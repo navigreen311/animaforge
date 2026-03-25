@@ -1,15 +1,12 @@
 export { TimelineRoot } from './TimelineRoot';
-export type {
-  TimelineRootProps,
-  Shot,
-  ShotStatus,
-  AudioTrack,
-  ToolMode,
-  Collaborator,
-} from './TimelineRoot';
+export type { TimelineRootProps, Shot, ShotStatus, AudioTrack, ToolMode, Collaborator } from './TimelineRoot';
 export { TimelineToolbar } from './TimelineToolbar';
+export type { SnapMode, FrameRate } from './TimelineToolbar';
 export { TimelineViewport } from './TimelineViewport';
 export { ShotTrack } from './ShotTrack';
 export { AudioTrackRow } from './AudioTrack';
 export { ShotInspector } from './ShotInspector';
 export { CollabPresence } from './CollabPresence';
+export { KeyframeTrack } from './KeyframeTrack';
+export type { Keyframe, KeyframeTrackProps } from './KeyframeTrack';
+export { TimelineShortcuts } from './TimelineShortcuts';
