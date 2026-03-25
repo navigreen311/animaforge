@@ -92,7 +92,7 @@ export const humanReviewService = {
     };
     tasks.set(task.id, task);
 
-    // Queue position = number of pending tasks
+    // Queue position = number of pending tasks with same or higher priority
     const pendingCount = Array.from(tasks.values()).filter(
       (t) => t.status === "pending",
     ).length;
@@ -163,9 +163,9 @@ export const humanReviewService = {
    * Get queue of tasks with optional filters.
    */
   getQueue(
-    type?: ReviewTaskType | string,
-    priority?: TaskPriority | string,
-    status?: TaskStatus | string,
+    type?: ReviewTaskType,
+    priority?: TaskPriority,
+    status?: TaskStatus,
   ): ReviewTask[] {
     let result = Array.from(tasks.values());
     if (type) result = result.filter((t) => t.type === type);
