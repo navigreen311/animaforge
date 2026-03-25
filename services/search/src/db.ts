@@ -1,33 +1,20 @@
-/**
- * Prisma client singleton — provides a single shared PrismaClient instance.
- *
- * In development the client is cached on `globalThis` to survive hot-reloads.
- * Falls back gracefully if @prisma/client is not installed (search service
- * can run fully in-memory without a database).
- */
+import { PrismaClient } from '@prisma/client';
 
-let prisma: any = null;
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-function createPrismaClient(): any {
-  try {
-    // Dynamic require so the module is optional
-    const { PrismaClient } = require("@prisma/client");
-    return new PrismaClient();
-  } catch {
-    // @prisma/client not available — return null to signal in-memory mode
-    return null;
+let prisma: PrismaClient | null = null;
+
+try {
+  prisma = globalForPrisma.prisma ?? new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
   }
-}
-
-const globalForPrisma = globalThis as unknown as { __prisma?: any };
-
-if (globalForPrisma.__prisma) {
-  prisma = globalForPrisma.__prisma;
-} else {
-  prisma = createPrismaClient();
-  if (process.env.NODE_ENV !== "production" && prisma) {
-    globalForPrisma.__prisma = prisma;
-  }
+} catch {
+  prisma = null;
 }
 
 export default prisma;
+export { prisma };
+export function isPrismaAvailable(): boolean { return prisma !== null; }

@@ -1,15 +1,20 @@
-// Database client - imports from @animaforge/db when available
-// Falls back to in-memory for development without DB
 import { PrismaClient } from '@prisma/client';
 
-let prisma: PrismaClient;
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+
+let prisma: PrismaClient | null = null;
 
 try {
-  prisma = new PrismaClient();
+  prisma = globalForPrisma.prisma ?? new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
+  }
 } catch {
-  // Fallback: PrismaClient not generated yet, use mock
-  prisma = null as any;
+  prisma = null;
 }
 
 export default prisma;
 export { prisma };
+export function isPrismaAvailable(): boolean { return prisma !== null; }
