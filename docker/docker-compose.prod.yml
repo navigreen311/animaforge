@@ -1,0 +1,257 @@
+version: "3.9"
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: animaforge-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-animaforge}
+      POSTGRES_USER: ${POSTGRES_USER:-animaforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U animaforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: animaforge-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: animaforge-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Application Services ────────────────────────────────────
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: animaforge-web
+    ports:
+      - "3000:3000"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      platform-api:
+        condition: service_started
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  platform-api:
+    build:
+      context: ../services/platform-api
+      dockerfile: Dockerfile
+    container_name: animaforge-platform-api
+    ports:
+      - "3001:3001"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  realtime:
+    build:
+      context: ../services/realtime
+      dockerfile: Dockerfile
+    container_name: animaforge-realtime
+    ports:
+      - "3002:3002"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: ../services/auth
+      dockerfile: Dockerfile
+    container_name: animaforge-auth
+    ports:
+      - "3003:3003"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  billing:
+    build:
+      context: ../services/billing
+      dockerfile: Dockerfile
+    container_name: animaforge-billing
+    ports:
+      - "3004:3004"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  workers:
+    build:
+      context: ../services/workers
+      dockerfile: Dockerfile
+    container_name: animaforge-workers
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  ai-api:
+    build:
+      context: ../services/ai-api
+      dockerfile: Dockerfile
+    container_name: animaforge-ai-api
+    ports:
+      - "8001:8001"
+    env_file: ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  # ── Governance Services ─────────────────────────────────────
+  moderation:
+    build:
+      context: ../services/governance/moderation
+      dockerfile: Dockerfile
+    container_name: animaforge-moderation
+    ports:
+      - "3005:3005"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  c2pa:
+    build:
+      context: ../services/governance/c2pa
+      dockerfile: Dockerfile
+    container_name: animaforge-c2pa
+    ports:
+      - "3006:3006"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  watermark:
+    build:
+      context: ../services/governance/watermark
+      dockerfile: Dockerfile
+    container_name: animaforge-watermark
+    ports:
+      - "3007:3007"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+  consent:
+    build:
+      context: ../services/governance/consent
+      dockerfile: Dockerfile
+    container_name: animaforge-consent
+    ports:
+      - "3008:3008"
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - animaforge-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  es_data:
+
+networks:
+  animaforge-network:
+    driver: bridge
