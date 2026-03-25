@@ -1,4 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
+import {
+  embedText,
+  embedBatch,
+  EMBEDDING_DIM,
+} from "./embeddingService";
+import prisma from "../db";
 
 export type SearchableType = "shots" | "characters" | "assets" | "projects";
 
@@ -7,104 +13,179 @@ export interface SearchDocument {
   type: SearchableType;
   content: string;
   metadata: Record<string, unknown>;
+  embedding: number[];
   indexedAt: string;
 }
 
 export interface SearchResult {
-  document: SearchDocument;
+  id: string;
+  type: SearchableType;
+  content: string;
   score: number;
+  metadata: Record<string, unknown>;
 }
 
-// In-memory index
 const documents = new Map<string, SearchDocument>();
+
+export function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  if (vecA.length !== vecB.length) {
+    throw new Error("Vector length mismatch: " + vecA.length + " vs " + vecB.length);
+  }
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dot += vecA[i] * vecB[i];
+    magA += vecA[i] * vecA[i];
+    magB += vecB[i] * vecB[i];
+  }
+  const denom = Math.sqrt(magA) * Math.sqrt(magB);
+  if (denom === 0) return 0;
+  return Math.min(1, Math.max(-1, dot / denom));
+}
+
+export function generateEmbedding(text: string): number[] {
+  return embedText(text);
+}
 
 export function indexDocument(data: {
   id?: string;
   type: SearchableType;
   content: string;
   metadata?: Record<string, unknown>;
+  embedding?: number[];
 }): SearchDocument {
+  const embedding = data.embedding ?? generateEmbedding(data.content);
   const doc: SearchDocument = {
-    id: data.id || uuidv4(),
+    id: data.id ?? uuidv4(),
     type: data.type,
     content: data.content,
-    metadata: data.metadata || {},
+    metadata: data.metadata ?? {},
+    embedding,
     indexedAt: new Date().toISOString(),
   };
-
   documents.set(doc.id, doc);
+
+  if (prisma?.searchDocument) {
+    prisma.searchDocument
+      .upsert({
+        where: { id: doc.id },
+        update: { type: doc.type, content: doc.content, metadata: doc.metadata, embedding: doc.embedding, indexedAt: doc.indexedAt },
+        create: { id: doc.id, type: doc.type, content: doc.content, metadata: doc.metadata, embedding: doc.embedding, indexedAt: doc.indexedAt },
+      })
+      .catch(() => {});
+  }
+
   return doc;
 }
 
+export function bulkIndex(
+  items: { id?: string; type: SearchableType; content: string; metadata?: Record<string, unknown>; embedding?: number[] }[]
+): SearchDocument[] {
+  const textsToEmbed: string[] = [];
+  const needsEmbedding: number[] = [];
+  items.forEach((item, idx) => {
+    if (!item.embedding) {
+      textsToEmbed.push(item.content);
+      needsEmbedding.push(idx);
+    }
+  });
+  const batchEmbeddings = embedBatch(textsToEmbed);
+  let embIdx = 0;
+  const enriched = items.map((item, idx) => {
+    if (needsEmbedding.includes(idx)) {
+      return { ...item, embedding: batchEmbeddings[embIdx++] };
+    }
+    return item;
+  });
+  return enriched.map((item) => indexDocument(item));
+}
+
 export function removeDocument(id: string): boolean {
-  return documents.delete(id);
+  const removed = documents.delete(id);
+  if (removed && prisma?.searchDocument) {
+    prisma.searchDocument.delete({ where: { id } }).catch(() => {});
+  }
+  return removed;
 }
 
 export function search(
   query: string,
-  options: { type?: SearchableType; page?: number; limit?: number }
+  options: { type?: SearchableType; page?: number; limit?: number } = {}
 ): { results: SearchResult[]; total: number; page: number; limit: number } {
-  const page = options.page || 1;
-  const limit = options.limit || 20;
-  const queryLower = query.toLowerCase();
-  const queryTerms = queryLower.split(/\s+/).filter(Boolean);
-
-  const results: SearchResult[] = [];
-
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 20;
+  if (!query || query.trim().length === 0) {
+    return { results: [], total: 0, page, limit };
+  }
+  const queryEmbedding = generateEmbedding(query);
+  const scored: SearchResult[] = [];
   for (const doc of documents.values()) {
-    // Filter by type if specified
     if (options.type && doc.type !== options.type) continue;
+    const score = cosineSimilarity(queryEmbedding, doc.embedding);
+    scored.push({ id: doc.id, type: doc.type, content: doc.content, score, metadata: doc.metadata });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const total = scored.length;
+  const start = (page - 1) * limit;
+  const paginated = scored.slice(start, start + limit);
+  return { results: paginated, total, page, limit };
+}
 
-    const contentLower = doc.content.toLowerCase();
-    const metadataStr = JSON.stringify(doc.metadata).toLowerCase();
+export function searchByVector(
+  embedding: number[],
+  options: { type?: SearchableType; limit?: number } = {}
+): SearchResult[] {
+  const limit = options.limit ?? 20;
+  const scored: SearchResult[] = [];
+  for (const doc of documents.values()) {
+    if (options.type && doc.type !== options.type) continue;
+    const score = cosineSimilarity(embedding, doc.embedding);
+    scored.push({ id: doc.id, type: doc.type, content: doc.content, score, metadata: doc.metadata });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+}
 
-    // Calculate relevance score
-    let score = 0;
+export function getIndexStats(): {
+  total_docs: number;
+  by_type: Record<SearchableType, number>;
+  avg_embedding_dim: number;
+} {
+  const byType: Record<SearchableType, number> = { shots: 0, characters: 0, assets: 0, projects: 0 };
+  let dimSum = 0;
+  for (const doc of documents.values()) {
+    byType[doc.type] = (byType[doc.type] || 0) + 1;
+    dimSum += doc.embedding.length;
+  }
+  return {
+    total_docs: documents.size,
+    by_type: byType,
+    avg_embedding_dim: documents.size > 0 ? dimSum / documents.size : 0,
+  };
+}
 
-    // Exact substring match in content (highest weight)
-    if (contentLower.includes(queryLower)) {
-      score += 10;
-    }
-
-    // Individual term matches
-    for (const term of queryTerms) {
-      if (contentLower.includes(term)) {
-        score += 3;
-        // Bonus for term appearing at the start
-        if (contentLower.startsWith(term)) {
-          score += 2;
-        }
-      }
-      // Metadata match (lower weight)
-      if (metadataStr.includes(term)) {
-        score += 1;
-      }
-    }
-
-    // Term frequency bonus
-    for (const term of queryTerms) {
-      const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-      const matches = doc.content.match(regex);
-      if (matches) {
-        score += Math.min(matches.length * 0.5, 5);
-      }
-    }
-
-    if (score > 0) {
-      results.push({ document: doc, score });
+export function reindexAll(): number {
+  const texts: string[] = [];
+  const ids: string[] = [];
+  for (const doc of documents.values()) {
+    texts.push(doc.content);
+    ids.push(doc.id);
+  }
+  const newEmbeddings = embedBatch(texts);
+  for (let i = 0; i < ids.length; i++) {
+    const doc = documents.get(ids[i]);
+    if (doc) {
+      doc.embedding = newEmbeddings[i];
     }
   }
-
-  // Sort by score descending
-  results.sort((a, b) => b.score - a.score);
-
-  const total = results.length;
-  const start = (page - 1) * limit;
-  const paginated = results.slice(start, start + limit);
-
-  return { results: paginated, total, page, limit };
+  return ids.length;
 }
 
 export function clearAll(): void {
   documents.clear();
+}
+
+export function getDocument(id: string): SearchDocument | undefined {
+  return documents.get(id);
 }
