@@ -39,7 +39,7 @@ function defaultProps(kind: NodeKind) {
   }
 }
 
-function createNode(kind: NodeKind, name?: string): NodeData & { children: SceneNode[]; visible: boolean } {
+function createNode(kind: NodeKind, name?: string): NodeData & { children: SceneNode[] } {
   const id = uid();
   return {
     id,
@@ -231,7 +231,7 @@ export function SceneGraphEditor() {
 
       {/* Main layout */}
       <div className="flex flex-1 min-h-0">
-        {/* Left panel - Node tree */}
+        {/* Left panel – Node tree */}
         <div className="w-56 flex-shrink-0 border-r border-zinc-800 bg-zinc-900/40 overflow-y-auto">
           <div className="px-2 py-2 text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
             Nodes ({nodes.length})
@@ -248,7 +248,7 @@ export function SceneGraphEditor() {
           />
         </div>
 
-        {/* Center - 3D Viewport */}
+        {/* Center – 3D Viewport */}
         <div className="flex-1 relative min-w-0">
           <SceneViewport
             nodes={flatNodes}
@@ -268,7 +268,7 @@ export function SceneGraphEditor() {
           </div>
         </div>
 
-        {/* Right panel - Properties */}
+        {/* Right panel – Properties */}
         <div className="w-64 flex-shrink-0 border-l border-zinc-800 bg-zinc-900/40">
           <div className="px-3 py-2 text-[10px] text-zinc-500 uppercase tracking-widest font-semibold border-b border-zinc-800">
             Properties
