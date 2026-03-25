@@ -134,7 +134,6 @@ export async function validateBrandConsistency(
 
   const violations: BrandViolation[] = [];
 
-  // Simulate compliance checks against the output
   if (!kit.logo.url) {
     violations.push({
       rule: "logo-present",
@@ -201,7 +200,6 @@ export async function applyBrandToOutput(
   outputUrl: string,
   brandKitId: string,
 ): Promise<{ applied: boolean; outputUrl: string; operations: string[] }> {
-  // Find the kit by id
   let kit: BrandKit | undefined;
   for (const k of brandKits.values()) {
     if (k.id === brandKitId) {

@@ -6,6 +6,9 @@ import { Server } from "socket.io";
 import { socketAuth } from "./middleware/socketAuth";
 import { registerJobEvents } from "./handlers/jobEvents";
 import { registerCollabEvents } from "./handlers/collabEvents";
+import { registerNotificationEvents } from "./handlers/notificationEvents";
+import { presenceService } from "./services/presenceService";
+import { roomManager } from "./services/roomManager";
 import type {
   AuthenticatedSocket,
   ClientToServerEvents,
@@ -35,6 +38,9 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 // ── Auth middleware ──────────────────────────────────────────────────
 io.use(socketAuth);
 
+// ── Initialize room manager with io instance ────────────────────────
+roomManager.init(io);
+
 // ── Connection handler ──────────────────────────────────────────────
 io.on("connection", (socket) => {
   const authedSocket = socket as AuthenticatedSocket;
@@ -43,13 +49,21 @@ io.on("connection", (socket) => {
   // Every user automatically joins their own private room
   authedSocket.join(`user:${userId}`);
 
+  // Track presence as online
+  presenceService.trackPresence(userId, "online");
+
+  // Set auto-away after 5 minutes of inactivity
+  presenceService.setAway(userId, 5 * 60 * 1000);
+
   console.log(`[realtime] user ${userId} connected (${authedSocket.id})`);
 
   // Register domain event handlers
   registerJobEvents(io, authedSocket);
   registerCollabEvents(io, authedSocket);
+  registerNotificationEvents(io, authedSocket);
 
   authedSocket.on("disconnect", (reason) => {
+    presenceService.trackPresence(userId, "offline");
     console.log(`[realtime] user ${userId} disconnected (${reason})`);
   });
 });
