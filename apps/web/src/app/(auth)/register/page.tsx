@@ -127,9 +127,7 @@ export default function RegisterPage() {
           {watchedPassword && (
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">
-                  Password strength
-                </span>
+                <span className="text-xs text-gray-500">Password strength</span>
                 <span
                   className={`text-xs font-medium ${
                     strength.label === "Weak"
@@ -167,19 +165,11 @@ export default function RegisterPage() {
             />
             <span className="text-sm text-gray-400">
               I agree to the{" "}
-              <Link
-                href="/terms"
-                className="text-violet-400 hover:underline"
-                target="_blank"
-              >
+              <Link href="/terms" className="text-violet-400 hover:underline" target="_blank">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link
-                href="/privacy"
-                className="text-violet-400 hover:underline"
-                target="_blank"
-              >
+              <Link href="/privacy" className="text-violet-400 hover:underline" target="_blank">
                 Privacy Policy
               </Link>
             </span>
@@ -198,24 +188,9 @@ export default function RegisterPage() {
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
-              <svg
-                className="h-4 w-4 animate-spin"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Creating account...
             </span>
