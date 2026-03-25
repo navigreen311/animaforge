@@ -10,6 +10,7 @@
     "test": "jest --forceExit --detectOpenHandles"
   },
   "dependencies": {
+    "@prisma/client": "^5.14.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -33,6 +34,8 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/src"]
+    "roots": [
+      "<rootDir>/src"
+    ]
   }
 }
