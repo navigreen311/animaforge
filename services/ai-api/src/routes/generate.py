@@ -14,17 +14,26 @@ from ..models.video_schemas import (
     GenerateVideoRequest,
     GenerateVideoResponse,
 )
-from ..services.video_service import create_video_job
+from ..services.video_service import (
+    create_video_job,
+    estimate_generation_time,
+)
 
 router = APIRouter(prefix="/ai/v1")
 
 
-# ── POST /ai/v1/generate/video ──────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# POST /ai/v1/generate/video
+# ---------------------------------------------------------------------------
 
 @router.post("/generate/video", response_model=GenerateVideoResponse, status_code=201)
 async def generate_video(body: GenerateVideoRequest) -> GenerateVideoResponse:
-    """Queue a new video generation job for the given shot."""
+    """Queue a new video generation job for the given shot.
+
+    Accepts a scene graph, optional style/character references, and a quality
+    tier.  Returns a ``job_id``, an estimated completion time in seconds, and a
+    ``preview_url`` where the result will be available once finished.
+    """
     if body.tier not in {"preview", "standard", "high"}:
         raise HTTPException(status_code=422, detail=f"Invalid tier: {body.tier}")
 
@@ -37,22 +46,35 @@ async def generate_video(body: GenerateVideoRequest) -> GenerateVideoResponse:
     )
 
 
-# ── POST /ai/v1/edit/instruction ────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# POST /ai/v1/edit/instruction
+# ---------------------------------------------------------------------------
 
 @router.post("/edit/instruction", response_model=EditInstructionResponse, status_code=201)
 async def edit_instruction(body: EditInstructionRequest) -> EditInstructionResponse:
-    """Apply a natural-language editing instruction to an existing output."""
+    """Apply a natural-language editing instruction to an existing output.
+
+    Optionally accepts a ``mask_url`` to restrict the edit to a specific
+    region of the frame.
+    """
     job_id = str(uuid.uuid4())
+    # In production this would enqueue the editing pipeline; for now we
+    # return the job reference immediately.
     return EditInstructionResponse(job_id=job_id)
 
 
-# ── POST /ai/v1/director/assemble ───────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# POST /ai/v1/director/assemble
+# ---------------------------------------------------------------------------
 
 @router.post("/director/assemble", response_model=DirectorAssembleResponse, status_code=201)
 async def director_assemble(body: DirectorAssembleRequest) -> DirectorAssembleResponse:
-    """Assemble a rough cut from the supplied shots."""
+    """Assemble a rough cut from the supplied shots.
+
+    The ``pacing`` parameter controls the edit rhythm (slow | normal | fast).
+    Returns a ``job_id`` and a ``rough_cut_url`` where the assembled video
+    will be available once the job completes.
+    """
     if body.pacing not in {"slow", "normal", "fast"}:
         raise HTTPException(status_code=422, detail=f"Invalid pacing: {body.pacing}")
 

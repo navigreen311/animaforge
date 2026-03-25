@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-# ── Request Schemas ──────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# Request schemas
+# ---------------------------------------------------------------------------
 
 class GenerateVideoRequest(BaseModel):
     """Body for POST /ai/v1/generate/video."""
@@ -24,7 +25,7 @@ class GenerateVideoRequest(BaseModel):
     style_ref: Optional[str] = Field(
         None, description="URL or ID of the style reference asset"
     )
-    char_refs: Optional[List[str]] = Field(
+    char_refs: Optional[list[str]] = Field(
         None, description="List of character reference asset URLs / IDs"
     )
 
@@ -46,7 +47,7 @@ class DirectorAssembleRequest(BaseModel):
     """Body for POST /ai/v1/director/assemble."""
 
     project_id: str = Field(..., description="Project identifier")
-    shot_ids: List[str] = Field(
+    shot_ids: list[str] = Field(
         ..., description="Ordered list of shot IDs to assemble"
     )
     pacing: str = Field(
@@ -55,8 +56,9 @@ class DirectorAssembleRequest(BaseModel):
     )
 
 
-# ── Response Schemas ─────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# Response schemas
+# ---------------------------------------------------------------------------
 
 class GenerateVideoResponse(BaseModel):
     """Response for POST /ai/v1/generate/video."""
@@ -79,8 +81,9 @@ class DirectorAssembleResponse(BaseModel):
     rough_cut_url: str
 
 
-# ── Internal / Domain Schemas ────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# Internal / shared schemas
+# ---------------------------------------------------------------------------
 
 class PipelineStage(BaseModel):
     """A single stage in the video generation pipeline."""
@@ -99,4 +102,4 @@ class JobDict(BaseModel):
     estimated_seconds: float = 0.0
     credit_cost: float = 0.0
     preview_url: str = ""
-    stages: List[PipelineStage] = []
+    stages: list[PipelineStage] = []
