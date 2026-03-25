@@ -1,0 +1,334 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), uuidOssp(map: "uuid-ossp")]
+}
+
+// ============================================
+// IDENTITY & AUTH
+// ============================================
+
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String   @unique
+  displayName   String?  @map("display_name")
+  avatarUrl     String?  @map("avatar_url")
+  orgId         String?  @map("org_id") @db.Uuid
+  role          String   @default("creator") // creator|editor|admin|enterprise
+  tier          String   @default("free") // free|creator|pro|studio|enterprise
+  genMemory     Json     @default("{}") @map("gen_memory")
+  stylePrefs    Json     @default("{}") @map("style_prefs")
+  consentFlags  Json     @default("{}") @map("consent_flags")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+
+  organization  Organization? @relation(fields: [orgId], references: [id])
+  projects      Project[]
+  characters    Character[]
+  jobs          GenerationJob[]
+  apiKeys       ApiKey[]
+  approvedShots Shot[]    @relation("ApprovedBy")
+
+  @@map("users")
+}
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  logoUrl   String?  @map("logo_url")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  users     User[]
+  projects  Project[]
+  teams     Team[]
+
+  @@map("organizations")
+}
+
+model Team {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  members      Membership[]
+
+  @@map("teams")
+}
+
+model Membership {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamId String @map("team_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  role   String @default("member")
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@map("memberships")
+}
+
+model ApiKey {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String
+  keyHash   String   @unique @map("key_hash")
+  scopes    String[] @default([])
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("api_keys")
+}
+
+// ============================================
+// PROJECTS & SHOTS
+// ============================================
+
+model Project {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId      String   @map("owner_id") @db.Uuid
+  orgId        String?  @map("org_id") @db.Uuid
+  title        String
+  description  String?
+  worldBible   Json     @default("{}") @map("world_bible")
+  brandKit     Json     @default("{}") @map("brand_kit")
+  styleLock    Json     @default("{}") @map("style_lock")
+  status       String   @default("active")
+  phase        String   @default("pre_production")
+  modelVersion String?  @map("model_version")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  owner        User         @relation(fields: [ownerId], references: [id])
+  organization Organization? @relation(fields: [orgId], references: [id])
+  scenes       Scene[]
+  shots        Shot[]
+  jobs         GenerationJob[]
+
+  @@map("projects")
+}
+
+model Scene {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  title     String
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  project Project @relation(fields: [projectId], references: [id])
+  shots   Shot[]
+
+  @@map("scenes")
+}
+
+model Shot {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sceneId       String   @map("scene_id") @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  shotNumber    Int      @map("shot_number")
+  sceneGraph    Json     @map("scene_graph")
+  prompt        String?
+  styleRef      String?  @map("style_ref") @db.Uuid
+  characterRefs String[] @map("character_refs") @db.Uuid
+  audioTrackId  String?  @map("audio_track_id") @db.Uuid
+  durationMs    Int?     @map("duration_ms")
+  aspectRatio   String   @default("16:9") @map("aspect_ratio")
+  status        String   @default("draft")
+  approvedBy    String?  @map("approved_by") @db.Uuid
+  approvedAt    DateTime? @map("approved_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  scene      Scene   @relation(fields: [sceneId], references: [id])
+  project    Project @relation(fields: [projectId], references: [id])
+  approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  jobs       GenerationJob[]
+
+  @@map("shots")
+}
+
+// ============================================
+// CHARACTERS & ASSETS
+// ============================================
+
+model Character {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId     String?  @map("project_id") @db.Uuid
+  ownerId       String   @map("owner_id") @db.Uuid
+  name          String
+  isDigitalTwin Boolean  @default(false) @map("is_digital_twin")
+  faceModelUrl  String?  @map("face_model_url")
+  bodyParams    Json     @default("{}") @map("body_params")
+  hairParams    Json     @default("{}") @map("hair_params")
+  wardrobe      Json     @default("{}")
+  voiceId       String?  @map("voice_id")
+  styleMode     String   @default("realistic") @map("style_mode")
+  facsRigUrl    String?  @map("facs_rig_url")
+  gltfUrl       String?  @map("gltf_url")
+  consentRecord String?  @map("consent_record") @db.Uuid
+  rightsStatus  String   @default("personal") @map("rights_status")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  @@map("characters")
+}
+
+model Asset {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  type      String   // image|video|audio|model|style_pack
+  name      String
+  url       String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("assets")
+}
+
+model StylePack {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  creatorId   String   @map("creator_id") @db.Uuid
+  fingerprint Json     // StyleFingerprint
+  sourceUrl   String   @map("source_url")
+  sourceType  String   @map("source_type") // video|animation
+  isPublic    Boolean  @default(false) @map("is_public")
+  price       Float?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("style_packs")
+}
+
+// ============================================
+// GENERATION JOBS
+// ============================================
+
+model GenerationJob {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shotId       String?  @map("shot_id") @db.Uuid
+  projectId    String   @map("project_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  jobType      String   @map("job_type")
+  modelId      String   @map("model_id")
+  inputParams  Json     @map("input_params")
+  inputHash    String?  @map("input_hash")
+  tier         String   @default("preview")
+  status       String   @default("queued")
+  progress     Int      @default(0)
+  outputUrl    String?  @map("output_url")
+  c2paManifest String?  @map("c2pa_manifest")
+  watermarkId  String?  @map("watermark_id")
+  qualityScores Json?   @map("quality_scores")
+  costCredits  Float?   @map("cost_credits")
+  gpuClass     String?  @map("gpu_class")
+  startedAt    DateTime? @map("started_at") @db.Timestamptz
+  completedAt  DateTime? @map("completed_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  shot    Shot?   @relation(fields: [shotId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("generation_jobs")
+}
+
+// ============================================
+// AUDIO & TIMELINE
+// ============================================
+
+model AudioTrack {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  type      String   // voice|sfx|music|mixed
+  url       String
+  duration  Int      // milliseconds
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audio_tracks")
+}
+
+// ============================================
+// GOVERNANCE
+// ============================================
+
+model Consent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectId    String   @map("subject_id") @db.Uuid
+  grantedBy    String   @map("granted_by") @db.Uuid
+  consentType  String   @map("consent_type") // face|voice|likeness
+  scope        String   // personal|commercial
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("consents")
+}
+
+model ModerationLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId     String   @map("job_id") @db.Uuid
+  result    String   // pass|flag|block
+  category  String?
+  score     Float?
+  details   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("moderation_logs")
+}
+
+model AuditTrail {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  action    String
+  resource  String
+  resourceId String  @map("resource_id") @db.Uuid
+  details   Json     @default("{}")
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audit_trail")
+}
+
+// ============================================
+// COMMERCE
+// ============================================
+
+model Subscription {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  stripeId      String   @unique @map("stripe_id")
+  tier          String
+  status        String   @default("active")
+  currentPeriodEnd DateTime @map("current_period_end") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("subscriptions")
+}
+
+model UsageMeter {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  period    String   // YYYY-MM
+  credits   Float    @default(0) @map("credits_used")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([userId, period])
+  @@map("usage_meters")
+}

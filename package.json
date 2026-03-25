@@ -1,0 +1,38 @@
+{
+  "name": "animaforge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AnimaForge - AI Animation & Video Production Operating System",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:api": "cd services/platform-api && npm run dev",
+    "dev:ai": "cd services/ai-api && uvicorn src.main:app --reload --port 8001",
+    "dev:realtime": "cd services/realtime && npm run dev",
+    "dev:all": "concurrently \"npm:dev:*\"",
+    "build:web": "cd apps/web && npm run build",
+    "build:api": "cd services/platform-api && npm run build",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:integration": "cd services/platform-api && npm test && cd ../ai-api && pytest",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "db:migrate": "cd packages/db && npx prisma migrate dev",
+    "db:seed": "cd packages/db && npx prisma db seed",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "@playwright/test": "^1.44.0"
+  }
+}
