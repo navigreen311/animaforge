@@ -1,17 +1,16 @@
 version: '3.9'
 
 services:
+  # === DATA LAYER ===
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: animaforge-postgres
+    container_name: af-postgres
     environment:
       POSTGRES_DB: animaforge
       POSTGRES_USER: animaforge
       POSTGRES_PASSWORD: animaforge_dev
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U animaforge"]
       interval: 5s
@@ -20,30 +19,160 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: animaforge-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    container_name: af-redis
+    ports: ["6379:6379"]
+    volumes: [redis_data:/data]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 5s
       retries: 5
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-    container_name: animaforge-elasticsearch
+    container_name: af-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
+    ports: ["9200:9200"]
+    volumes: [es_data:/usr/share/elasticsearch/data]
+
+  minio:
+    image: minio/minio
+    container_name: af-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: animaforge
+      MINIO_ROOT_PASSWORD: animaforge_dev
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio_data:/data]
+
+  # === PLATFORM SERVICES ===
+  gateway:
+    build: ../services/gateway
+    container_name: af-gateway
+    ports: ["4000:4000"]
+    env_file: ../.env
+    depends_on: [postgres, redis]
+
+  platform-api:
+    build: ../services/platform-api
+    container_name: af-platform-api
+    ports: ["3001:3001"]
+    env_file: ../.env
+    depends_on: [postgres, redis]
+
+  auth:
+    build: ../services/auth
+    container_name: af-auth
+    ports: ["3003:3003"]
+    env_file: ../.env
+    depends_on: [postgres, redis]
+
+  billing:
+    build: ../services/billing
+    container_name: af-billing
+    ports: ["3004:3004"]
+    env_file: ../.env
+    depends_on: [postgres, redis]
+
+  realtime:
+    build: ../services/realtime
+    container_name: af-realtime
+    ports: ["3002:3002"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  notification:
+    build: ../services/notification
+    container_name: af-notification
+    ports: ["3009:3009"]
+    env_file: ../.env
+    depends_on: [postgres]
+
+  # === AI SERVICES ===
+  ai-api:
+    build: ../services/ai-api
+    container_name: af-ai-api
+    ports: ["8001:8001"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  workers:
+    build: ../services/workers
+    container_name: af-workers
+    env_file: ../.env
+    depends_on: [redis, postgres]
+
+  # === GOVERNANCE ===
+  moderation:
+    build: ../services/governance/moderation
+    container_name: af-moderation
+    ports: ["3005:3005"]
+    env_file: ../.env
+    depends_on: [postgres]
+
+  c2pa:
+    build: ../services/governance/c2pa
+    container_name: af-c2pa
+    ports: ["3006:3006"]
+    env_file: ../.env
+
+  watermark:
+    build: ../services/governance/watermark
+    container_name: af-watermark
+    ports: ["3007:3007"]
+    env_file: ../.env
+
+  consent:
+    build: ../services/governance/consent
+    container_name: af-consent
+    ports: ["3008:3008"]
+    env_file: ../.env
+    depends_on: [postgres]
+
+  # === ADDITIONAL ===
+  search:
+    build: ../services/search
+    container_name: af-search
+    ports: ["3010:3010"]
+    env_file: ../.env
+    depends_on: [elasticsearch]
+
+  analytics:
+    build: ../services/analytics
+    container_name: af-analytics
+    ports: ["3011:3011"]
+    env_file: ../.env
+    depends_on: [postgres]
+
+  export:
+    build: ../services/export
+    container_name: af-export
+    ports: ["3013:3013"]
+    env_file: ../.env
+
+  collab:
+    build: ../services/collab
+    container_name: af-collab
+    ports: ["3012:3012"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  # === WEB APP ===
+  web:
+    build: ../apps/web
+    container_name: af-web
+    ports: ["3000:3000"]
+    env_file: ../.env
+    depends_on: [gateway]
 
 volumes:
   postgres_data:
   redis_data:
   es_data:
+  minio_data:
+
+networks:
+  default:
+    name: animaforge
