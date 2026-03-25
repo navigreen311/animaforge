@@ -19,14 +19,20 @@ export interface HealthResponse {
   checks: Record<string, CheckResult>;
 }
 
+/**
+ * Creates an Express handler for GET /health that runs configurable dependency checks
+ * and returns an aggregated health status.
+ */
 export function healthCheck(options: HealthCheckOptions = {}) {
   const { version = process.env.APP_VERSION || '0.0.0', checks = {} } = options;
 
   return async (_req: Request, res: Response): Promise<void> => {
     const results: Record<string, CheckResult> = {};
     let overallStatus: 'ok' | 'degraded' | 'down' = 'ok';
+
     const checkEntries = Object.entries(checks);
 
+    // Run all checks in parallel
     const settled = await Promise.allSettled(
       checkEntries.map(async ([name, checkFn]) => {
         const start = Date.now();
@@ -34,7 +40,13 @@ export function healthCheck(options: HealthCheckOptions = {}) {
           const result = await checkFn();
           return { name, result };
         } catch {
-          return { name, result: { status: 'down' as const, latency_ms: Date.now() - start } };
+          return {
+            name,
+            result: {
+              status: 'down' as const,
+              latency_ms: Date.now() - start,
+            },
+          };
         }
       }),
     );
@@ -43,12 +55,22 @@ export function healthCheck(options: HealthCheckOptions = {}) {
       if (entry.status === 'fulfilled') {
         const { name, result } = entry.value;
         results[name] = result;
-        if (result.status === 'down') { overallStatus = 'down'; }
-        else if (result.status === 'degraded' && overallStatus !== 'down') { overallStatus = 'degraded'; }
+
+        if (result.status === 'down') {
+          overallStatus = 'down';
+        } else if (result.status === 'degraded' && overallStatus !== 'down') {
+          overallStatus = 'degraded';
+        }
       }
     }
 
-    const response: HealthResponse = { status: overallStatus, version, uptime: process.uptime(), checks: results };
+    const response: HealthResponse = {
+      status: overallStatus,
+      version,
+      uptime: process.uptime(),
+      checks: results,
+    };
+
     const statusCode = overallStatus === 'ok' ? 200 : overallStatus === 'degraded' ? 200 : 503;
     res.status(statusCode).json(response);
   };

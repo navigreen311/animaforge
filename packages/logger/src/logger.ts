@@ -22,13 +22,21 @@ const defaultOptions: LoggerOptions = {
   }),
 };
 
+/**
+ * Create a structured JSON logger for a given service.
+ * In development, logs are pretty-printed. In production, logs are JSON.
+ */
 export function createLogger(serviceName: string, options?: Partial<LoggerOptions>): Logger {
   return pino({
     ...defaultOptions,
     ...options,
-    base: { service: serviceName },
+    base: {
+      service: serviceName,
+    },
   });
 }
 
+/** Shared root logger instance for the platform */
 export const logger = createLogger('animaforge');
+
 export type { Logger } from 'pino';
