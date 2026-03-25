@@ -35,18 +35,26 @@ export function useCollab(projectId: string | null): UseCollabReturn {
   const { token } = useAuth();
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
+
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<CollabUser[]>([]);
   const [shotLocks, setShotLocks] = useState<Map<string, ShotLockInfo>>(new Map());
 
   useEffect(() => {
     if (!projectId || !token) return;
+
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
-    const provider = new WebsocketProvider(WS_URL, projectId, ydoc, {
-      params: { token, projectId },
-      connect: true,
-    });
+
+    const provider = new WebsocketProvider(
+      WS_URL,
+      projectId,
+      ydoc,
+      {
+        params: { token, projectId },
+        connect: true,
+      },
+    );
     providerRef.current = provider;
 
     provider.on('status', ({ status }: { status: string }) => {
@@ -56,6 +64,7 @@ export function useCollab(projectId: string | null): UseCollabReturn {
     provider.awareness.on('change', () => {
       const states = provider.awareness.getStates();
       const users: CollabUser[] = [];
+
       states.forEach((state: Record<string, unknown>) => {
         if (state.user) {
           const u = state.user as CollabUser;
@@ -68,6 +77,7 @@ export function useCollab(projectId: string | null): UseCollabReturn {
           });
         }
       });
+
       setConnectedUsers(users);
     });
 
@@ -77,7 +87,11 @@ export function useCollab(projectId: string | null): UseCollabReturn {
         if (msg.type === 'shot-lock-update') {
           setShotLocks((prev) => {
             const next = new Map(prev);
-            next.set(msg.shotId, { locked: msg.locked, lockedBy: msg.lockedBy, expiresAt: msg.expiresAt });
+            next.set(msg.shotId, {
+              locked: msg.locked,
+              lockedBy: msg.lockedBy,
+              expiresAt: msg.expiresAt,
+            });
             return next;
           });
         } else if (msg.type === 'awareness-update') {
@@ -86,12 +100,16 @@ export function useCollab(projectId: string | null): UseCollabReturn {
           setShotLocks((prev) => {
             const next = new Map(prev);
             for (const [shotId, info] of next.entries()) {
-              if (info.lockedBy === msg.userId) next.delete(shotId);
+              if (info.lockedBy === msg.userId) {
+                next.delete(shotId);
+              }
             }
             return next;
           });
         }
-      } catch { /* Yjs binary */ }
+      } catch {
+        // Not a JSON message -- Yjs binary protocol
+      }
     });
 
     return () => {
@@ -120,7 +138,12 @@ export function useCollab(projectId: string | null): UseCollabReturn {
   }, []);
 
   return {
-    isConnected, connectedUsers, lockShot, unlockShot, shotLocks,
-    ydoc: ydocRef.current, provider: providerRef.current,
+    isConnected,
+    connectedUsers,
+    lockShot,
+    unlockShot,
+    shotLocks,
+    ydoc: ydocRef.current,
+    provider: providerRef.current,
   };
 }

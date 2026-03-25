@@ -1,8 +1,20 @@
 import { v4 as uuidv4 } from "uuid";
 import { prisma, isPrismaAvailable } from "../db";
-import type { ModerateRequest, ModerateResponse, PreCheckRequest, PreCheckResponse, ModerationLogRecord, ModerationCategory } from "../models/moderationSchemas";
+import type {
+  ModerateRequest,
+  ModerateResponse,
+  PreCheckRequest,
+  PreCheckResponse,
+  ModerationLogRecord,
+  ModerationCategory,
+} from "../models/moderationSchemas";
 
-const CATEGORY_WEIGHTS: Record<Exclude<ModerationCategory, "safe">, number> = { violence: 0.9, sexual: 0.95, impersonation: 0.8, minors: 1.0 };
+const CATEGORY_WEIGHTS: Record<Exclude<ModerationCategory, "safe">, number> = {
+  violence: 0.9,
+  sexual: 0.95,
+  impersonation: 0.8,
+  minors: 1.0,
+};
 
 const CATEGORY_KEYWORDS: Record<Exclude<ModerationCategory, "safe">, string[]> = {
   violence: ["kill","murder","blood","gore","weapon","stab","shoot","explode","dismember","torture"],
@@ -13,6 +25,7 @@ const CATEGORY_KEYWORDS: Record<Exclude<ModerationCategory, "safe">, string[]> =
 
 const BLOCK_THRESHOLD = 0.7;
 const FLAG_THRESHOLD = 0.4;
+
 const logStore: Map<string, ModerationLogRecord[]> = new Map();
 
 function appendLogInMemory(record: ModerationLogRecord): void {
@@ -74,7 +87,7 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
     if (await isPrismaAvailable()) {
       await prisma.moderationLog.create({ data: { jobId: `precheck-${uuidv4()}`, result: allowed ? "pass" : "block", category: blockedCategories[0] ?? null, score: allowed ? 0.0 : 1.0, details: { type: "pre_check", prompt: req.prompt, reason_code, blocked_categories: blockedCategories } } });
     }
-  } catch { /* best-effort */ }
+  } catch { /* pre-check logging is best-effort */ }
   return { allowed, reason_code, blocked_categories: blockedCategories };
 }
 
@@ -84,7 +97,7 @@ export async function getModerationLog(jobId: string): Promise<ModerationLogReco
       const rows = await prisma.moderationLog.findMany({ where: { jobId }, orderBy: { createdAt: "asc" } });
       return rows.map((r) => ({ id: r.id, job_id: r.jobId, timestamp: r.createdAt.toISOString(), result: r.result as ModerationLogRecord["result"], category: (r.category ?? "safe") as ModerationCategory, score: r.score ?? 0, details: typeof r.details === "object" && r.details !== null ? ((r.details as Record<string, unknown>).message as string) ?? JSON.stringify(r.details) : String(r.details) }));
     }
-  } catch { /* fall through */ }
+  } catch { /* fall through to in-memory */ }
   return logStore.get(jobId) ?? [];
 }
 
