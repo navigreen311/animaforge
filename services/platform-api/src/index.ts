@@ -10,6 +10,11 @@ import { config } from "./config/index.js";
 import { logger } from "./utils/logger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import healthRouter from "./routes/health.js";
+import projectsRouter from "./routes/projects.js";
+import scenesRouter from "./routes/scenes.js";
+import shotsRouter from "./routes/shots.js";
+import charactersRouter from "./routes/characters.js";
+import assetsRouter from "./routes/assets.js";
 
 const app = express();
 
@@ -21,6 +26,11 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1", healthRouter);
+app.use("/api/v1", projectsRouter);
+app.use("/api/v1", scenesRouter);
+app.use("/api/v1", shotsRouter);
+app.use("/api/v1", charactersRouter);
+app.use("/api/v1", assetsRouter);
 
 // Global error handler (must be registered after routes)
 app.use(errorHandler);
