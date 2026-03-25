@@ -1,0 +1,19 @@
+{
+  "name": "@animaforge/desktop",
+  "version": "0.1.0",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dev": "concurrently \"npm run dev:web --prefix ../web\" \"electron .\""
+  },
+  "dependencies": {
+    "electron-updater": "^6.2.0",
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.0",
+    "concurrently": "^8.2.0"
+  }
+}
