@@ -14,6 +14,7 @@ from ..models.video_schemas import (
     GenerateVideoRequest,
     GenerateVideoResponse,
 )
+from ..services.job_manager import create_job
 from ..services.video_service import (
     create_video_job,
     estimate_generation_time,
@@ -22,68 +23,59 @@ from ..services.video_service import (
 router = APIRouter(prefix="/ai/v1")
 
 
-# ---------------------------------------------------------------------------
-# POST /ai/v1/generate/video
-# ---------------------------------------------------------------------------
-
 @router.post("/generate/video", response_model=GenerateVideoResponse, status_code=201)
 async def generate_video(body: GenerateVideoRequest) -> GenerateVideoResponse:
-    """Queue a new video generation job for the given shot.
-
-    Accepts a scene graph, optional style/character references, and a quality
-    tier.  Returns a ``job_id``, an estimated completion time in seconds, and a
-    ``preview_url`` where the result will be available once finished.
-    """
+    """Queue a new video generation job for the given shot."""
     if body.tier not in {"preview", "standard", "high"}:
         raise HTTPException(status_code=422, detail=f"Invalid tier: {body.tier}")
 
     job = create_video_job({"tier": body.tier, "shot_id": body.shot_id})
 
+    # Persist to Redis so the job can be polled via GET /jobs/{job_id}
+    managed = create_job(
+        job_type="generate_video",
+        payload={"tier": body.tier, "shot_id": body.shot_id},
+    )
+
     return GenerateVideoResponse(
-        job_id=job["id"],
-        estimated_seconds=job["estimated_seconds"],
+        job_id=managed["job_id"],
+        estimated_seconds=managed["estimated_seconds"],
         preview_url=job["preview_url"],
     )
 
 
-# ---------------------------------------------------------------------------
-# POST /ai/v1/edit/instruction
-# ---------------------------------------------------------------------------
-
 @router.post("/edit/instruction", response_model=EditInstructionResponse, status_code=201)
 async def edit_instruction(body: EditInstructionRequest) -> EditInstructionResponse:
-    """Apply a natural-language editing instruction to an existing output.
+    """Apply a natural-language editing instruction to an existing output."""
+    # Persist to Redis so the job can be polled
+    managed = create_job(
+        job_type="edit_instruction",
+        payload={
+            "shot_id": body.shot_id,
+            "output_id": body.output_id,
+            "instruction": body.instruction,
+        },
+    )
+    return EditInstructionResponse(job_id=managed["job_id"])
 
-    Optionally accepts a ``mask_url`` to restrict the edit to a specific
-    region of the frame.
-    """
-    job_id = str(uuid.uuid4())
-    # In production this would enqueue the editing pipeline; for now we
-    # return the job reference immediately.
-    return EditInstructionResponse(job_id=job_id)
-
-
-# ---------------------------------------------------------------------------
-# POST /ai/v1/director/assemble
-# ---------------------------------------------------------------------------
 
 @router.post("/director/assemble", response_model=DirectorAssembleResponse, status_code=201)
 async def director_assemble(body: DirectorAssembleRequest) -> DirectorAssembleResponse:
-    """Assemble a rough cut from the supplied shots.
-
-    The ``pacing`` parameter controls the edit rhythm (slow | normal | fast).
-    Returns a ``job_id`` and a ``rough_cut_url`` where the assembled video
-    will be available once the job completes.
-    """
+    """Assemble a rough cut from the supplied shots."""
     if body.pacing not in {"slow", "normal", "fast"}:
         raise HTTPException(status_code=422, detail=f"Invalid pacing: {body.pacing}")
 
     if not body.shot_ids:
         raise HTTPException(status_code=422, detail="shot_ids must not be empty")
 
-    job_id = str(uuid.uuid4())
     rough_cut_url = (
         f"https://cdn.animaforge.ai/roughcut/{uuid.uuid4().hex[:12]}.mp4"
     )
 
-    return DirectorAssembleResponse(job_id=job_id, rough_cut_url=rough_cut_url)
+    # Persist to Redis so the job can be polled
+    managed = create_job(
+        job_type="director_assemble",
+        payload={"shot_ids": body.shot_ids, "pacing": body.pacing},
+    )
+
+    return DirectorAssembleResponse(job_id=managed["job_id"], rough_cut_url=rough_cut_url)
