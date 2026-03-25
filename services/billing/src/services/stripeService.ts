@@ -1,236 +1,132 @@
+import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
 import * as billingService from "./billingService";
 
-// --------------- Pricing Configuration ---------------
+// --------------- Stripe Client ---------------
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+  apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
+});
+
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+
+// --------------- Pricing / Price ID Configuration ---------------
 
 export interface PlanConfig {
   tier: string;
   name: string;
-  priceId: string;
+  stripePriceId: string;
   priceMonthly: number;
   credits: number;
 }
+
+/** Map tiers to Stripe price IDs (set via env or defaults for dev) */
+const STRIPE_PRICE_IDS: Record<string, string> = {
+  free: process.env.STRIPE_PRICE_FREE ?? "price_free_000",
+  creator: process.env.STRIPE_PRICE_CREATOR ?? "price_creator_029",
+  pro: process.env.STRIPE_PRICE_PRO ?? "price_pro_049",
+  studio: process.env.STRIPE_PRICE_STUDIO ?? "price_studio_099",
+};
 
 export const PRICING: Record<string, PlanConfig> = {
   free: {
     tier: "free",
     name: "Free",
-    priceId: "price_free_000",
+    stripePriceId: STRIPE_PRICE_IDS.free,
     priceMonthly: 0,
     credits: 10,
   },
   creator: {
     tier: "creator",
     name: "Creator",
-    priceId: "price_creator_029",
-    priceMonthly: 2900, // cents
+    stripePriceId: STRIPE_PRICE_IDS.creator,
+    priceMonthly: 2900,
     credits: 100,
   },
   pro: {
     tier: "pro",
     name: "Pro",
-    priceId: "price_pro_049",
+    stripePriceId: STRIPE_PRICE_IDS.pro,
     priceMonthly: 4900,
     credits: 300,
   },
   studio: {
     tier: "studio",
     name: "Studio",
-    priceId: "price_studio_099",
+    stripePriceId: STRIPE_PRICE_IDS.studio,
     priceMonthly: 9900,
     credits: 1000,
   },
 };
 
-// --------------- In-memory Stripe mock stores ---------------
+// --------------- Checkout Sessions ---------------
 
-export interface StripeCustomer {
+export interface CheckoutSessionResult {
   id: string;
-  userId: string;
-  email: string;
-  createdAt: string;
+  url: string | null;
 }
 
-export interface StripeSubscription {
-  id: string;
-  customerId: string;
-  tier: string;
-  priceId: string;
-  status: "active" | "canceled" | "past_due";
-  currentPeriodEnd: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const customers = new Map<string, StripeCustomer>();
-const customersByUserId = new Map<string, string>(); // userId -> customerId
-const subscriptions = new Map<string, StripeSubscription>();
-const subscriptionsByCustomer = new Map<string, string>(); // customerId -> subscriptionId
-
-// --------------- Customer ---------------
-
-export function createCustomer(userId: string, email: string): StripeCustomer {
-  const existing = customersByUserId.get(userId);
-  if (existing) {
-    return customers.get(existing)!;
-  }
-
-  const customer: StripeCustomer = {
-    id: `cus_${uuidv4().replace(/-/g, "").slice(0, 14)}`,
-    userId,
-    email,
-    createdAt: new Date().toISOString(),
-  };
-
-  customers.set(customer.id, customer);
-  customersByUserId.set(userId, customer.id);
-  return customer;
-}
-
-// --------------- Subscription ---------------
-
-export function createSubscription(
-  customerId: string,
-  tier: string,
-): StripeSubscription {
-  const plan = PRICING[tier];
-  if (!plan) {
-    throw new Error(`Unknown tier: ${tier}`);
-  }
-
-  const customer = customers.get(customerId);
-  if (!customer) {
-    throw new Error(`Customer not found: ${customerId}`);
-  }
-
-  const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-  const sub: StripeSubscription = {
-    id: `sub_${uuidv4().replace(/-/g, "").slice(0, 14)}`,
-    customerId,
-    tier,
-    priceId: plan.priceId,
-    status: "active",
-    currentPeriodEnd: periodEnd.toISOString(),
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
-  };
-
-  subscriptions.set(sub.id, sub);
-  subscriptionsByCustomer.set(customerId, sub.id);
-
-  // Allocate credits for the tier
-  const userId = customer.userId;
-  billingService.topUp(userId, plan.credits);
-
-  return sub;
-}
-
-export function updateSubscription(
-  subscriptionId: string,
-  newTier: string,
-): StripeSubscription {
-  const sub = subscriptions.get(subscriptionId);
-  if (!sub) {
-    throw new Error(`Subscription not found: ${subscriptionId}`);
-  }
-
-  const plan = PRICING[newTier];
-  if (!plan) {
-    throw new Error(`Unknown tier: ${newTier}`);
-  }
-
-  sub.tier = newTier;
-  sub.priceId = plan.priceId;
-  sub.updatedAt = new Date().toISOString();
-  subscriptions.set(subscriptionId, sub);
-
-  return sub;
-}
-
-export function cancelSubscription(
-  subscriptionId: string,
-): StripeSubscription {
-  const sub = subscriptions.get(subscriptionId);
-  if (!sub) {
-    throw new Error(`Subscription not found: ${subscriptionId}`);
-  }
-
-  sub.status = "canceled";
-  sub.updatedAt = new Date().toISOString();
-  subscriptions.set(subscriptionId, sub);
-
-  return sub;
-}
-
-// --------------- Checkout & Portal Sessions ---------------
-
-export interface CheckoutSession {
-  id: string;
-  url: string;
-  userId: string;
-  tier: string;
-  priceId: string;
-  status: "open";
-}
-
-export function createCheckoutSession(
+export async function createCheckoutSession(
   userId: string,
   tier: string,
-  successUrl?: string,
-  cancelUrl?: string,
-): CheckoutSession {
+  successUrl: string,
+  cancelUrl: string,
+): Promise<CheckoutSessionResult> {
   const plan = PRICING[tier];
   if (!plan) {
     throw new Error(`Unknown tier: ${tier}`);
   }
 
-  const sessionId = `cs_${uuidv4().replace(/-/g, "").slice(0, 14)}`;
-  const baseUrl = "https://checkout.stripe.com";
-  const success = successUrl || "https://animaforge.app/billing/success";
-  const cancel = cancelUrl || "https://animaforge.app/billing/cancel";
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: plan.stripePriceId,
+          quantity: 1,
+        },
+      ],
+      client_reference_id: userId,
+      metadata: { tier },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
 
-  return {
-    id: sessionId,
-    url: `${baseUrl}/c/pay/${sessionId}?success_url=${encodeURIComponent(success)}&cancel_url=${encodeURIComponent(cancel)}`,
-    userId,
-    tier,
-    priceId: plan.priceId,
-    status: "open",
-  };
+    return { id: session.id, url: session.url };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Stripe checkout failed";
+    console.error(`[StripeService] createCheckoutSession error: ${message}`);
+    throw new Error(`Stripe checkout error: ${message}`);
+  }
 }
 
-export interface PortalSession {
+// --------------- Billing Portal Sessions ---------------
+
+export interface PortalSessionResult {
   id: string;
   url: string;
-  customerId: string;
 }
 
-export function createPortalSession(customerId: string): PortalSession {
-  const customer = customers.get(customerId);
-  if (!customer) {
-    throw new Error(`Customer not found: ${customerId}`);
-  }
+export async function createPortalSession(
+  customerId: string,
+): Promise<PortalSessionResult> {
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url:
+        process.env.BILLING_RETURN_URL ?? "https://animaforge.app/billing",
+    });
 
-  const sessionId = `bps_${uuidv4().replace(/-/g, "").slice(0, 14)}`;
-  return {
-    id: sessionId,
-    url: `https://billing.stripe.com/p/session/${sessionId}`,
-    customerId,
-  };
+    return { id: session.id, url: session.url };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Stripe portal failed";
+    console.error(`[StripeService] createPortalSession error: ${message}`);
+    throw new Error(`Stripe portal error: ${message}`);
+  }
 }
 
 // --------------- Webhook Event Processing ---------------
-
-export interface WebhookEvent {
-  id: string;
-  type: string;
-  data: {
-    object: Record<string, unknown>;
-  };
-}
 
 export interface WebhookResult {
   received: boolean;
@@ -238,127 +134,148 @@ export interface WebhookResult {
   error?: string;
 }
 
-export function handleWebhookEvent(event: WebhookEvent): WebhookResult {
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const obj = event.data.object;
-      const userId = obj.client_reference_id as string | undefined;
-      const tier = (obj.metadata as Record<string, string>)?.tier;
+/**
+ * Verify and construct a Stripe webhook event from the raw request body
+ * and signature header, then process it.
+ */
+export async function handleWebhookEvent(
+  body: string | Buffer,
+  signature: string,
+): Promise<WebhookResult> {
+  let event: Stripe.Event;
 
-      if (!userId || !tier) {
-        return { received: true, error: "Missing userId or tier in session" };
-      }
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Signature verification failed";
+    console.error(`[StripeService] Webhook signature error: ${message}`);
+    return { received: false, error: `Webhook signature verification failed: ${message}` };
+  }
 
-      // Create customer and subscription on successful checkout
-      const email = (obj.customer_email as string) || `${userId}@animaforge.app`;
-      const customer = createCustomer(userId, email);
-      createSubscription(customer.id, tier);
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id;
+        const tier = session.metadata?.tier;
 
-      return { received: true, action: "subscription_created" };
-    }
-
-    case "customer.subscription.updated": {
-      const obj = event.data.object;
-      const subscriptionId = obj.id as string;
-      const newTier = (obj.metadata as Record<string, string>)?.tier;
-
-      if (!subscriptionId) {
-        return { received: true, error: "Missing subscription id" };
-      }
-
-      if (newTier) {
-        try {
-          updateSubscription(subscriptionId, newTier);
-          return { received: true, action: "subscription_updated" };
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "Unknown error";
-          return { received: true, error: message };
+        if (!userId || !tier) {
+          return { received: true, error: "Missing userId or tier in session" };
         }
+
+        await billingService.subscribeTier(userId, tier as any);
+        return { received: true, action: "subscription_created" };
       }
 
-      return { received: true, action: "subscription_update_acknowledged" };
-    }
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.userId;
+        const newTier = subscription.metadata?.tier;
 
-    case "customer.subscription.deleted": {
-      const obj = event.data.object;
-      const subscriptionId = obj.id as string;
+        if (userId && newTier) {
+          await billingService.changeTier(userId, newTier as any);
+          return { received: true, action: "subscription_updated" };
+        }
 
-      if (!subscriptionId) {
-        return { received: true, error: "Missing subscription id" };
+        return { received: true, action: "subscription_update_acknowledged" };
       }
 
-      try {
-        cancelSubscription(subscriptionId);
-        return { received: true, action: "subscription_canceled" };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        return { received: true, error: message };
-      }
-    }
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.userId;
 
-    case "invoice.payment_succeeded": {
-      const obj = event.data.object;
-      const customerId = obj.customer as string;
+        if (userId) {
+          await billingService.cancelSubscription(userId);
+          return { received: true, action: "subscription_canceled" };
+        }
 
-      if (!customerId) {
-        return { received: true, error: "Missing customer id" };
+        return { received: true, error: "Missing userId in subscription metadata" };
       }
 
-      // Look up the subscription to credit the customer
-      const subId = subscriptionsByCustomer.get(customerId);
-      if (subId) {
-        const sub = subscriptions.get(subId);
-        if (sub) {
-          const plan = PRICING[sub.tier];
-          const customer = customers.get(customerId);
-          if (plan && customer) {
-            billingService.topUp(customer.userId, plan.credits);
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId =
+          typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id;
+        const userId = invoice.subscription_details?.metadata?.userId;
+        const tier = invoice.subscription_details?.metadata?.tier;
+
+        if (userId && tier) {
+          const plan = PRICING[tier];
+          if (plan) {
+            await billingService.topUp(userId, plan.credits);
           }
         }
+
+        console.log(
+          `[StripeService] Payment succeeded for customer=${customerId}`,
+        );
+        return { received: true, action: "payment_recorded" };
       }
 
-      return { received: true, action: "payment_recorded" };
-    }
-
-    case "invoice.payment_failed": {
-      const obj = event.data.object;
-      const subscriptionId = obj.subscription as string;
-
-      if (subscriptionId) {
-        const sub = subscriptions.get(subscriptionId);
-        if (sub) {
-          sub.status = "past_due";
-          sub.updatedAt = new Date().toISOString();
-          subscriptions.set(subscriptionId, sub);
-        }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.warn(
+          `[StripeService] Payment failed for invoice=${invoice.id}`,
+        );
+        return { received: true, action: "payment_failed_recorded" };
       }
 
-      return { received: true, action: "payment_failed_recorded" };
+      default:
+        return { received: true, action: "unhandled_event" };
     }
-
-    default:
-      return { received: true, action: "unhandled_event" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[StripeService] Webhook processing error: ${message}`);
+    return { received: true, error: message };
   }
 }
 
 // --------------- Helpers ---------------
 
-export function getCustomerByUserId(userId: string): StripeCustomer | undefined {
-  const customerId = customersByUserId.get(userId);
-  return customerId ? customers.get(customerId) : undefined;
+export function getStripePriceId(tier: string): string | undefined {
+  return STRIPE_PRICE_IDS[tier];
 }
 
-export function getSubscriptionByCustomer(
-  customerId: string,
-): StripeSubscription | undefined {
-  const subId = subscriptionsByCustomer.get(customerId);
-  return subId ? subscriptions.get(subId) : undefined;
+export function getPlan(tier: string): PlanConfig | undefined {
+  return PRICING[tier];
+}
+
+// --------------- In-memory fallback helpers (for tests / no-Stripe mode) ---------------
+
+const customers = new Map<string, { id: string; userId: string; email: string }>();
+const customersByUserId = new Map<string, string>();
+
+export function createCustomer(
+  userId: string,
+  email: string,
+): { id: string; userId: string; email: string } {
+  const existing = customersByUserId.get(userId);
+  if (existing) {
+    return customers.get(existing)!;
+  }
+
+  const customer = {
+    id: `cus_${uuidv4().replace(/-/g, "").slice(0, 14)}`,
+    userId,
+    email,
+  };
+
+  customers.set(customer.id, customer);
+  customersByUserId.set(userId, customer.id);
+  return customer;
+}
+
+export function getCustomerByUserId(
+  userId: string,
+): { id: string; userId: string; email: string } | undefined {
+  const customerId = customersByUserId.get(userId);
+  return customerId ? customers.get(customerId) : undefined;
 }
 
 export function _resetStores(): void {
   customers.clear();
   customersByUserId.clear();
-  subscriptions.clear();
-  subscriptionsByCustomer.clear();
   billingService._resetStores();
 }
