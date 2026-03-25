@@ -1,92 +1,262 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGenerationStore } from '@/stores/generationStore';
-import type { GenerationTier, GenerationStage } from '@/types';
+import { useAuthStore } from '@/stores/authStore';
+import { apiClient } from '@/lib/api';
+import { getToken } from '@/lib/auth';
+import type { GenerationTier, GenerationStage, SceneGraph, QualityScores } from '@/types';
 
-const STAGES: GenerationStage[] = [
-  'queued',
-  'preprocessing',
-  'generating',
-  'post-processing',
-  'finalizing',
-  'complete',
-];
+/* ------------------------------------------------------------------ */
+/*  Cost table (credits)                                               */
+/* ------------------------------------------------------------------ */
 
-const STAGE_PROGRESS: Record<GenerationStage, number> = {
-  queued: 0,
-  preprocessing: 15,
-  generating: 50,
-  'post-processing': 75,
-  finalizing: 90,
-  complete: 100,
-  failed: 0,
+const TIER_CREDITS: Record<GenerationTier, number> = {
+  draft: 1,
+  standard: 5,
+  premium: 12,
 };
 
-const TIER_COST: Record<GenerationTier, number> = {
-  draft: 0.05,
-  standard: 0.25,
-  premium: 1.0,
+/** Per-millisecond surcharge applied on top of the base tier cost. */
+const MS_RATE: Record<GenerationTier, number> = {
+  draft: 0,
+  standard: 0.0005,
+  premium: 0.001,
 };
 
-export function costEstimate(tier: GenerationTier): number {
-  return TIER_COST[tier];
+/* ------------------------------------------------------------------ */
+/*  WebSocket URL                                                      */
+/* ------------------------------------------------------------------ */
+
+const WS_URL =
+  process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000/ws';
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface GenerateResponse {
+  jobId: string;
+  estimatedSeconds: number;
+}
+
+interface BalanceResponse {
+  credits: number;
+}
+
+interface JobProgressEvent {
+  jobId: string;
+  progress: number;
+  stage: GenerationStage;
+}
+
+interface JobCompleteEvent {
+  jobId: string;
+  outputUrl: string;
+  qualityScores: QualityScores;
+}
+
+interface JobFailedEvent {
+  jobId: string;
+  error: string;
+}
+
+export interface GenerationResult {
+  outputUrl: string;
+  qualityScores: QualityScores;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Hook                                                               */
+/* ------------------------------------------------------------------ */
+
+export function estimateCost(tier: GenerationTier, durationMs: number = 0): number {
+  return TIER_CREDITS[tier] + durationMs * MS_RATE[tier];
 }
 
 export function useGeneration() {
-  const { addJob, updateJobProgress, completeJob, failJob, activeJobs } =
-    useGenerationStore();
+  const {
+    addJob,
+    updateJobProgress,
+    completeJob,
+    failJob,
+    cancelJob: storeCancelJob,
+  } = useGenerationStore();
+
+  const user = useAuthStore((s) => s.user);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<string | null>(null);
+  const [stage, setStage] = useState<GenerationStage | null>(null);
+  const [result, setResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [balance, setBalance] = useState<number | null>(null);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
+  const elapsedRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ---- Cleanup --------------------------------------------------- */
 
   useEffect(() => {
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      wsRef.current?.close();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  const generate = useCallback(
-    (shotId: string, tier: GenerationTier) => {
-      setIsGenerating(true);
-      setProgress(0);
-      setResult(null);
-      setError(null);
+  /* ---- WebSocket subscription ------------------------------------ */
 
-      const jobId = `job_${shotId}_${Date.now()}`;
-      currentJobIdRef.current = jobId;
+  const subscribe = useCallback(
+    (jobId: string) => {
+      const token = getToken();
+      const ws = new WebSocket(`${WS_URL}?token=${token}&jobId=${jobId}`);
+      wsRef.current = ws;
 
-      addJob(jobId, { status: 'queued', progress: 0, stage: 'queued' });
+      ws.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
 
-      let stageIndex = 0;
+          switch (data.type) {
+            case 'job:progress': {
+              const payload = data.payload as JobProgressEvent;
+              if (payload.jobId !== jobId) return;
+              updateJobProgress(payload.jobId, payload.progress, payload.stage);
+              setProgress(payload.progress);
+              setStage(payload.stage);
+              break;
+            }
 
-      intervalRef.current = setInterval(() => {
-        stageIndex += 1;
+            case 'job:complete': {
+              const payload = data.payload as JobCompleteEvent;
+              if (payload.jobId !== jobId) return;
+              completeJob(payload.jobId, payload.outputUrl);
+              setProgress(100);
+              setStage('complete');
+              setResult({
+                outputUrl: payload.outputUrl,
+                qualityScores: payload.qualityScores,
+              });
+              setIsGenerating(false);
+              if (timerRef.current) clearInterval(timerRef.current);
+              ws.close();
+              break;
+            }
 
-        if (stageIndex >= STAGES.length) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          intervalRef.current = null;
-
-          const outputUrl = `/outputs/${shotId}_${tier}_${Date.now()}.mp4`;
-          completeJob(jobId, outputUrl);
-          setProgress(100);
-          setResult(outputUrl);
-          setIsGenerating(false);
-          return;
+            case 'job:failed': {
+              const payload = data.payload as JobFailedEvent;
+              if (payload.jobId !== jobId) return;
+              failJob(payload.jobId, payload.error);
+              setError(payload.error);
+              setStage('failed');
+              setIsGenerating(false);
+              if (timerRef.current) clearInterval(timerRef.current);
+              ws.close();
+              break;
+            }
+          }
+        } catch {
+          // ignore malformed messages
         }
+      });
 
-        const stage = STAGES[stageIndex];
-        const stageProgress = STAGE_PROGRESS[stage];
+      ws.addEventListener('error', () => {
+        setError('WebSocket connection error. Please try again.');
+        setIsGenerating(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+      });
 
-        updateJobProgress(jobId, stageProgress, stage);
-        setProgress(stageProgress);
-      }, 1200);
+      ws.addEventListener('close', () => {
+        wsRef.current = null;
+      });
     },
-    [addJob, updateJobProgress, completeJob],
+    [updateJobProgress, completeJob, failJob],
   );
 
-  return { generate, isGenerating, progress, result, error };
+  /* ---- Check balance --------------------------------------------- */
+
+  const checkBalance = useCallback(async (): Promise<number> => {
+    const userId = user?.id;
+    if (!userId) throw new Error('Not authenticated');
+    const res = await apiClient.get<BalanceResponse>(`/billing/credits/${userId}`);
+    setBalance(res.credits);
+    return res.credits;
+  }, [user?.id]);
+
+  /* ---- Generate -------------------------------------------------- */
+
+  const generate = useCallback(
+    async (shotId: string, tier: GenerationTier, sceneGraph?: SceneGraph) => {
+      setIsGenerating(true);
+      setProgress(0);
+      setStage('queued');
+      setResult(null);
+      setError(null);
+      elapsedRef.current = 0;
+
+      try {
+        const res = await apiClient.post<GenerateResponse>('/ai/v1/generate/video', {
+          shotId,
+          tier,
+          sceneGraph,
+        });
+
+        const jobId = res.jobId;
+        currentJobIdRef.current = jobId;
+
+        addJob(jobId, { status: 'queued', progress: 0, stage: 'queued' });
+
+        // Start elapsed-time counter
+        timerRef.current = setInterval(() => {
+          elapsedRef.current += 1;
+        }, 1000);
+
+        // Subscribe to real-time updates
+        subscribe(jobId);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Generation request failed';
+        setError(message);
+        setIsGenerating(false);
+      }
+    },
+    [addJob, subscribe],
+  );
+
+  /* ---- Cancel ---------------------------------------------------- */
+
+  const cancel = useCallback(
+    async (jobId?: string) => {
+      const targetId = jobId || currentJobIdRef.current;
+      if (!targetId) return;
+
+      try {
+        await apiClient.post(`/ai/v1/jobs/${targetId}/cancel`);
+        storeCancelJob(targetId);
+        setIsGenerating(false);
+        setStage(null);
+        if (timerRef.current) clearInterval(timerRef.current);
+        wsRef.current?.close();
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to cancel job';
+        setError(message);
+      }
+    },
+    [storeCancelJob],
+  );
+
+  return {
+    generate,
+    cancel,
+    isGenerating,
+    progress,
+    stage,
+    result,
+    error,
+    estimatedCost,
+    setEstimatedCost,
+    balance,
+    checkBalance,
+    estimateCost,
+    elapsedRef,
+  };
 }
