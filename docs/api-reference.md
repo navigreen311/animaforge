@@ -625,6 +625,228 @@ Query audit log entries.
 
 ---
 
+### Plugins
+
+#### `GET /api/v1/plugins`
+List installed plugins for the current user/organization.
+
+**Response** `200 OK`
+```json
+{
+  "data": [
+    {
+      "id": "plg_001",
+      "name": "Auto QC Pro",
+      "version": "2.1.0",
+      "author": "animaforge-labs",
+      "status": "active",
+      "permissions": ["shot:read", "generation:read", "ui:panel"],
+      "installed_at": "2026-03-10T12:00:00Z"
+    }
+  ]
+}
+```
+
+#### `POST /api/v1/plugins`
+Install a plugin by ID.
+
+**Request**
+```json
+{ "plugin_id": "com.animaforge-labs.auto-qc-pro" }
+```
+
+**Response** `201 Created`
+```json
+{
+  "id": "plg_001",
+  "name": "Auto QC Pro",
+  "status": "active",
+  "installed_at": "2026-03-25T10:00:00Z"
+}
+```
+
+#### `DELETE /api/v1/plugins/:pluginId`
+Uninstall a plugin.
+
+**Response** `200 OK`
+```json
+{ "message": "Plugin uninstalled." }
+```
+
+---
+
+### CDN
+
+#### `POST /api/v1/cdn/signed-url`
+Generate a signed CDN URL for secure asset delivery.
+
+**Request**
+```json
+{
+  "asset_id": "ast_001",
+  "expires_in_s": 3600
+}
+```
+
+**Response** `200 OK`
+```json
+{
+  "url": "https://cdn.animaforge.ai/assets/ast_001.png?token=...",
+  "expires_at": "2026-03-25T11:00:00Z"
+}
+```
+
+#### `POST /api/v1/cdn/purge`
+Purge CDN cache for specific assets.
+
+**Request**
+```json
+{ "asset_ids": ["ast_001", "ast_002"] }
+```
+
+**Response** `200 OK`
+```json
+{ "message": "Cache purged for 2 assets." }
+```
+
+---
+
+### Social Publishing
+
+#### `POST /api/v1/social/publish`
+Publish or schedule content to social media platforms.
+
+**Request**
+```json
+{
+  "platform": "youtube",
+  "project_id": "proj_abc123",
+  "caption": "Check out our latest AI animation!",
+  "scheduled_at": "2026-03-26T14:00:00Z"
+}
+```
+
+**Response** `201 Created`
+```json
+{
+  "id": "social_001",
+  "platform": "youtube",
+  "status": "scheduled",
+  "scheduled_at": "2026-03-26T14:00:00Z"
+}
+```
+
+#### `GET /api/v1/social/posts`
+List social media posts with status filtering.
+
+**Query Parameters**
+| Param | Type | Description |
+|-------|------|-------------|
+| `platform` | string | Filter: `youtube`, `tiktok`, `instagram`, `twitter`, `linkedin` |
+| `status` | string | Filter: `draft`, `scheduled`, `published`, `failed` |
+
+**Response** `200 OK`
+```json
+{
+  "data": [
+    {
+      "id": "social_001",
+      "platform": "youtube",
+      "status": "published",
+      "published_url": "https://youtube.com/watch?v=abc123"
+    }
+  ]
+}
+```
+
+---
+
+### Content Repurposing
+
+#### `POST /api/v1/repurpose`
+Repurpose a project's output for a different format or platform.
+
+**Request**
+```json
+{
+  "project_id": "proj_abc123",
+  "target_format": "vertical_short"
+}
+```
+
+**Response** `202 Accepted`
+```json
+{
+  "id": "repurpose_001",
+  "source_project_id": "proj_abc123",
+  "target_format": "vertical_short",
+  "status": "queued"
+}
+```
+
+#### `GET /api/v1/repurpose/:jobId`
+Check repurpose job status.
+
+**Response** `200 OK`
+```json
+{
+  "id": "repurpose_001",
+  "status": "completed",
+  "output_url": "https://cdn.animaforge.ai/repurposed/repurpose_001.mp4"
+}
+```
+
+---
+
+### Human Review
+
+#### `GET /api/v1/human-review`
+List items flagged for human review (content moderation escalation).
+
+**Query Parameters**
+| Param | Type | Description |
+|-------|------|-------------|
+| `status` | string | Filter: `pending`, `approved`, `rejected` |
+
+**Response** `200 OK`
+```json
+{
+  "data": [
+    {
+      "id": "hr_001",
+      "output_id": "out_abc123",
+      "reason": "NSFW score 0.18 exceeded threshold",
+      "status": "pending",
+      "assigned_to": null,
+      "flagged_at": "2026-03-25T08:36:05Z"
+    }
+  ]
+}
+```
+
+#### `POST /api/v1/human-review/:itemId/decide`
+Approve or reject a flagged item.
+
+**Request**
+```json
+{
+  "decision": "approve",
+  "notes": "False positive — stylized violence in anime context is acceptable."
+}
+```
+
+**Response** `200 OK`
+```json
+{
+  "id": "hr_001",
+  "status": "approved",
+  "decided_by": "sarah@acme.studio",
+  "decided_at": "2026-03-25T09:00:00Z"
+}
+```
+
+---
+
 ## AI Inference API (11 Endpoints)
 
 ### Generation
@@ -880,6 +1102,177 @@ Run content moderation on generated output.
   "moderated_at": "2026-03-25T08:36:00Z"
 }
 ```
+
+---
+
+### Music Composition
+
+#### `POST /ai/v1/music/generate`
+Generate original music for a project.
+
+**Request**
+```json
+{
+  "project_id": "proj_abc123",
+  "mood": "epic",
+  "genre": "orchestral",
+  "duration_ms": 60000,
+  "tempo_bpm": 120
+}
+```
+
+**Response** `202 Accepted`
+```json
+{
+  "job_id": "music_job_001",
+  "status": "queued",
+  "estimated_duration_s": 90,
+  "created_at": "2026-03-25T10:00:00Z"
+}
+```
+
+---
+
+### Dubbing
+
+#### `POST /ai/v1/dubbing/start`
+Start AI-powered multilingual dubbing for a project.
+
+**Request**
+```json
+{
+  "project_id": "proj_abc123",
+  "target_language": "es",
+  "preserve_lip_sync": true,
+  "voice_cloning": false
+}
+```
+
+**Response** `202 Accepted`
+```json
+{
+  "job_id": "dub_job_001",
+  "status": "queued",
+  "estimated_duration_s": 180,
+  "created_at": "2026-03-25T10:05:00Z"
+}
+```
+
+---
+
+### Physics Simulation
+
+#### `POST /ai/v1/physics/simulate`
+Run physics simulation (cloth, hair, rigid body, fluid, particles) on a shot.
+
+**Request**
+```json
+{
+  "shot_id": "shot_001",
+  "simulation_type": "cloth",
+  "quality": "high",
+  "duration_ms": 4000
+}
+```
+
+**Response** `202 Accepted`
+```json
+{
+  "job_id": "phys_job_001",
+  "status": "queued",
+  "estimated_duration_s": 60
+}
+```
+
+---
+
+### Custom Model Training
+
+#### `POST /ai/v1/training/jobs`
+Start a custom model fine-tuning job.
+
+**Request**
+```json
+{
+  "name": "My Studio Style v1",
+  "base_model": "animaforge-v2",
+  "dataset_url": "https://cdn.animaforge.ai/datasets/my_dataset.zip",
+  "epochs": 10,
+  "learning_rate": 0.0001
+}
+```
+
+**Response** `202 Accepted`
+```json
+{
+  "id": "train_001",
+  "name": "My Studio Style v1",
+  "status": "queued",
+  "created_at": "2026-03-25T10:15:00Z"
+}
+```
+
+#### `GET /ai/v1/training/jobs`
+List training jobs.
+
+#### `GET /ai/v1/training/jobs/:jobId`
+Get training job details.
+
+#### `POST /ai/v1/training/jobs/:jobId/cancel`
+Cancel a running training job.
+
+---
+
+### Cartoon Pro
+
+#### `POST /ai/v1/cartoon/stylize`
+Apply Cartoon Pro stylization to a shot.
+
+**Request**
+```json
+{
+  "shot_id": "shot_001",
+  "style": "anime",
+  "intensity": 0.8,
+  "preserve_motion": true
+}
+```
+
+Supported styles: `classic_2d`, `anime`, `pixar`, `watercolor`, `comic_book`, `stop_motion`.
+
+---
+
+### Quality Control
+
+#### `POST /ai/v1/qc/run`
+Run automated quality checks on a completed generation job.
+
+**Request**
+```json
+{
+  "job_id": "job_xyz789",
+  "checks": ["motion_smoothness", "frame_consistency", "audio_sync", "artifact_detection"]
+}
+```
+
+**Response** `200 OK`
+```json
+{
+  "job_id": "job_xyz789",
+  "overall_score": 92.5,
+  "passed": true
+}
+```
+
+---
+
+### Job Management
+
+#### `GET /ai/v1/jobs`
+List all AI jobs for the authenticated user.
+
+#### `GET /ai/v1/jobs/:jobId`
+Get details for any AI job by ID.
 
 ---
 

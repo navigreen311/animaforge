@@ -1,0 +1,3078 @@
+openapi: 3.1.0
+info:
+  title: AnimaForge Platform API
+  version: "1.0"
+  description: |
+    AnimaForge is the world's first full-stack AI animation and video production
+    operating system. This specification covers both the Platform API (project
+    management, assets, reviews, marketplace, enterprise) and the AI Inference
+    API (generation, avatars, style, audio, governance).
+  contact:
+    name: AnimaForge Engineering
+    url: https://animaforge.com
+    email: api-support@animaforge.com
+  license:
+    name: Proprietary
+    identifier: LicenseRef-scancode-proprietary-license
+
+servers:
+  - url: http://localhost:4000
+    description: Local development
+  - url: https://api.animaforge.com
+    description: Production
+
+tags:
+  - name: Projects
+    description: CRUD operations for animation projects
+  - name: Scenes
+    description: Scene management within projects
+  - name: Shots
+    description: Shot management within project timelines
+  - name: Characters
+    description: Character library and reference management
+  - name: Assets
+    description: Project asset management (images, video, audio, 3D models)
+  - name: Reviews
+    description: Shot review and approval workflow
+  - name: Upload
+    description: Direct file upload endpoints
+  - name: CDN
+    description: Content delivery and signed URL generation
+  - name: Brand Kit
+    description: Brand identity management for enterprises
+  - name: Social
+    description: Social media publishing and scheduling
+  - name: Repurpose
+    description: Content repurposing across formats and platforms
+  - name: Human Review
+    description: Human-in-the-loop review queue for flagged content
+  - name: Support
+    description: Support ticket management
+  - name: Plugins
+    description: Plugin ecosystem management
+  - name: Generation
+    description: AI video generation jobs
+  - name: Audio
+    description: AI audio synthesis (SFX, dialogue)
+  - name: Avatar
+    description: 3D avatar reconstruction from reference images
+  - name: Style
+    description: Style fingerprinting and transfer
+  - name: Script
+    description: Script parsing and shot decomposition
+  - name: Music
+    description: AI music composition
+  - name: Dubbing
+    description: AI-powered multilingual dubbing
+  - name: MoCap
+    description: AI motion capture from video
+  - name: Continuity
+    description: Cross-shot continuity checking
+  - name: Physics
+    description: Physics simulation for animations
+  - name: Memory
+    description: Long-term project context and memory
+  - name: Training
+    description: Custom model fine-tuning
+  - name: Cartoon
+    description: Cartoon Pro stylization engine
+  - name: QC
+    description: Automated quality control
+  - name: Jobs
+    description: Generation job management
+  - name: Governance
+    description: Content moderation, C2PA, consent, and verification
+  - name: Marketplace
+    description: Community marketplace for styles, templates, and assets
+  - name: Enterprise
+    description: Organization management, SSO, and audit
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login or SSO flow
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for server-to-server or plugin integrations
+
+  schemas:
+    # ── Common ──────────────────────────────────────────────────────────
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, status]
+          properties:
+            code:
+              type: string
+              example: RESOURCE_NOT_FOUND
+            message:
+              type: string
+              example: "Project proj_xyz not found."
+            status:
+              type: integer
+              example: 404
+            request_id:
+              type: string
+              example: req_abc123
+
+    # ── Projects ────────────────────────────────────────────────────────
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          example: proj_abc123
+        title:
+          type: string
+          example: "Cyber Samurai: Origin"
+        description:
+          type: string
+        phase:
+          type: string
+          enum: [draft, generating, review, published]
+        shot_count:
+          type: integer
+        total_duration_ms:
+          type: integer
+        style_preset:
+          type: string
+        characters:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        style_preset:
+          type: string
+
+    ProjectUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    # ── Scenes ──────────────────────────────────────────────────────────
+    Scene:
+      type: object
+      properties:
+        id:
+          type: string
+          example: scene_001
+        project_id:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        shot_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    SceneCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        order:
+          type: integer
+
+    # ── Shots ───────────────────────────────────────────────────────────
+    Shot:
+      type: object
+      properties:
+        id:
+          type: string
+          example: shot_001
+        project_id:
+          type: string
+        order:
+          type: integer
+        prompt:
+          type: string
+        negative_prompt:
+          type: string
+        duration_ms:
+          type: integer
+        status:
+          type: string
+          enum: [pending, generating, completed, failed]
+        style_preset:
+          type: string
+        output_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ShotCreate:
+      type: object
+      required: [prompt, duration_ms]
+      properties:
+        prompt:
+          type: string
+        negative_prompt:
+          type: string
+        duration_ms:
+          type: integer
+        order:
+          type: integer
+        style_preset:
+          type: string
+        character_ids:
+          type: array
+          items:
+            type: string
+
+    ShotUpdate:
+      type: object
+      properties:
+        prompt:
+          type: string
+        negative_prompt:
+          type: string
+        duration_ms:
+          type: integer
+        order:
+          type: integer
+
+    ShotReorder:
+      type: object
+      required: [shot_order]
+      properties:
+        shot_order:
+          type: array
+          items:
+            type: string
+
+    # ── Characters ──────────────────────────────────────────────────────
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+          example: char_001
+        name:
+          type: string
+        type:
+          type: string
+          enum: [humanoid, creature, robot, abstract]
+        style:
+          type: string
+        description:
+          type: string
+        reference_images:
+          oneOf:
+            - type: integer
+            - type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  angle:
+                    type: string
+        consent_status:
+          type: string
+          enum: [pending, approved, denied]
+        created_at:
+          type: string
+          format: date-time
+
+    CharacterCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        style:
+          type: string
+        description:
+          type: string
+
+    CharacterUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    # ── Assets ──────────────────────────────────────────────────────────
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ast_001
+        name:
+          type: string
+        type:
+          type: string
+          enum: [image, video, audio, model]
+        size_bytes:
+          type: integer
+        url:
+          type: string
+          format: uri
+        dimensions:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+        uploaded_at:
+          type: string
+          format: date-time
+
+    # ── Reviews ─────────────────────────────────────────────────────────
+    Review:
+      type: object
+      properties:
+        shot_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        reviewer:
+          type: string
+          nullable: true
+        comments:
+          type: integer
+        submitted_at:
+          type: string
+          format: date-time
+
+    ReviewAction:
+      type: object
+      properties:
+        comment:
+          type: string
+        request_changes:
+          type: boolean
+
+    BulkReviewAction:
+      type: object
+      required: [shot_ids, action]
+      properties:
+        shot_ids:
+          type: array
+          items:
+            type: string
+        action:
+          type: string
+          enum: [approve, reject]
+        comment:
+          type: string
+
+    # ── Marketplace ─────────────────────────────────────────────────────
+    MarketplaceListing:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [style-packs, templates, characters, audio-packs, plugins]
+        creator:
+          type: string
+        price:
+          type: number
+          format: float
+        rating:
+          type: number
+          format: float
+        downloads:
+          type: integer
+        preview_images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    MarketplacePublish:
+      type: object
+      required: [name, category, price]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: float
+        preview_images:
+          type: array
+          items:
+            type: string
+
+    MarketplacePurchase:
+      type: object
+      required: [listing_id]
+      properties:
+        listing_id:
+          type: string
+
+    # ── Enterprise ──────────────────────────────────────────────────────
+    EnterpriseUser:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, creator, editor, viewer]
+        tier:
+          type: string
+        status:
+          type: string
+          enum: [active, invited, disabled]
+        last_active:
+          type: string
+          format: date-time
+
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        user:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        resource_id:
+          type: string
+        ip:
+          type: string
+        details:
+          type: object
+
+    # ── CDN ─────────────────────────────────────────────────────────────
+    SignedUrl:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+
+    # ── Brand Kit ───────────────────────────────────────────────────────
+    BrandKit:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo_url:
+          type: string
+          format: uri
+        colors:
+          type: array
+          items:
+            type: string
+        fonts:
+          type: array
+          items:
+            type: string
+        style_fingerprint_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Social ──────────────────────────────────────────────────────────
+    SocialPost:
+      type: object
+      properties:
+        id:
+          type: string
+        platform:
+          type: string
+          enum: [youtube, tiktok, instagram, twitter, linkedin]
+        status:
+          type: string
+          enum: [draft, scheduled, published, failed]
+        scheduled_at:
+          type: string
+          format: date-time
+        published_url:
+          type: string
+          format: uri
+
+    SocialPublish:
+      type: object
+      required: [platform, project_id]
+      properties:
+        platform:
+          type: string
+        project_id:
+          type: string
+        caption:
+          type: string
+        scheduled_at:
+          type: string
+          format: date-time
+
+    # ── Repurpose ───────────────────────────────────────────────────────
+    RepurposeJob:
+      type: object
+      properties:
+        id:
+          type: string
+        source_project_id:
+          type: string
+        target_format:
+          type: string
+          enum: [vertical_short, square_social, gif, thumbnail_set, audio_only]
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        output_url:
+          type: string
+          format: uri
+
+    RepurposeRequest:
+      type: object
+      required: [project_id, target_format]
+      properties:
+        project_id:
+          type: string
+        target_format:
+          type: string
+        options:
+          type: object
+
+    # ── Human Review ────────────────────────────────────────────────────
+    HumanReviewItem:
+      type: object
+      properties:
+        id:
+          type: string
+        output_id:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        assigned_to:
+          type: string
+          nullable: true
+        flagged_at:
+          type: string
+          format: date-time
+
+    HumanReviewDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject]
+        notes:
+          type: string
+
+    # ── Support ─────────────────────────────────────────────────────────
+    SupportTicket:
+      type: object
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        created_at:
+          type: string
+          format: date-time
+
+    SupportTicketCreate:
+      type: object
+      required: [subject, body]
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        priority:
+          type: string
+
+    # ── Plugins ─────────────────────────────────────────────────────────
+    Plugin:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        author:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, disabled, pending_review]
+        installed_at:
+          type: string
+          format: date-time
+
+    PluginInstall:
+      type: object
+      required: [plugin_id]
+      properties:
+        plugin_id:
+          type: string
+
+    # ── AI: Generation ──────────────────────────────────────────────────
+    GenerateVideoRequest:
+      type: object
+      required: [project_id, shot_ids]
+      properties:
+        project_id:
+          type: string
+        shot_ids:
+          type: array
+          items:
+            type: string
+        model:
+          type: string
+          default: animaforge-v2
+        quality:
+          type: string
+          enum: [draft, standard, high, ultra]
+        resolution:
+          type: string
+          example: "1920x1080"
+        fps:
+          type: integer
+          enum: [24, 30, 60]
+        c2pa_enabled:
+          type: boolean
+          default: true
+        style_fingerprint_id:
+          type: string
+
+    GenerationJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed, cancelled]
+        progress:
+          type: number
+          format: float
+        current_stage:
+          type: string
+        estimated_remaining_s:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    GenerationResult:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+        outputs:
+          type: array
+          items:
+            type: object
+            properties:
+              shot_id:
+                type: string
+              output_url:
+                type: string
+                format: uri
+              thumbnail_url:
+                type: string
+                format: uri
+              c2pa_manifest_url:
+                type: string
+                format: uri
+              quality_score:
+                type: number
+              duration_ms:
+                type: integer
+        credits_used:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+
+    # ── AI: Audio ───────────────────────────────────────────────────────
+    AudioGenerateRequest:
+      type: object
+      required: [project_id, type]
+      properties:
+        project_id:
+          type: string
+        type:
+          type: string
+          enum: [sfx, dialogue, ambience]
+        prompt:
+          type: string
+        shot_ids:
+          type: array
+          items:
+            type: string
+        duration_ms:
+          type: integer
+        voice_id:
+          type: string
+
+    # ── AI: Avatar ──────────────────────────────────────────────────────
+    AvatarReconstructRequest:
+      type: object
+      required: [character_id]
+      properties:
+        character_id:
+          type: string
+        quality:
+          type: string
+          enum: [draft, standard, high]
+        output_format:
+          type: string
+          enum: [glb, fbx, obj]
+        features:
+          type: object
+          properties:
+            facial_rigging:
+              type: boolean
+            body_rigging:
+              type: boolean
+            hair_simulation:
+              type: boolean
+
+    # ── AI: Style ───────────────────────────────────────────────────────
+    StyleAnalyzeRequest:
+      type: object
+      required: [source_url]
+      properties:
+        source_url:
+          type: string
+          format: uri
+        extract_palette:
+          type: boolean
+        extract_textures:
+          type: boolean
+        extract_lighting:
+          type: boolean
+
+    StyleFingerprint:
+      type: object
+      properties:
+        fingerprint_id:
+          type: string
+        palette:
+          type: array
+          items:
+            type: string
+        line_weight:
+          type: number
+        texture_class:
+          type: string
+        lighting_model:
+          type: string
+        mood_vector:
+          type: array
+          items:
+            type: number
+        confidence:
+          type: number
+
+    StyleTransferRequest:
+      type: object
+      required: [job_id, fingerprint_id]
+      properties:
+        job_id:
+          type: string
+        fingerprint_id:
+          type: string
+        intensity:
+          type: number
+          minimum: 0
+          maximum: 1
+        preserve_identity:
+          type: boolean
+
+    # ── AI: Script ──────────────────────────────────────────────────────
+    ScriptParseRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        format:
+          type: string
+          enum: [screenplay, freeform, storyboard_notes]
+
+    # ── AI: Music ───────────────────────────────────────────────────────
+    MusicGenerateRequest:
+      type: object
+      required: [project_id]
+      properties:
+        project_id:
+          type: string
+        mood:
+          type: string
+        genre:
+          type: string
+        duration_ms:
+          type: integer
+        tempo_bpm:
+          type: integer
+        reference_url:
+          type: string
+          format: uri
+
+    # ── AI: Dubbing ─────────────────────────────────────────────────────
+    DubbingRequest:
+      type: object
+      required: [project_id, target_language]
+      properties:
+        project_id:
+          type: string
+        target_language:
+          type: string
+          example: es
+        preserve_lip_sync:
+          type: boolean
+          default: true
+        voice_cloning:
+          type: boolean
+          default: false
+
+    # ── AI: MoCap ───────────────────────────────────────────────────────
+    MoCapRequest:
+      type: object
+      required: [video_url]
+      properties:
+        video_url:
+          type: string
+          format: uri
+        output_format:
+          type: string
+          enum: [bvh, fbx, json]
+        track_fingers:
+          type: boolean
+        track_face:
+          type: boolean
+
+    # ── AI: Continuity ──────────────────────────────────────────────────
+    ContinuityCheckRequest:
+      type: object
+      required: [project_id, shot_ids]
+      properties:
+        project_id:
+          type: string
+        shot_ids:
+          type: array
+          items:
+            type: string
+        checks:
+          type: array
+          items:
+            type: string
+            enum: [color, lighting, character_appearance, object_position, scale]
+
+    ContinuityReport:
+      type: object
+      properties:
+        project_id:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              shot_pair:
+                type: array
+                items:
+                  type: string
+              type:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high]
+              description:
+                type: string
+        score:
+          type: number
+
+    # ── AI: Physics ─────────────────────────────────────────────────────
+    PhysicsSimRequest:
+      type: object
+      required: [shot_id]
+      properties:
+        shot_id:
+          type: string
+        simulation_type:
+          type: string
+          enum: [cloth, hair, rigid_body, fluid, particles]
+        quality:
+          type: string
+          enum: [draft, standard, high]
+        duration_ms:
+          type: integer
+
+    # ── AI: Memory ──────────────────────────────────────────────────────
+    MemoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        type:
+          type: string
+          enum: [character_trait, plot_point, style_preference, world_rule]
+        content:
+          type: string
+        relevance_score:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    MemoryStoreRequest:
+      type: object
+      required: [project_id, type, content]
+      properties:
+        project_id:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+
+    # ── AI: Training ────────────────────────────────────────────────────
+    TrainingJobRequest:
+      type: object
+      required: [name, dataset_url]
+      properties:
+        name:
+          type: string
+        base_model:
+          type: string
+          default: animaforge-v2
+        dataset_url:
+          type: string
+          format: uri
+        epochs:
+          type: integer
+          default: 10
+        learning_rate:
+          type: number
+          default: 0.0001
+
+    TrainingJob:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [queued, training, completed, failed]
+        progress:
+          type: number
+        metrics:
+          type: object
+          properties:
+            loss:
+              type: number
+            epoch:
+              type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    # ── AI: Cartoon Pro ─────────────────────────────────────────────────
+    CartoonProRequest:
+      type: object
+      required: [shot_id, style]
+      properties:
+        shot_id:
+          type: string
+        style:
+          type: string
+          enum: [classic_2d, anime, pixar, watercolor, comic_book, stop_motion]
+        intensity:
+          type: number
+          minimum: 0
+          maximum: 1
+        preserve_motion:
+          type: boolean
+
+    # ── AI: QC ──────────────────────────────────────────────────────────
+    QcRequest:
+      type: object
+      required: [job_id]
+      properties:
+        job_id:
+          type: string
+        checks:
+          type: array
+          items:
+            type: string
+            enum: [motion_smoothness, frame_consistency, audio_sync, artifact_detection, resolution]
+
+    QcReport:
+      type: object
+      properties:
+        job_id:
+          type: string
+        overall_score:
+          type: number
+        passed:
+          type: boolean
+        results:
+          type: object
+        checked_at:
+          type: string
+          format: date-time
+
+    # ── AI: Governance ──────────────────────────────────────────────────
+    GovernanceVerifyRequest:
+      type: object
+      required: [output_id]
+      properties:
+        output_id:
+          type: string
+
+    GovernanceModerateRequest:
+      type: object
+      required: [output_id]
+      properties:
+        output_id:
+          type: string
+        checks:
+          type: array
+          items:
+            type: string
+            enum: [nsfw, violence, bias, copyright]
+
+    # ── Generic Job ─────────────────────────────────────────────────────
+    AsyncJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed, cancelled]
+        progress:
+          type: number
+        estimated_duration_s:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+  # ── Response helpers ────────────────────────────────────────────────
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+# ═══════════════════════════════════════════════════════════════════════
+# PATHS
+# ═══════════════════════════════════════════════════════════════════════
+paths:
+  # ── Projects ────────────────────────────────────────────────────────
+  /api/v1/projects:
+    get:
+      operationId: listProjects
+      tags: [Projects]
+      summary: List all projects
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: phase
+          in: query
+          schema: { type: string, enum: [draft, generating, review, published] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [created_at, updated_at, title] }
+      responses:
+        "200":
+          description: Paginated project list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createProject
+      tags: [Projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getProject
+      tags: [Projects]
+      summary: Get a project by ID
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateProject
+      tags: [Projects]
+      summary: Update project metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [Projects]
+      summary: Soft-delete a project
+      responses:
+        "200":
+          description: Project deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Scenes ──────────────────────────────────────────────────────────
+  /api/v1/projects/{projectId}/scenes:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listScenes
+      tags: [Scenes]
+      summary: List scenes in a project
+      responses:
+        "200":
+          description: Scene list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Scene"
+    post:
+      operationId: createScene
+      tags: [Scenes]
+      summary: Create a scene
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SceneCreate"
+      responses:
+        "201":
+          description: Scene created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scene"
+
+  # ── Shots ───────────────────────────────────────────────────────────
+  /api/v1/projects/{projectId}/shots:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listShots
+      tags: [Shots]
+      summary: List shots in a project
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, generating, completed, failed] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [order, created_at, duration_ms] }
+      responses:
+        "200":
+          description: Shot list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Shot"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: createShot
+      tags: [Shots]
+      summary: Add a shot to the timeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShotCreate"
+      responses:
+        "201":
+          description: Shot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shot"
+
+  /api/v1/projects/{projectId}/shots/{shotId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: shotId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      operationId: updateShot
+      tags: [Shots]
+      summary: Update shot parameters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShotUpdate"
+      responses:
+        "200":
+          description: Shot updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shot"
+    delete:
+      operationId: deleteShot
+      tags: [Shots]
+      summary: Delete a shot
+      responses:
+        "200":
+          description: Shot deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /api/v1/projects/{projectId}/shots/reorder:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: reorderShots
+      tags: [Shots]
+      summary: Reorder shots in the timeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShotReorder"
+      responses:
+        "200":
+          description: Shots reordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Characters ──────────────────────────────────────────────────────
+  /api/v1/characters:
+    get:
+      operationId: listCharacters
+      tags: [Characters]
+      summary: List all characters
+      responses:
+        "200":
+          description: Character list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Character"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: createCharacter
+      tags: [Characters]
+      summary: Create a character
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterCreate"
+      responses:
+        "201":
+          description: Character created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+
+  /api/v1/characters/{characterId}:
+    parameters:
+      - name: characterId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getCharacter
+      tags: [Characters]
+      summary: Get character details
+      responses:
+        "200":
+          description: Character details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+    patch:
+      operationId: updateCharacter
+      tags: [Characters]
+      summary: Update character metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterUpdate"
+      responses:
+        "200":
+          description: Character updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+    delete:
+      operationId: deleteCharacter
+      tags: [Characters]
+      summary: Delete a character
+      responses:
+        "200":
+          description: Character deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /api/v1/characters/{characterId}/references:
+    parameters:
+      - name: characterId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: uploadCharacterReferences
+      tags: [Characters]
+      summary: Upload reference images
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 10
+                angles:
+                  type: array
+                  items:
+                    type: string
+                    enum: [front, side, back, three_quarter]
+      responses:
+        "200":
+          description: References uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  character_id:
+                    type: string
+                  reference_images:
+                    type: integer
+                  message:
+                    type: string
+
+  # ── Assets ──────────────────────────────────────────────────────────
+  /api/v1/projects/{projectId}/assets:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listAssets
+      tags: [Assets]
+      summary: List project assets
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [image, video, audio, model] }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Asset list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Asset"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      operationId: uploadAsset
+      tags: [Assets]
+      summary: Upload a new asset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Asset file (max 500 MB)
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [image, video, audio, model]
+      responses:
+        "201":
+          description: Asset uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /api/v1/projects/{projectId}/assets/{assetId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: assetId
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      operationId: deleteAsset
+      tags: [Assets]
+      summary: Delete an asset
+      responses:
+        "200":
+          description: Asset deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Reviews ─────────────────────────────────────────────────────────
+  /api/v1/projects/{projectId}/reviews:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listReviews
+      tags: [Reviews]
+      summary: List shots under review
+      responses:
+        "200":
+          description: Review list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Review"
+
+  /api/v1/projects/{projectId}/reviews/{shotId}/approve:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: shotId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: approveShot
+      tags: [Reviews]
+      summary: Approve a shot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewAction"
+      responses:
+        "200":
+          description: Shot approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /api/v1/projects/{projectId}/reviews/{shotId}/reject:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: shotId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: rejectShot
+      tags: [Reviews]
+      summary: Reject a shot with feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewAction"
+      responses:
+        "200":
+          description: Shot rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /api/v1/projects/{projectId}/reviews/bulk:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: bulkReview
+      tags: [Reviews]
+      summary: Bulk approve or reject shots
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkReviewAction"
+      responses:
+        "200":
+          description: Bulk action completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        shot_id:
+                          type: string
+                        status:
+                          type: string
+
+  # ── Upload ──────────────────────────────────────────────────────────
+  /api/v1/upload:
+    post:
+      operationId: getUploadUrl
+      tags: [Upload]
+      summary: Get a pre-signed upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, content_type]
+              properties:
+                filename:
+                  type: string
+                content_type:
+                  type: string
+                size_bytes:
+                  type: integer
+      responses:
+        "200":
+          description: Pre-signed upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url:
+                    type: string
+                    format: uri
+                  asset_id:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  # ── CDN ─────────────────────────────────────────────────────────────
+  /api/v1/cdn/signed-url:
+    post:
+      operationId: getSignedUrl
+      tags: [CDN]
+      summary: Generate a signed CDN URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id:
+                  type: string
+                expires_in_s:
+                  type: integer
+                  default: 3600
+      responses:
+        "200":
+          description: Signed URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedUrl"
+
+  /api/v1/cdn/purge:
+    post:
+      operationId: purgeCdn
+      tags: [CDN]
+      summary: Purge CDN cache for assets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_ids]
+              properties:
+                asset_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Cache purged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Brand Kit ───────────────────────────────────────────────────────
+  /api/v1/brand-kit:
+    get:
+      operationId: getBrandKit
+      tags: [Brand Kit]
+      summary: Get the organization brand kit
+      responses:
+        "200":
+          description: Brand kit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandKit"
+    put:
+      operationId: updateBrandKit
+      tags: [Brand Kit]
+      summary: Update brand kit settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandKit"
+      responses:
+        "200":
+          description: Brand kit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandKit"
+
+  # ── Social ──────────────────────────────────────────────────────────
+  /api/v1/social/publish:
+    post:
+      operationId: socialPublish
+      tags: [Social]
+      summary: Publish or schedule content to social platforms
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialPublish"
+      responses:
+        "201":
+          description: Post created or scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialPost"
+
+  /api/v1/social/posts:
+    get:
+      operationId: listSocialPosts
+      tags: [Social]
+      summary: List social media posts
+      parameters:
+        - name: platform
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [draft, scheduled, published, failed] }
+      responses:
+        "200":
+          description: Post list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SocialPost"
+
+  # ── Repurpose ───────────────────────────────────────────────────────
+  /api/v1/repurpose:
+    post:
+      operationId: createRepurposeJob
+      tags: [Repurpose]
+      summary: Repurpose content for a different format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepurposeRequest"
+      responses:
+        "202":
+          description: Repurpose job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepurposeJob"
+
+  /api/v1/repurpose/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getRepurposeJob
+      tags: [Repurpose]
+      summary: Get repurpose job status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepurposeJob"
+
+  # ── Human Review ────────────────────────────────────────────────────
+  /api/v1/human-review:
+    get:
+      operationId: listHumanReviewQueue
+      tags: [Human Review]
+      summary: List items in the human review queue
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected] }
+      responses:
+        "200":
+          description: Review queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/HumanReviewItem"
+
+  /api/v1/human-review/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getHumanReviewItem
+      tags: [Human Review]
+      summary: Get a human review item
+      responses:
+        "200":
+          description: Review item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HumanReviewItem"
+
+  /api/v1/human-review/{itemId}/decide:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: decideHumanReview
+      tags: [Human Review]
+      summary: Approve or reject a flagged item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HumanReviewDecision"
+      responses:
+        "200":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HumanReviewItem"
+
+  # ── Support ─────────────────────────────────────────────────────────
+  /api/v1/support/tickets:
+    get:
+      operationId: listSupportTickets
+      tags: [Support]
+      summary: List support tickets
+      responses:
+        "200":
+          description: Ticket list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SupportTicket"
+    post:
+      operationId: createSupportTicket
+      tags: [Support]
+      summary: Create a support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketCreate"
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  # ── Plugins ─────────────────────────────────────────────────────────
+  /api/v1/plugins:
+    get:
+      operationId: listPlugins
+      tags: [Plugins]
+      summary: List installed plugins
+      responses:
+        "200":
+          description: Plugin list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Plugin"
+    post:
+      operationId: installPlugin
+      tags: [Plugins]
+      summary: Install a plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginInstall"
+      responses:
+        "201":
+          description: Plugin installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plugin"
+
+  /api/v1/plugins/{pluginId}:
+    parameters:
+      - name: pluginId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getPlugin
+      tags: [Plugins]
+      summary: Get plugin details
+      responses:
+        "200":
+          description: Plugin details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plugin"
+    delete:
+      operationId: uninstallPlugin
+      tags: [Plugins]
+      summary: Uninstall a plugin
+      responses:
+        "200":
+          description: Plugin uninstalled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /api/v1/plugins/{pluginId}/enable:
+    parameters:
+      - name: pluginId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: enablePlugin
+      tags: [Plugins]
+      summary: Enable a plugin
+      responses:
+        "200":
+          description: Plugin enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plugin"
+
+  /api/v1/plugins/{pluginId}/disable:
+    parameters:
+      - name: pluginId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: disablePlugin
+      tags: [Plugins]
+      summary: Disable a plugin
+      responses:
+        "200":
+          description: Plugin disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plugin"
+
+  # ── Marketplace ─────────────────────────────────────────────────────
+  /api/v1/marketplace:
+    get:
+      operationId: browseMarketplace
+      tags: [Marketplace]
+      summary: Browse marketplace listings
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string, enum: [style-packs, templates, characters, audio-packs, plugins] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [popular, newest, price_asc, price_desc] }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Marketplace listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketplaceListing"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  /api/v1/marketplace/publish:
+    post:
+      operationId: publishToMarketplace
+      tags: [Marketplace]
+      summary: Submit an item for marketplace review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketplacePublish"
+      responses:
+        "201":
+          description: Item submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                  submitted_at:
+                    type: string
+                    format: date-time
+
+  /api/v1/marketplace/purchase:
+    post:
+      operationId: purchaseMarketplaceItem
+      tags: [Marketplace]
+      summary: Purchase a marketplace item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketplacePurchase"
+      responses:
+        "200":
+          description: Purchase completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing_id:
+                    type: string
+                  message:
+                    type: string
+
+  # ── Enterprise ──────────────────────────────────────────────────────
+  /api/v1/enterprise/users:
+    get:
+      operationId: listEnterpriseUsers
+      tags: [Enterprise]
+      summary: List organization users (admin only)
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EnterpriseUser"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  /api/v1/enterprise/users/invite:
+    post:
+      operationId: inviteUser
+      tags: [Enterprise]
+      summary: Invite a user to the organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, creator, editor, viewer]
+                team:
+                  type: string
+      responses:
+        "201":
+          description: User invited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnterpriseUser"
+
+  /api/v1/enterprise/audit:
+    get:
+      operationId: queryAuditLog
+      tags: [Enterprise]
+      summary: Query audit log entries
+      parameters:
+        - name: user
+          in: query
+          schema: { type: string }
+        - name: action
+          in: query
+          schema: { type: string, enum: [create, update, delete, login, export, invite] }
+        - name: resource
+          in: query
+          schema: { type: string, enum: [project, character, shot, asset, user, settings] }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditEntry"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # AI INFERENCE API
+  # ═════════════════════════════════════════════════════════════════════
+
+  # ── Generation ──────────────────────────────────────────────────────
+  /ai/v1/generate/video:
+    post:
+      operationId: generateVideo
+      tags: [Generation]
+      summary: Submit a video generation job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateVideoRequest"
+      responses:
+        "202":
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationJob"
+
+  /ai/v1/generate/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getGenerationStatus
+      tags: [Generation]
+      summary: Check generation job status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationJob"
+
+  /ai/v1/generate/{jobId}/result:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getGenerationResult
+      tags: [Generation]
+      summary: Retrieve generation outputs
+      responses:
+        "200":
+          description: Generation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationResult"
+
+  /ai/v1/generate/{jobId}/cancel:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: cancelGeneration
+      tags: [Generation]
+      summary: Cancel a generation job
+      responses:
+        "200":
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  status:
+                    type: string
+                  credits_refunded:
+                    type: integer
+
+  # ── Audio ───────────────────────────────────────────────────────────
+  /ai/v1/audio/generate:
+    post:
+      operationId: generateAudio
+      tags: [Audio]
+      summary: Generate audio (SFX, dialogue, ambience)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AudioGenerateRequest"
+      responses:
+        "202":
+          description: Audio generation job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/audio/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getAudioStatus
+      tags: [Audio]
+      summary: Check audio generation status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Avatar ──────────────────────────────────────────────────────────
+  /ai/v1/avatar/reconstruct:
+    post:
+      operationId: reconstructAvatar
+      tags: [Avatar]
+      summary: Start 3D avatar reconstruction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvatarReconstructRequest"
+      responses:
+        "202":
+          description: Avatar job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/avatar/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getAvatarStatus
+      tags: [Avatar]
+      summary: Check avatar reconstruction status
+      responses:
+        "200":
+          description: Avatar job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Style ───────────────────────────────────────────────────────────
+  /ai/v1/style/analyze:
+    post:
+      operationId: analyzeStyle
+      tags: [Style]
+      summary: Extract a style fingerprint from a reference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StyleAnalyzeRequest"
+      responses:
+        "200":
+          description: Style fingerprint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StyleFingerprint"
+
+  /ai/v1/style/transfer:
+    post:
+      operationId: transferStyle
+      tags: [Style]
+      summary: Apply a style fingerprint to content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StyleTransferRequest"
+      responses:
+        "202":
+          description: Style transfer job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Script ──────────────────────────────────────────────────────────
+  /ai/v1/script/parse:
+    post:
+      operationId: parseScript
+      tags: [Script]
+      summary: Parse a script into scenes and shots
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScriptParseRequest"
+      responses:
+        "200":
+          description: Parsed script structure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        shots:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              prompt:
+                                type: string
+                              camera:
+                                type: string
+                              duration_ms:
+                                type: integer
+                              characters:
+                                type: array
+                                items:
+                                  type: string
+
+  # ── Music ───────────────────────────────────────────────────────────
+  /ai/v1/music/generate:
+    post:
+      operationId: generateMusic
+      tags: [Music]
+      summary: Generate original music for a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MusicGenerateRequest"
+      responses:
+        "202":
+          description: Music generation job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/music/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getMusicStatus
+      tags: [Music]
+      summary: Check music generation status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Dubbing ─────────────────────────────────────────────────────────
+  /ai/v1/dubbing/start:
+    post:
+      operationId: startDubbing
+      tags: [Dubbing]
+      summary: Start multilingual dubbing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DubbingRequest"
+      responses:
+        "202":
+          description: Dubbing job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/dubbing/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getDubbingStatus
+      tags: [Dubbing]
+      summary: Check dubbing job status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── MoCap ───────────────────────────────────────────────────────────
+  /ai/v1/mocap/extract:
+    post:
+      operationId: extractMotionCapture
+      tags: [MoCap]
+      summary: Extract motion capture data from video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoCapRequest"
+      responses:
+        "202":
+          description: MoCap extraction job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/mocap/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getMoCapStatus
+      tags: [MoCap]
+      summary: Check MoCap extraction status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Continuity ──────────────────────────────────────────────────────
+  /ai/v1/continuity/check:
+    post:
+      operationId: checkContinuity
+      tags: [Continuity]
+      summary: Check cross-shot visual continuity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContinuityCheckRequest"
+      responses:
+        "200":
+          description: Continuity report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContinuityReport"
+
+  # ── Physics ─────────────────────────────────────────────────────────
+  /ai/v1/physics/simulate:
+    post:
+      operationId: simulatePhysics
+      tags: [Physics]
+      summary: Run physics simulation on a shot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhysicsSimRequest"
+      responses:
+        "202":
+          description: Simulation job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/physics/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getPhysicsStatus
+      tags: [Physics]
+      summary: Check physics simulation status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Memory ──────────────────────────────────────────────────────────
+  /ai/v1/memory/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getProjectMemory
+      tags: [Memory]
+      summary: Retrieve project context memory
+      responses:
+        "200":
+          description: Memory entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MemoryEntry"
+    post:
+      operationId: storeMemory
+      tags: [Memory]
+      summary: Store a project memory entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryStoreRequest"
+      responses:
+        "201":
+          description: Memory stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryEntry"
+
+  # ── Training ────────────────────────────────────────────────────────
+  /ai/v1/training/jobs:
+    get:
+      operationId: listTrainingJobs
+      tags: [Training]
+      summary: List custom model training jobs
+      responses:
+        "200":
+          description: Training job list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrainingJob"
+    post:
+      operationId: createTrainingJob
+      tags: [Training]
+      summary: Start a custom model fine-tuning job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingJobRequest"
+      responses:
+        "202":
+          description: Training job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJob"
+
+  /ai/v1/training/jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getTrainingJob
+      tags: [Training]
+      summary: Get training job details
+      responses:
+        "200":
+          description: Training job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJob"
+
+  /ai/v1/training/jobs/{jobId}/cancel:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: cancelTrainingJob
+      tags: [Training]
+      summary: Cancel a training job
+      responses:
+        "200":
+          description: Training job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJob"
+
+  # ── Cartoon Pro ─────────────────────────────────────────────────────
+  /ai/v1/cartoon/stylize:
+    post:
+      operationId: cartoonStylize
+      tags: [Cartoon]
+      summary: Apply Cartoon Pro stylization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartoonProRequest"
+      responses:
+        "202":
+          description: Stylization job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  /ai/v1/cartoon/{jobId}/status:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getCartoonStatus
+      tags: [Cartoon]
+      summary: Check Cartoon Pro job status
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── QC ──────────────────────────────────────────────────────────────
+  /ai/v1/qc/run:
+    post:
+      operationId: runQualityCheck
+      tags: [QC]
+      summary: Run automated quality checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QcRequest"
+      responses:
+        "200":
+          description: QC report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QcReport"
+
+  # ── Jobs ────────────────────────────────────────────────────────────
+  /ai/v1/jobs:
+    get:
+      operationId: listJobs
+      tags: [Jobs]
+      summary: List all jobs for the authenticated user
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [queued, processing, completed, failed, cancelled] }
+        - name: type
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Job list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AsyncJob"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+  /ai/v1/jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getJob
+      tags: [Jobs]
+      summary: Get job details
+      responses:
+        "200":
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJob"
+
+  # ── Governance ──────────────────────────────────────────────────────
+  /ai/v1/governance/verify:
+    post:
+      operationId: verifyProvenance
+      tags: [Governance]
+      summary: Verify content provenance and authenticity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GovernanceVerifyRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  output_id:
+                    type: string
+                  verified:
+                    type: boolean
+                  c2pa_valid:
+                    type: boolean
+                  watermark_detected:
+                    type: boolean
+                  generator:
+                    type: string
+                  consent_status:
+                    type: string
+                  chain_of_custody:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        actor:
+                          type: string
+
+  /ai/v1/governance/consent/{characterId}:
+    parameters:
+      - name: characterId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getConsentStatus
+      tags: [Governance]
+      summary: Check likeness consent for a character
+      responses:
+        "200":
+          description: Consent status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  character_id:
+                    type: string
+                  name:
+                    type: string
+                  consent_status:
+                    type: string
+                  consent_type:
+                    type: string
+                  restrictions:
+                    type: array
+                    items:
+                      type: string
+
+  /ai/v1/governance/moderate:
+    post:
+      operationId: moderateContent
+      tags: [Governance]
+      summary: Run content moderation checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GovernanceModerateRequest"
+      responses:
+        "200":
+          description: Moderation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  output_id:
+                    type: string
+                  passed:
+                    type: boolean
+                  results:
+                    type: object
+                  moderated_at:
+                    type: string
+                    format: date-time
