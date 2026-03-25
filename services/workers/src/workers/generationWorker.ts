@@ -1,5 +1,6 @@
-import { Worker, Job } from "bullmq";
+import { Worker, Job, Queue } from "bullmq";
 import { v4 as uuidv4 } from "uuid";
+import { createHash } from "crypto";
 import { redisConnection } from "../queues/index.js";
 import {
   StageDefinition,
@@ -23,6 +24,7 @@ import {
   runGovernancePipeline,
   type GovernancePipelineJob,
 } from "./governancePipeline.js";
+import { prisma } from "../db.js";
 
 /* ---------- Constants ---------- */
 
@@ -30,6 +32,10 @@ const AI_POLL_INTERVAL_MS = 2_000;
 const AI_POLL_MAX_ATTEMPTS = 300; // 10 min max polling
 const REALTIME_SERVICE_URL =
   process.env.REALTIME_SERVICE_URL ?? "http://localhost:3003";
+
+const MAX_JOB_DURATION: Record<string, number> = { preview: 300000, standard: 900000, pro: 1800000, enterprise: 3600000 };
+const DEFAULT_MAX_DURATION = 900000;
+const DLQ_MAX_RETRIES = 3;
 
 /* ---------- Pipeline stages (11 stages) ---------- */
 
@@ -61,7 +67,38 @@ interface GenerationJobData {
   project_id: string;
   user_id: string;
   params: Record<string, unknown>;
+  priority?: number;
+  tier?: string;
+  input_hash?: string;
 }
+
+
+/* ---------- Dead Letter Queue ---------- */
+let dlq: Queue | null = null;
+function getDeadLetterQueue(): Queue { if (!dlq) dlq = new Queue("generation-dlq", { connection: redisConnection, defaultJobOptions: { removeOnComplete: false, removeOnFail: false } }); return dlq; }
+
+/* ---------- Resource Estimation ---------- */
+export interface GpuEstimate { gpu_class: "T4"|"A10G"|"A100"|"H100"; vram_required_gb: number; estimated_time_seconds: number; cost_credits: number; }
+export function estimateGPU(jobType: GenerationType, tier = "standard"): GpuEstimate {
+  const e: Record<GenerationType,Record<string,GpuEstimate>> = {
+    video:{preview:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:60,cost_credits:1},standard:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:120,cost_credits:3},pro:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:180,cost_credits:8},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:90,cost_credits:15}},
+    audio:{preview:{gpu_class:"T4",vram_required_gb:4,estimated_time_seconds:30,cost_credits:0.5},standard:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:45,cost_credits:1},pro:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:60,cost_credits:2},enterprise:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:30,cost_credits:3}},
+    avatar:{preview:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:90,cost_credits:2},standard:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:150,cost_credits:5},pro:{gpu_class:"A100",vram_required_gb:80,estimated_time_seconds:240,cost_credits:10},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:120,cost_credits:18}},
+    style_clone:{preview:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:45,cost_credits:1},standard:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:90,cost_credits:3},pro:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:120,cost_credits:7},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:60,cost_credits:12}},
+    img_to_cartoon:{preview:{gpu_class:"T4",vram_required_gb:4,estimated_time_seconds:20,cost_credits:0.5},standard:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:30,cost_credits:1},pro:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:45,cost_credits:2},enterprise:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:20,cost_credits:3}},
+  };
+  return e[jobType]?.[tier] ?? e[jobType]?.standard ?? {gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:120,cost_credits:3};
+}
+
+/* ---------- Job Deduplication ---------- */
+function computeInputHash(d: GenerationJobData): string { return createHash("sha256").update(JSON.stringify({type:d.type,project_id:d.project_id,params:d.params})).digest("hex"); }
+let usePrisma = true;
+async function findCachedResult(h: string): Promise<GenerationResult|null> {
+  if(!usePrisma) return null;
+  try { const r = await prisma.generationJob.findFirst({where:{inputHash:h,status:"complete"},orderBy:{completedAt:"desc"}}); if(r?.outputUrl&&r?.qualityScores){const s=r.qualityScores as Record<string,number>;return{output_url:r.outputUrl,quality_scores:{overall:s.overall??0,fidelity:s.fidelity??0,consistency:s.consistency??0}};} }
+  catch(e){console.warn("[generation] Dedup failed:",e instanceof Error?e.message:e);usePrisma=false;} return null;
+}
+function getMaxDuration(tier?: string): number { return (tier&&MAX_JOB_DURATION[tier])?MAX_JOB_DURATION[tier]:DEFAULT_MAX_DURATION; }
 
 /* ---------- WebSocket event emitter ---------- */
 

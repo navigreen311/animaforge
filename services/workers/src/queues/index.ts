@@ -25,10 +25,12 @@ export const generationQueue = new Queue("generation", defaultQueueOpts);
 export const governanceQueue = new Queue("governance", defaultQueueOpts);
 export const exportQueue = new Queue("export", defaultQueueOpts);
 export const qcQueue = new Queue("qc", defaultQueueOpts);
+export const cleanupQueue = new Queue("cleanup", defaultQueueOpts);
 
 export const allQueues = [
   generationQueue,
   governanceQueue,
   exportQueue,
   qcQueue,
+  cleanupQueue,
 ] as const;

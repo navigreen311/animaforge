@@ -2,6 +2,8 @@ import "dotenv/config";
 import { createGenerationWorker } from "./workers/generationWorker.js";
 import { createGovernanceWorker } from "./workers/governanceWorker.js";
 import { createExportWorker } from "./workers/exportWorker.js";
+import { createQcWorker } from "./workers/qcWorker.js";
+import { createCleanupWorker, startCleanupScheduler } from "./workers/cleanupWorker.js";
 import { allQueues } from "./queues/index.js";
 
 async function main(): Promise<void> {
@@ -11,7 +13,10 @@ async function main(): Promise<void> {
   const governanceWorker = createGovernanceWorker();
   const exportWorker = createExportWorker();
 
-  const workers = [generationWorker, governanceWorker, exportWorker];
+  const qcWorker = createQcWorker();
+  const cleanupWorker = createCleanupWorker();
+  const workers = [generationWorker, governanceWorker, exportWorker, qcWorker, cleanupWorker];
+  const cleanupInterval = await startCleanupScheduler();
 
   console.log("[animaforge-workers] All workers running.");
   console.log(
@@ -22,6 +27,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`\n[animaforge-workers] Received ${signal}, shutting down...`);
 
+    clearInterval(cleanupInterval);
     await Promise.all(workers.map((w) => w.close()));
     await Promise.all(allQueues.map((q) => q.close()));
 
