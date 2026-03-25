@@ -8,13 +8,17 @@ import morgan from 'morgan';
 import { globalLimiter } from './middleware/rateLimiter';
 import { requestLogger } from './middleware/requestLogger';
 import { authForward } from './middleware/authForward';
+import { buildCorsOptions } from './middleware/cors';
 import { setupProxies } from './proxy';
+import { adminRouter } from './routes/admin';
+import { serviceRegistry } from './services/serviceRegistry';
+import { SERVICE_ROUTES } from './config/routes';
 
 export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+  app.use(cors(buildCorsOptions()));
   app.use(express.json());
   app.use(morgan('combined'));
   app.use(globalLimiter);
@@ -24,6 +28,9 @@ export function createApp() {
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', service: 'gateway', timestamp: new Date().toISOString() });
   });
+
+  // Admin routes for service management and metrics
+  app.use('/admin', adminRouter);
 
   setupProxies(app);
 
@@ -35,10 +42,19 @@ export function createApp() {
   return app;
 }
 
+/** Seed the service registry from the static route table. */
+function seedRegistry(): void {
+  for (const [path, route] of Object.entries(SERVICE_ROUTES)) {
+    serviceRegistry.registerService(route.name, route.target, '/health');
+  }
+  serviceRegistry.startPolling();
+}
+
 const PORT = process.env.PORT || 4000;
 
 if (process.env.NODE_ENV !== 'test') {
   const app = createApp();
+  seedRegistry();
   app.listen(PORT, () => {
     console.log(`[gateway] API Gateway listening on port ${PORT}`);
   });
