@@ -41,7 +41,7 @@ def _consistent_shots() -> list[dict]:
             "character_ref": "hero-v1",
             "style_ref": "cinematic-warm",
             "characters": ["alice", "bob"],
-            "audio_level_db": -13.5,
+            "audio_level_db": -14.0,
         },
     ]
 

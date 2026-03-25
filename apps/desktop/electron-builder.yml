@@ -1,0 +1,75 @@
+appId: dev.animaforge.desktop
+productName: AnimaForge
+copyright: Copyright © 2026 AnimaForge
+
+directories:
+  output: dist
+  buildResources: assets
+
+files:
+  - src/**/*
+  - renderer/**/*
+  - assets/**/*
+  - package.json
+
+extraMetadata:
+  main: src/main.js
+
+# ── Windows ──────────────────────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.ico
+  artifactName: AnimaForge-${version}-win-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  differentialPackage: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.icns
+  category: public.app-category.graphics-design
+  artifactName: AnimaForge-${version}-mac-${arch}.${ext}
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  sign: false
+
+# ── Linux ────────────────────────────────────────────────────────────────────
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: assets/icon.png
+  category: Graphics
+  artifactName: AnimaForge-${version}-linux-${arch}.${ext}
+
+# ── Auto-update (GitHub Releases) ───────────────────────────────────────────
+publish:
+  provider: github
+  owner: animaforge
+  repo: animaforge
+
+# ── Protocol handler ────────────────────────────────────────────────────────
+protocols:
+  - name: AnimaForge
+    schemes:
+      - animaforge
