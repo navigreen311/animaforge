@@ -17,6 +17,7 @@ from src.services.audio_service import (
 
 # ── App fixture ──────────────────────────────────────────────────────────────
 
+
 @pytest.fixture()
 def client() -> TestClient:
     app = FastAPI()
@@ -25,6 +26,7 @@ def client() -> TestClient:
 
 
 # ── Service-layer unit tests ────────────────────────────────────────────────
+
 
 class TestAudioService:
     def test_create_audio_job_returns_job(self) -> None:
@@ -73,6 +75,7 @@ class TestAudioService:
 
 
 # ── Route / integration tests ───────────────────────────────────────────────
+
 
 class TestGenerateAudioEndpoint:
     def test_success(self, client: TestClient) -> None:

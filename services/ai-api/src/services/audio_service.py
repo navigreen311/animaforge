@@ -20,6 +20,7 @@ _PROCESSING_RATE_FACTOR: float = 0.4  # seconds of processing per second of audi
 
 # ── Public API ───────────────────────────────────────────────────────────────
 
+
 def create_audio_job(params: GenerateAudioRequest) -> AudioJob:
     """Create an audio-generation job and return its metadata."""
     duration_ms = _estimate_dialogue_duration_ms(params.dialogue)
@@ -87,11 +88,12 @@ def estimate_audio_time(duration_ms: int) -> float:
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _new_job_id() -> str:
     return f"audio-{uuid.uuid4().hex[:12]}"
 
 
 def _estimate_dialogue_duration_ms(dialogue: str) -> int:
-    """Rough heuristic: ~150 words per minute → 400 ms per word."""
+    """Rough heuristic: ~150 words per minute -> 400 ms per word."""
     word_count = len(dialogue.split())
     return max(word_count * 400, 1000)

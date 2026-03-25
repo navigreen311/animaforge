@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config.settings import settings
-from src.routes import health, jobs
+from src.routes import audio, health, jobs, style
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
@@ -22,10 +22,12 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(jobs.router)
 
+app.include_router(style.router)
+
+app.include_router(audio.router)
+
 # Placeholder routers for future implementation:
 # app.include_router(generate.router)
-# app.include_router(audio.router)
-# app.include_router(style.router)
 # app.include_router(script.router)
 
 

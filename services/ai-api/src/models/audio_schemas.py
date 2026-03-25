@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 # ── Request Schemas ──────────────────────────────────────────────────────────
 
+
 class GenerateAudioRequest(BaseModel):
     shot_id: str = Field(..., description="Identifier of the shot to attach audio to")
     dialogue: str = Field(..., description="Dialogue text to synthesise")
@@ -19,10 +20,13 @@ class MusicScoreRequest(BaseModel):
     project_id: str = Field(..., description="Project identifier")
     cut_url: str = Field(..., description="URL of the video cut to score against")
     mood: str = Field(..., description="Target mood descriptor (e.g. 'tense', 'uplifting')")
-    stems: list[str] = Field(..., description="Requested instrument stems (e.g. ['strings', 'drums'])")
+    stems: list[str] = Field(
+        ..., description="Requested instrument stems (e.g. ['strings', 'drums'])"
+    )
 
 
 # ── Response Schemas ─────────────────────────────────────────────────────────
+
 
 class GenerateAudioResponse(BaseModel):
     job_id: str
@@ -43,6 +47,7 @@ class MusicScoreResponse(BaseModel):
 
 
 # ── Internal / Utility Schemas ───────────────────────────────────────────────
+
 
 class Phoneme(BaseModel):
     phoneme: str
