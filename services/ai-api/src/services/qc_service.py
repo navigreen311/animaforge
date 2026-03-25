@@ -10,6 +10,7 @@ weights are wired in.
 from __future__ import annotations
 
 import hashlib
+import math
 import time
 import uuid
 from typing import Any
@@ -19,12 +20,12 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 _THRESHOLDS = {
-    "max_lpips": 0.15,
-    "min_identity_sim": 0.85,
-    "lip_sync_poor_ms": 50,
+    "max_lpips": 0.15,           # flicker if max LPIPS exceeds this
+    "min_identity_sim": 0.85,    # drift if min similarity drops below
+    "lip_sync_poor_ms": 50,      # poor sync if offset exceeds 50 ms
     "loudness_target_lufs": -14.0,
-    "loudness_tolerance": 2.0,
-    "overall_pass": 0.8,
+    "loudness_tolerance": 2.0,   # +/- 2 LU from target
+    "overall_pass": 0.8,         # aggregate score threshold
 }
 
 # ---------------------------------------------------------------------------
@@ -37,11 +38,14 @@ def compute_temporal_lpips(frames_url: str) -> dict[str, Any]:
 
     Returns mean/max LPIPS, per-frame scores, and flicker flag.
     """
+    # Deterministic simulation: derive scores from the URL hash so
+    # identical inputs always produce identical outputs.
     seed = int(hashlib.sha256(frames_url.encode()).hexdigest(), 16)
 
-    num_frames = 24
+    num_frames = 24  # simulate 1 s @ 24 fps → 23 consecutive pairs
     frame_scores: list[float] = []
     for i in range(num_frames - 1):
+        # Produce values roughly in [0.01, 0.12] with a small spike.
         raw = ((seed >> (i % 64)) & 0xFF) / 255.0
         score = round(0.01 + raw * 0.11, 4)
         frame_scores.append(score)
@@ -59,8 +63,7 @@ def compute_temporal_lpips(frames_url: str) -> dict[str, Any]:
 
 
 def compute_identity_drift(
-    character_ref: str,
-    frames_url: str,
+    character_ref: str, frames_url: str
 ) -> dict[str, Any]:
     """Simulate face-identity comparison across frames.
 
@@ -68,7 +71,7 @@ def compute_identity_drift(
     """
     seed = int(
         hashlib.sha256(
-            f"{character_ref}:{frames_url}".encode(),
+            f"{character_ref}:{frames_url}".encode()
         ).hexdigest(),
         16,
     )
@@ -79,7 +82,7 @@ def compute_identity_drift(
 
     for i in range(num_frames):
         raw = ((seed >> (i % 64)) & 0xFF) / 255.0
-        sim = round(0.82 + raw * 0.17, 4)
+        sim = round(0.82 + raw * 0.17, 4)  # range ~[0.82, 0.99]
         similarities.append(sim)
         if sim < _THRESHOLDS["min_identity_sim"]:
             frames_with_drift.append(i)
@@ -97,8 +100,7 @@ def compute_identity_drift(
 
 
 def compute_lip_sync_offset(
-    audio_url: str,
-    video_url: str,
+    audio_url: str, video_url: str
 ) -> dict[str, Any]:
     """Simulate A/V sync measurement.
 
@@ -106,12 +108,12 @@ def compute_lip_sync_offset(
     """
     seed = int(
         hashlib.sha256(
-            f"{audio_url}:{video_url}".encode(),
+            f"{audio_url}:{video_url}".encode()
         ).hexdigest(),
         16,
     )
 
-    offset_ms = round(((seed & 0xFFFF) / 0xFFFF) * 80, 1)
+    offset_ms = round(((seed & 0xFFFF) / 0xFFFF) * 80, 1)  # 0-80 ms
     confidence = round(0.7 + ((seed >> 16) & 0xFF) / 255.0 * 0.3, 4)
 
     if offset_ms <= 20:
@@ -128,13 +130,7 @@ def compute_lip_sync_offset(
     }
 
 
-_ARTIFACT_TYPES = [
-    "compression",
-    "banding",
-    "aliasing",
-    "ghosting",
-    "morphing",
-]
+_ARTIFACT_TYPES = ["compression", "banding", "aliasing", "ghosting", "morphing"]
 
 
 def compute_artifact_score(frames_url: str) -> dict[str, Any]:
@@ -154,6 +150,8 @@ def compute_artifact_score(frames_url: str) -> dict[str, Any]:
             severity_scores.append(round(val, 4))
 
     artifact_count = len(detected_types)
+
+    # Worst frame (deterministic pick from seed)
     worst_frame = (seed & 0xFF) % 24 if artifact_count > 0 else -1
 
     return {
@@ -173,17 +171,14 @@ def compute_loudness(audio_url: str) -> dict[str, Any]:
     seed = int(hashlib.sha256(audio_url.encode()).hexdigest(), 16)
 
     integrated_lufs = round(
-        -16.0 + ((seed & 0xFFFF) / 0xFFFF) * 4.0,
-        1,
-    )
+        -16.0 + ((seed & 0xFFFF) / 0xFFFF) * 4.0, 1
+    )  # -16 to -12 LUFS
     true_peak = round(
-        -3.0 + ((seed >> 16) & 0xFF) / 255.0 * 4.0,
-        1,
-    )
+        -3.0 + ((seed >> 16) & 0xFF) / 255.0 * 4.0, 1
+    )  # -3 to +1 dBTP
     loudness_range = round(
-        3.0 + ((seed >> 24) & 0xFF) / 255.0 * 9.0,
-        1,
-    )
+        3.0 + ((seed >> 24) & 0xFF) / 255.0 * 9.0, 1
+    )  # 3-12 LU
 
     target = _THRESHOLDS["loudness_target_lufs"]
     tolerance = _THRESHOLDS["loudness_tolerance"]
@@ -204,12 +199,10 @@ def compute_loudness(audio_url: str) -> dict[str, Any]:
 _CHECK_DISPATCH = {
     "temporal_lpips": lambda urls: compute_temporal_lpips(urls["frames_url"]),
     "identity_drift": lambda urls: compute_identity_drift(
-        urls.get("character_ref", "default"),
-        urls["frames_url"],
+        urls.get("character_ref", "default"), urls["frames_url"]
     ),
     "lip_sync": lambda urls: compute_lip_sync_offset(
-        urls["audio_url"],
-        urls["video_url"],
+        urls["audio_url"], urls["video_url"]
     ),
     "artifacts": lambda urls: compute_artifact_score(urls["frames_url"]),
     "loudness": lambda urls: compute_loudness(urls["audio_url"]),
@@ -219,15 +212,17 @@ _CHECK_DISPATCH = {
 def _score_check(name: str, result: dict) -> float:
     """Derive a 0-1 quality score from a single check result."""
     if name == "temporal_lpips":
+        # Lower mean LPIPS is better; 0 → 1.0, 0.15+ → 0.0
         return max(0.0, 1.0 - result["mean_lpips"] / 0.15)
     if name == "identity_drift":
+        # Higher min similarity is better
         return max(0.0, min(1.0, result["min_similarity"]))
     if name == "lip_sync":
         return {"perfect": 1.0, "acceptable": 0.75, "poor": 0.3}.get(
-            result["sync_quality"],
-            0.0,
+            result["sync_quality"], 0.0
         )
     if name == "artifacts":
+        # 0 artifacts → 1.0, 5 → 0.0
         return max(0.0, 1.0 - result["artifact_count"] / 5.0)
     if name == "loudness":
         return 1.0 if result["compliant"] else 0.4
@@ -270,28 +265,29 @@ def validate_output(
         score = _score_check(check_name, result)
         scores.append(score)
 
+        # Flag specific issues
         if check_name == "temporal_lpips" and result["flicker_detected"]:
             issues.append("Flicker detected in frame sequence")
         if check_name == "identity_drift" and result["frames_with_drift"]:
             issues.append(
-                f"Identity drift in {len(result['frames_with_drift'])} frame(s)",
+                f"Identity drift in {len(result['frames_with_drift'])} frame(s)"
             )
         if check_name == "lip_sync" and result["sync_quality"] == "poor":
             issues.append(
-                f"Poor lip sync (offset {result['offset_ms']} ms)",
+                f"Poor lip sync (offset {result['offset_ms']} ms)"
             )
         if check_name == "artifacts" and result["artifact_count"] > 2:
             issues.append(
-                f"{result['artifact_count']} artifacts detected",
+                f"{result['artifact_count']} artifacts detected"
             )
         if check_name == "loudness" and not result["compliant"]:
             issues.append(
-                f"Loudness non-compliant ({result['integrated_lufs']} LUFS)",
+                f"Loudness non-compliant ({result['integrated_lufs']} LUFS)"
             )
 
-    overall_score = (
-        round(sum(scores) / len(scores), 4) if scores else 0.0
-    )
+    overall_score = round(
+        sum(scores) / len(scores), 4
+    ) if scores else 0.0
     passed = overall_score >= _THRESHOLDS["overall_pass"] and len(issues) == 0
 
     return {
@@ -312,8 +308,7 @@ def validate_output(
 
 
 def generate_qc_certificate(
-    job_id: str,
-    report: dict[str, Any],
+    job_id: str, report: dict[str, Any]
 ) -> dict[str, Any]:
     """Create a signed QC certificate for a completed validation run.
 
@@ -323,9 +318,8 @@ def generate_qc_certificate(
     timestamp = time.time()
     cert_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"qc:{job_id}:{timestamp}"))
 
-    payload = (
-        f"{job_id}:{report.get('overall_score', 0)}:{report.get('passed', False)}"
-    )
+    # Build a deterministic digest from job_id + core report data.
+    payload = f"{job_id}:{report.get('overall_score', 0)}:{report.get('passed', False)}"
     signature = hashlib.sha256(payload.encode()).hexdigest()
 
     return {
