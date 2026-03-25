@@ -8,6 +8,8 @@ import {
   simulateWork,
 } from "../utils/jobHelpers.js";
 
+/* ---------- Pipeline stages ---------- */
+
 const EXPORT_STAGES: StageDefinition[] = [
   { name: "validate_format", weight: 10 },
   { name: "transcode", weight: 40 },
@@ -34,6 +36,8 @@ interface ExportResult {
   exported_at: string;
 }
 
+/* ---------- Processor ---------- */
+
 async function processExport(job: Job<ExportJobData>): Promise<ExportResult> {
   const { project_id, format } = job.data;
   const startTime = Date.now();
@@ -43,6 +47,7 @@ async function processExport(job: Job<ExportJobData>): Promise<ExportResult> {
   for (let i = 0; i < EXPORT_STAGES.length; i++) {
     const stage = EXPORT_STAGES[i];
     const progress = calculateProgress(EXPORT_STAGES, i);
+
     await updateJobStatus(job, stage.name, "running", progress);
     await simulateWork(stage.weight * 10);
   }
@@ -51,7 +56,7 @@ async function processExport(job: Job<ExportJobData>): Promise<ExportResult> {
   const ext = format === "png_sequence" ? "zip" : format;
 
   const result: ExportResult = {
-    download_url: "https://cdn.animaforge.io/exports/" + project_id + "/" + outputId + "." + ext,
+    download_url: `https://cdn.animaforge.io/exports/${project_id}/${outputId}.${ext}`,
     file_size_bytes: Math.floor(1_000_000 + Math.random() * 50_000_000),
     format,
     duration_ms: Date.now() - startTime,
@@ -61,6 +66,8 @@ async function processExport(job: Job<ExportJobData>): Promise<ExportResult> {
   await updateJobStatus(job, "done", "complete", 100);
   return result;
 }
+
+/* ---------- Worker factory ---------- */
 
 export function createExportWorker(concurrency = 3): Worker<ExportJobData, ExportResult> {
   const worker = new Worker<ExportJobData, ExportResult>(
@@ -73,11 +80,11 @@ export function createExportWorker(concurrency = 3): Worker<ExportJobData, Expor
   );
 
   worker.on("completed", (job) => {
-    console.log("[export] Job " + job.id + " completed");
+    console.log(`[export] Job ${job.id} completed`);
   });
 
   worker.on("failed", (job, err) => {
-    console.error("[export] Job " + (job?.id) + " failed:", err.message);
+    console.error(`[export] Job ${job?.id} failed:`, err.message);
   });
 
   return worker;

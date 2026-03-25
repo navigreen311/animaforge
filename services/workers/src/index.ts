@@ -14,12 +14,17 @@ async function main(): Promise<void> {
   const workers = [generationWorker, governanceWorker, exportWorker];
 
   console.log("[animaforge-workers] All workers running.");
-  console.log("[animaforge-workers] Queues: " + allQueues.map((q) => q.name).join(", "));
+  console.log(
+    `[animaforge-workers] Queues: ${allQueues.map((q) => q.name).join(", ")}`,
+  );
 
+  /* ---------- Graceful shutdown ---------- */
   const shutdown = async (signal: string): Promise<void> => {
-    console.log("[animaforge-workers] Received " + signal + ", shutting down...");
+    console.log(`\n[animaforge-workers] Received ${signal}, shutting down...`);
+
     await Promise.all(workers.map((w) => w.close()));
     await Promise.all(allQueues.map((q) => q.close()));
+
     console.log("[animaforge-workers] All workers stopped. Exiting.");
     process.exit(0);
   };

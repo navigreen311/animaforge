@@ -9,6 +9,8 @@ import {
   simulateWork,
 } from "../utils/jobHelpers.js";
 
+/* ---------- Pipeline stages (11 stages) ---------- */
+
 const GENERATION_STAGES: StageDefinition[] = [
   { name: "validate_input", weight: 3 },
   { name: "load_model", weight: 8 },
@@ -22,6 +24,8 @@ const GENERATION_STAGES: StageDefinition[] = [
   { name: "quality_check", weight: 7 },
   { name: "upload_output", weight: 10 },
 ];
+
+/* ---------- Supported generation types ---------- */
 
 export type GenerationType =
   | "video"
@@ -37,6 +41,8 @@ interface GenerationJobData {
   params: Record<string, unknown>;
 }
 
+/* ---------- Processor ---------- */
+
 async function processGeneration(job: Job<GenerationJobData>): Promise<GenerationResult> {
   const { type, project_id } = job.data;
 
@@ -46,13 +52,16 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
   for (let i = 0; i < GENERATION_STAGES.length; i++) {
     const stage = GENERATION_STAGES[i];
     const progress = calculateProgress(GENERATION_STAGES, i);
+
     await updateJobStatus(job, stage.name, "running", progress);
+
+    // Simulate processing time proportional to stage weight
     await simulateWork(stage.weight * 10);
   }
 
   const outputId = uuidv4();
   const result: GenerationResult = {
-    output_url: "https://cdn.animaforge.io/outputs/" + project_id + "/" + type + "/" + outputId + ".mp4",
+    output_url: `https://cdn.animaforge.io/outputs/${project_id}/${type}/${outputId}.mp4`,
     quality_scores: {
       overall: +(0.85 + Math.random() * 0.14).toFixed(3),
       fidelity: +(0.82 + Math.random() * 0.17).toFixed(3),
@@ -63,6 +72,8 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
   await updateJobStatus(job, "done", "complete", 100);
   return result;
 }
+
+/* ---------- Worker factory ---------- */
 
 export function createGenerationWorker(concurrency = 3): Worker<GenerationJobData, GenerationResult> {
   const worker = new Worker<GenerationJobData, GenerationResult>(
@@ -76,11 +87,11 @@ export function createGenerationWorker(concurrency = 3): Worker<GenerationJobDat
   );
 
   worker.on("completed", (job) => {
-    console.log("[generation] Job " + job.id + " completed");
+    console.log(`[generation] Job ${job.id} completed`);
   });
 
   worker.on("failed", (job, err) => {
-    console.error("[generation] Job " + (job?.id) + " failed:", err.message);
+    console.error(`[generation] Job ${job?.id} failed:`, err.message);
   });
 
   return worker;

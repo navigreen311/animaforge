@@ -5,6 +5,8 @@ import {
   JobStatus,
 } from "../utils/jobHelpers.js";
 
+/* ---------- Mock BullMQ before any worker imports ---------- */
+
 const mockProcess = vi.fn();
 const mockWorkerOn = vi.fn();
 const mockWorkerClose = vi.fn();
@@ -39,6 +41,8 @@ vi.mock("ioredis", () => {
   };
 });
 
+/* ---------- Tests ---------- */
+
 describe("jobHelpers", () => {
   describe("calculateProgress", () => {
     const stages: StageDefinition[] = [
@@ -49,6 +53,8 @@ describe("jobHelpers", () => {
     ];
 
     it("returns 0 progress when no stages are completed", () => {
+      // completedIndex = -1 means nothing completed; but our function
+      // counts up to completedIndex, so passing -1 yields 0.
       expect(calculateProgress(stages, -1)).toBe(0);
     });
 
@@ -166,9 +172,11 @@ describe("Generation worker", () => {
 
     await mockProcess(mockJob);
 
+    // 11 stages + 1 init + 1 done = at least 13 updateProgress calls
     expect(mockJob.updateProgress).toHaveBeenCalled();
     expect(mockJob.log).toHaveBeenCalled();
 
+    // Last log entry should be "complete"
     const lastLogCall = mockJob.log.mock.calls[mockJob.log.mock.calls.length - 1][0];
     const lastStatus = JSON.parse(lastLogCall);
     expect(lastStatus.status).toBe("complete");
@@ -201,7 +209,7 @@ describe("Export worker", () => {
 });
 
 describe("Status transitions", () => {
-  it("job goes through queued -> running -> complete", async () => {
+  it("job goes through queued → running → complete", async () => {
     const { createGenerationWorker } = await import(
       "../workers/generationWorker.js"
     );
@@ -226,9 +234,14 @@ describe("Status transitions", () => {
 
     await mockProcess(mockJob);
 
+    // First status should be "queued", last should be "complete"
     expect(statusHistory[0]).toBe("queued");
     expect(statusHistory[statusHistory.length - 1]).toBe("complete");
+
+    // Should have "running" in the middle
     expect(statusHistory).toContain("running");
+
+    // No "failed" status in a successful run
     expect(statusHistory).not.toContain("failed");
   });
 });

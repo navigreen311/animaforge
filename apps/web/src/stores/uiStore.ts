@@ -1,9 +1,5 @@
 import { create } from 'zustand';
 
-/* ------------------------------------------------------------------ */
-/*  Notification                                                       */
-/* ------------------------------------------------------------------ */
-
 export interface Notification {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error';
@@ -11,19 +7,11 @@ export interface Notification {
   createdAt: number;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Modal                                                              */
-/* ------------------------------------------------------------------ */
-
 export interface ModalEntry {
   id: string;
   component: string;
   props?: Record<string, unknown>;
 }
-
-/* ------------------------------------------------------------------ */
-/*  State                                                              */
-/* ------------------------------------------------------------------ */
 
 interface UiState {
   sidebarOpen: boolean;
@@ -31,10 +19,6 @@ interface UiState {
   theme: 'dark' | 'light';
   notifications: Notification[];
 }
-
-/* ------------------------------------------------------------------ */
-/*  Actions                                                            */
-/* ------------------------------------------------------------------ */
 
 interface UiActions {
   toggleSidebar: () => void;
@@ -44,18 +28,12 @@ interface UiActions {
   dismissNotification: (id: string) => void;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Store                                                              */
-/* ------------------------------------------------------------------ */
-
 export const useUiStore = create<UiState & UiActions>((set) => ({
-  // State
   sidebarOpen: true,
   modalStack: [],
   theme: 'dark',
   notifications: [],
 
-  // Actions
   toggleSidebar: () =>
     set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 

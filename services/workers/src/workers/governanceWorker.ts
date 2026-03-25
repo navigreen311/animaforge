@@ -7,6 +7,8 @@ import {
   simulateWork,
 } from "../utils/jobHelpers.js";
 
+/* ---------- Pipeline stages (4 stages) ---------- */
+
 const GOVERNANCE_STAGES: StageDefinition[] = [
   { name: "content_scan", weight: 30 },
   { name: "policy_check", weight: 25 },
@@ -28,6 +30,8 @@ interface GovernanceResult {
   reviewed_at: string;
 }
 
+/* ---------- Processor ---------- */
+
 async function processGovernance(job: Job<GovernanceJobData>): Promise<GovernanceResult> {
   await updateJobStatus(job, "init", "queued", 0);
 
@@ -36,9 +40,11 @@ async function processGovernance(job: Job<GovernanceJobData>): Promise<Governanc
   for (let i = 0; i < GOVERNANCE_STAGES.length; i++) {
     const stage = GOVERNANCE_STAGES[i];
     const progress = calculateProgress(GOVERNANCE_STAGES, i);
+
     await updateJobStatus(job, stage.name, "running", progress);
     await simulateWork(stage.weight * 10);
 
+    // Simulate occasional flags
     if (stage.name === "content_scan" && Math.random() > 0.85) {
       flags.push("potential_nsfw_content");
     }
@@ -58,6 +64,8 @@ async function processGovernance(job: Job<GovernanceJobData>): Promise<Governanc
   return result;
 }
 
+/* ---------- Worker factory ---------- */
+
 export function createGovernanceWorker(concurrency = 5): Worker<GovernanceJobData, GovernanceResult> {
   const worker = new Worker<GovernanceJobData, GovernanceResult>(
     "governance",
@@ -69,11 +77,11 @@ export function createGovernanceWorker(concurrency = 5): Worker<GovernanceJobDat
   );
 
   worker.on("completed", (job) => {
-    console.log("[governance] Job " + job.id + " completed");
+    console.log(`[governance] Job ${job.id} completed`);
   });
 
   worker.on("failed", (job, err) => {
-    console.error("[governance] Job " + (job?.id) + " failed:", err.message);
+    console.error(`[governance] Job ${job?.id} failed:`, err.message);
   });
 
   return worker;

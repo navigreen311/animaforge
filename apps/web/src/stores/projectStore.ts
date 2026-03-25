@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import type { Project, WorldBible, BrandKit, User } from '@/types';
 
-/* ------------------------------------------------------------------ */
-/*  State                                                              */
-/* ------------------------------------------------------------------ */
-
 interface ProjectState {
   activeProject: Project | null;
   projects: Project[];
@@ -12,10 +8,6 @@ interface ProjectState {
   brandKit: BrandKit | null;
   members: User[];
 }
-
-/* ------------------------------------------------------------------ */
-/*  Actions                                                            */
-/* ------------------------------------------------------------------ */
 
 interface ProjectActions {
   setActiveProject: (project: Project | null) => void;
@@ -26,19 +18,13 @@ interface ProjectActions {
   updateBrandKit: (brandKit: BrandKit) => void;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Store                                                              */
-/* ------------------------------------------------------------------ */
-
 export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
-  // State
   activeProject: null,
   projects: [],
   worldBible: null,
   brandKit: null,
   members: [],
 
-  // Actions
   setActiveProject: (project) =>
     set({
       activeProject: project,
