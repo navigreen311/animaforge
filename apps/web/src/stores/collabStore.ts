@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 
+/* ------------------------------------------------------------------ */
+/*  Presence Entry                                                     */
+/* ------------------------------------------------------------------ */
+
 export interface PresenceEntry {
   userId: string;
   name: string;
@@ -9,10 +13,18 @@ export interface PresenceEntry {
   lastSeen: number;
 }
 
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
+
 interface CollabState {
   presenceMap: Map<string, PresenceEntry>;
   isConnected: boolean;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Actions                                                            */
+/* ------------------------------------------------------------------ */
 
 interface CollabActions {
   updatePresence: (userId: string, entry: PresenceEntry) => void;
@@ -20,10 +32,16 @@ interface CollabActions {
   setConnected: (connected: boolean) => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Store                                                              */
+/* ------------------------------------------------------------------ */
+
 export const useCollabStore = create<CollabState & CollabActions>((set) => ({
+  // State
   presenceMap: new Map(),
   isConnected: false,
 
+  // Actions
   updatePresence: (userId, entry) =>
     set((state) => {
       const next = new Map(state.presenceMap);

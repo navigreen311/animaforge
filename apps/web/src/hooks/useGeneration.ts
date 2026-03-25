@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGenerationStore } from '@/stores/generationStore';
 import type { GenerationTier, GenerationStage } from '@/types';
 
+/* ------------------------------------------------------------------ */
+/*  Mock stage progression                                             */
+/* ------------------------------------------------------------------ */
+
 const STAGES: GenerationStage[] = [
   'queued',
   'preprocessing',
@@ -21,6 +25,7 @@ const STAGE_PROGRESS: Record<GenerationStage, number> = {
   failed: 0,
 };
 
+/** Cost estimates per tier (mock values). */
 const TIER_COST: Record<GenerationTier, number> = {
   draft: 0.05,
   standard: 0.25,
@@ -30,6 +35,10 @@ const TIER_COST: Record<GenerationTier, number> = {
 export function costEstimate(tier: GenerationTier): number {
   return TIER_COST[tier];
 }
+
+/* ------------------------------------------------------------------ */
+/*  Hook                                                               */
+/* ------------------------------------------------------------------ */
 
 export function useGeneration() {
   const { addJob, updateJobProgress, completeJob, failJob, activeJobs } =
@@ -43,6 +52,7 @@ export function useGeneration() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
 
+  /** Clean up interval on unmount. */
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -51,6 +61,7 @@ export function useGeneration() {
 
   const generate = useCallback(
     (shotId: string, tier: GenerationTier) => {
+      // Reset local state
       setIsGenerating(true);
       setProgress(0);
       setResult(null);
@@ -59,14 +70,20 @@ export function useGeneration() {
       const jobId = `job_${shotId}_${Date.now()}`;
       currentJobIdRef.current = jobId;
 
-      addJob(jobId, { status: 'queued', progress: 0, stage: 'queued' });
+      addJob(jobId, {
+        status: 'queued',
+        progress: 0,
+        stage: 'queued',
+      });
 
       let stageIndex = 0;
 
+      // Simulate progress via setInterval
       intervalRef.current = setInterval(() => {
         stageIndex += 1;
 
         if (stageIndex >= STAGES.length) {
+          // Complete
           if (intervalRef.current) clearInterval(intervalRef.current);
           intervalRef.current = null;
 

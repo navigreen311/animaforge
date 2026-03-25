@@ -1,12 +1,20 @@
 import { create } from 'zustand';
 import type { Shot, SceneGraph } from '@/types';
 
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
+
 interface ShotState {
   shots: Shot[];
   activeShot: Shot | null;
   sceneGraph: SceneGraph | null;
   isDirty: boolean;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Actions                                                            */
+/* ------------------------------------------------------------------ */
 
 interface ShotActions {
   setShots: (shots: Shot[]) => void;
@@ -19,14 +27,22 @@ interface ShotActions {
   markClean: () => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Store                                                              */
+/* ------------------------------------------------------------------ */
+
 export const useShotStore = create<ShotState & ShotActions>((set) => ({
+  // State
   shots: [],
   activeShot: null,
   sceneGraph: null,
   isDirty: false,
 
+  // Actions
   setShots: (shots) => set({ shots }),
+
   setActiveShot: (shot) => set({ activeShot: shot }),
+
   updateSceneGraph: (sceneGraph) => set({ sceneGraph, isDirty: true }),
 
   addShot: (shot) =>

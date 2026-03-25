@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
+
 interface TimelineState {
   playhead: number;
   zoomLevel: number;
@@ -7,6 +11,10 @@ interface TimelineState {
   selectedShotIds: string[];
   isPlaying: boolean;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Actions                                                            */
+/* ------------------------------------------------------------------ */
 
 interface TimelineActions {
   setPlayhead: (time: number) => void;
@@ -18,15 +26,22 @@ interface TimelineActions {
   togglePlay: () => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Store                                                              */
+/* ------------------------------------------------------------------ */
+
 export const useTimelineStore = create<TimelineState & TimelineActions>(
   (set) => ({
+    // State
     playhead: 0,
     zoomLevel: 100,
     trackVisibility: {},
     selectedShotIds: [],
     isPlaying: false,
 
+    // Actions
     setPlayhead: (time) => set({ playhead: time }),
+
     setZoom: (level) => set({ zoomLevel: Math.max(10, Math.min(400, level)) }),
 
     toggleTrack: (trackId) =>
@@ -38,6 +53,7 @@ export const useTimelineStore = create<TimelineState & TimelineActions>(
       })),
 
     setSelection: (ids) => set({ selectedShotIds: ids }),
+
     play: () => set({ isPlaying: true }),
     pause: () => set({ isPlaying: false }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import type { GenerationJob, JobStatus, GenerationStage } from '@/types';
 
+/* ------------------------------------------------------------------ */
+/*  Job Entry (used in activeJobs map)                                 */
+/* ------------------------------------------------------------------ */
+
 export interface JobEntry {
   status: JobStatus;
   progress: number;
@@ -9,25 +13,43 @@ export interface JobEntry {
   error?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
+
 interface GenerationState {
   activeJobs: Map<string, JobEntry>;
   results: GenerationJob[];
 }
 
+/* ------------------------------------------------------------------ */
+/*  Actions                                                            */
+/* ------------------------------------------------------------------ */
+
 interface GenerationActions {
   addJob: (id: string, entry: JobEntry) => void;
-  updateJobProgress: (id: string, progress: number, stage: GenerationStage) => void;
+  updateJobProgress: (
+    id: string,
+    progress: number,
+    stage: GenerationStage,
+  ) => void;
   completeJob: (id: string, outputUrl: string) => void;
   failJob: (id: string, error: string) => void;
   cancelJob: (id: string) => void;
   clearResults: () => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Store                                                              */
+/* ------------------------------------------------------------------ */
+
 export const useGenerationStore = create<GenerationState & GenerationActions>(
   (set) => ({
+    // State
     activeJobs: new Map(),
     results: [],
 
+    // Actions
     addJob: (id, entry) =>
       set((state) => {
         const next = new Map(state.activeJobs);

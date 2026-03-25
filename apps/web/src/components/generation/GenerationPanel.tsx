@@ -4,11 +4,19 @@ import { useState } from 'react';
 import { useGeneration, costEstimate } from '@/hooks/useGeneration';
 import type { GenerationTier } from '@/types';
 
+/* ------------------------------------------------------------------ */
+/*  Tier options                                                       */
+/* ------------------------------------------------------------------ */
+
 const TIERS: { value: GenerationTier; label: string; desc: string }[] = [
   { value: 'draft', label: 'Draft', desc: 'Fast preview, lower quality' },
   { value: 'standard', label: 'Standard', desc: 'Balanced quality & speed' },
   { value: 'premium', label: 'Premium', desc: 'Maximum fidelity' },
 ];
+
+/* ------------------------------------------------------------------ */
+/*  Stage labels for display                                           */
+/* ------------------------------------------------------------------ */
 
 function stageLabel(progress: number): string {
   if (progress <= 0) return 'Queued';
@@ -18,6 +26,10 @@ function stageLabel(progress: number): string {
   if (progress <= 90) return 'Finalizing...';
   return 'Complete';
 }
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 interface GenerationPanelProps {
   shotId: string;
@@ -37,7 +49,10 @@ export function GenerationPanel({ shotId }: GenerationPanelProps) {
 
       {/* Tier Selector */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="tier-select" className="text-xs font-medium text-zinc-500">
+        <label
+          htmlFor="tier-select"
+          className="text-xs font-medium text-zinc-500"
+        >
           Quality Tier
         </label>
         <select
