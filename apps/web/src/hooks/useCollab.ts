@@ -35,26 +35,18 @@ export function useCollab(projectId: string | null): UseCollabReturn {
   const { token } = useAuth();
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
-
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<CollabUser[]>([]);
   const [shotLocks, setShotLocks] = useState<Map<string, ShotLockInfo>>(new Map());
 
   useEffect(() => {
     if (!projectId || !token) return;
-
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
-
-    const provider = new WebsocketProvider(
-      WS_URL,
-      projectId,
-      ydoc,
-      {
-        params: { token, projectId },
-        connect: true,
-      },
-    );
+    const provider = new WebsocketProvider(WS_URL, projectId, ydoc, {
+      params: { token, projectId },
+      connect: true,
+    });
     providerRef.current = provider;
 
     provider.on('status', ({ status }: { status: string }) => {
@@ -64,20 +56,15 @@ export function useCollab(projectId: string | null): UseCollabReturn {
     provider.awareness.on('change', () => {
       const states = provider.awareness.getStates();
       const users: CollabUser[] = [];
-
       states.forEach((state: Record<string, unknown>) => {
         if (state.user) {
           const u = state.user as CollabUser;
           users.push({
-            userId: u.userId,
-            displayName: u.displayName,
-            color: u.color,
-            cursor: u.cursor || null,
-            selectedShot: u.selectedShot || null,
+            userId: u.userId, displayName: u.displayName, color: u.color,
+            cursor: u.cursor || null, selectedShot: u.selectedShot || null,
           });
         }
       });
-
       setConnectedUsers(users);
     });
 
@@ -87,11 +74,7 @@ export function useCollab(projectId: string | null): UseCollabReturn {
         if (msg.type === 'shot-lock-update') {
           setShotLocks((prev) => {
             const next = new Map(prev);
-            next.set(msg.shotId, {
-              locked: msg.locked,
-              lockedBy: msg.lockedBy,
-              expiresAt: msg.expiresAt,
-            });
+            next.set(msg.shotId, { locked: msg.locked, lockedBy: msg.lockedBy, expiresAt: msg.expiresAt });
             return next;
           });
         } else if (msg.type === 'awareness-update') {
@@ -100,50 +83,30 @@ export function useCollab(projectId: string | null): UseCollabReturn {
           setShotLocks((prev) => {
             const next = new Map(prev);
             for (const [shotId, info] of next.entries()) {
-              if (info.lockedBy === msg.userId) {
-                next.delete(shotId);
-              }
+              if (info.lockedBy === msg.userId) next.delete(shotId);
             }
             return next;
           });
         }
-      } catch {
-        // Not a JSON message -- Yjs binary protocol
-      }
+      } catch { /* Yjs binary */ }
     });
 
     return () => {
-      provider.destroy();
-      ydoc.destroy();
-      ydocRef.current = null;
-      providerRef.current = null;
-      setIsConnected(false);
-      setConnectedUsers([]);
-      setShotLocks(new Map());
+      provider.destroy(); ydoc.destroy();
+      ydocRef.current = null; providerRef.current = null;
+      setIsConnected(false); setConnectedUsers([]); setShotLocks(new Map());
     };
   }, [projectId, token]);
 
   const lockShot = useCallback((shotId: string) => {
     const ws = providerRef.current?.ws;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'lock-shot', shotId }));
-    }
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'lock-shot', shotId }));
   }, []);
 
   const unlockShot = useCallback((shotId: string) => {
     const ws = providerRef.current?.ws;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'unlock-shot', shotId }));
-    }
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'unlock-shot', shotId }));
   }, []);
 
-  return {
-    isConnected,
-    connectedUsers,
-    lockShot,
-    unlockShot,
-    shotLocks,
-    ydoc: ydocRef.current,
-    provider: providerRef.current,
-  };
+  return { isConnected, connectedUsers, lockShot, unlockShot, shotLocks, ydoc: ydocRef.current, provider: providerRef.current };
 }

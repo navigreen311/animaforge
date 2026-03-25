@@ -14,16 +14,10 @@ declare global {
 
 export interface RequestLoggerOptions {
   logger?: Logger;
-  /** Header name to read an existing request ID from (e.g. 'x-request-id') */
   requestIdHeader?: string;
-  /** Paths to skip logging (e.g. /health, /metrics) */
   ignorePaths?: string[];
 }
 
-/**
- * Express middleware that logs every HTTP request on response finish.
- * Generates a requestId (UUID v4) and attaches it to req.id plus a child logger to req.log.
- */
 export function requestLogger(options: RequestLoggerOptions = {}) {
   const {
     logger: baseLogger = defaultLogger,
@@ -42,17 +36,14 @@ export function requestLogger(options: RequestLoggerOptions = {}) {
     req.id = requestId;
     res.setHeader('x-request-id', requestId);
 
-    // Create child logger with request context
     const childLogger = baseLogger.child({
       requestId,
       ...(req.headers['x-user-id'] && { userId: req.headers['x-user-id'] }),
     });
     req.log = childLogger;
 
-    // Log on response finish
     res.on('finish', () => {
       const duration_ms = Date.now() - startTime;
-
       childLogger.info({
         msg: 'request completed',
         method: req.method,

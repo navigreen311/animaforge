@@ -4,27 +4,19 @@ import path from 'node:path';
 
 const PERSISTENCE_DIR = process.env.COLLAB_PERSISTENCE_DIR || './collab-data';
 const DEBOUNCE_MS = 5000;
-
 const memoryStore = new Map<string, Uint8Array>();
 const saveTimers = new Map<string, NodeJS.Timeout>();
 const useFilePersistence = process.env.COLLAB_PERSISTENCE !== 'memory';
 
 export function initPersistence(projectId: string, doc: Y.Doc): void {
-  const existingState = loadState(projectId);
-  if (existingState) {
-    Y.applyUpdate(doc, existingState);
-  }
+  const existing = loadState(projectId);
+  if (existing) Y.applyUpdate(doc, existing);
   doc.on('update', () => { debouncedSave(projectId, doc); });
 }
 
 function debouncedSave(projectId: string, doc: Y.Doc): void {
-  const existing = saveTimers.get(projectId);
-  if (existing) clearTimeout(existing);
-  const timer = setTimeout(() => {
-    saveState(projectId, doc);
-    saveTimers.delete(projectId);
-  }, DEBOUNCE_MS);
-  saveTimers.set(projectId, timer);
+  const t = saveTimers.get(projectId); if (t) clearTimeout(t);
+  saveTimers.set(projectId, setTimeout(() => { saveState(projectId, doc); saveTimers.delete(projectId); }, DEBOUNCE_MS));
 }
 
 function saveState(projectId: string, doc: Y.Doc): void {
@@ -33,36 +25,21 @@ function saveState(projectId: string, doc: Y.Doc): void {
     try {
       const dir = path.resolve(PERSISTENCE_DIR);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      const filePath = path.join(dir, sanitizeFileName(projectId) + '.yjs');
-      fs.writeFileSync(filePath, Buffer.from(state));
-    } catch (err) {
-      console.error('[collab] Failed to save state for ' + projectId + ':', err);
-      memoryStore.set(projectId, state);
-    }
-  } else {
-    memoryStore.set(projectId, state);
-  }
+      fs.writeFileSync(path.join(dir, sanitize(projectId) + '.yjs'), Buffer.from(state));
+    } catch (e) { console.error('[collab] save fail:', e); memoryStore.set(projectId, state); }
+  } else { memoryStore.set(projectId, state); }
 }
 
 function loadState(projectId: string): Uint8Array | null {
   if (useFilePersistence) {
     try {
-      const filePath = path.join(path.resolve(PERSISTENCE_DIR), sanitizeFileName(projectId) + '.yjs');
-      if (fs.existsSync(filePath)) return new Uint8Array(fs.readFileSync(filePath));
-    } catch (err) {
-      console.error('[collab] Failed to load state for ' + projectId + ':', err);
-    }
+      const fp = path.join(path.resolve(PERSISTENCE_DIR), sanitize(projectId) + '.yjs');
+      if (fs.existsSync(fp)) return new Uint8Array(fs.readFileSync(fp));
+    } catch (e) { console.error('[collab] load fail:', e); }
   }
   return memoryStore.get(projectId) || null;
 }
 
-function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_-]/g, '_');
-}
-
-export function flushAll(): void {
-  for (const [, timer] of saveTimers.entries()) clearTimeout(timer);
-  saveTimers.clear();
-}
-
+function sanitize(n: string): string { return n.replace(/[^a-zA-Z0-9_-]/g, '_'); }
+export function flushAll(): void { for (const [, t] of saveTimers) clearTimeout(t); saveTimers.clear(); }
 export { memoryStore, loadState, saveState };

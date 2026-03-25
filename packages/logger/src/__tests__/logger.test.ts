@@ -3,12 +3,10 @@ import { createLogger } from '../logger';
 import { sanitize } from '../errorLogger';
 import { MetricsCollector } from '../metrics';
 
-// ---------- Logger output format ----------
 describe('createLogger', () => {
   it('should create a logger with the given service name', () => {
     const log = createLogger('test-service');
     expect(log).toBeDefined();
-    // pino exposes bindings()
     const bindings = log.bindings();
     expect(bindings.service).toBe('test-service');
   });
@@ -23,7 +21,6 @@ describe('createLogger', () => {
   });
 });
 
-// ---------- Child logger context ----------
 describe('child logger', () => {
   it('should propagate parent service binding to child', () => {
     const parent = createLogger('parent-svc');
@@ -35,30 +32,15 @@ describe('child logger', () => {
   });
 });
 
-// ---------- Request logging ----------
 describe('requestLogger middleware', () => {
   it('should attach requestId and child logger to req', async () => {
-    // Dynamic import to avoid Express type issues at test time
     const { requestLogger } = await import('../requestLogger');
     const log = createLogger('req-test');
-
-    const req: any = {
-      headers: {},
-      path: '/api/test',
-      method: 'GET',
-      originalUrl: '/api/test',
-      socket: { remoteAddress: '127.0.0.1' },
-    };
-    const res: any = {
-      setHeader: vi.fn(),
-      on: vi.fn(),
-      statusCode: 200,
-    };
+    const req: any = { headers: {}, path: '/api/test', method: 'GET', originalUrl: '/api/test', socket: { remoteAddress: '127.0.0.1' } };
+    const res: any = { setHeader: vi.fn(), on: vi.fn(), statusCode: 200 };
     const next = vi.fn();
-
     const middleware = requestLogger({ logger: log });
     middleware(req, res, next);
-
     expect(next).toHaveBeenCalled();
     expect(req.id).toBeDefined();
     expect(typeof req.id).toBe('string');
@@ -67,17 +49,9 @@ describe('requestLogger middleware', () => {
   });
 });
 
-// ---------- Error sanitization ----------
 describe('sanitize', () => {
   it('should redact sensitive fields', () => {
-    const input = {
-      username: 'alice',
-      password: 'super-secret',
-      data: {
-        token: 'jwt-abc',
-        safe: 'visible',
-      },
-    };
+    const input = { username: 'alice', password: 'super-secret', data: { token: 'jwt-abc', safe: 'visible' } };
     const result = sanitize(input);
     expect(result.username).toBe('alice');
     expect(result.password).toBe('[REDACTED]');
@@ -93,13 +67,9 @@ describe('sanitize', () => {
   });
 });
 
-// ---------- Metrics counters ----------
 describe('MetricsCollector', () => {
   let collector: MetricsCollector;
-
-  beforeEach(() => {
-    collector = new MetricsCollector();
-  });
+  beforeEach(() => { collector = new MetricsCollector(); });
 
   it('should increment counters correctly', () => {
     collector.counter('http_requests_total');
