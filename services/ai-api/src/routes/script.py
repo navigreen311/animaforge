@@ -24,7 +24,7 @@ class ShotBreakdownItem(BaseModel):
     shot_number: int
     description: str
     duration_ms: int
-    camera: str
+    camera: CameraInfo
 
 
 class CameraInfo(BaseModel):
@@ -69,7 +69,7 @@ class QCValidateResponse(BaseModel):
 @router.post("/script/generate", response_model=ScriptGenerateResponse, status_code=201)
 async def script_generate(body: ScriptGenerateRequest) -> ScriptGenerateResponse:
     """Generate a script with shot breakdown and scene graphs from a scene description."""
-    result = generate_script(
+    result = await generate_script(
         project_id=body.project_id,
         scene_desc=body.scene_desc,
         char_ids=body.char_ids,
