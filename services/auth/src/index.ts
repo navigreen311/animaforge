@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
+import ssoRoutes from "./routes/sso";
+import scimRoutes from "./routes/scim";
 
 dotenv.config();
 
@@ -14,6 +16,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/auth/sso", ssoRoutes);
+app.use("/scim/v2", scimRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "auth" });
