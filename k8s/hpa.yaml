@@ -1,0 +1,98 @@
+# Consolidated HPA definitions for cross-namespace visibility
+# Individual HPAs are co-located with their Deployments in each namespace.
+# This file provides a single-pane reference for all autoscaling policies.
+#
+# Platform namespace HPAs:
+#   - platform-api: 3-10 replicas, CPU 70%
+#   - realtime: 5-20 replicas, WebSocket connections
+#   - auth: 3-6 replicas, CPU 70%
+#   - billing: 2-4 replicas, CPU 70%
+#   - gateway: 3-10 replicas, CPU 60%
+#   - notification: 2-4 replicas, CPU 70%
+#
+# AI namespace HPAs:
+#   - inference-api: 3-10 replicas, queue depth
+#   - video-worker: 0-50 replicas, queue depth (spot/GPU)
+#   - audio-worker: 0-20 replicas, queue depth (GPU)
+#   - avatar-worker: 0-10 replicas, queue depth (GPU)
+#   - style-worker: 0-15 replicas, queue depth (GPU)
+#
+# Governance namespace HPAs:
+#   - moderation: 3-10 replicas, CPU 70%
+#   - c2pa-signer: 3-6 replicas, CPU 70%
+#   - watermark: 3-8 replicas, CPU 70%
+#   - consent: 2-5 replicas, CPU 70%
+#
+# Custom metrics required:
+#   - websocket_active_connections (realtime)
+#   - queue_depth (inference-api)
+#   - queue_depth_video (video-worker)
+#   - queue_depth_audio (audio-worker)
+#   - queue_depth_avatar (avatar-worker)
+#   - queue_depth_style (style-worker)
+#
+# Prometheus Adapter config for custom metrics:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-adapter-config
+  namespace: animaforge-platform
+  labels:
+    app.kubernetes.io/part-of: animaforge
+data:
+  config.yaml: |
+    rules:
+      - seriesQuery: 'websocket_active_connections{namespace="animaforge-platform"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "websocket_active_connections"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+      - seriesQuery: 'queue_depth{namespace="animaforge-ai"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "queue_depth"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+      - seriesQuery: 'queue_depth_video{namespace="animaforge-ai"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "queue_depth_video"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+      - seriesQuery: 'queue_depth_audio{namespace="animaforge-ai"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "queue_depth_audio"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+      - seriesQuery: 'queue_depth_avatar{namespace="animaforge-ai"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "queue_depth_avatar"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+      - seriesQuery: 'queue_depth_style{namespace="animaforge-ai"}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^(.*)$"
+          as: "queue_depth_style"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: animaforge-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: animaforge
+data:
+  POSTGRES_HOST: "animaforge-prod.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "animaforge"
+  POSTGRES_SSL_MODE: "require"
+  POSTGRES_MAX_CONNECTIONS: "100"
+  POSTGRES_POOL_SIZE: "20"
+  POSTGRES_IDLE_TIMEOUT_MS: "30000"
+  POSTGRES_CONNECTION_TIMEOUT_MS: "5000"
+  POSTGRES_READ_REPLICA_HOST: "animaforge-prod-read.cluster-ro-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+  POSTGRES_READ_REPLICA_PORT: "5432"

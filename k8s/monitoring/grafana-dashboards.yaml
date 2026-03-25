@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: animaforge-platform
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: animaforge
+    grafana_dashboard: "1"
+data:
+  api-latency.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "title": "API Request Latency (p50 / p95 / p99)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{namespace=~\"animaforge-.*\"}[5m])) by (le, service))",
+              "legendFormat": "p50 - {{ service }}"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=~\"animaforge-.*\"}[5m])) by (le, service))",
+              "legendFormat": "p95 - {{ service }}"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=~\"animaforge-.*\"}[5m])) by (le, service))",
+              "legendFormat": "p99 - {{ service }}"
+            }
+          ]
+        },
+        {
+          "title": "Request Rate by Service",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{namespace=~\"animaforge-.*\"}[5m])) by (service)",
+              "legendFormat": "{{ service }}"
+            }
+          ]
+        },
+        {
+          "title": "Request Rate by Status Code",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{namespace=~\"animaforge-.*\"}[5m])) by (status)",
+              "legendFormat": "HTTP {{ status }}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["animaforge", "api"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "title": "AnimaForge - API Latency",
+      "uid": "animaforge-api-latency"
+    }
+  generation-throughput.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "title": "Generation Jobs Throughput",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(rate(generation_jobs_completed_total{namespace=\"animaforge-ai\"}[5m])) by (worker_type)",
+              "legendFormat": "{{ worker_type }} completed/s"
+            }
+          ]
+        },
+        {
+          "title": "Queue Depth by Worker Type",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "queue_depth{namespace=\"animaforge-ai\"}",
+              "legendFormat": "{{ queue }}"
+            }
+          ]
+        },
+        {
+          "title": "Average Generation Duration",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, rate(generation_duration_seconds_bucket{namespace=\"animaforge-ai\"}[5m]))",
+              "legendFormat": "p50 - {{ worker_type }}"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(generation_duration_seconds_bucket{namespace=\"animaforge-ai\"}[5m]))",
+              "legendFormat": "p95 - {{ worker_type }}"
+            }
+          ]
+        },
+        {
+          "title": "Active Workers",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "expr": "count(up{namespace=\"animaforge-ai\", job=~\".*worker.*\"} == 1) by (job)",
+              "legendFormat": "{{ job }}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["animaforge", "generation"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "title": "AnimaForge - Generation Throughput",
+      "uid": "animaforge-gen-throughput"
+    }
+  gpu-utilization.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "title": "GPU Utilization by Pod",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "DCGM_FI_DEV_GPU_UTIL{namespace=\"animaforge-ai\"}",
+              "legendFormat": "{{ pod }} - GPU {{ gpu }}"
+            }
+          ]
+        },
+        {
+          "title": "GPU Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "DCGM_FI_DEV_FB_USED{namespace=\"animaforge-ai\"} / DCGM_FI_DEV_FB_FREE{namespace=\"animaforge-ai\"} * 100",
+              "legendFormat": "{{ pod }} - GPU {{ gpu }}"
+            }
+          ]
+        },
+        {
+          "title": "GPU Temperature",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "DCGM_FI_DEV_GPU_TEMP{namespace=\"animaforge-ai\"}",
+              "legendFormat": "{{ pod }} - GPU {{ gpu }}"
+            }
+          ]
+        },
+        {
+          "title": "GPU Power Usage (Watts)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "expr": "DCGM_FI_DEV_POWER_USAGE{namespace=\"animaforge-ai\"}",
+              "legendFormat": "{{ pod }} - GPU {{ gpu }}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["animaforge", "gpu"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "title": "AnimaForge - GPU Utilization",
+      "uid": "animaforge-gpu-util"
+    }
+  error-rates.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "title": "Error Rate by Service",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{status=~\"5..\", namespace=~\"animaforge-.*\"}[5m])) by (service) / sum(rate(http_requests_total{namespace=~\"animaforge-.*\"}[5m])) by (service) * 100",
+              "legendFormat": "{{ service }}"
+            }
+          ]
+        },
+        {
+          "title": "5xx Errors by Endpoint",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "topk(20, sum(increase(http_requests_total{status=~\"5..\", namespace=~\"animaforge-.*\"}[1h])) by (service, method, path))",
+              "format": "table",
+              "instant": true
+            }
+          ]
+        },
+        {
+          "title": "Generation Failure Rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "expr": "sum(rate(generation_jobs_failed_total{namespace=\"animaforge-ai\"}[5m])) by (worker_type) / sum(rate(generation_jobs_completed_total{namespace=\"animaforge-ai\"}[5m])) by (worker_type) * 100",
+              "legendFormat": "{{ worker_type }}"
+            }
+          ]
+        },
+        {
+          "title": "Moderation Rejection Rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "targets": [
+            {
+              "expr": "sum(rate(moderation_rejections_total{namespace=\"animaforge-governance\"}[5m])) by (reason)",
+              "legendFormat": "{{ reason }}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["animaforge", "errors"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "title": "AnimaForge - Error Rates",
+      "uid": "animaforge-error-rates"
+    }

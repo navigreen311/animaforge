@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: animaforge
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: animaforge
+
+resources:
+  # Namespaces
+  - namespaces.yaml
+
+  # Platform services
+  - platform/platform-api.yaml
+  - platform/realtime.yaml
+  - platform/auth.yaml
+  - platform/billing.yaml
+  - platform/gateway.yaml
+  - platform/notification.yaml
+
+  # AI services
+  - ai/inference-api.yaml
+  - ai/video-worker.yaml
+  - ai/audio-worker.yaml
+  - ai/avatar-worker.yaml
+  - ai/style-worker.yaml
+
+  # Governance services
+  - governance/moderation.yaml
+  - governance/c2pa-signer.yaml
+  - governance/watermark.yaml
+  - governance/consent.yaml
+
+  # Data configurations
+  - data/postgres-config.yaml
+  - data/redis-config.yaml
+  - data/elasticsearch-config.yaml
+
+  # Monitoring
+  - monitoring/prometheus.yaml
+  - monitoring/grafana-dashboards.yaml
+
+  # Ingress
+  - ingress.yaml
+
+  # HPA / Prometheus Adapter config
+  - hpa.yaml
