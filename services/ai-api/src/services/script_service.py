@@ -53,7 +53,6 @@ async def generate_script(
                 response.raise_for_status()
                 result = response.json()
                 content = result["content"][0]["text"]
-                # Try to parse JSON from response
                 return parse_script_response(content, scene_desc)
         except Exception as e:
             print(f"Claude API error, falling back to mock: {e}")
@@ -66,15 +65,12 @@ def parse_script_response(content: str, scene_desc: str) -> dict:
     import re
 
     try:
-        # Try direct JSON parse
         data = json.loads(content)
         return data
     except json.JSONDecodeError:
-        # Extract JSON from markdown code block
         json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
         if json_match:
             return json.loads(json_match.group(1))
-        # Return as plain text script
         return {"script": content, "shot_breakdown": [], "scene_graphs": []}
 
 

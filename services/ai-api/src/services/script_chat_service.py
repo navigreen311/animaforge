@@ -236,7 +236,7 @@ class ScriptSession:
         )
         user_prompt = f"Script to storyboard:\n{script}"
 
-        self.add_message("user", f"Generate storyboard for script")
+        self.add_message("user", "Generate storyboard for script")
         raw = await self._call_claude(system_prompt, user_prompt)
 
         if raw:

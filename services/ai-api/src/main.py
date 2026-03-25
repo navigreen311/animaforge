@@ -14,8 +14,8 @@ from src.routes.audio import router as audio_router
 from src.routes.style import router as style_router
 from src.routes.script import router as script_router
 from src.routes.avatar import router as avatar_router
+from src.routes.style_advanced import router as style_advanced_router
 from src.routes.script_chat import router as script_chat_router
-from src.routes.dubbing import router as dubbing_router
 from src.services.job_manager import connect_redis, close_redis
 
 
@@ -48,8 +48,8 @@ app.include_router(audio_router)
 app.include_router(style_router)
 app.include_router(script_router)
 app.include_router(avatar_router)
+app.include_router(style_advanced_router)
 app.include_router(script_chat_router)
-app.include_router(dubbing_router)
 
 
 @app.exception_handler(ValueError)
