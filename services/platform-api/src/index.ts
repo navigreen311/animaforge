@@ -15,6 +15,8 @@ import scenesRouter from "./routes/scenes.js";
 import shotsRouter from "./routes/shots.js";
 import charactersRouter from "./routes/characters.js";
 import assetsRouter from "./routes/assets.js";
+import uploadRouter from "./routes/upload.js";
+import { performanceMonitor, metricsRouter } from "./middleware/performanceMonitor.js";
 
 const app = express();
 
@@ -23,6 +25,7 @@ app.use(helmet());
 app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
+app.use(performanceMonitor);
 
 // Routes
 app.use("/api/v1", healthRouter);
@@ -31,6 +34,8 @@ app.use("/api/v1", scenesRouter);
 app.use("/api/v1", shotsRouter);
 app.use("/api/v1", charactersRouter);
 app.use("/api/v1", assetsRouter);
+app.use("/api/v1", uploadRouter);
+app.use("/api/v1", metricsRouter());
 
 // Global error handler (must be registered after routes)
 app.use(errorHandler);

@@ -1,15 +1,35 @@
 """AnimaForge AI API - FastAPI application entry point."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config.settings import settings
-from src.routes import style
+from src.routes.health import router as health_router
+from src.routes.jobs import router as jobs_router
+from src.routes.generate import router as generate_router
+from src.routes.audio import router as audio_router
+from src.routes.style import router as style_router
+from src.routes.script import router as script_router
+from src.routes.avatar import router as avatar_router
+from src.services.job_manager import connect_redis, close_redis
 
-app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
-# -- CORS Middleware ----------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup / shutdown lifecycle hook."""
+    connect_redis()
+    yield
+    close_redis()
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,12 +39,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -- Routers ------------------------------------------------------------------
-
-app.include_router(style.router)
-
-
-# -- Exception Handlers -------------------------------------------------------
+app.include_router(health_router)
+app.include_router(jobs_router)
+app.include_router(generate_router)
+app.include_router(audio_router)
+app.include_router(style_router)
+app.include_router(script_router)
+app.include_router(avatar_router)
 
 
 @app.exception_handler(ValueError)
@@ -38,9 +59,6 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         status_code=500,
         content={"detail": "Internal server error"},
     )
-
-
-# -- Root ---------------------------------------------------------------------
 
 
 @app.get("/")
