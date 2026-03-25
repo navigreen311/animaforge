@@ -6,7 +6,7 @@ import random
 import uuid
 from typing import Any, Dict, List
 
-from services.ai_api.src.models.style_schemas import PipelineStage
+from ..models.style_schemas import PipelineStage
 
 
 # The seven canonical stages of the toon-conversion pipeline.
@@ -28,14 +28,13 @@ def image_to_cartoon(
 ) -> Dict[str, Any]:
     """Simulate the 7-stage cartoon-conversion pipeline.
 
-    Each stage is "executed" with a mock duration; the result includes a
-    *job_id*, the predicted *output_url*, and the list of completed stages.
+    Each stage is executed with a mock duration; the result includes a
+    job_id, the predicted output_url, and the list of completed stages.
     """
     job_id = uuid.uuid4().hex[:16]
 
     stages_completed: List[PipelineStage] = []
     for stage_name in _PIPELINE_STAGES:
-        # Simulate variable processing time per stage (50-300 ms).
         duration_ms = round(random.uniform(50.0, 300.0), 1)
         stages_completed.append(
             PipelineStage(

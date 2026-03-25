@@ -1,13 +1,15 @@
+"""AnimaForge AI API - FastAPI application entry point."""
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config.settings import settings
-from src.routes import audio, health, jobs, style
+from src.routes import style
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
-# ── CORS Middleware ─────────────────────────────────────────────
+# -- CORS Middleware ----------------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,21 +19,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ─────────────────────────────────────────────────────
-
-app.include_router(health.router)
-app.include_router(jobs.router)
+# -- Routers ------------------------------------------------------------------
 
 app.include_router(style.router)
 
-app.include_router(audio.router)
 
-# Placeholder routers for future implementation:
-# app.include_router(generate.router)
-# app.include_router(script.router)
-
-
-# ── Exception Handlers ──────────────────────────────────────────
+# -- Exception Handlers -------------------------------------------------------
 
 
 @app.exception_handler(ValueError)
@@ -47,7 +40,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
-# ── Root ────────────────────────────────────────────────────────
+# -- Root ---------------------------------------------------------------------
 
 
 @app.get("/")

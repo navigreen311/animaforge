@@ -6,21 +6,21 @@ import uuid
 
 from fastapi import APIRouter
 
-from services.ai_api.src.models.style_schemas import (
+from ..models.style_schemas import (
     ImageToCartoonRequest,
     ImageToCartoonResponse,
     StyleCloneRequest,
     StyleCloneResponse,
 )
-from services.ai_api.src.services.cartoon_service import image_to_cartoon
-from services.ai_api.src.services.style_service import extract_style_fingerprint
+from ..services.cartoon_service import image_to_cartoon
+from ..services.style_service import extract_style_fingerprint
 
 router = APIRouter(prefix="/ai/v1")
 
 
 @router.post("/style/clone", response_model=StyleCloneResponse)
 async def clone_style(request: StyleCloneRequest) -> StyleCloneResponse:
-    """Extract a style fingerprint from *source_url* and return a style pack."""
+    """Extract a style fingerprint from source_url and return a style pack."""
     fingerprint = extract_style_fingerprint(
         source_url=request.source_url,
         source_type=request.source_type,

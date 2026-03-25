@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
 
-from services.ai_api.src.models.style_schemas import StyleFingerprint
+from ..models.style_schemas import StyleFingerprint
 
 
 def extract_style_fingerprint(source_url: str, source_type: str) -> StyleFingerprint:
-    """Analyse *source_url* and return a mock :class:`StyleFingerprint`.
+    """Analyse source_url and return a mock StyleFingerprint.
 
     In production this would delegate to a vision model pipeline; for now it
     returns a deterministic mock so the API contract is exercisable end-to-end.
