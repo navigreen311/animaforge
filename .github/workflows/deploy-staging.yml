@@ -1,0 +1,156 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/animaforge
+  K8S_NAMESPACE: animaforge-staging
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service:
+          - { name: platform-api, context: services/platform-api }
+          - { name: auth, context: services/auth }
+          - { name: billing, context: services/billing }
+          - { name: realtime, context: services/realtime }
+          - { name: workers, context: services/workers }
+          - { name: gateway, context: services/gateway }
+          - { name: export, context: services/export }
+          - { name: notification, context: services/notification }
+          - { name: search, context: services/search }
+          - { name: analytics, context: services/analytics }
+          - { name: ai-api, context: services/ai-api }
+          - { name: web, context: apps/web }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}
+          tags: |
+            type=sha,prefix=staging-
+            type=raw,value=staging-latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Staging K8s
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy to staging
+        run: |
+          export IMAGE_TAG="staging-${GITHUB_SHA::7}"
+          envsubst < k8s/overlays/staging/kustomization.yml > k8s/overlays/staging/kustomization-resolved.yml
+          mv k8s/overlays/staging/kustomization-resolved.yml k8s/overlays/staging/kustomization.yml
+          kubectl apply -k k8s/overlays/staging/ --namespace ${{ env.K8S_NAMESPACE }}
+
+      - name: Wait for rollout
+        run: |
+          services=(platform-api auth billing realtime workers gateway export notification search analytics ai-api web)
+          for svc in "${services[@]}"; do
+            echo "Waiting for $svc rollout..."
+            kubectl rollout status deployment/$svc \
+              --namespace ${{ env.K8S_NAMESPACE }} \
+              --timeout=300s || exit 1
+          done
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run smoke tests
+        run: |
+          chmod +x scripts/health-check.sh
+          HEALTH_CHECK_URL="${{ secrets.STAGING_BASE_URL }}" \
+            scripts/health-check.sh
+        env:
+          ENV: staging
+
+      - name: API smoke tests
+        run: |
+          BASE_URL="${{ secrets.STAGING_BASE_URL }}"
+          # Test critical endpoints
+          endpoints=("/api/health" "/api/v1/status" "/auth/health")
+          for ep in "${endpoints[@]}"; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$ep" --max-time 10)
+            if [[ "$status" -lt 200 ]] || [[ "$status" -ge 400 ]]; then
+              echo "FAIL: $ep returned $status"
+              exit 1
+            fi
+            echo "OK: $ep returned $status"
+          done
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    if: always()
+    steps:
+      - name: Notify Slack (stub)
+        run: |
+          STATUS="${{ needs.smoke-tests.result }}"
+          # TODO: Replace with actual Slack webhook
+          echo "Staging deployment status: $STATUS"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+          #   -H 'Content-Type: application/json' \
+          #   -d "{\"text\": \"AnimaForge staging deploy: $STATUS by ${{ github.actor }}\"}"
+
+      - name: Notify Discord (stub)
+        run: |
+          STATUS="${{ needs.smoke-tests.result }}"
+          # TODO: Replace with actual Discord webhook
+          echo "Discord notification: Staging deploy $STATUS"
+          # curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+          #   -H 'Content-Type: application/json' \
+          #   -d "{\"content\": \"AnimaForge staging deploy: $STATUS by ${{ github.actor }}\"}"

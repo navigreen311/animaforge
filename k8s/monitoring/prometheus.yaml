@@ -1,0 +1,109 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: platform-services
+  namespace: animaforge-platform
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: animaforge
+  namespaceSelector:
+    matchNames:
+      - animaforge-platform
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-services
+  namespace: animaforge-ai
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: animaforge
+  namespaceSelector:
+    matchNames:
+      - animaforge-ai
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: governance-services
+  namespace: animaforge-governance
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: animaforge
+  namespaceSelector:
+    matchNames:
+      - animaforge-governance
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: animaforge-alerts
+  namespace: animaforge-platform
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    monitoring: prometheus
+spec:
+  groups:
+    - name: animaforge.platform
+      rules:
+        - alert: HighAPILatency
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace="animaforge-platform"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High API latency detected"
+            description: "95th percentile latency is above 1s for {{ $labels.service }}"
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5..", namespace=~"animaforge-.*"}[5m]) / rate(http_requests_total{namespace=~"animaforge-.*"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate detected"
+            description: "Error rate is above 5% for {{ $labels.service }}"
+    - name: animaforge.ai
+      rules:
+        - alert: GPUUtilizationLow
+          expr: avg(DCGM_FI_DEV_GPU_UTIL{namespace="animaforge-ai"}) < 20
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low GPU utilization"
+            description: "Average GPU utilization is below 20% - consider scaling down"
+        - alert: QueueBacklog
+          expr: queue_depth{namespace="animaforge-ai"} > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Job queue backlog growing"
+            description: "Queue depth exceeds 100 for {{ $labels.queue }}"

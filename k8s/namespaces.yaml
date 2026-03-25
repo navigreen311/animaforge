@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: animaforge-platform
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    tier: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: animaforge-ai
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    tier: ai
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: animaforge-governance
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    tier: governance
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: animaforge-data
+  labels:
+    app.kubernetes.io/part-of: animaforge
+    tier: data

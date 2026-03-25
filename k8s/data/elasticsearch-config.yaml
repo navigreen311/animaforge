@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+  namespace: animaforge-data
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/part-of: animaforge
+data:
+  ELASTICSEARCH_URL: "https://animaforge-prod.es.us-east-1.aws.elastic.cloud:9243"
+  ELASTICSEARCH_INDEX_PREFIX: "animaforge"
+  ELASTICSEARCH_SHARDS: "3"
+  ELASTICSEARCH_REPLICAS: "2"
+  ELASTICSEARCH_REFRESH_INTERVAL: "5s"
+  ELASTICSEARCH_MAX_RESULT_WINDOW: "10000"
+  ELASTICSEARCH_BULK_SIZE: "500"
+  ELASTICSEARCH_BULK_FLUSH_INTERVAL_MS: "5000"
+  ELASTICSEARCH_REQUEST_TIMEOUT_MS: "30000"

@@ -1,0 +1,269 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., v1.2.3)"
+        required: false
+        type: string
+      skip_approval:
+        description: "Skip manual approval (emergency only)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/animaforge
+  K8S_NAMESPACE: animaforge-production
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ inputs.version }}" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Auto-generate version from date + short SHA
+            VERSION="v$(date +%Y.%m.%d)-${GITHUB_SHA::7}"
+          fi
+          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "image_tag=prod-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service:
+          - { name: platform-api, context: services/platform-api }
+          - { name: auth, context: services/auth }
+          - { name: billing, context: services/billing }
+          - { name: realtime, context: services/realtime }
+          - { name: workers, context: services/workers }
+          - { name: gateway, context: services/gateway }
+          - { name: export, context: services/export }
+          - { name: notification, context: services/notification }
+          - { name: search, context: services/search }
+          - { name: analytics, context: services/analytics }
+          - { name: ai-api, context: services/ai-api }
+          - { name: web, context: apps/web }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.image_tag }}
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=production-latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_VERSION=${{ needs.prepare.outputs.version }}
+            BUILD_SHA=${{ github.sha }}
+
+  deploy-blue-green:
+    name: Blue-Green Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Determine active slot
+        id: slot
+        run: |
+          ACTIVE=$(kubectl get svc animaforge-router \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            -o jsonpath='{.spec.selector.slot}' 2>/dev/null || echo "blue")
+          if [[ "$ACTIVE" == "blue" ]]; then
+            TARGET="green"
+          else
+            TARGET="blue"
+          fi
+          echo "active=$ACTIVE" >> "$GITHUB_OUTPUT"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "Active slot: $ACTIVE, deploying to: $TARGET"
+
+      - name: Deploy to target slot
+        run: |
+          IMAGE_TAG="${{ needs.prepare.outputs.image_tag }}"
+          TARGET="${{ steps.slot.outputs.target }}"
+
+          # Apply deployment to the inactive slot
+          export IMAGE_TAG TARGET
+          envsubst < k8s/overlays/production/kustomization.yml > k8s/overlays/production/kustomization-resolved.yml
+          mv k8s/overlays/production/kustomization-resolved.yml k8s/overlays/production/kustomization.yml
+
+          kubectl apply -k k8s/overlays/production/ \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            -l slot=$TARGET
+
+      - name: Wait for target slot rollout
+        run: |
+          TARGET="${{ steps.slot.outputs.target }}"
+          services=(platform-api auth billing realtime workers gateway export notification search analytics ai-api web)
+          for svc in "${services[@]}"; do
+            echo "Waiting for $svc-$TARGET rollout..."
+            kubectl rollout status deployment/$svc-$TARGET \
+              --namespace ${{ env.K8S_NAMESPACE }} \
+              --timeout=300s || exit 1
+          done
+
+      - name: Health check target slot
+        id: health
+        run: |
+          chmod +x scripts/health-check.sh
+          TARGET="${{ steps.slot.outputs.target }}"
+          HEALTH_CHECK_URL="${{ secrets.PRODUCTION_INTERNAL_URL }}-$TARGET" \
+            scripts/health-check.sh
+
+      - name: Switch traffic to target slot
+        if: success()
+        run: |
+          TARGET="${{ steps.slot.outputs.target }}"
+          kubectl patch svc animaforge-router \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            -p "{\"spec\":{\"selector\":{\"slot\":\"$TARGET\"}}}"
+          echo "Traffic switched to $TARGET slot"
+
+      - name: Verify production health
+        run: |
+          sleep 10
+          chmod +x scripts/health-check.sh
+          HEALTH_CHECK_URL="${{ secrets.PRODUCTION_BASE_URL }}" \
+            scripts/health-check.sh
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-blue-green]
+    if: failure()
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Rollback to previous slot
+        run: |
+          chmod +x scripts/rollback.sh
+          scripts/rollback.sh production
+
+      - name: Notify rollback
+        run: |
+          echo "PRODUCTION ROLLBACK executed for version ${{ needs.prepare.outputs.version }}"
+          echo "Commit: ${{ github.sha }}"
+          # TODO: Send urgent alert via PagerDuty / Slack
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text": ":rotating_light: PRODUCTION ROLLBACK: ${{ needs.prepare.outputs.version }}"}'
+
+  tag-release:
+    name: Tag GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-blue-green]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [[ -n "$PREV_TAG" ]]; then
+            CHANGELOG=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+          # Write to file to handle multiline
+          echo "$CHANGELOG" > /tmp/changelog.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.version }}
+          name: "AnimaForge ${{ needs.prepare.outputs.version }}"
+          body_path: /tmp/changelog.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-blue-green, tag-release]
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          DEPLOY_STATUS="${{ needs.deploy-blue-green.result }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          echo "Production deployment: $DEPLOY_STATUS"
+          echo "Version: $VERSION"
+          echo "Commit: ${{ github.sha }}"
+          # TODO: Replace with actual notification integrations
+          # Slack / Discord / PagerDuty stubs

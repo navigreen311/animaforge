@@ -6,31 +6,99 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
 jobs:
   lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+
       - run: npm ci
-      - run: npm run lint
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier check
+        run: npx prettier --check "apps/**/*.{ts,tsx}" "services/**/*.ts"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Python lint
+        run: |
+          pip install ruff
+          ruff check services/ai-api/
+
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Type check apps/web
+        run: cd apps/web && npx tsc --noEmit
+
+      - name: Type check services
+        run: |
+          for svc in platform-api auth billing realtime workers gateway export notification search analytics; do
+            if [ -f "services/$svc/tsconfig.json" ]; then
+              echo "Type checking services/$svc..."
+              cd services/$svc && npx tsc --noEmit && cd ../..
+            fi
+          done
 
   test-frontend:
+    name: Frontend Tests (Vitest)
     runs-on: ubuntu-latest
+    needs: [lint, type-check]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+
       - run: npm ci
-      - run: cd apps/web && npm test
+
+      - name: Run Vitest
+        run: cd apps/web && npx vitest run --coverage --reporter=json --outputFile=coverage-report.json
+        env:
+          CI: true
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: apps/web/coverage-report.json
+          retention-days: 14
 
   test-api:
+    name: API Tests (Supertest + Postgres)
     runs-on: ubuntu-latest
+    needs: [lint, type-check]
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -56,21 +124,173 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+
       - run: npm ci
-      - run: cd services/platform-api && npm test
+
+      - name: Run API tests with coverage
+        run: cd services/platform-api && npx vitest run --coverage --reporter=json --outputFile=coverage-report.json
         env:
           DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_test
           REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+      - name: Upload API coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-coverage
+          path: services/platform-api/coverage-report.json
+          retention-days: 14
 
   test-ai-api:
+    name: AI API Tests (pytest)
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: services/ai-api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          cd services/ai-api
+          pip install -r requirements.txt
+          pip install pytest-cov pytest-asyncio
+
+      - name: Run pytest with coverage
+        run: |
+          cd services/ai-api
+          pytest --cov=src --cov-report=json:coverage-report.json --cov-report=term-missing -v
+
+      - name: Upload AI API coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-api-coverage
+          path: services/ai-api/coverage-report.json
+          retention-days: 14
+
+  test-e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-api]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: animaforge_test
+          POSTGRES_USER: animaforge
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test --reporter=html
+        env:
+          DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  security-scan:
+    name: Security Scan (Semgrep)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
         with:
-          python-version: '3.11'
-      - run: cd services/ai-api && pip install -r requirements.txt && pytest
+          config: >-
+            p/javascript
+            p/typescript
+            p/python
+            p/docker
+            p/secrets
+            p/owasp-top-ten
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  ci-passed:
+    name: CI Passed
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - lint
+      - type-check
+      - test-frontend
+      - test-api
+      - test-ai-api
+      - test-e2e
+      - security-scan
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-api.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-ai-api.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-e2e.result }}" == "failure" ]] || \
+             [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed."
