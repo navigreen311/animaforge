@@ -1,11 +1,17 @@
 import { randomUUID } from 'crypto';
-import { PrismaClient } from '@prisma/client';
 
 /**
  * Generate a UUID v4 identifier.
  */
 export function generateId(): string {
   return randomUUID();
+}
+
+/**
+ * Returns a where filter that excludes soft-deleted records.
+ */
+export function excludeDeleted(): { deletedAt: null } {
+  return { deletedAt: null };
 }
 
 /**
@@ -25,39 +31,43 @@ export async function softDelete<
 }
 
 /**
- * Pagination helper — wraps a Prisma `findMany`-style query with skip/take.
+ * Paginated query helper — wraps a Prisma `findMany`-style query with skip/take.
  *
- * @param model  - A Prisma delegate that supports `findMany` and `count`
- * @param page   - 1-based page number
- * @param limit  - Number of records per page
- * @param args   - Additional findMany arguments (where, orderBy, include, etc.)
- * @returns An object with `data`, `page`, `limit`, `totalCount`, and `totalPages`
+ * @param model   - A Prisma delegate that supports `findMany` and `count`
+ * @param where   - Prisma where filter
+ * @param page    - 1-based page number
+ * @param limit   - Number of records per page
+ * @param orderBy - Prisma orderBy clause
+ * @returns An object with `data` and `meta` containing pagination info
  */
-export async function paginate<
+export async function paginatedQuery<
   T extends {
     findMany: (args: Record<string, unknown>) => Promise<unknown[]>;
     count: (args?: Record<string, unknown>) => Promise<number>;
   },
 >(
   model: T,
+  where: Record<string, unknown> = {},
   page: number = 1,
   limit: number = 20,
-  args: Record<string, unknown> = {},
+  orderBy: Record<string, unknown> = { createdAt: 'desc' },
 ) {
   const safePage = Math.max(1, page);
   const safeLimit = Math.max(1, Math.min(limit, 100));
   const skip = (safePage - 1) * safeLimit;
 
-  const [data, totalCount] = await Promise.all([
-    model.findMany({ ...args, skip, take: safeLimit }),
-    model.count(args.where ? { where: args.where } : undefined),
+  const [data, total] = await Promise.all([
+    model.findMany({ where, skip, take: safeLimit, orderBy }),
+    model.count({ where }),
   ]);
 
   return {
     data,
-    page: safePage,
-    limit: safeLimit,
-    totalCount,
-    totalPages: Math.ceil(totalCount / safeLimit),
+    meta: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+    },
   };
 }
