@@ -97,7 +97,7 @@ interface InternalSCIMUser {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory store (orgId -> userId -> InternalSCIMUser)
+// In-memory store  (orgId -> userId -> InternalSCIMUser)
 // ---------------------------------------------------------------------------
 
 const scimStore = new Map<string, Map<string, InternalSCIMUser>>();
@@ -143,13 +143,14 @@ function toSCIMUser(user: InternalSCIMUser, baseUrl?: string): SCIMUser {
       resourceType: "User",
       created: user.createdAt.toISOString(),
       lastModified: user.updatedAt.toISOString(),
-      location: baseUrl ? baseUrl + "/scim/v2/Users/" + user.id : undefined,
+      location: baseUrl ? `${baseUrl}/scim/v2/Users/${user.id}` : undefined,
     },
     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
       organization: user.orgId,
       department: user.department,
     },
   };
+
   return scimUser;
 }
 
@@ -159,6 +160,7 @@ function applyFilter(
 ): InternalSCIMUser[] {
   if (!filter) return users;
 
+  // Basic SCIM filter support: userName eq "value" or emails.value eq "value"
   const eqMatch = filter.match(
     /^(\w+(?:\.\w+)?)\s+eq\s+"([^"]+)"$/i,
   );
@@ -207,6 +209,7 @@ export function listUsers(
   allUsers = applyFilter(allUsers, filter);
 
   const totalResults = allUsers.length;
+  // SCIM uses 1-based indexing
   const start = Math.max(0, startIndex - 1);
   const page = allUsers.slice(start, start + count);
 
@@ -240,9 +243,10 @@ export function createUser(
     scimPayload.emails?.[0]?.value || scimPayload.userName || "";
   const userName = scimPayload.userName || email;
 
+  // Check for duplicate userName within org
   for (const existing of store.values()) {
     if (existing.userName === userName && existing.active) {
-      throw new Error('User with userName "' + userName + '" already exists');
+      throw new Error(`User with userName "${userName}" already exists`);
     }
   }
 
@@ -279,6 +283,7 @@ export function updateUser(
   const existing = store.get(userId);
   if (!existing) return null;
 
+  // Apply full replacement (PUT semantics)
   if (scimPayload.userName) existing.userName = scimPayload.userName;
   if (scimPayload.displayName) existing.displayName = scimPayload.displayName;
   if (scimPayload.name) {
@@ -317,7 +322,7 @@ export function patchUser(
   for (const op of patchOp.Operations) {
     switch (op.op) {
       case "replace":
-        if (op.path === "active") {
+        if (op.path === "active" || op.path === "active") {
           existing.active = Boolean(op.value);
         } else if (op.path === "displayName") {
           existing.displayName = String(op.value);
@@ -328,6 +333,7 @@ export function patchUser(
         } else if (op.path === "name.familyName") {
           existing.familyName = String(op.value);
         } else if (!op.path && typeof op.value === "object") {
+          // Bulk replace without path
           if (op.value.active !== undefined)
             existing.active = Boolean(op.value.active);
           if (op.value.displayName)
@@ -340,6 +346,7 @@ export function patchUser(
         }
         break;
       case "remove":
+        // SCIM remove operations — typically used for multi-valued attrs
         break;
     }
   }
@@ -355,6 +362,7 @@ export function deleteUser(orgId: string, userId: string): boolean {
   const existing = store.get(userId);
   if (!existing) return false;
 
+  // SCIM DELETE = soft-deactivate
   existing.active = false;
   existing.updatedAt = new Date();
   store.set(userId, existing);

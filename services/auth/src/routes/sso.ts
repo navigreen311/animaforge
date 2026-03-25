@@ -15,7 +15,7 @@ import {
 const router = Router();
 
 // ---------------------------------------------------------------------------
-// POST /auth/sso/saml/configure
+// POST /auth/sso/saml/configure — Configure SAML for an org (admin only)
 // ---------------------------------------------------------------------------
 router.post(
   "/saml/configure",
@@ -45,7 +45,7 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// GET /auth/sso/saml/:orgId/metadata
+// GET /auth/sso/saml/:orgId/metadata — Return SP metadata XML
 // ---------------------------------------------------------------------------
 router.get("/saml/:orgId/metadata", (req: Request, res: Response) => {
   const { orgId } = req.params;
@@ -56,28 +56,28 @@ router.get("/saml/:orgId/metadata", (req: Request, res: Response) => {
     return;
   }
 
-  const baseUrl = req.protocol + "://" + req.get("host");
-  const metadata = '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"' +
-    ' entityID="' + baseUrl + '/auth/sso/saml/' + orgId + '/metadata">' +
-    '<md:SPSSODescriptor' +
-    ' AuthnRequestsSigned="false"' +
-    ' WantAssertionsSigned="true"' +
-    ' protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">' +
-    '<md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>' +
-    '<md:AssertionConsumerService' +
-    ' Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"' +
-    ' Location="' + baseUrl + '/auth/sso/saml/' + orgId + '/acs"' +
-    ' index="1" />' +
-    '</md:SPSSODescriptor>' +
-    '</md:EntityDescriptor>';
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const metadata = `<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+  entityID="${baseUrl}/auth/sso/saml/${orgId}/metadata">
+  <md:SPSSODescriptor
+    AuthnRequestsSigned="false"
+    WantAssertionsSigned="true"
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:AssertionConsumerService
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+      Location="${baseUrl}/auth/sso/saml/${orgId}/acs"
+      index="1" />
+  </md:SPSSODescriptor>
+</md:EntityDescriptor>`;
 
   res.set("Content-Type", "application/xml");
   res.send(metadata);
 });
 
 // ---------------------------------------------------------------------------
-// POST /auth/sso/saml/:orgId/acs
+// POST /auth/sso/saml/:orgId/acs — SAML Assertion Consumer Service (callback)
 // ---------------------------------------------------------------------------
 router.post("/saml/:orgId/acs", async (req: Request, res: Response) => {
   try {
@@ -129,7 +129,7 @@ router.post("/saml/:orgId/acs", async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /auth/sso/oidc/configure
+// POST /auth/sso/oidc/configure — Configure OIDC for an org
 // ---------------------------------------------------------------------------
 router.post(
   "/oidc/configure",
@@ -166,7 +166,7 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// GET /auth/sso/oidc/:orgId/authorize
+// GET /auth/sso/oidc/:orgId/authorize — Initiate OIDC flow (redirect to IdP)
 // ---------------------------------------------------------------------------
 router.get("/oidc/:orgId/authorize", (req: Request, res: Response) => {
   const { orgId } = req.params;
@@ -178,7 +178,7 @@ router.get("/oidc/:orgId/authorize", (req: Request, res: Response) => {
   }
 
   const state = Buffer.from(JSON.stringify({ orgId })).toString("base64");
-  const authUrl = new URL(config.issuer + "/authorize");
+  const authUrl = new URL(`${config.issuer}/authorize`);
   authUrl.searchParams.set("client_id", config.clientId);
   authUrl.searchParams.set("redirect_uri", config.redirectUri);
   authUrl.searchParams.set("response_type", "code");
@@ -189,7 +189,7 @@ router.get("/oidc/:orgId/authorize", (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// GET /auth/sso/oidc/:orgId/callback
+// GET /auth/sso/oidc/:orgId/callback — OIDC callback, exchange code, create session
 // ---------------------------------------------------------------------------
 router.get("/oidc/:orgId/callback", async (req: Request, res: Response) => {
   try {

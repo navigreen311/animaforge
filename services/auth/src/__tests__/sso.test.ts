@@ -29,13 +29,15 @@ describe("SSO & SCIM", () => {
     clearSCIMStore();
   });
 
+  // -------------------------------------------------------------------------
   // 1. SAML Configuration
+  // -------------------------------------------------------------------------
   it("should configure SAML for an org (admin only)", async () => {
     const token = await getAdminToken();
 
     const res = await request(app)
       .post("/auth/sso/saml/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-1",
         entityId: "https://idp.example.com/saml",
@@ -48,13 +50,16 @@ describe("SSO & SCIM", () => {
     expect(res.body.config.entityId).toBe("https://idp.example.com/saml");
   });
 
+  // -------------------------------------------------------------------------
   // 2. SAML Callback (ACS)
+  // -------------------------------------------------------------------------
   it("should handle SAML callback and create SSO user", async () => {
     const token = await getAdminToken();
 
+    // First configure SAML
     await request(app)
       .post("/auth/sso/saml/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-1",
         entityId: "https://idp.example.com/saml",
@@ -62,6 +67,7 @@ describe("SSO & SCIM", () => {
         certificate: "MIIC...fake-cert",
       });
 
+    // Now hit ACS with mock SAML response
     const samlPayload = encodeMockPayload({
       email: "alice@corp.com",
       name: "Alice Smith",
@@ -81,13 +87,15 @@ describe("SSO & SCIM", () => {
     expect(res.body.user.ssoProvider).toBe("saml");
   });
 
+  // -------------------------------------------------------------------------
   // 3. OIDC Configuration
+  // -------------------------------------------------------------------------
   it("should configure OIDC for an org (admin only)", async () => {
     const token = await getAdminToken();
 
     const res = await request(app)
       .post("/auth/sso/oidc/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-2",
         clientId: "animaforge-client",
@@ -101,13 +109,16 @@ describe("SSO & SCIM", () => {
     expect(res.body.config.clientId).toBe("animaforge-client");
   });
 
+  // -------------------------------------------------------------------------
   // 4. OIDC Callback
+  // -------------------------------------------------------------------------
   it("should handle OIDC callback and create SSO user", async () => {
     const token = await getAdminToken();
 
+    // Configure OIDC first
     await request(app)
       .post("/auth/sso/oidc/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-2",
         clientId: "animaforge-client",
@@ -116,6 +127,7 @@ describe("SSO & SCIM", () => {
         redirectUri: "https://animaforge.io/auth/sso/oidc/org-2/callback",
       });
 
+    // Mock OIDC code with user info
     const oidcCode = encodeMockPayload({
       email: "bob@corp.com",
       name: "Bob Jones",
@@ -124,7 +136,7 @@ describe("SSO & SCIM", () => {
     });
 
     const res = await request(app)
-      .get("/auth/sso/oidc/org-2/callback?code=" + oidcCode);
+      .get(`/auth/sso/oidc/org-2/callback?code=${oidcCode}`);
 
     expect(res.status).toBe(201);
     expect(res.body.token).toBeDefined();
@@ -133,13 +145,15 @@ describe("SSO & SCIM", () => {
     expect(res.body.user.ssoProvider).toBe("oidc");
   });
 
-  // 5. SSO User Creation (find-or-create)
+  // -------------------------------------------------------------------------
+  // 5. SSO User Creation (find-or-create, returning existing)
+  // -------------------------------------------------------------------------
   it("should return existing SSO user on subsequent logins", async () => {
     const token = await getAdminToken();
 
     await request(app)
       .post("/auth/sso/saml/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-1",
         entityId: "https://idp.example.com/saml",
@@ -153,12 +167,14 @@ describe("SSO & SCIM", () => {
       groups: ["users"],
     });
 
+    // First login — creates user
     const first = await request(app)
       .post("/auth/sso/saml/org-1/acs")
       .send({ SAMLResponse: samlPayload });
 
     expect(first.status).toBe(201);
 
+    // Second login — finds existing user
     const second = await request(app)
       .post("/auth/sso/saml/org-1/acs")
       .send({ SAMLResponse: samlPayload });
@@ -167,13 +183,15 @@ describe("SSO & SCIM", () => {
     expect(second.body.user.id).toBe(first.body.user.id);
   });
 
+  // -------------------------------------------------------------------------
   // 6. Group-to-Role Mapping
+  // -------------------------------------------------------------------------
   it("should map IdP groups to AnimaForge roles correctly", async () => {
     const token = await getAdminToken();
 
     await request(app)
       .post("/auth/sso/saml/configure")
-      .set("Authorization", "Bearer " + token)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         orgId: "org-1",
         entityId: "https://idp.example.com/saml",
@@ -181,6 +199,7 @@ describe("SSO & SCIM", () => {
         certificate: "MIIC...fake-cert",
       });
 
+    // User with moderator group
     const modPayload = encodeMockPayload({
       email: "mod@corp.com",
       name: "Mod User",
@@ -193,6 +212,7 @@ describe("SSO & SCIM", () => {
 
     expect(res.body.user.role).toBe("moderator");
 
+    // User with no recognized groups defaults to 'user'
     const defaultPayload = encodeMockPayload({
       email: "regular@corp.com",
       name: "Regular",
@@ -206,8 +226,11 @@ describe("SSO & SCIM", () => {
     expect(res2.body.user.role).toBe("user");
   });
 
+  // -------------------------------------------------------------------------
   // 7. SCIM List Users
+  // -------------------------------------------------------------------------
   it("should list users via SCIM endpoint", async () => {
+    // Create some users via SCIM first
     await request(app)
       .post("/scim/v2/Users")
       .set("Authorization", "Bearer scim-token-123")
@@ -241,7 +264,9 @@ describe("SSO & SCIM", () => {
     );
   });
 
+  // -------------------------------------------------------------------------
   // 8. SCIM Create User
+  // -------------------------------------------------------------------------
   it("should create a user via SCIM", async () => {
     const res = await request(app)
       .post("/scim/v2/Users")
@@ -264,8 +289,11 @@ describe("SSO & SCIM", () => {
     expect(res.body.meta.resourceType).toBe("User");
   });
 
+  // -------------------------------------------------------------------------
   // 9. SCIM Update User (PUT)
+  // -------------------------------------------------------------------------
   it("should update a user via SCIM PUT", async () => {
+    // Create user first
     const createRes = await request(app)
       .post("/scim/v2/Users")
       .set("Authorization", "Bearer scim-token-123")
@@ -278,8 +306,9 @@ describe("SSO & SCIM", () => {
 
     const userId = createRes.body.id;
 
+    // Update via PUT
     const res = await request(app)
-      .put("/scim/v2/Users/" + userId)
+      .put(`/scim/v2/Users/${userId}`)
       .set("Authorization", "Bearer scim-token-123")
       .set("x-scim-org-id", "org-1")
       .send({
@@ -295,8 +324,11 @@ describe("SSO & SCIM", () => {
     expect(res.body.name.givenName).toBe("Updated");
   });
 
+  // -------------------------------------------------------------------------
   // 10. SCIM Delete (Deactivate) User
+  // -------------------------------------------------------------------------
   it("should deactivate a user via SCIM DELETE", async () => {
+    // Create user first
     const createRes = await request(app)
       .post("/scim/v2/Users")
       .set("Authorization", "Bearer scim-token-123")
@@ -309,13 +341,15 @@ describe("SSO & SCIM", () => {
 
     const userId = createRes.body.id;
 
+    // Delete (deactivate)
     const deleteRes = await request(app)
-      .delete("/scim/v2/Users/" + userId)
+      .delete(`/scim/v2/Users/${userId}`)
       .set("Authorization", "Bearer scim-token-123")
       .set("x-scim-org-id", "org-1");
 
     expect(deleteRes.status).toBe(204);
 
+    // Verify user is no longer in active list
     const listRes = await request(app)
       .get("/scim/v2/Users")
       .set("Authorization", "Bearer scim-token-123")

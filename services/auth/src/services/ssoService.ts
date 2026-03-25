@@ -50,8 +50,8 @@ export interface SSOUser extends User {
 
 const samlConfigs = new Map<string, SAMLConfig>();
 const oidcConfigs = new Map<string, OIDCConfig>();
-const ssoUsers = new Map<string, SSOUser>();
-const ssoUsersById = new Map<string, SSOUser>();
+const ssoUsers = new Map<string, SSOUser>(); // email -> SSOUser
+const ssoUsersById = new Map<string, SSOUser>(); // id -> SSOUser
 
 // ---------------------------------------------------------------------------
 // Role mapping: IdP group name -> AnimaForge role
@@ -113,7 +113,12 @@ export function getSAMLConfig(orgId: string): SAMLConfig | undefined {
 // ---------------------------------------------------------------------------
 
 export function handleSAMLResponse(samlResponse: string): SAMLAssertion {
+  // In production, this would use a library like passport-saml or saml2-js
+  // to parse and validate the XML assertion against the stored certificate.
+  // Here we mock the parsing for development/testing purposes.
+
   try {
+    // Attempt to parse as base64-encoded JSON mock payload
     const decoded = Buffer.from(samlResponse, "base64").toString("utf-8");
     const parsed = JSON.parse(decoded);
 
@@ -168,8 +173,14 @@ export async function handleOIDCCallback(
 ): Promise<OIDCUserInfo> {
   const config = oidcConfigs.get(orgId);
   if (!config) {
-    throw new Error("No OIDC configuration found for org " + orgId);
+    throw new Error(`No OIDC configuration found for org ${orgId}`);
   }
+
+  // In production, this would:
+  // 1. Exchange the authorization code for tokens at config.issuer/token
+  // 2. Validate the id_token JWT
+  // 3. Optionally call the userinfo endpoint
+  // Here we mock by decoding the code as a base64 JSON payload.
 
   try {
     const decoded = Buffer.from(code, "base64").toString("utf-8");
@@ -202,6 +213,7 @@ export function findOrCreateSSOUser(
 ): { user: SSOUser; created: boolean } {
   const existing = ssoUsers.get(email);
   if (existing) {
+    // Update attributes on login
     existing.displayName = attributes.name || existing.displayName;
     existing.orgId = orgId;
     if (attributes.groups && attributes.groups.length > 0) {
@@ -212,12 +224,12 @@ export function findOrCreateSSOUser(
 
   const role = attributes.groups
     ? mapGroupsToRoles(attributes.groups)
-    : ("user" as UserRole);
+    : "user" as UserRole;
 
   const user: SSOUser = {
     id: uuidv4(),
     email,
-    passwordHash: "",
+    passwordHash: "", // SSO users don't have passwords
     displayName: attributes.name || email,
     role,
     tier: "enterprise" as UserTier,
@@ -238,6 +250,7 @@ export function findOrCreateSSOUser(
 // ---------------------------------------------------------------------------
 
 export function mapGroupsToRoles(groups: string[]): UserRole {
+  // Highest-privilege match wins: admin > moderator > user
   const normalizedGroups = groups.map((g) => g.toLowerCase().trim());
 
   for (const group of normalizedGroups) {

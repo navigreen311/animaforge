@@ -16,6 +16,8 @@ const router = Router();
 // ---------------------------------------------------------------------------
 // SCIM Bearer Token Auth Middleware
 // ---------------------------------------------------------------------------
+// In production, SCIM endpoints are authenticated via a provisioning token
+// issued per-org. For now, we extract orgId from a header or query param.
 
 function extractOrgId(req: Request): string | null {
   return (
@@ -61,7 +63,7 @@ function scimResponse(res: Response): Response {
 }
 
 // ---------------------------------------------------------------------------
-// GET /scim/v2/Users
+// GET /scim/v2/Users — List users (with optional filter, pagination)
 // ---------------------------------------------------------------------------
 router.get("/Users", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
@@ -70,20 +72,20 @@ router.get("/Users", (req: Request, res: Response) => {
   const filter = req.query.filter as string | undefined;
   const startIndex = parseInt(req.query.startIndex as string, 10) || 1;
   const count = parseInt(req.query.count as string, 10) || 100;
-  const baseUrl = req.protocol + "://" + req.get("host");
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
 
   const result = listUsers(orgId, filter, startIndex, count, baseUrl);
   scimResponse(res).status(200).json(result);
 });
 
 // ---------------------------------------------------------------------------
-// GET /scim/v2/Users/:id
+// GET /scim/v2/Users/:id — Get a specific user
 // ---------------------------------------------------------------------------
 router.get("/Users/:id", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
   if (!orgId) return;
 
-  const baseUrl = req.protocol + "://" + req.get("host");
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
   const user = getUser(orgId, req.params.id, baseUrl);
 
   if (!user) {
@@ -95,7 +97,7 @@ router.get("/Users/:id", (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /scim/v2/Users
+// POST /scim/v2/Users — Create a new user
 // ---------------------------------------------------------------------------
 router.post("/Users", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
@@ -123,7 +125,7 @@ router.post("/Users", (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// PUT /scim/v2/Users/:id
+// PUT /scim/v2/Users/:id — Replace a user (full update)
 // ---------------------------------------------------------------------------
 router.put("/Users/:id", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
@@ -140,7 +142,7 @@ router.put("/Users/:id", (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// PATCH /scim/v2/Users/:id
+// PATCH /scim/v2/Users/:id — Partial update (SCIM PatchOp)
 // ---------------------------------------------------------------------------
 router.patch("/Users/:id", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
@@ -153,7 +155,7 @@ router.patch("/Users/:id", (req: Request, res: Response) => {
   ) {
     scimResponse(res)
       .status(400)
-      .json(buildSCIMError(400, "Invalid SCIM PATCH request - missing PatchOp schema"));
+      .json(buildSCIMError(400, "Invalid SCIM PATCH request — missing PatchOp schema"));
     return;
   }
 
@@ -168,7 +170,7 @@ router.patch("/Users/:id", (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// DELETE /scim/v2/Users/:id
+// DELETE /scim/v2/Users/:id — Deactivate user
 // ---------------------------------------------------------------------------
 router.delete("/Users/:id", (req: Request, res: Response) => {
   const orgId = scimAuth(req, res);
