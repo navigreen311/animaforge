@@ -15,19 +15,15 @@ async function main(): Promise<void> {
   const qcWorker = createQcWorker();
   const cleanupWorker = createCleanupWorker();
 
-  const qcWorker = createQcWorker();
-  const cleanupWorker = createCleanupWorker();
   const workers = [generationWorker, governanceWorker, exportWorker, qcWorker, cleanupWorker];
+
   const cleanupInterval = await startCleanupScheduler();
 
   console.log("[animaforge-workers] All workers running.");
-  console.log(
-    "[animaforge-workers] Queues: " + allQueues.map((q) => q.name).join(", "),
-  );
+  console.log("[animaforge-workers] Queues: " + allQueues.map((q) => q.name).join(", "));
 
   const shutdown = async (signal: string): Promise<void> => {
-    console.log(`\n[animaforge-workers] Received ${signal}, shutting down...`);
-
+    console.log("\n[animaforge-workers] Received " + signal + ", shutting down...");
     clearInterval(cleanupInterval);
     await Promise.all(workers.map((w) => w.close()));
     await Promise.all(allQueues.map((q) => q.close()));
