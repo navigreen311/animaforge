@@ -125,15 +125,39 @@ export interface SceneGraphEdge {
 /*  Characters                                                         */
 /* ------------------------------------------------------------------ */
 
+export type StyleMode = 'realistic' | 'anime' | 'cartoon' | 'cel' | 'pixel';
+
+export type ExportFormat = 'glTF' | 'ARKit' | 'USD' | 'FBX';
+
+export interface BodyParams {
+  height?: string;
+  build?: string;
+}
+
+export interface HairParams {
+  style?: string;
+  color?: string;
+}
+
 export interface Character {
   id: string;
   projectId: string;
   name: string;
   description: string;
+  styleMode: StyleMode;
+  isDigitalTwin: boolean;
   referenceImages: string[];
   voiceProfileId?: string;
+  bodyParams?: BodyParams;
+  hairParams?: HairParams;
+  wardrobeDescription?: string;
+  twinPhotos?: string[];
+  twinReconstructionStatus?: 'idle' | 'processing' | 'complete' | 'failed';
+  avatarUrl?: string;
   traits: string[];
   embeddings?: number[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 /* ------------------------------------------------------------------ */
