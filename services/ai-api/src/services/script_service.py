@@ -14,30 +14,22 @@ async def generate_script(
 
     system_prompt = (
         "You are AnimaForge's AI Script Writer. Generate production-ready"
-        " animation scripts.
-
-"
-        "Output a JSON object with:
-"
+        " animation scripts.\n\n"
+        "Output a JSON object with:\n"
         "- script: Full script text with character names, dialogue, and action"
-        " descriptions
-"
+        " descriptions\n"
         "- shot_breakdown: Array of shots, each with: shot_number, description,"
-        " duration_ms, camera (angle, movement)
-"
+        " duration_ms, camera (angle, movement)\n"
         "- scene_graphs: Array matching shots, each with: subject,"
         " camera{angle,movement}, action, emotion, timing{duration_ms,pacing},"
-        " dialogue
-
-"
+        " dialogue\n\n"
         "Keep shots between 3-10 seconds. Use cinematic camera language."
         " Make dialogue natural."
     )
 
     user_prompt = f"Scene description: {scene_desc}"
     if char_ids:
-        user_prompt += f"
-Characters involved: {', '.join(char_ids)}"
+        user_prompt += f"\nCharacters involved: {', '.join(char_ids)}"
 
     # Try Claude API, fall back to mock
     if ANTHROPIC_API_KEY:
@@ -61,7 +53,6 @@ Characters involved: {', '.join(char_ids)}"
                 response.raise_for_status()
                 result = response.json()
                 content = result["content"][0]["text"]
-                # Try to parse JSON from response
                 return parse_script_response(content, scene_desc)
         except Exception as e:
             print(f"Claude API error, falling back to mock: {e}")
@@ -74,15 +65,12 @@ def parse_script_response(content: str, scene_desc: str) -> dict:
     import re
 
     try:
-        # Try direct JSON parse
         data = json.loads(content)
         return data
     except json.JSONDecodeError:
-        # Extract JSON from markdown code block
         json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
         if json_match:
             return json.loads(json_match.group(1))
-        # Return as plain text script
         return {"script": content, "shot_breakdown": [], "scene_graphs": []}
 
 
@@ -90,21 +78,9 @@ def generate_mock_script(scene_desc: str, char_ids: Optional[list] = None) -> di
     """Fallback mock script generation."""
     return {
         "script": (
-            f"INT. STUDIO - DAY
-
-{scene_desc}
-
-[Characters enter scene]"
-            "
-
-CHARACTER 1
-Let's begin.
-
-CHARACTER 2
-I'm ready."
-            "
-
-[Action sequence follows]"
+            f"INT. STUDIO - DAY\n\n{scene_desc}\n\n[Characters enter scene]"
+            "\n\nCHARACTER 1\nLet's begin.\n\nCHARACTER 2\nI'm ready."
+            "\n\n[Action sequence follows]"
         ),
         "shot_breakdown": [
             {"shot_number": 1, "description": "Establishing wide shot", "duration_ms": 3000, "camera": {"angle": "wide", "movement": "static"}},
