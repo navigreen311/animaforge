@@ -1,10 +1,26 @@
 import { v4 as uuidv4 } from "uuid";
+import { prisma } from "../db.js";
 import type { Scene, CreateSceneInput, UpdateSceneInput } from "../models/sceneSchemas.js";
 
+// In-memory fallback store
 const scenes = new Map<string, Scene>();
 
 export const sceneService = {
-  create(projectId: string, input: CreateSceneInput): Scene {
+  async create(projectId: string, input: CreateSceneInput): Promise<Scene> {
+    if (prisma) {
+      return prisma.scene.create({
+        data: {
+          projectId,
+          title: input.title,
+          order: input.order,
+        },
+        include: {
+          shots: true,
+        },
+      }) as unknown as Scene;
+    }
+
+    // In-memory fallback
     const now = new Date().toISOString();
     const scene: Scene = {
       id: uuidv4(),
@@ -18,17 +34,54 @@ export const sceneService = {
     return scene;
   },
 
-  listByProject(projectId: string): Scene[] {
+  async listByProject(projectId: string): Promise<Scene[]> {
+    if (prisma) {
+      const results = await prisma.scene.findMany({
+        where: { projectId },
+        orderBy: { order: "asc" },
+        include: {
+          shots: true,
+        },
+      });
+      return results as unknown as Scene[];
+    }
+
+    // In-memory fallback
     return Array.from(scenes.values())
       .filter((s) => s.projectId === projectId)
       .sort((a, b) => a.order - b.order);
   },
 
-  getById(id: string): Scene | undefined {
+  async getById(id: string): Promise<Scene | undefined> {
+    if (prisma) {
+      const scene = await prisma.scene.findUnique({
+        where: { id },
+        include: {
+          shots: true,
+          project: true,
+        },
+      });
+      return (scene ?? undefined) as Scene | undefined;
+    }
+
+    // In-memory fallback
     return scenes.get(id);
   },
 
-  update(id: string, input: UpdateSceneInput): Scene | undefined {
+  async update(id: string, input: UpdateSceneInput): Promise<Scene | undefined> {
+    if (prisma) {
+      const existing = await prisma.scene.findUnique({ where: { id } });
+      if (!existing) return undefined;
+
+      const updated = await prisma.scene.update({
+        where: { id },
+        data: { ...input },
+        include: { shots: true },
+      });
+      return updated as unknown as Scene;
+    }
+
+    // In-memory fallback
     const scene = scenes.get(id);
     if (!scene) return undefined;
 
@@ -41,11 +94,20 @@ export const sceneService = {
     return updated;
   },
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
+    if (prisma) {
+      const existing = await prisma.scene.findUnique({ where: { id } });
+      if (!existing) return false;
+
+      await prisma.scene.delete({ where: { id } });
+      return true;
+    }
+
+    // In-memory fallback
     return scenes.delete(id);
   },
 
-  /** Clears all data — for testing only. */
+  /** Clears all data -- for testing only. */
   _clear(): void {
     scenes.clear();
   },
