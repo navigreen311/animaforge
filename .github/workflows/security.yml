@@ -1,0 +1,176 @@
+name: Security Scanning
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Weekly on Monday at 06:00 UTC
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: SAST - Semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/typescript
+            p/python
+            p/docker
+            p/secrets
+            p/owasp-top-ten
+            p/sql-injection
+            p/xss
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+      - name: Semgrep with AnimaForge custom rules
+        if: hashFiles('.semgrep/') != ''
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: .semgrep/
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: npm audit
+        run: |
+          npm ci
+          npm audit --audit-level=high || true
+          # Generate structured report
+          npm audit --json > npm-audit-report.json || true
+
+      - name: pip audit
+        run: |
+          pip install pip-audit
+          cd services/ai-api
+          pip install -r requirements.txt
+          pip-audit --format=json --output=pip-audit-report.json || true
+          pip-audit || true
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-reports
+          path: |
+            npm-audit-report.json
+            services/ai-api/pip-audit-report.json
+          retention-days: 30
+
+  container-scan:
+    name: Container Scan - Trivy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: platform-api, context: services/platform-api }
+          - { name: auth, context: services/auth }
+          - { name: ai-api, context: services/ai-api }
+          - { name: gateway, context: services/gateway }
+          - { name: web, context: apps/web }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image for scanning
+        run: |
+          docker build -t animaforge/${{ matrix.service.name }}:scan \
+            ${{ matrix.service.context }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: animaforge/${{ matrix.service.name }}:scan
+          format: "sarif"
+          output: "trivy-${{ matrix.service.name }}.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-${{ matrix.service.name }}.sarif"
+          category: "trivy-${{ matrix.service.name }}"
+
+      - name: Upload Trivy report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-report-${{ matrix.service.name }}
+          path: "trivy-${{ matrix.service.name }}.sarif"
+          retention-days: 30
+
+  owasp-zap:
+    name: DAST - OWASP ZAP (Stub)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OWASP ZAP Baseline Scan (stub)
+        run: |
+          echo "============================================"
+          echo "OWASP ZAP Dynamic Application Security Test"
+          echo "============================================"
+          echo ""
+          echo "This is a stub configuration. To enable:"
+          echo "1. Set STAGING_BASE_URL in repository secrets"
+          echo "2. Uncomment the ZAP action below"
+          echo ""
+          # TODO: Enable when staging environment is available
+          # - name: ZAP Baseline Scan
+          #   uses: zaproxy/action-baseline@v0.12.0
+          #   with:
+          #     target: '${{ secrets.STAGING_BASE_URL }}'
+          #     rules_file_name: '.zap/rules.tsv'
+          #     cmd_options: '-a -j'
+
+      - name: Generate stub report
+        run: |
+          echo '{"scan": "stub", "status": "not_configured"}' > zap-report.json
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-report
+          path: zap-report.json
+          retention-days: 30
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [semgrep, dependency-audit, container-scan]
+    steps:
+      - name: Summary
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST (Semgrep) | ${{ needs.semgrep.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Scan (Trivy) | ${{ needs.container-scan.result }} |" >> $GITHUB_STEP_SUMMARY
