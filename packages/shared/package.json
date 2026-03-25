@@ -7,5 +7,8 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "redis": "^4.6.0"
   }
 }
