@@ -29,7 +29,7 @@
     "@types/supertest": "^6.0.2",
     "ts-jest": "^29.2.6",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.2"
+    "typescript": "^5.7.0"
   },
   "jest": {
     "preset": "ts-jest",
