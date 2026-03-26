@@ -180,100 +180,100 @@ export default function Sidebar() {
             collapsed={collapsed}
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={Film}
             label="Timeline"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={Users}
             label="Characters"
-            active={false}
             collapsed={collapsed}
+            disabled
           />
         </NavSection>
 
         {/* CREATE */}
         <NavSection title="CREATE" collapsed={collapsed}>
           <NavItem
-            href="/script"
+            href="#"
             icon={FileText}
             label="Script AI"
-            active={pathname.startsWith("/script")}
             collapsed={collapsed}
+            disabled
           />
           <NavItem
-            href="/style"
+            href="#"
             icon={Palette}
             label="Style Studio"
-            active={pathname.startsWith("/style")}
             collapsed={collapsed}
+            disabled
           />
           <NavItem
-            href="/avatar"
+            href="#"
             icon={User}
             label="Avatar Studio"
-            active={pathname.startsWith("/avatar")}
             collapsed={collapsed}
+            disabled
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={Music}
             label="Audio Studio"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
         </NavSection>
 
         {/* MANAGE */}
         <NavSection title="MANAGE" collapsed={collapsed}>
           <NavItem
-            href="/projects"
+            href="#"
             icon={Image}
             label="Asset Library"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={Brush}
             label="Brand Kit"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={BarChart3}
             label="Analytics"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
         </NavSection>
 
         {/* PLATFORM */}
         <NavSection title="PLATFORM" collapsed={collapsed}>
           <NavItem
-            href="/browse"
+            href="#"
             icon={Store}
             label="Marketplace"
-            active={pathname.startsWith("/browse")}
             collapsed={collapsed}
             badge="dot"
+            disabled
           />
           <NavItem
-            href="/projects"
+            href="#"
             icon={UserPlus}
             label="Team"
-            active={false}
             collapsed={collapsed}
             badge="new"
+            disabled
           />
         </NavSection>
       </nav>
@@ -293,12 +293,12 @@ export default function Sidebar() {
         />
 
         <NavItem
-          href="/projects"
+          href="#"
           icon={Settings}
           label="Settings"
-          active={false}
           collapsed={collapsed}
           badge="new"
+          disabled
         />
       </div>
     </motion.aside>

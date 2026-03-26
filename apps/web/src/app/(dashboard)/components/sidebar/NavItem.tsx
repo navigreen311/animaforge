@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItemProps {
@@ -11,6 +12,7 @@ interface NavItemProps {
   active?: boolean;
   badge?: "new" | "dot";
   collapsed?: boolean;
+  disabled?: boolean;
 }
 
 export default function NavItem({
@@ -20,26 +22,35 @@ export default function NavItem({
   active = false,
   badge,
   collapsed = false,
+  disabled = false,
 }: NavItemProps) {
   const [hovered, setHovered] = useState(false);
 
   const color = active
     ? "var(--text-brand)"
-    : hovered
+    : hovered && !disabled
       ? "var(--text-primary)"
       : "var(--text-secondary)";
 
   const backgroundColor = active
     ? "var(--bg-active)"
-    : hovered
+    : hovered && !disabled
       ? "var(--bg-hover)"
       : "transparent";
 
   const borderLeft = active ? "2px solid var(--brand)" : "2px solid transparent";
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (disabled) {
+      e.preventDefault();
+      toast(`${label} — coming soon`);
+    }
+  };
+
   return (
     <Link
-      href={href}
+      href={disabled ? "#" : href}
+      onClick={handleClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
