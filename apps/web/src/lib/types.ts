@@ -19,13 +19,88 @@ export interface Project {
   projectType: ProjectType;
   thumbnailUrl?: string;
   thumbnailGradient?: string;
+  previewVideoUrl?: string;
   totalShots: number;
   approvedShots: number;
   durationSeconds?: number;
   teamMembers: TeamMember[];
   creditsCost: number;
+  isPinned?: boolean;
+  folderId?: string;
   updatedAt: string;
   createdAt: string;
+}
+
+export type CharacterStatus = 'draft' | 'processing' | 'active' | 'failed';
+export type StyleMode = 'realistic' | 'anime' | 'cartoon' | 'cel-shaded' | 'pixel' | 'clay';
+export type RightsScope = 'personal' | 'commercial' | 'expired';
+
+export interface Character {
+  id: string;
+  name: string;
+  description?: string;
+  styleMode: StyleMode;
+  status: CharacterStatus;
+  isDigitalTwin: boolean;
+  sourcePhotos: string[];
+  voiceId?: string;
+  voiceName?: string;
+  projectIds: string[];
+  driftScore?: number;
+  rightsScope?: RightsScope;
+  avatarColor: string;
+  shotCount: number;
+  lastUsedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterStats {
+  total: number;
+  activeInProjects: number;
+  digitalTwins: number;
+  voicesPaired: number;
+}
+
+export type MarkerType = 'note' | 'issue' | 'approved' | 'question';
+
+export interface TimelineMarker {
+  id: string;
+  projectId: string;
+  userId: string;
+  userInitials: string;
+  timecodeMs: number;
+  type: MarkerType;
+  text: string;
+  isResolved: boolean;
+  createdAt: string;
+}
+
+export interface ShotTake {
+  id: string;
+  shotId: string;
+  tier: 'preview' | 'standard' | 'final';
+  outputUrl?: string;
+  thumbnailUrl?: string;
+  qualityScores?: { temporal: number; drift: string; lipSync: string };
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface SceneGraph {
+  prompt: string;
+  characterIds: string[];
+  cameraType: string;
+  motionStyle: string;
+  emotionalBeat: string;
+  styleRef?: string;
+}
+
+export interface ProjectFolder {
+  id: string;
+  name: string;
+  color: string;
+  projectCount: number;
 }
 
 export interface RenderJob {

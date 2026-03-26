@@ -1,19 +1,73 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Pin, Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Project, ViewMode } from '@/lib/types';
 import { useUIStore } from '@/store/useUIStore';
 import ProjectCard from './ProjectCard';
 import ProjectCardSkeleton from './ProjectCardSkeleton';
+import ProjectListView from './ProjectListView';
+
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
 
 interface ProjectGridProps {
   projects: Project[];
+  pinnedProjects?: Project[];
   loading?: boolean;
   viewMode: ViewMode;
 }
 
-export default function ProjectGrid({ projects, loading, viewMode }: ProjectGridProps) {
+/* ------------------------------------------------------------------ */
+/*  Section label                                                      */
+/* ------------------------------------------------------------------ */
+
+function SectionLabel({ icon, label }: { icon?: React.ReactNode; label: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+        marginTop: 4,
+      }}
+    >
+      {icon}
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'var(--text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          lineHeight: 1,
+          userSelect: 'none',
+        }}
+      >
+        {label}
+      </span>
+    </motion.div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
+export default function ProjectGrid({
+  projects,
+  pinnedProjects,
+  loading,
+  viewMode,
+}: ProjectGridProps) {
   const setNewProjectModalOpen = useUIStore((s) => s.setNewProjectModalOpen);
+
+  const hasPinned = pinnedProjects && pinnedProjects.length > 0;
 
   /* ── Loading state ── */
   if (loading) {
@@ -33,7 +87,7 @@ export default function ProjectGrid({ projects, loading, viewMode }: ProjectGrid
   }
 
   /* ── Empty state ── */
-  if (projects.length === 0) {
+  if (projects.length === 0 && !hasPinned) {
     return (
       <div
         style={{
@@ -95,9 +149,50 @@ export default function ProjectGrid({ projects, loading, viewMode }: ProjectGrid
     );
   }
 
-  /* ── Grid mode ── */
-  if (viewMode === 'grid') {
+  /* ── List mode ── */
+  if (viewMode === 'list') {
     return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {hasPinned && (
+          <>
+            <SectionLabel
+              icon={<Pin size={12} style={{ color: 'var(--text-tertiary)' }} />}
+              label="Pinned"
+            />
+            <ProjectListView projects={pinnedProjects!} />
+            <div style={{ height: 16 }} />
+            <SectionLabel label="All projects" />
+          </>
+        )}
+        <ProjectListView projects={projects} />
+      </div>
+    );
+  }
+
+  /* ── Grid mode ── */
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {hasPinned && (
+        <>
+          <SectionLabel
+            icon={<Pin size={12} style={{ color: 'var(--text-tertiary)' }} />}
+            label="Pinned"
+          />
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 12,
+              marginBottom: 20,
+            }}
+          >
+            {pinnedProjects!.map((project, index) => (
+              <ProjectCard key={project.id} project={project} index={index} />
+            ))}
+          </div>
+          <SectionLabel label="All projects" />
+        </>
+      )}
       <div
         style={{
           display: 'grid',
@@ -106,24 +201,13 @@ export default function ProjectGrid({ projects, loading, viewMode }: ProjectGrid
         }}
       >
         {projects.map((project, index) => (
-          <ProjectCard key={project.id} project={project} index={index} />
+          <ProjectCard
+            key={project.id}
+            project={project}
+            index={hasPinned ? index + pinnedProjects!.length : index}
+          />
         ))}
       </div>
-    );
-  }
-
-  /* ── List mode ── */
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-      }}
-    >
-      {projects.map((project, index) => (
-        <ProjectCard key={project.id} project={project} index={index} />
-      ))}
     </div>
   );
 }
