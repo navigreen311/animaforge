@@ -1,4 +1,4 @@
-"""Async pytest suite for AI Dubbing and Localization API routes."""
+"Async pytest suite for AI Dubbing and Localization API routes."
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ BASE = "http://test"
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the dubbing router and ValueError handler."""
     app = FastAPI()
     app.include_router(router)
 
@@ -24,9 +23,6 @@ def api_client():
 
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# ── 1. Translate script ─────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -45,9 +41,6 @@ async def test_translate_script(api_client: AsyncClient) -> None:
     assert data["translated_script"].startswith("[fr]")
     assert data["word_count"] == 5
     assert 0 < data["confidence"] <= 1.0
-
-
-# ── 2. Generate dubbed audio ────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -69,9 +62,6 @@ async def test_generate_dubbed_audio(api_client: AsyncClient) -> None:
     assert data["duration_ms"] > 0
 
 
-# ── 3. Lip sync adjustment ──────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_lip_sync(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -87,9 +77,6 @@ async def test_lip_sync(api_client: AsyncClient) -> None:
     data = resp.json()
     assert data["job_id"].startswith("sync-")
     assert 0 < data["sync_quality"] <= 1.0
-
-
-# ── 4. Batch dubbing ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -109,9 +96,6 @@ async def test_batch_dub(api_client: AsyncClient) -> None:
     assert all(j["status"] == "queued" for j in data["jobs"])
 
 
-# ── 5. Supported language listing ────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_language_list(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -122,9 +106,6 @@ async def test_language_list(api_client: AsyncClient) -> None:
     codes = {l["code"] for l in langs}
     assert "en" in codes
     assert "ja" in codes
-
-
-# ── 6. Detect language ───────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

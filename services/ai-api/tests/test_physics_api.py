@@ -1,4 +1,4 @@
-"""Async pytest suite for Physics Simulation API routes (F5)."""
+"Async pytest suite for Physics Simulation API routes (F5)."
 
 from __future__ import annotations
 
@@ -13,14 +13,10 @@ BASE = "http://test"
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the physics router."""
     app = FastAPI()
     app.include_router(router)
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# -- 1. Cloth simulation --
 
 
 @pytest.mark.asyncio
@@ -44,9 +40,6 @@ async def test_cloth_simulation(api_client: AsyncClient) -> None:
     assert len(data["frames"]) == 30
 
 
-# -- 2. Hair simulation --
-
-
 @pytest.mark.asyncio
 async def test_hair_simulation(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -63,9 +56,6 @@ async def test_hair_simulation(api_client: AsyncClient) -> None:
     assert data["strand_count"] == 4000
     assert data["frame_count"] > 0
     assert 0 <= data["flicker_score"] <= 1.0
-
-
-# -- 3. Rigid body simulation --
 
 
 @pytest.mark.asyncio
@@ -88,9 +78,6 @@ async def test_rigid_body_simulation(api_client: AsyncClient) -> None:
     assert "position" in data["objects_final_state"][0]
 
 
-# -- 4. Wind application --
-
-
 @pytest.mark.asyncio
 async def test_wind_application(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -111,9 +98,6 @@ async def test_wind_application(api_client: AsyncClient) -> None:
     assert data["turbulence"] == 0.4
 
 
-# -- 5. Material presets listing --
-
-
 @pytest.mark.asyncio
 async def test_material_presets(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -126,9 +110,6 @@ async def test_material_presets(api_client: AsyncClient) -> None:
     for _name, props in presets.items():
         assert "stiffness" in props
         assert "damping" in props
-
-
-# -- 6. Parameter validation (invalid wind direction) --
 
 
 @pytest.mark.asyncio

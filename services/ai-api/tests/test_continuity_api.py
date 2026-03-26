@@ -13,7 +13,6 @@ BASE = "http://test"
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the continuity router."""
     app = FastAPI()
     app.include_router(router)
     transport = ASGITransport(app=app)
@@ -77,9 +76,6 @@ def _style_drift_shots() -> list[dict]:
     ]
 
 
-# -- 1. Consistent shots pass --
-
-
 @pytest.mark.asyncio
 async def test_check_consistent_shots(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -95,9 +91,6 @@ async def test_check_consistent_shots(api_client: AsyncClient) -> None:
     data = resp.json()
     assert data["overall_score"] == 1.0
     assert data["issues"] == []
-
-
-# -- 2. Character drift detected --
 
 
 @pytest.mark.asyncio
@@ -118,9 +111,6 @@ async def test_detect_character_drift(api_client: AsyncClient) -> None:
     assert "character_drift" in issue_types
 
 
-# -- 3. Style drift detected --
-
-
 @pytest.mark.asyncio
 async def test_detect_style_drift(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -137,9 +127,6 @@ async def test_detect_style_drift(api_client: AsyncClient) -> None:
     assert data["overall_score"] < 1.0
     issue_types = [i["type"] for i in data["issues"]]
     assert "style_mismatch" in issue_types
-
-
-# -- 4. Fix suggestions returned --
 
 
 @pytest.mark.asyncio
@@ -161,9 +148,6 @@ async def test_fix_suggestions(api_client: AsyncClient) -> None:
         assert "auto_fixable" in fix
 
 
-# -- 5. Empty shots handled --
-
-
 @pytest.mark.asyncio
 async def test_empty_shots_returns_clean(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -176,9 +160,6 @@ async def test_empty_shots_returns_clean(api_client: AsyncClient) -> None:
     assert data["overall_score"] == 1.0
     assert data["issues"] == []
     assert "warnings" in data
-
-
-# -- 6. Fix endpoint integration --
 
 
 @pytest.mark.asyncio

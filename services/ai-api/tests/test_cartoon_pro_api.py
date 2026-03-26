@@ -1,4 +1,4 @@
-"""Async pytest suite for Cartoon Pro API routes (E7)."""
+"Async pytest suite for Cartoon Pro API routes (E7)."
 
 from __future__ import annotations
 
@@ -14,9 +14,6 @@ BASE = "http://test"
 def api_client():
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# ── 1. Line controls ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -39,9 +36,6 @@ async def test_line_controls(api_client: AsyncClient) -> None:
     assert data["settings_applied"]["color"] == "#333333"
 
 
-# ── 2. Fill controls ────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_fill_controls(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -60,9 +54,6 @@ async def test_fill_controls(api_client: AsyncClient) -> None:
     assert "gradient" in data["output_url"]
 
 
-# ── 3. Shading controls ─────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_shading_controls(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -79,9 +70,6 @@ async def test_shading_controls(api_client: AsyncClient) -> None:
     data = resp.json()
     assert "output_url" in data
     assert "rim" in data["output_url"]
-
-
-# ── 4. Motion principles ────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -105,9 +93,6 @@ async def test_motion_principles(api_client: AsyncClient) -> None:
     assert data["principles_applied"]["smear"] == 0.2
 
 
-# ── 5. Model sheet ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_model_sheet(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -122,9 +107,6 @@ async def test_model_sheet(api_client: AsyncClient) -> None:
     data = resp.json()
     assert "sheet_url" in data
     assert data["views"] == ["front", "side", "back", "3/4"]
-
-
-# ── 6. Presets listing ───────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

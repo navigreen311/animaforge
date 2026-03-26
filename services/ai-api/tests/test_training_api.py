@@ -1,4 +1,4 @@
-"""Async pytest suite for Training Data Feedback Pipeline API routes."""
+"Async pytest suite for Training Data Feedback Pipeline API routes."
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from src.services.training_service import (
     _reset_stores,
     collect_feedback,
     create_dataset,
-    promote_model,
 )
 
 BASE = "http://test"
@@ -26,7 +25,6 @@ def _clean_stores():
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the training router."""
     app = FastAPI()
     app.include_router(router)
 
@@ -56,9 +54,6 @@ def _seed_dataset() -> str:
     return ds["dataset_id"]
 
 
-# ── 1. Submit feedback ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_submit_feedback(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -78,9 +73,6 @@ async def test_submit_feedback(api_client: AsyncClient) -> None:
     assert "feedback_id" in data
 
 
-# ── 2. Create dataset ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_create_dataset(api_client: AsyncClient) -> None:
     _seed_feedback(20)
@@ -96,9 +88,6 @@ async def test_create_dataset(api_client: AsyncClient) -> None:
     assert total == 20
 
 
-# ── 3. Submit finetune job ───────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_finetune_job(api_client: AsyncClient) -> None:
     ds_id = _seed_dataset()
@@ -111,9 +100,6 @@ async def test_finetune_job(api_client: AsyncClient) -> None:
     data = resp.json()
     assert data["job_id"].startswith("ft-")
     assert data["estimated_hours"] > 0
-
-
-# ── 4. Evaluate model ───────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -131,9 +117,6 @@ async def test_evaluate_model(api_client: AsyncClient) -> None:
     assert "identity_score" in data
 
 
-# ── 5. Promote model ────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_promote_model(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -148,13 +131,9 @@ async def test_promote_model(api_client: AsyncClient) -> None:
     assert data["status"] == "promoted"
 
 
-# ── 6. Rollback model ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_rollback_model(api_client: AsyncClient) -> None:
     async with api_client as c:
-        # Promote twice to have enough versions
         await c.post(
             "/ai/v1/training/promote",
             json={"model_id": "model-b", "environment": "staging"},

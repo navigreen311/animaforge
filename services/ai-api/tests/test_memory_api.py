@@ -1,4 +1,4 @@
-"""Async pytest suite for Generative Memory API routes (G8)."""
+"Async pytest suite for Generative Memory API routes (G8)."
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ BASE = "http://test"
 
 @pytest.fixture(autouse=True)
 def _clear_stores():
-    """Ensure clean state before and after every test."""
     _memory_store.clear()
     _style_store.clear()
     yield
@@ -28,9 +27,6 @@ def api_client():
     app.include_router(router)
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# -- 1. Store context --
 
 
 @pytest.mark.asyncio
@@ -49,9 +45,6 @@ async def test_store_context(api_client: AsyncClient) -> None:
     assert "id" in data
     assert data["project_id"] == "p-1"
     assert "created_at" in data
-
-
-# -- 2. Recall by similarity --
 
 
 @pytest.mark.asyncio
@@ -87,9 +80,6 @@ async def test_recall_context(api_client: AsyncClient) -> None:
     assert data["results"][0]["similarity"] >= data["results"][1]["similarity"]
 
 
-# -- 3. Style preference --
-
-
 @pytest.mark.asyncio
 async def test_style_preference(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -106,9 +96,6 @@ async def test_style_preference(api_client: AsyncClient) -> None:
     assert "id" in data
     assert data["rating"] == 4.5
     assert data["style_fingerprint"]["palette"] == "warm"
-
-
-# -- 4. Suggest parameters --
 
 
 @pytest.mark.asyncio
@@ -131,9 +118,6 @@ async def test_suggest_params(api_client: AsyncClient) -> None:
     assert data["count"] >= 1
     assert "context" in data["suggestions"][0]
     assert "similarity" in data["suggestions"][0]
-
-
-# -- 5. User profile --
 
 
 @pytest.mark.asyncio
@@ -161,9 +145,6 @@ async def test_user_profile(api_client: AsyncClient) -> None:
     assert data["generation_count"] == 2
     assert data["avg_parameters"]["steps"] == 40.0
     assert data["avg_parameters"]["cfg"] == 7.5
-
-
-# -- 6. Clear memory --
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-"""Async pytest suite for AI Music Composition API routes."""
+"Async pytest suite for AI Music Composition API routes."
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ BASE = "http://test"
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the music router and ValueError handler."""
     app = FastAPI()
     app.include_router(router)
 
@@ -24,9 +23,6 @@ def api_client():
 
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# ── 1. Generate score ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -49,9 +45,6 @@ async def test_generate_score(api_client: AsyncClient) -> None:
     assert data["cue_sheet"]["time_signature"] == "4/4"
 
 
-# ── 2. Analyze scene for music ──────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_analyze_scene(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -72,9 +65,6 @@ async def test_analyze_scene(api_client: AsyncClient) -> None:
     assert len(data["intensity_curve"]) == 2
 
 
-# ── 3. Generate stems ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_generate_stems(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -92,9 +82,6 @@ async def test_generate_stems(api_client: AsyncClient) -> None:
     assert types == {"melody", "drums", "bass"}
 
 
-# ── 4. Beat detection ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_beat_detection(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -108,9 +95,6 @@ async def test_beat_detection(api_client: AsyncClient) -> None:
     assert data["time_signature"] == "4/4"
     assert len(data["beats_ms"]) > 0
     assert len(data["downbeats_ms"]) > 0
-
-
-# ── 5. Mix stems ────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -130,9 +114,6 @@ async def test_mix_stems(api_client: AsyncClient) -> None:
     data = resp.json()
     assert data["mixed_url"].endswith(".wav")
     assert data["duration_ms"] == 60000
-
-
-# ── 6. Sound effects generation ──────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

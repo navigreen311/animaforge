@@ -1,4 +1,4 @@
-"""Async pytest suite for Motion Capture API routes (E8)."""
+"Async pytest suite for Motion Capture API routes (E8)."
 
 from __future__ import annotations
 
@@ -13,14 +13,10 @@ BASE = "http://test"
 
 @pytest.fixture()
 def api_client():
-    """Standalone app with the mocap router."""
     app = FastAPI()
     app.include_router(router)
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url=BASE)
-
-
-# -- 1. BVH upload --
 
 
 @pytest.mark.asyncio
@@ -36,9 +32,6 @@ async def test_bvh_upload(api_client: AsyncClient) -> None:
     assert "motion_id" in data
     assert data["stats"]["joint_count"] == 19
     assert data["stats"]["frame_count"] == 120
-
-
-# -- 2. Retarget motion --
 
 
 @pytest.mark.asyncio
@@ -57,9 +50,6 @@ async def test_retarget_motion(api_client: AsyncClient) -> None:
     data = resp.json()
     assert "retargeted_motion_id" in data
     assert 0 < data["compatibility"] <= 1.0
-
-
-# -- 3. Blend motions --
 
 
 @pytest.mark.asyncio
@@ -85,9 +75,6 @@ async def test_blend_motions(api_client: AsyncClient) -> None:
     assert "blended_motion_id" in resp.json()
 
 
-# -- 4. Apply to shot --
-
-
 @pytest.mark.asyncio
 async def test_apply_to_shot(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -107,9 +94,6 @@ async def test_apply_to_shot(api_client: AsyncClient) -> None:
     assert data["duration_ms"] > 0
 
 
-# -- 5. Format listing --
-
-
 @pytest.mark.asyncio
 async def test_list_formats(api_client: AsyncClient) -> None:
     async with api_client as c:
@@ -117,9 +101,6 @@ async def test_list_formats(api_client: AsyncClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert set(data["formats"]) == {"bvh", "fbx", "c3d", "trc"}
-
-
-# -- 6. Invalid format returns error --
 
 
 @pytest.mark.asyncio
