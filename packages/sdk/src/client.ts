@@ -5,6 +5,8 @@ import { CharactersResource } from './resources/characters';
 import { GenerationResource } from './resources/generation';
 import { JobsResource } from './resources/jobs';
 import { AssetsResource } from './resources/assets';
+import { WebhooksResource } from './resources/webhooks';
+import { DeveloperResource } from './resources/developer';
 import type { ClientConfig } from './types';
 
 export class AnimaForgeClient {
@@ -14,6 +16,8 @@ export class AnimaForgeClient {
   public readonly generate: GenerationResource;
   public readonly jobs: JobsResource;
   public readonly assets: AssetsResource;
+  public readonly webhooks: WebhooksResource;
+  public readonly developer: DeveloperResource;
 
   private readonly http: HttpClient;
 
@@ -35,5 +39,7 @@ export class AnimaForgeClient {
     this.generate = new GenerationResource(this.http);
     this.jobs = new JobsResource(this.http);
     this.assets = new AssetsResource(this.http);
+    this.webhooks = new WebhooksResource(this.http);
+    this.developer = new DeveloperResource(this.http);
   }
 }

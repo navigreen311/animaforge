@@ -19,6 +19,7 @@ import uploadRouter from "./routes/upload.js";
 import socialRouter from "./routes/social.js";
 import repurposeRouter from "./routes/repurpose.js";
 import { performanceMonitor, metricsRouter } from "./middleware/performanceMonitor.js";
+import devportalRouter from "./routes/devportal.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/v1", assetsRouter);
 app.use("/api/v1", uploadRouter);
 app.use("/api/v1", socialRouter);
 app.use("/api/v1", repurposeRouter);
+app.use("/api/v1", devportalRouter);
 app.use("/api/v1", metricsRouter());
 
 // Global error handler (must be registered after routes)
