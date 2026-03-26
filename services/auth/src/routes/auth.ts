@@ -3,18 +3,22 @@ import type { Response } from "express";
 import { registerSchema, loginSchema } from "../models/authSchemas";
 import {
   createUser,
-  findUserByEmail,
-  findUserById,
-  comparePassword,
   signToken,
   buildJwtPayload,
-  blacklistToken,
+  findUserById,
+  login as authLogin,
+  logout as authLogout,
+  refresh as authRefresh,
 } from "../services/authService";
 import {
   createApiKey,
   listApiKeys,
   revokeApiKey,
 } from "../services/apiKeyService";
+import {
+  getUserSessions,
+  invalidateAllSessions,
+} from "../services/sessionService";
 import { authenticate, type AuthRequest } from "../middleware/authenticate";
 
 const router = Router();
@@ -73,21 +77,14 @@ router.post("/login", async (req: AuthRequest, res: Response) => {
     }
 
     const { email, password } = parsed.data;
-    const user = await findUserByEmail(email);
+    const result = await authLogin(email, password);
 
-    if (!user) {
+    if (!result) {
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
 
-    const valid = await comparePassword(password, user.passwordHash);
-    if (!valid) {
-      res.status(401).json({ error: "Invalid email or password" });
-      return;
-    }
-
-    const payload = buildJwtPayload(user);
-    const token = signToken(payload);
+    const { token, user } = result;
 
     res.json({
       token,
@@ -117,22 +114,18 @@ router.post(
         return;
       }
 
-      // Blacklist old token
-      if (req.token) {
-        blacklistToken(req.token);
+      if (!req.token) {
+        res.status(401).json({ error: "No token provided" });
+        return;
       }
 
-      // Issue new token with fresh payload
-      const user = await findUserById(req.user.userId);
-      if (!user) {
+      const result = await authRefresh(req.token, req.user.userId);
+      if (!result) {
         res.status(401).json({ error: "User not found" });
         return;
       }
 
-      const payload = buildJwtPayload(user);
-      const token = signToken(payload);
-
-      res.json({ token });
+      res.json({ token: result.token });
     } catch {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -174,12 +167,55 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
 router.post(
   "/logout",
   authenticate,
-  (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       if (req.token) {
-        blacklistToken(req.token);
+        await authLogout(req.token);
       }
       res.json({ message: "Logged out successfully" });
+    } catch {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+
+// ---------------------------------------------------------------------------
+// GET /auth/sessions
+// ---------------------------------------------------------------------------
+router.get(
+  "/sessions",
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Not authenticated" });
+        return;
+      }
+
+      const sessions = await getUserSessions(req.user.userId);
+      res.json({ sessions, count: sessions.length });
+    } catch {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// DELETE /auth/sessions
+// ---------------------------------------------------------------------------
+router.delete(
+  "/sessions",
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Not authenticated" });
+        return;
+      }
+
+      await invalidateAllSessions(req.user.userId);
+      res.json({ message: "All sessions invalidated" });
     } catch {
       res.status(500).json({ error: "Internal server error" });
     }

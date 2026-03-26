@@ -8,6 +8,11 @@ import type {
   UserTier,
 } from "../models/authSchemas";
 import prisma from "../db";
+import {
+  createSession,
+  invalidateSession,
+  isBlacklisted,
+} from "./sessionService";
 
 const JWT_SECRET = process.env.JWT_SECRET || "animaforge-dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
@@ -82,12 +87,22 @@ export function verifyToken(token: string): JwtPayload {
   return jwt.verify(token, JWT_SECRET) as JwtPayload;
 }
 
+export async function verifyTokenAsync(token: string): Promise<JwtPayload> {
+  if (tokenBlacklist.has(token)) {
+    throw new Error("Token has been revoked");
+  }
+  const blacklisted = await isBlacklisted(token);
+  if (blacklisted) {
+    throw new Error("Token has been revoked");
+  }
+  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+}
+
 // ---------------------------------------------------------------------------
 // Token blacklist — Redis when available, in-memory Set as fallback
 // ---------------------------------------------------------------------------
 
 export function blacklistToken(token: string): void {
-  // TODO: integrate Redis for distributed token blacklist
   tokenBlacklist.add(token);
 }
 
@@ -279,4 +294,48 @@ export function buildJwtPayload(user: User): JwtPayload {
     role: user.role,
     tier: user.tier,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Session-aware auth operations
+// ---------------------------------------------------------------------------
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ token: string; user: User } | null> {
+  const user = await findUserByEmail(email);
+  if (!user) return null;
+
+  const valid = await comparePassword(password, user.passwordHash);
+  if (!valid) return null;
+
+  const payload = buildJwtPayload(user);
+  const token = signToken(payload);
+
+  await createSession(user.id, token);
+
+  return { token, user };
+}
+
+export async function logout(token: string): Promise<void> {
+  blacklistToken(token);
+  await invalidateSession(token);
+}
+
+export async function refresh(
+  oldToken: string,
+  userId: string,
+): Promise<{ token: string } | null> {
+  const user = await findUserById(userId);
+  if (!user) return null;
+
+  blacklistToken(oldToken);
+  await invalidateSession(oldToken);
+
+  const payload = buildJwtPayload(user);
+  const token = signToken(payload);
+  await createSession(user.id, token);
+
+  return { token };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 /* ------------------------------------------------------------------ */
-/*  WebGLRenderer – utility wrapper for WebGL2 2D drawing             */
+/*  WebGLRenderer - utility wrapper for WebGL2 2D drawing             */
 /*  Provides drawRect, drawLine, drawText with OffscreenCanvas        */
 /* ------------------------------------------------------------------ */
 
@@ -32,9 +32,8 @@ precision highp float;
 uniform vec2 u_resolution;
 in vec2 a_position;
 void main() {
-  // Convert pixel coords to clip space (-1..1)
   vec2 clip = (a_position / u_resolution) * 2.0 - 1.0;
-  clip.y = -clip.y; // flip Y so 0 is top
+  clip.y = -clip.y;
   gl_Position = vec4(clip, 0.0, 1.0);
 }
 `;
@@ -82,7 +81,7 @@ function createProgram(gl: WebGL2RenderingContext, vert: string, frag: string): 
 }
 
 /* ------------------------------------------------------------------ */
-/*  Text texture cache (OffscreenCanvas → WebGL texture)              */
+/*  Text texture cache                                                 */
 /* ------------------------------------------------------------------ */
 
 interface TextEntry {
@@ -116,7 +115,6 @@ export class WebGLRenderer {
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
 
-    // Main color program
     const prog = createProgram(gl, VERT_SRC, FRAG_SRC);
     if (!prog) throw new Error('Failed to create WebGL program');
     this.program = prog;
@@ -134,7 +132,6 @@ export class WebGLRenderer {
     gl.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
 
-    // Text-rendering program (textured quad)
     const textVertSrc = `#version 300 es
 precision highp float;
 uniform vec2 u_resolution;
@@ -179,12 +176,9 @@ void main() {
     gl.vertexAttribPointer(taUvLoc, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
 
-    // OffscreenCanvas for text rasterisation
     this.textCanvas = new OffscreenCanvas(512, 64);
     this.textCtx = this.textCanvas.getContext('2d')!;
   }
-
-  /* ---- Viewport / clear ---- */
 
   setViewport(width: number, height: number) {
     this.gl.viewport(0, 0, width, height);
@@ -196,11 +190,8 @@ void main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  /* ---- drawRect ---- */
-
   drawRect(x: number, y: number, w: number, h: number, color: GLColor) {
     const gl = this.gl;
-    // Two-triangle quad
     const verts = new Float32Array([
       x, y,       x + w, y,       x, y + h,
       x, y + h,   x + w, y,       x + w, y + h,
@@ -215,22 +206,17 @@ void main() {
     gl.bindVertexArray(null);
   }
 
-  /* ---- drawLine ---- */
-
   drawLine(x1: number, y1: number, x2: number, y2: number, color: GLColor, width = 1) {
     const gl = this.gl;
-    // Expand line into a quad for thickness
     const dx = x2 - x1;
     const dy = y2 - y1;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     const nx = (-dy / len) * (width / 2);
     const ny = (dx / len) * (width / 2);
-
     const verts = new Float32Array([
       x1 + nx, y1 + ny,   x1 - nx, y1 - ny,   x2 + nx, y2 + ny,
       x2 + nx, y2 + ny,   x1 - nx, y1 - ny,   x2 - nx, y2 - ny,
     ]);
-
     gl.useProgram(this.program);
     gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height);
     gl.uniform4fv(this.uColor, color);
@@ -241,16 +227,11 @@ void main() {
     gl.bindVertexArray(null);
   }
 
-  /* ---- drawLineStrip ---- */
-
   drawLineStrip(points: Float32Array, color: GLColor, width = 1.5) {
-    // Render as a series of line segments (quads)
     for (let i = 0; i < points.length - 2; i += 2) {
       this.drawLine(points[i], points[i + 1], points[i + 2], points[i + 3], color, width);
     }
   }
-
-  /* ---- drawText (via OffscreenCanvas → texture) ---- */
 
   drawText(
     text: string,
@@ -266,14 +247,12 @@ void main() {
     let entry = this.textCache.get(cacheKey);
 
     if (!entry) {
-      // Rasterise text to OffscreenCanvas
       const fontStr = `${bold ? 'bold ' : ''}${size}px system-ui, -apple-system, sans-serif`;
       this.textCtx.font = fontStr;
       const metrics = this.textCtx.measureText(text);
       const tw = Math.ceil(metrics.width) + 4;
       const th = Math.ceil(size * 1.5) + 4;
 
-      // Resize if needed
       if (this.textCanvas.width < tw || this.textCanvas.height < th) {
         this.textCanvas.width = Math.max(this.textCanvas.width, tw);
         this.textCanvas.height = Math.max(this.textCanvas.height, th);
@@ -297,7 +276,6 @@ void main() {
       entry = { texture, width: tw, height: th };
       this.textCache.set(cacheKey, entry);
 
-      // Evict old entries if cache is large
       if (this.textCache.size > 200) {
         const firstKey = this.textCache.keys().next().value;
         if (firstKey !== undefined) {
@@ -308,7 +286,6 @@ void main() {
       }
     }
 
-    // Compute draw position based on alignment
     let drawX = x;
     if (align === 'right') drawX = x - entry.width;
     else if (align === 'center') drawX = x - entry.width / 2;
@@ -317,12 +294,10 @@ void main() {
     const w = entry.width;
     const h = entry.height;
 
-    // Position quad
     const posVerts = new Float32Array([
       drawX, drawY,       drawX + w, drawY,       drawX, drawY + h,
       drawX, drawY + h,   drawX + w, drawY,       drawX + w, drawY + h,
     ]);
-    // UV coords
     const uvVerts = new Float32Array([
       0, 0,  1, 0,  0, 1,
       0, 1,  1, 0,  1, 1,
@@ -343,16 +318,12 @@ void main() {
     gl.bindVertexArray(null);
   }
 
-  /* ---- drawRectOutline ---- */
-
   drawRectOutline(x: number, y: number, w: number, h: number, color: GLColor, lineWidth = 1) {
-    this.drawLine(x, y, x + w, y, color, lineWidth);           // top
-    this.drawLine(x + w, y, x + w, y + h, color, lineWidth);   // right
-    this.drawLine(x, y + h, x + w, y + h, color, lineWidth);   // bottom
-    this.drawLine(x, y, x, y + h, color, lineWidth);           // left
+    this.drawLine(x, y, x + w, y, color, lineWidth);
+    this.drawLine(x + w, y, x + w, y + h, color, lineWidth);
+    this.drawLine(x, y + h, x + w, y + h, color, lineWidth);
+    this.drawLine(x, y, x, y + h, color, lineWidth);
   }
-
-  /* ---- Cleanup ---- */
 
   clearTextCache() {
     const gl = this.gl;

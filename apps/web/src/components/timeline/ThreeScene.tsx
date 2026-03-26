@@ -81,10 +81,9 @@ function renderShotsWebGL(
   const labelW = TRACK_LABEL_WIDTH * dpr;
   const scrollPx = scrollX * dpr;
 
-  // -- Background --
   renderer.clear([0.035, 0.035, 0.043, 1.0]);
 
-  // -- Grid lines --
+  // Grid lines
   const startSec = Math.floor(scrollX / pxPerSec(zoom));
   const endSec = Math.ceil((scrollX + canvasW / dpr) / pxPerSec(zoom));
   const gridColor: GLColor = [0.247, 0.247, 0.275, 0.3];
@@ -93,12 +92,11 @@ function renderShotsWebGL(
     renderer.drawLine(x, rulerH, x, canvasH, gridColor, 1);
   }
 
-  // -- Time ruler background --
+  // Time ruler background
   renderer.drawRect(0, 0, canvasW, rulerH, hexToGL('#18181b'));
-  // Ruler bottom border
   renderer.drawLine(0, rulerH, canvasW, rulerH, hexToGL('#27272a'), 1);
 
-  // -- Ruler tick marks and labels --
+  // Ruler tick marks and labels
   for (let sec = startSec; sec <= endSec; sec++) {
     const x = Math.round(sec * scale - scrollPx);
     const isMajor = sec % 5 === 0;
@@ -110,18 +108,18 @@ function renderShotsWebGL(
       const minutes = Math.floor(sec / 60);
       const secs = sec % 60;
       const label = minutes > 0
-        ? `${minutes}:${secs.toString().padStart(2, '0')}`
-        : `${sec}s`;
+        ? minutes + ':' + secs.toString().padStart(2, '0')
+        : sec + 's';
       renderer.drawText(label, x + 4 * dpr, 3 * dpr, [0.631, 0.631, 0.667, 1.0], 10 * dpr);
     }
   }
 
-  // -- Shot track label --
+  // Shot track label
   renderer.drawRect(0, rulerH, labelW, shotH, hexToGL('#18181b'));
   renderer.drawText('Shots', 8 * dpr, rulerH + shotH / 2 - 4 * dpr, [0.631, 0.631, 0.667, 1.0], 11 * dpr);
   renderer.drawLine(labelW, rulerH, labelW, rulerH + shotH, hexToGL('#27272a'), 1);
 
-  // -- Shot blocks --
+  // Shot blocks
   let offsetX = 0;
   for (const shot of shots) {
     const durationSec = msToSec(shot.durationMs);
@@ -133,58 +131,38 @@ function renderShotsWebGL(
       const rx = Math.max(drawX, labelW);
       const rw = Math.min(drawX + widthPx, canvasW) - rx;
 
-      // Shot fill
       const bgColor = STATUS_COLORS[shot.status] || STATUS_COLORS.draft;
       renderer.drawRect(rx + 1 * dpr, rulerH + 2 * dpr, rw - 2 * dpr, shotH - 4 * dpr, hexToGL(bgColor));
 
-      // Border
       const borderColor = isSelected ? '#a78bfa' : (STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft);
       const borderWidth = isSelected ? 2 * dpr : 1;
       renderer.drawRectOutline(rx + 1 * dpr, rulerH + 2 * dpr, rw - 2 * dpr, shotH - 4 * dpr, hexToGL(borderColor), borderWidth);
 
-      // Selection glow (extra bright outline)
       if (isSelected) {
-        renderer.drawRectOutline(
-          rx - 1 * dpr, rulerH, rw + 2 * dpr, shotH, hexToGL('#a78bfa', 0.4), 3 * dpr,
-        );
+        renderer.drawRectOutline(rx - 1 * dpr, rulerH, rw + 2 * dpr, shotH, hexToGL('#a78bfa', 0.4), 3 * dpr);
       }
 
-      // Thumbnail placeholder
       if (rw > 40 * dpr) {
-        renderer.drawRect(
-          rx + 6 * dpr, rulerH + 8 * dpr,
-          Math.min(rw - 12 * dpr, 60 * dpr), 32 * dpr,
-          [0, 0, 0, 0.2],
-        );
+        renderer.drawRect(rx + 6 * dpr, rulerH + 8 * dpr, Math.min(rw - 12 * dpr, 60 * dpr), 32 * dpr, [0, 0, 0, 0.2]);
       }
 
-      // Shot number label
       if (rw > 30 * dpr) {
-        renderer.drawText(
-          `#${shot.shotNumber}`, rx + 6 * dpr, rulerH + shotH - 18 * dpr,
-          [1, 1, 1, 0.9], 10 * dpr, 'left', true,
-        );
+        renderer.drawText('#' + shot.shotNumber, rx + 6 * dpr, rulerH + shotH - 18 * dpr, [1, 1, 1, 0.9], 10 * dpr, 'left', true);
       }
 
-      // Duration label
       if (rw > 60 * dpr) {
-        renderer.drawText(
-          `${durationSec.toFixed(1)}s`, rx + rw - 6 * dpr, rulerH + shotH - 18 * dpr,
-          [1, 1, 1, 0.6], 10 * dpr, 'right',
-        );
+        renderer.drawText(durationSec.toFixed(1) + 's', rx + rw - 6 * dpr, rulerH + shotH - 18 * dpr, [1, 1, 1, 0.6], 10 * dpr, 'right');
       }
     }
     offsetX += widthPx;
   }
 
-  // Shot track bottom border
   renderer.drawLine(0, rulerH + shotH, canvasW, rulerH + shotH, hexToGL('#27272a'), 1);
 
-  // -- Playhead --
+  // Playhead
   const playheadSec = msToSec(playheadMs);
   const phX = Math.round(playheadSec * scale - scrollPx);
   renderer.drawLine(phX, 0, phX, canvasH, [0.937, 0.267, 0.267, 1.0], 2 * dpr);
-  // Triangle at top
   renderer.drawRect(phX - 6 * dpr, 0, 12 * dpr, 10 * dpr, [0.937, 0.267, 0.267, 1.0]);
 }
 
@@ -208,11 +186,9 @@ function renderShots2D(
 
   const scale = pxPerSec(zoom);
 
-  // Background
   ctx.fillStyle = '#09090b';
   ctx.fillRect(0, 0, w, h);
 
-  // Grid
   const startSec = Math.floor(scrollX / scale);
   const endSec = Math.ceil((scrollX + w) / scale);
   ctx.strokeStyle = 'rgba(63, 63, 70, 0.3)';
@@ -225,7 +201,6 @@ function renderShots2D(
     ctx.stroke();
   }
 
-  // Ruler background
   ctx.fillStyle = '#18181b';
   ctx.fillRect(0, 0, w, RULER_HEIGHT);
   ctx.strokeStyle = '#27272a';
@@ -235,7 +210,6 @@ function renderShots2D(
   ctx.lineTo(w, RULER_HEIGHT - 0.5);
   ctx.stroke();
 
-  // Ruler ticks
   ctx.font = '10px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'left';
   for (let sec = startSec; sec <= endSec; sec++) {
@@ -251,12 +225,11 @@ function renderShots2D(
       ctx.fillStyle = '#a1a1aa';
       const minutes = Math.floor(sec / 60);
       const secs = sec % 60;
-      const label = minutes > 0 ? `${minutes}:${secs.toString().padStart(2, '0')}` : `${sec}s`;
+      const label = minutes > 0 ? minutes + ':' + secs.toString().padStart(2, '0') : sec + 's';
       ctx.fillText(label, x + 4, 14);
     }
   }
 
-  // Shot track label
   ctx.fillStyle = '#18181b';
   ctx.fillRect(0, RULER_HEIGHT, TRACK_LABEL_WIDTH, SHOT_TRACK_HEIGHT);
   ctx.fillStyle = '#a1a1aa';
@@ -264,7 +237,6 @@ function renderShots2D(
   ctx.textAlign = 'left';
   ctx.fillText('Shots', 8, RULER_HEIGHT + SHOT_TRACK_HEIGHT / 2 + 4);
 
-  // Shot blocks
   let offsetX = 0;
   for (const shot of shots) {
     const durationSec = msToSec(shot.durationMs);
@@ -276,16 +248,13 @@ function renderShots2D(
       const rx = Math.max(drawX, TRACK_LABEL_WIDTH);
       const rw = Math.min(drawX + widthPx, w) - rx;
 
-      // Fill
       ctx.fillStyle = STATUS_COLORS[shot.status] || STATUS_COLORS.draft;
       ctx.fillRect(rx + 1, RULER_HEIGHT + 2, rw - 2, SHOT_TRACK_HEIGHT - 4);
 
-      // Border
       ctx.strokeStyle = isSelected ? '#a78bfa' : (STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft);
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.strokeRect(rx + 1, RULER_HEIGHT + 2, rw - 2, SHOT_TRACK_HEIGHT - 4);
 
-      // Selection glow
       if (isSelected) {
         ctx.shadowColor = '#a78bfa';
         ctx.shadowBlur = 8;
@@ -295,32 +264,28 @@ function renderShots2D(
         ctx.shadowBlur = 0;
       }
 
-      // Thumbnail placeholder
       if (rw > 40) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.fillRect(rx + 6, RULER_HEIGHT + 8, Math.min(rw - 12, 60), 32);
       }
 
-      // Shot number
       if (rw > 30) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(`#${shot.shotNumber}`, rx + 6, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10);
+        ctx.fillText('#' + shot.shotNumber, rx + 6, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10);
       }
 
-      // Duration
       if (rw > 60) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.font = '10px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(`${durationSec.toFixed(1)}s`, rx + rw - 6, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10);
+        ctx.fillText(durationSec.toFixed(1) + 's', rx + rw - 6, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10);
       }
     }
     offsetX += widthPx;
   }
 
-  // Shot track bottom border
   ctx.strokeStyle = '#27272a';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -328,7 +293,6 @@ function renderShots2D(
   ctx.lineTo(w, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 0.5);
   ctx.stroke();
 
-  // Playhead
   const playheadSec = msToSec(playheadMs);
   const phX = Math.round(playheadSec * scale - scrollX) + 0.5;
   ctx.strokeStyle = '#ef4444';
@@ -337,7 +301,6 @@ function renderShots2D(
   ctx.moveTo(phX, 0);
   ctx.lineTo(phX, h);
   ctx.stroke();
-  // Triangle
   ctx.fillStyle = '#ef4444';
   ctx.beginPath();
   ctx.moveTo(phX - 6, 0);
@@ -410,7 +373,6 @@ export default function ThreeScene({
     30_000,
   );
 
-  // Initialize WebGL2 context
   const initGL = useCallback((canvas: HTMLCanvasElement): WebGL2RenderingContext | null => {
     const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
     if (!gl) {
@@ -423,7 +385,6 @@ export default function ThreeScene({
     return gl;
   }, []);
 
-  // Setup and render loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -453,10 +414,7 @@ export default function ThreeScene({
     const render = () => {
       if (renderer && gl) {
         renderer.setViewport(canvas.width, canvas.height);
-        renderShotsWebGL(
-          renderer, shots, zoom, playhead, selectedShotId,
-          scrollX, canvas.width, canvas.height,
-        );
+        renderShotsWebGL(renderer, shots, zoom, playhead, selectedShotId, scrollX, canvas.width, canvas.height);
       } else if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         renderShots2D(ctx, shots, zoom, playhead, selectedShotId, scrollX);
@@ -464,14 +422,13 @@ export default function ThreeScene({
       animFrameRef.current = requestAnimationFrame(render);
     };
 
-    // ResizeObserver for responsive sizing
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       const dpr = devicePixelRatio || 1;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
       setCanvasSize({ width, height });
       if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
     });
@@ -489,7 +446,6 @@ export default function ThreeScene({
     };
   }, [shots, playhead, zoom, selectedShotId, scrollX, initGL, useWebGL]);
 
-  // Mouse click: select shot or set playhead
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -498,20 +454,17 @@ export default function ThreeScene({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      // Check playhead hit
       if (hitTestPlayhead(x, playhead, zoom, scrollX)) {
         setIsDraggingPlayhead(true);
         return;
       }
 
-      // Check shot hit
       const hitShot = hitTestShot(x, y, shots, zoom, scrollX);
       if (hitShot) {
         onShotClick(hitShot.id);
         return;
       }
 
-      // Click on ruler to set playhead
       if (y < RULER_HEIGHT) {
         const scale = pxPerSec(zoom);
         const timeSec = (x - TRACK_LABEL_WIDTH + scrollX) / scale;
@@ -521,7 +474,6 @@ export default function ThreeScene({
     [playhead, zoom, scrollX, shots, onShotClick, onPlayheadChange],
   );
 
-  // Mouse move: drag playhead
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isDraggingPlayhead) return;
@@ -531,7 +483,6 @@ export default function ThreeScene({
       const x = e.clientX - rect.left;
       const scale = pxPerSec(zoom);
       const timeSec = (x - TRACK_LABEL_WIDTH + scrollX) / scale;
-      const totalSec = msToSec(totalDurationMs);
       onPlayheadChange(Math.max(0, Math.min(timeSec * 1000, totalDurationMs)));
     },
     [isDraggingPlayhead, zoom, scrollX, totalDurationMs, onPlayheadChange],
@@ -541,14 +492,10 @@ export default function ThreeScene({
     setIsDraggingPlayhead(false);
   }, []);
 
-  // Mouse wheel: Ctrl+scroll → zoom, scroll → pan
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLCanvasElement>) => {
       e.preventDefault();
-      if (e.ctrlKey) {
-        // Zoom not directly changeable from here; could emit an event
-        // For now, no-op — zoom is controlled by parent
-      } else {
+      if (!e.ctrlKey) {
         const maxScroll = Math.max(
           0,
           msToSec(totalDurationMs) * pxPerSec(zoom) - (canvasSize.width - TRACK_LABEL_WIDTH),
