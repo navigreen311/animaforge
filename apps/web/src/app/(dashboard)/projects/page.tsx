@@ -1,18 +1,36 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import TopBar from '../components/topbar/TopBar';
 import StatsRow from '../components/projects/StatsRow';
 import ProjectFilterBar from '../components/projects/ProjectFilterBar';
 import ProjectGrid from '../components/projects/ProjectGrid';
+import ProjectListView from '../components/projects/ProjectListView';
+import EmptyProjectsState from '../components/projects/EmptyProjectsState';
+import FolderSelector from '../components/projects/FolderSelector';
 import ActivityFeed from '../components/panels/ActivityFeed';
 import RenderQueuePanel from '../components/panels/RenderQueuePanel';
 import NewProjectModal from '../components/projects/NewProjectModal';
 import { useUIStore } from '@/store/useUIStore';
-import type { Project, RenderJob, ActivityItem, DashboardStats } from '@/lib/types';
+import type { Project, RenderJob, ActivityItem, DashboardStats, ProjectFolder } from '@/lib/types';
 import { timeAgo } from '@/lib/utils/format';
+
+/* ------------------------------------------------------------------ */
+/*  Mock folders                                                       */
+/* ------------------------------------------------------------------ */
+
+const MOCK_FOLDERS: ProjectFolder[] = [
+  { id: 'folder-animations', name: 'Animations', color: '#6366f1', projectCount: 0 },
+  { id: 'folder-ads', name: 'Ads', color: '#f59e0b', projectCount: 0 },
+  { id: 'folder-shorts', name: 'Shorts', color: '#10b981', projectCount: 0 },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function ProjectsPage() {
   const statusFilter = useUIStore((s) => s.statusFilter);
@@ -20,6 +38,8 @@ export default function ProjectsPage() {
   const searchQuery = useUIStore((s) => s.searchQuery);
   const viewMode = useUIStore((s) => s.viewMode);
   const setNewProjectModalOpen = useUIStore((s) => s.setNewProjectModalOpen);
+
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   // ── Projects ──────────────────────────────────────────────
   const {
@@ -36,7 +56,8 @@ export default function ProjectsPage() {
       if (searchQuery) params.set('search', searchQuery);
       const res = await fetch(`/api/projects?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch projects');
-      return res.json();
+      const data = await res.json();
+      return data.projects ?? [];
     },
     refetchInterval: 30_000,
   });
@@ -47,7 +68,8 @@ export default function ProjectsPage() {
     queryFn: async () => {
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
-      return res.json();
+      const data = await res.json();
+      return data.jobs ?? [];
     },
     refetchInterval: 5_000,
   });
@@ -58,7 +80,8 @@ export default function ProjectsPage() {
     queryFn: async () => {
       const res = await fetch('/api/activity');
       if (!res.ok) throw new Error('Failed to fetch activity');
-      return res.json();
+      const data = await res.json();
+      return data.activities ?? [];
     },
   });
 
@@ -79,6 +102,11 @@ export default function ProjectsPage() {
           p.title.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q),
       );
+    }
+
+    // Folder filter
+    if (selectedFolderId) {
+      result = result.filter((p) => p.folderId === selectedFolderId);
     }
 
     // Sort
@@ -106,7 +134,18 @@ export default function ProjectsPage() {
     }
 
     return result;
-  }, [projects, statusFilter, sortOption, searchQuery]);
+  }, [projects, statusFilter, sortOption, searchQuery, selectedFolderId]);
+
+  // ── Pinned vs unpinned ────────────────────────────────────
+  const pinnedProjects = useMemo(
+    () => filteredProjects.filter((p) => p.isPinned),
+    [filteredProjects],
+  );
+
+  const unpinnedProjects = useMemo(
+    () => filteredProjects.filter((p) => !p.isPinned),
+    [filteredProjects],
+  );
 
   // ── Derived stats ─────────────────────────────────────────
   const stats: DashboardStats | null = useMemo(() => {
@@ -132,6 +171,23 @@ export default function ProjectsPage() {
     );
     return timeAgo(latest.updatedAt);
   }, [projects]);
+
+  // ── Folder counts (derived from current projects) ─────────
+  const foldersWithCounts = useMemo<ProjectFolder[]>(() => {
+    return MOCK_FOLDERS.map((folder) => ({
+      ...folder,
+      projectCount: projects.filter((p) => p.folderId === folder.id).length,
+    }));
+  }, [projects]);
+
+  // ── Handlers ──────────────────────────────────────────────
+  const handleImport = () => {
+    toast('Import coming soon');
+  };
+
+  const handleCreateProject = () => {
+    setNewProjectModalOpen(true);
+  };
 
   // ── Render ────────────────────────────────────────────────
   return (
@@ -177,6 +233,7 @@ export default function ProjectsPage() {
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               type="button"
+              onClick={handleImport}
               style={{
                 background: 'transparent',
                 border: '0.5px solid var(--border)',
@@ -234,7 +291,14 @@ export default function ProjectsPage() {
         {/* ── Filter Bar ────────────────────────────────── */}
         <ProjectFilterBar />
 
-        {/* ── Project Grid / Error State ────────────────── */}
+        {/* ── Folder Selector ─────────────────────────── */}
+        <FolderSelector
+          folders={foldersWithCounts}
+          selectedId={selectedFolderId}
+          onChange={setSelectedFolderId}
+        />
+
+        {/* ── Project Content ─────────────────────────── */}
         {projectsError ? (
           <div
             style={{
@@ -266,8 +330,17 @@ export default function ProjectsPage() {
               Retry
             </button>
           </div>
+        ) : projects.length === 0 && !projectsLoading ? (
+          <EmptyProjectsState onCreateProject={handleCreateProject} />
+        ) : viewMode === 'list' ? (
+          <ProjectListView projects={filteredProjects} />
         ) : (
-          <ProjectGrid projects={filteredProjects} loading={projectsLoading} viewMode={viewMode} />
+          <ProjectGrid
+            projects={unpinnedProjects}
+            pinnedProjects={pinnedProjects}
+            loading={projectsLoading}
+            viewMode={viewMode}
+          />
         )}
 
         {/* ── Bottom Panels ─────────────────────────────── */}

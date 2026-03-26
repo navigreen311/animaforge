@@ -147,7 +147,21 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         isLoading: false,
       });
     } else {
-      set({ isLoading: false });
+      // Auto-create a demo session so the dashboard is always accessible
+      const demoUser: AuthUser = {
+        id: 'user_demo',
+        email: 'shadow@animaforge.io',
+        displayName: 'Shadow',
+        tier: 'pro',
+      };
+      const demoToken = 'demo_token_animaforge';
+      persistAuth(demoUser, demoToken);
+      set({
+        user: demoUser,
+        token: demoToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
     }
   },
 }));

@@ -176,7 +176,7 @@ export default function Sidebar() {
             href="/projects"
             icon={FolderKanban}
             label="Projects"
-            active={pathname.startsWith("/projects")}
+            active={pathname === "/projects" || pathname.startsWith("/projects/")}
             collapsed={collapsed}
           />
           <NavItem

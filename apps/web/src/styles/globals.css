@@ -88,3 +88,20 @@ body {
 .animate-pulse-dot {
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
+
+@keyframes thumbnail-shimmer {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+.thumbnail-generating {
+  animation: thumbnail-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(124,58,237,0); }
+}
+.shot-generating {
+  animation: shot-pulse 1.5s ease-in-out infinite;
+}

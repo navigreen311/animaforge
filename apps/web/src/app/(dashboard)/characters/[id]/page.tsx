@@ -1,0 +1,1132 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import {
+  User,
+  Eye,
+  Pencil,
+  Play,
+  Trash2,
+  Copy,
+  FlaskConical,
+  FolderOpen,
+  Volume2,
+  VolumeX,
+  Plus,
+  Download,
+  Check,
+  Smile,
+  Frown,
+  Meh,
+  Angry,
+  Heart,
+  Zap,
+} from 'lucide-react';
+import type { Character, StyleMode } from '@/lib/types';
+import { Toast, useToast } from '@/components/shared/Toast';
+
+/* ── Mock Data ──────────────────────────────────────────────── */
+
+const MOCK_CHARACTER: Character & {
+  skinTone: string;
+  age: number;
+  build: string;
+  hairColor: string;
+  hairLength: number;
+  facialHair: boolean;
+  consentStatus: 'verified' | 'pending' | 'none';
+} = {
+  id: 'char-1',
+  name: 'Kai Tanaka',
+  description: 'A cyberpunk ronin wandering neon-lit streets.',
+  styleMode: 'anime',
+  status: 'active',
+  isDigitalTwin: true,
+  sourcePhotos: [],
+  voiceId: 'voice-001',
+  voiceName: 'Kenji Smooth',
+  projectIds: ['proj-1', 'proj-2'],
+  driftScore: 85,
+  rightsScope: 'commercial',
+  avatarColor: '#6366f1',
+  shotCount: 24,
+  lastUsedAt: '2026-03-22T14:30:00Z',
+  createdAt: '2026-01-15T10:00:00Z',
+  updatedAt: '2026-03-22T14:30:00Z',
+  skinTone: '#D2A679',
+  age: 32,
+  build: 'Athletic',
+  hairColor: '#1a1a2e',
+  hairLength: 40,
+  facialHair: false,
+  consentStatus: 'verified',
+};
+
+const STYLE_MODES: { value: StyleMode; label: string; gradient: string }[] = [
+  { value: 'realistic', label: 'Realistic', gradient: 'linear-gradient(135deg, #334155, #1e293b)' },
+  { value: 'anime', label: 'Anime', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
+  { value: 'cartoon', label: 'Cartoon', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
+  { value: 'cel-shaded', label: 'Cel-Shaded', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)' },
+  { value: 'pixel', label: 'Pixel', gradient: 'linear-gradient(135deg, #ec4899, #f97316)' },
+  { value: 'clay', label: 'Clay', gradient: 'linear-gradient(135deg, #a16207, #854d0e)' },
+];
+
+const SKIN_TONES = ['#FDDBB4', '#E8B98D', '#D2A679', '#C68642', '#8D5524', '#6B3A1F', '#3B1F0B', '#F5D6C6'];
+
+const HAIR_COLORS = ['#1a1a2e', '#4a2c0a', '#8B4513', '#D2691E', '#DAA520', '#C0C0C0', '#DC143C', '#2E0854'];
+
+const BUILD_OPTIONS = ['Slim', 'Average', 'Athletic', 'Heavy'];
+
+const VIEW_ANGLES = ['Front', 'Side', '3/4', 'Full Body'] as const;
+
+const TABS = ['Appearance', 'Hair', 'Wardrobe', 'Voice', 'History', 'Export'] as const;
+type Tab = (typeof TABS)[number];
+
+const WARDROBE_CATEGORIES = ['Tops', 'Bottoms', 'Shoes', 'Accessories'] as const;
+
+const EXPORT_FORMATS = [
+  { id: 'gltf', label: 'glTF 2.0', ext: '.glb' },
+  { id: 'fbx', label: 'FBX', ext: '.fbx' },
+  { id: 'usd', label: 'USD/USDZ', ext: '.usdz' },
+  { id: 'bvh', label: 'BVH', ext: '.bvh' },
+  { id: 'arkit', label: 'ARKit', ext: '.reality' },
+];
+
+const EMOTION_PREVIEWS = [
+  { label: 'Neutral', Icon: Meh },
+  { label: 'Happy', Icon: Smile },
+  { label: 'Sad', Icon: Frown },
+  { label: 'Angry', Icon: Angry },
+  { label: 'Love', Icon: Heart },
+  { label: 'Surprise', Icon: Zap },
+];
+
+const MOCK_HISTORY = [
+  { id: 'h-1', project: 'Cyber Samurai: Origin', shotNumber: 7, date: '2026-03-20', consistencyScore: 94 },
+  { id: 'h-2', project: 'Neon Drift', shotNumber: 3, date: '2026-03-18', consistencyScore: 88 },
+  { id: 'h-3', project: 'Cyber Samurai: Origin', shotNumber: 12, date: '2026-03-15', consistencyScore: 91 },
+];
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+
+function timeAgo(dateString: string): string {
+  const diff = Date.now() - new Date(dateString).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days < 1) return 'Today';
+  if (days === 1) return '1 day ago';
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? '1 month ago' : `${months} months ago`;
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+/* ── Component ───────────────────────────────────────────────── */
+
+export default function CharacterDetailPage() {
+  const params = useParams<{ id: string }>();
+  const { toast, toasts, dismiss } = useToast();
+
+  const [character] = useState(MOCK_CHARACTER);
+  const [activeTab, setActiveTab] = useState<Tab>('Appearance');
+  const [activeView, setActiveView] = useState<(typeof VIEW_ANGLES)[number]>('Front');
+  const [selectedStyle, setSelectedStyle] = useState<StyleMode>(character.styleMode);
+  const [selectedSkin, setSelectedSkin] = useState(character.skinTone);
+  const [age, setAge] = useState(character.age);
+  const [build, setBuild] = useState(character.build);
+  const [hairColor, setHairColor] = useState(character.hairColor);
+  const [customHairHex, setCustomHairHex] = useState('');
+  const [hairLength, setHairLength] = useState(character.hairLength);
+  const [facialHair, setFacialHair] = useState(character.facialHair);
+  const [wardrobeCategory, setWardrobeCategory] = useState<(typeof WARDROBE_CATEGORIES)[number]>('Tops');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(character.name);
+
+  const handleExport = useCallback(
+    (format: string) => {
+      toast.success(`Export started: ${format}`);
+    },
+    [toast],
+  );
+
+  const handleNameSave = useCallback(() => {
+    setIsEditingName(false);
+  }, []);
+
+  /* ── Render: Tab Content ────────────────────────────────────── */
+
+  function renderAppearanceTab() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* Style Mode */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Style Mode
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {STYLE_MODES.map((mode) => (
+              <button
+                key={mode.value}
+                onClick={() => setSelectedStyle(mode.value)}
+                style={{
+                  background: mode.gradient,
+                  border: selectedStyle === mode.value ? '2px solid var(--brand-light)' : '2px solid transparent',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '14px 8px',
+                  color: 'var(--text-primary)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Skin Tone */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Skin Tone
+          </h4>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {SKIN_TONES.map((tone) => (
+              <button
+                key={tone}
+                onClick={() => setSelectedSkin(tone)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  backgroundColor: tone,
+                  border: selectedSkin === tone ? '3px solid var(--brand-light)' : '2px solid var(--border)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+                aria-label={`Skin tone ${tone}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Age Slider */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Age: {age}
+          </h4>
+          <input
+            type="range"
+            min={18}
+            max={80}
+            value={age}
+            onChange={(e) => setAge(Number(e.target.value))}
+            style={{ width: '100%', accentColor: 'var(--brand)' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)' }}>
+            <span>18</span>
+            <span>80</span>
+          </div>
+        </div>
+
+        {/* Build Selector */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Build
+          </h4>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {BUILD_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setBuild(opt)}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-md)',
+                  border: build === opt ? '1px solid var(--brand-border)' : '1px solid var(--border)',
+                  backgroundColor: build === opt ? 'var(--bg-active)' : 'var(--bg-surface)',
+                  color: build === opt ? 'var(--text-brand)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Emotion Previews */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Emotion Previews
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {EMOTION_PREVIEWS.map(({ label, Icon }) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: 12,
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <Icon size={20} style={{ color: 'var(--text-secondary)' }} />
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderHairTab() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* Hair Color */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Hair Color
+          </h4>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {HAIR_COLORS.map((color) => (
+              <button
+                key={color}
+                onClick={() => setHairColor(color)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  backgroundColor: color,
+                  border: hairColor === color ? '3px solid var(--brand-light)' : '2px solid var(--border)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+                aria-label={`Hair color ${color}`}
+              />
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Custom:</span>
+            <input
+              type="text"
+              placeholder="#FF5500"
+              value={customHairHex}
+              onChange={(e) => setCustomHairHex(e.target.value)}
+              maxLength={7}
+              style={{
+                width: 90,
+                padding: '4px 8px',
+                fontSize: 12,
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+              }}
+            />
+            {customHairHex.match(/^#[0-9A-Fa-f]{6}$/) && (
+              <button
+                onClick={() => setHairColor(customHairHex)}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--brand)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Apply
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Hair Length */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Length: {hairLength}%
+          </h4>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={hairLength}
+            onChange={(e) => setHairLength(Number(e.target.value))}
+            style={{ width: '100%', accentColor: 'var(--brand)' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)' }}>
+            <span>Buzz</span>
+            <span>Long</span>
+          </div>
+        </div>
+
+        {/* Facial Hair */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Facial Hair
+          </h4>
+          <button
+            onClick={() => setFacialHair(!facialHair)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              backgroundColor: facialHair ? 'var(--bg-active)' : 'var(--bg-surface)',
+              color: facialHair ? 'var(--text-brand)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: 13,
+              width: '100%',
+            }}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: facialHair ? 'var(--brand)' : 'var(--border-strong)',
+                position: 'relative',
+                transition: 'background-color 0.2s',
+              }}
+            >
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  position: 'absolute',
+                  top: 2,
+                  left: facialHair ? 18 : 2,
+                  transition: 'left 0.2s',
+                }}
+              />
+            </div>
+            {facialHair ? 'Enabled' : 'Disabled'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderWardrobeTab() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Category Sub-tabs */}
+        <div style={{ display: 'flex', gap: 4, backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 3 }}>
+          {WARDROBE_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setWardrobeCategory(cat)}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                fontSize: 12,
+                fontWeight: 500,
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                backgroundColor: wardrobeCategory === cat ? 'var(--bg-elevated)' : 'transparent',
+                color: wardrobeCategory === cat ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Placeholder Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                aspectRatio: '1',
+                borderRadius: 'var(--radius-md)',
+                border: '1px dashed var(--border-strong)',
+                backgroundColor: 'var(--bg-surface)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Plus size={16} style={{ color: 'var(--text-tertiary)' }} />
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+          Drag items here or click + to add {wardrobeCategory.toLowerCase()}
+        </p>
+      </div>
+    );
+  }
+
+  function renderVoiceTab() {
+    const hasPairedVoice = Boolean(character.voiceId);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', paddingTop: 24 }}>
+        {hasPairedVoice ? (
+          <>
+            <Volume2 size={36} style={{ color: 'var(--brand-light)' }} />
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {character.voiceName}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                Voice ID: {character.voiceId}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--brand-border)',
+                  backgroundColor: 'var(--bg-active)',
+                  color: 'var(--text-brand)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Play size={14} /> Play Sample
+              </button>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                Unpair
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <VolumeX size={36} style={{ color: 'var(--text-tertiary)' }} />
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>No voice paired</p>
+          </>
+        )}
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 20px',
+            fontSize: 13,
+            fontWeight: 500,
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--brand-border)',
+            backgroundColor: 'var(--brand-dim)',
+            color: 'var(--text-brand)',
+            cursor: 'pointer',
+            marginTop: 8,
+          }}
+        >
+          <Plus size={14} /> Pair Voice
+        </button>
+      </div>
+    );
+  }
+
+  function renderHistoryTab() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>
+          Shot History
+        </h4>
+        {MOCK_HISTORY.map((entry) => (
+          <div
+            key={entry.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                {entry.project}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                Shot #{entry.shotNumber} &middot; {entry.date}
+              </p>
+            </div>
+            <div
+              style={{
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: 12,
+                fontWeight: 500,
+                backgroundColor:
+                  entry.consistencyScore >= 90
+                    ? 'rgba(52, 211, 153, 0.12)'
+                    : 'rgba(234, 179, 8, 0.12)',
+                color:
+                  entry.consistencyScore >= 90 ? '#6ee7b7' : '#fbbf24',
+                border: `1px solid ${entry.consistencyScore >= 90 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(234, 179, 8, 0.3)'}`,
+              }}
+            >
+              {entry.consistencyScore}%
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderExportTab() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>
+          Export Formats
+        </h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {EXPORT_FORMATS.map((fmt) => (
+            <button
+              key={fmt.id}
+              onClick={() => handleExport(fmt.label)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                padding: '18px 10px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s, background-color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--brand-border)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-elevated)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-surface)';
+              }}
+            >
+              <Download size={20} style={{ color: 'var(--brand-light)' }} />
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{fmt.label}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{fmt.ext}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderTabContent() {
+    switch (activeTab) {
+      case 'Appearance':
+        return renderAppearanceTab();
+      case 'Hair':
+        return renderHairTab();
+      case 'Wardrobe':
+        return renderWardrobeTab();
+      case 'Voice':
+        return renderVoiceTab();
+      case 'History':
+        return renderHistoryTab();
+      case 'Export':
+        return renderExportTab();
+    }
+  }
+
+  /* ── Drift Score Gauge ──────────────────────────────────────── */
+
+  function DriftGauge({ score }: { score: number }) {
+    const circumference = 2 * Math.PI * 42;
+    const strokeDashoffset = circumference - (score / 100) * circumference;
+    const color = score >= 80 ? '#34d399' : score >= 60 ? '#fbbf24' : '#f87171';
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <svg width="96" height="96" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" strokeWidth="6" />
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            transform="rotate(-90 50 50)"
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+          <text x="50" y="46" textAnchor="middle" fill="var(--text-primary)" fontSize="22" fontWeight="700">
+            {score}
+          </text>
+          <text x="50" y="62" textAnchor="middle" fill="var(--text-tertiary)" fontSize="11">
+            /100
+          </text>
+        </svg>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Drift Score</span>
+      </div>
+    );
+  }
+
+  /* ── Main Render ────────────────────────────────────────────── */
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Toast Container */}
+      {toasts.length > 0 && (
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360 }}>
+          {toasts.map((t) => (
+            <Toast key={t.id} item={t} onDismiss={dismiss} />
+          ))}
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div style={{ marginBottom: 24 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+          Characters / {character.name}
+        </p>
+      </div>
+
+      {/* Two-Column Layout */}
+      <div style={{ display: 'flex', gap: 24 }}>
+        {/* ── LEFT COLUMN (60%) ─────────────────────────────────── */}
+        <div style={{ flex: '0 0 60%', minWidth: 0 }}>
+          {/* Preview Area */}
+          <div
+            style={{
+              height: 300,
+              backgroundColor: 'var(--bg-surface)',
+              border: '2px dashed var(--border-strong)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+          >
+            <User size={48} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 500 }}>
+              Character Preview
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              {activeView} View
+            </span>
+          </div>
+
+          {/* View Angle Toggles */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 6,
+              marginTop: 12,
+              backgroundColor: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-pill)',
+              padding: 3,
+              width: 'fit-content',
+            }}
+          >
+            {VIEW_ANGLES.map((angle) => (
+              <button
+                key={angle}
+                onClick={() => setActiveView(angle)}
+                style={{
+                  padding: '6px 16px',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-pill)',
+                  border: 'none',
+                  backgroundColor: activeView === angle ? 'var(--brand)' : 'transparent',
+                  color: activeView === angle ? '#fff' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {angle}
+              </button>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 0,
+              marginTop: 24,
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  border: 'none',
+                  borderBottom: activeTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
+                  backgroundColor: 'transparent',
+                  color: activeTab === tab ? 'var(--text-brand)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <div style={{ marginTop: 20, minHeight: 300 }}>
+            {renderTabContent()}
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN (40%) ────────────────────────────────── */}
+        <div
+          style={{
+            flex: '0 0 40%',
+            maxWidth: 280,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20,
+          }}
+        >
+          {/* Character Name (editable) */}
+          <div>
+            {isEditingName ? (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleNameSave()}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    fontSize: 18,
+                    fontWeight: 700,
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--brand-border)',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={handleNameSave}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--brand-border)',
+                    backgroundColor: 'var(--brand)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Check size={14} />
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                onClick={() => setIsEditingName(true)}
+              >
+                <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {editName}
+                </h1>
+                <Pencil size={14} style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            )}
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+              ID: {params.id}
+            </p>
+          </div>
+
+          {/* Status Badges */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {/* Character Status */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                fontSize: 11,
+                fontWeight: 500,
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor:
+                  character.status === 'active'
+                    ? 'rgba(52, 211, 153, 0.12)'
+                    : character.status === 'draft'
+                      ? 'rgba(255, 255, 255, 0.06)'
+                      : 'rgba(234, 179, 8, 0.12)',
+                color:
+                  character.status === 'active'
+                    ? '#6ee7b7'
+                    : character.status === 'draft'
+                      ? 'rgba(255, 255, 255, 0.4)'
+                      : '#fbbf24',
+                border: `1px solid ${
+                  character.status === 'active'
+                    ? 'rgba(52, 211, 153, 0.3)'
+                    : character.status === 'draft'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(234, 179, 8, 0.3)'
+                }`,
+                textTransform: 'capitalize',
+              }}
+            >
+              {character.status}
+            </span>
+
+            {/* Digital Twin Badge */}
+            {character.isDigitalTwin && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-pill)',
+                  backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                  color: '#67e8f9',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                }}
+              >
+                Digital Twin
+              </span>
+            )}
+
+            {/* Consent Status */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 10px',
+                fontSize: 11,
+                fontWeight: 500,
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor:
+                  character.consentStatus === 'verified'
+                    ? 'rgba(52, 211, 153, 0.12)'
+                    : 'rgba(234, 179, 8, 0.12)',
+                color:
+                  character.consentStatus === 'verified' ? '#6ee7b7' : '#fbbf24',
+                border: `1px solid ${
+                  character.consentStatus === 'verified'
+                    ? 'rgba(52, 211, 153, 0.3)'
+                    : 'rgba(234, 179, 8, 0.3)'
+                }`,
+              }}
+            >
+              {character.consentStatus === 'verified' && <Check size={10} />}
+              Consent: {character.consentStatus}
+            </span>
+          </div>
+
+          {/* Drift Score Gauge */}
+          <div
+            style={{
+              padding: 16,
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-surface)',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <DriftGauge score={character.driftScore ?? 0} />
+          </div>
+
+          {/* Metadata */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              padding: 14,
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-surface)',
+              fontSize: 12,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Last used</span>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                {character.lastUsedAt ? timeAgo(character.lastUsedAt) : 'Never'}
+              </span>
+            </div>
+            <div
+              style={{
+                height: 1,
+                backgroundColor: 'var(--border)',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Created</span>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                {formatDate(character.createdAt)}
+              </span>
+            </div>
+            <div
+              style={{
+                height: 1,
+                backgroundColor: 'var(--border)',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Shots</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{character.shotCount}</span>
+            </div>
+            <div
+              style={{
+                height: 1,
+                backgroundColor: 'var(--border)',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Rights</span>
+              <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                {character.rightsScope ?? 'N/A'}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              onClick={() => toast.info('Generating test shot...')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '10px 0',
+                fontSize: 13,
+                fontWeight: 600,
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                backgroundColor: 'var(--brand)',
+                color: '#fff',
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+                width: '100%',
+              }}
+            >
+              <FlaskConical size={15} /> Generate Test Shot
+            </button>
+
+            <button
+              onClick={() => toast.info('Opening project selector...')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '10px 0',
+                fontSize: 13,
+                fontWeight: 500,
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--brand-border)',
+                backgroundColor: 'var(--brand-dim)',
+                color: 'var(--text-brand)',
+                cursor: 'pointer',
+                width: '100%',
+              }}
+            >
+              <FolderOpen size={15} /> Use in Project
+            </button>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => toast.success('Character cloned')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '10px 0',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Copy size={14} /> Clone
+              </button>
+              <button
+                onClick={() => toast.warning('Are you sure? This cannot be undone.')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '10px 0',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  color: '#f87171',
+                  cursor: 'pointer',
+                }}
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

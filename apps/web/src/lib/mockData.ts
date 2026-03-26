@@ -1,4 +1,4 @@
-import type { Project, RenderJob, ActivityItem, DashboardStats } from './types';
+import type { Project, RenderJob, ActivityItem, DashboardStats, Character, CharacterStats } from './types';
 
 export const MOCK_PROJECTS: Project[] = [
   {
@@ -144,4 +144,48 @@ export const MOCK_STATS: DashboardStats = {
   creditsUsed: 620,
   creditsTotal: 1000,
   activeRenderJobs: 2,
+};
+
+export const MOCK_CHARACTERS: Character[] = [
+  {
+    id: 'char_kai', name: 'Kai Tanaka', description: 'Cyberpunk samurai from Neo-Tokyo',
+    styleMode: 'anime', status: 'active', isDigitalTwin: false, sourcePhotos: [],
+    projectIds: ['proj_cyber_samurai'], driftScore: 92, avatarColor: '#7c3aed',
+    shotCount: 12, rightsScope: undefined, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'char_luna', name: 'Luna Evergreen', description: 'Guardian of the last garden on Earth',
+    styleMode: 'cartoon', status: 'active', isDigitalTwin: true, sourcePhotos: ['/photos/luna1.jpg'],
+    voiceId: 'voice_1', voiceName: 'Serene Female', projectIds: ['proj_last_garden'],
+    driftScore: 78, avatarColor: '#10b981', shotCount: 8, rightsScope: 'commercial',
+    createdAt: new Date(Date.now() - 86400000 * 8).toISOString(),
+    updatedAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'char_echo', name: 'Dr. Echo', description: 'Time scientist exploring parallel timelines',
+    styleMode: 'realistic', status: 'draft', isDigitalTwin: false, sourcePhotos: [],
+    projectIds: ['proj_echoes'], driftScore: undefined, avatarColor: '#f59e0b',
+    shotCount: 0, createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 'char_pixel', name: 'Pixel', description: 'Adorable robot companion with a heart of gold',
+    styleMode: 'pixel', status: 'active', isDigitalTwin: false, sourcePhotos: [],
+    projectIds: ['proj_cyber_samurai', 'proj_echoes'], driftScore: 85, avatarColor: '#ec4899',
+    shotCount: 6, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    updatedAt: new Date(Date.now() - 43200000).toISOString(),
+  },
+  {
+    id: 'char_maya', name: 'Maya Torres', description: 'Street artist turned digital activist',
+    styleMode: 'cel-shaded', status: 'active', isDigitalTwin: true, sourcePhotos: ['/photos/maya1.jpg', '/photos/maya2.jpg'],
+    voiceId: 'voice_2', voiceName: 'Bold Female', projectIds: ['proj_cyber_samurai'],
+    driftScore: 65, avatarColor: '#06b6d4', shotCount: 4, rightsScope: 'personal',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - 18000000).toISOString(),
+  },
+];
+
+export const MOCK_CHARACTER_STATS: CharacterStats = {
+  total: 5, activeInProjects: 4, digitalTwins: 2, voicesPaired: 2,
 };

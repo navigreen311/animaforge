@@ -4,3 +4,6 @@ export { default as ProjectCardSkeleton } from './ProjectCardSkeleton';
 export { default as ProjectFilterBar } from './ProjectFilterBar';
 export { default as StatsRow } from './StatsRow';
 export { default as NewProjectModal } from './NewProjectModal';
+export { default as ProjectListView } from './ProjectListView';
+export { default as EmptyProjectsState } from './EmptyProjectsState';
+export { default as FolderSelector } from './FolderSelector';
