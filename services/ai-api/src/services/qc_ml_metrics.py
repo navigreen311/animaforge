@@ -326,7 +326,7 @@ def compute_color_consistency(
     consistency = round(max(0.0, 1.0 - mean_shift / 0.15), 4)
 
     # White balance drift: accumulated shift over all frames
-    wb_drift = round(sum(shift_magnitudes) / len(shift_magnitudes) * 100, 2)
+    wb_drift = round(sum(shift_magnitudes) / len(shift_magnitudes) * 100, 2)  # in Kelvin-equivalent units
 
     return {
         "consistency_score": consistency,

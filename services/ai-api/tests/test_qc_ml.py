@@ -223,6 +223,8 @@ def test_comprehensive_qc_pass():
 
 def test_comprehensive_qc_fail():
     """Force a low-quality scenario and verify fail behaviour."""
+    # Use a URL that we know produces a low aggregate score or just
+    # verify that if grade is D/F the action is reject.
     result = run_comprehensive_qc("job-fail-001", "https://cdn.example.com/output/bad-quality")
 
     assert result["job_id"] == "job-fail-001"
