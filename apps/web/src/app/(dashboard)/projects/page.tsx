@@ -36,7 +36,8 @@ export default function ProjectsPage() {
       if (searchQuery) params.set('search', searchQuery);
       const res = await fetch(`/api/projects?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch projects');
-      return res.json();
+      const data = await res.json();
+      return data.projects ?? [];
     },
     refetchInterval: 30_000,
   });
@@ -47,7 +48,8 @@ export default function ProjectsPage() {
     queryFn: async () => {
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
-      return res.json();
+      const data = await res.json();
+      return data.jobs ?? [];
     },
     refetchInterval: 5_000,
   });
@@ -58,7 +60,8 @@ export default function ProjectsPage() {
     queryFn: async () => {
       const res = await fetch('/api/activity');
       if (!res.ok) throw new Error('Failed to fetch activity');
-      return res.json();
+      const data = await res.json();
+      return data.activities ?? [];
     },
   });
 
