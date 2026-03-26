@@ -17,6 +17,12 @@ export { CharactersResource } from './resources/characters';
 export { GenerationResource } from './resources/generation';
 export { JobsResource } from './resources/jobs';
 export { AssetsResource } from './resources/assets';
+export { WebhooksResource } from './resources/webhooks';
+export { DeveloperResource } from './resources/developer';
+
+// Webhook & Developer types
+export type { Webhook, WebhookLogEntry } from './resources/webhooks';
+export type { ApiUsage, RateLimitStatus, ChangelogEntry, SandboxCredentials } from './resources/developer';
 
 // Types
 export type {
