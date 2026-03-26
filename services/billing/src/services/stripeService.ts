@@ -1,14 +1,19 @@
-import Stripe from "stripe";
-import { v4 as uuidv4 } from "uuid";
-import * as billingService from "./billingService";
+import Stripe from 'stripe';
 
-// --------------- Stripe Client ---------------
+// --------------- Stripe Client (lazy, with mock fallback) ---------------
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
-});
+let stripe: Stripe | null = null;
 
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+function getStripe(): Stripe | null {
+  if (stripe) return stripe;
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || key.startsWith('YOUR_')) {
+    console.warn('[StripeService] Stripe not configured, using mock mode');
+    return null;
+  }
+  stripe = new Stripe(key, { apiVersion: '2024-04-10' });
+  return stripe;
+}
 
 // --------------- Pricing / Price ID Configuration ---------------
 
@@ -20,262 +25,121 @@ export interface PlanConfig {
   credits: number;
 }
 
-/** Map tiers to Stripe price IDs (set via env or defaults for dev) */
-const STRIPE_PRICE_IDS: Record<string, string> = {
-  free: process.env.STRIPE_PRICE_FREE ?? "price_free_000",
-  creator: process.env.STRIPE_PRICE_CREATOR ?? "price_creator_029",
-  pro: process.env.STRIPE_PRICE_PRO ?? "price_pro_049",
-  studio: process.env.STRIPE_PRICE_STUDIO ?? "price_studio_099",
+const PRICE_IDS: Record<string, string> = {
+  creator: process.env.STRIPE_PRICE_CREATOR || 'price_creator_placeholder',
+  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_placeholder',
+  studio: process.env.STRIPE_PRICE_STUDIO || 'price_studio_placeholder',
 };
 
 export const PRICING: Record<string, PlanConfig> = {
   free: {
-    tier: "free",
-    name: "Free",
-    stripePriceId: STRIPE_PRICE_IDS.free,
+    tier: 'free',
+    name: 'Free',
+    stripePriceId: '',
     priceMonthly: 0,
     credits: 10,
   },
   creator: {
-    tier: "creator",
-    name: "Creator",
-    stripePriceId: STRIPE_PRICE_IDS.creator,
+    tier: 'creator',
+    name: 'Creator',
+    stripePriceId: PRICE_IDS.creator,
     priceMonthly: 2900,
     credits: 100,
   },
   pro: {
-    tier: "pro",
-    name: "Pro",
-    stripePriceId: STRIPE_PRICE_IDS.pro,
+    tier: 'pro',
+    name: 'Pro',
+    stripePriceId: PRICE_IDS.pro,
     priceMonthly: 4900,
     credits: 300,
   },
   studio: {
-    tier: "studio",
-    name: "Studio",
-    stripePriceId: STRIPE_PRICE_IDS.studio,
+    tier: 'studio',
+    name: 'Studio',
+    stripePriceId: PRICE_IDS.studio,
     priceMonthly: 9900,
     credits: 1000,
   },
 };
 
-// --------------- Checkout Sessions ---------------
+// --------------- Customer Management ---------------
 
-export interface CheckoutSessionResult {
-  id: string;
-  url: string | null;
+export async function createCustomer(email: string, name?: string) {
+  const s = getStripe();
+  if (!s) return { id: `mock_cus_${Date.now()}`, email, name };
+  return s.customers.create({ email, name });
 }
 
+// --------------- Checkout Sessions ---------------
+
 export async function createCheckoutSession(
-  userId: string,
+  customerId: string,
   tier: string,
   successUrl: string,
   cancelUrl: string,
-): Promise<CheckoutSessionResult> {
-  const plan = PRICING[tier];
-  if (!plan) {
-    throw new Error(`Unknown tier: ${tier}`);
-  }
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price: plan.stripePriceId,
-          quantity: 1,
-        },
-      ],
-      client_reference_id: userId,
-      metadata: { tier },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
-
-    return { id: session.id, url: session.url };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Stripe checkout failed";
-    console.error(`[StripeService] createCheckoutSession error: ${message}`);
-    throw new Error(`Stripe checkout error: ${message}`);
-  }
+) {
+  const s = getStripe();
+  if (!s) return { id: `mock_cs_${Date.now()}`, url: successUrl + '?session_id=mock' };
+  return s.checkout.sessions.create({
+    customer: customerId,
+    line_items: [{ price: PRICE_IDS[tier], quantity: 1 }],
+    mode: 'subscription',
+    success_url: successUrl + '?session_id={CHECKOUT_SESSION_ID}',
+    cancel_url: cancelUrl,
+  });
 }
 
 // --------------- Billing Portal Sessions ---------------
 
-export interface PortalSessionResult {
-  id: string;
-  url: string;
+export async function createPortalSession(customerId: string, returnUrl: string) {
+  const s = getStripe();
+  if (!s) return { url: returnUrl + '?portal=mock' };
+  return s.billingPortal.sessions.create({ customer: customerId, return_url: returnUrl });
 }
 
-export async function createPortalSession(
-  customerId: string,
-): Promise<PortalSessionResult> {
-  try {
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url:
-        process.env.BILLING_RETURN_URL ?? "https://animaforge.app/billing",
-    });
+// --------------- Subscription Management ---------------
 
-    return { id: session.id, url: session.url };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Stripe portal failed";
-    console.error(`[StripeService] createPortalSession error: ${message}`);
-    throw new Error(`Stripe portal error: ${message}`);
-  }
+export async function cancelSubscription(subscriptionId: string) {
+  const s = getStripe();
+  if (!s) return { id: subscriptionId, status: 'canceled' };
+  return s.subscriptions.cancel(subscriptionId);
 }
 
-// --------------- Webhook Event Processing ---------------
-
-export interface WebhookResult {
-  received: boolean;
-  action?: string;
-  error?: string;
+export async function getSubscription(subscriptionId: string) {
+  const s = getStripe();
+  if (!s) return { id: subscriptionId, status: 'active', current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400 };
+  return s.subscriptions.retrieve(subscriptionId);
 }
 
-/**
- * Verify and construct a Stripe webhook event from the raw request body
- * and signature header, then process it.
- */
-export async function handleWebhookEvent(
-  body: string | Buffer,
-  signature: string,
-): Promise<WebhookResult> {
-  let event: Stripe.Event;
+export async function updateSubscription(subscriptionId: string, params: Stripe.SubscriptionUpdateParams) {
+  const s = getStripe();
+  if (!s) return { id: subscriptionId, status: 'active', ...params };
+  return s.subscriptions.update(subscriptionId, params);
+}
 
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Signature verification failed";
-    console.error(`[StripeService] Webhook signature error: ${message}`);
-    return { received: false, error: `Webhook signature verification failed: ${message}` };
-  }
+// --------------- Invoices ---------------
 
-  try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id;
-        const tier = session.metadata?.tier;
+export async function listInvoices(customerId: string, limit = 10) {
+  const s = getStripe();
+  if (!s) return { data: [], has_more: false };
+  return s.invoices.list({ customer: customerId, limit });
+}
 
-        if (!userId || !tier) {
-          return { received: true, error: "Missing userId or tier in session" };
-        }
+// --------------- Webhook Event Construction ---------------
 
-        await billingService.subscribeTier(userId, tier as any);
-        return { received: true, action: "subscription_created" };
-      }
-
-      case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
-        const newTier = subscription.metadata?.tier;
-
-        if (userId && newTier) {
-          await billingService.changeTier(userId, newTier as any);
-          return { received: true, action: "subscription_updated" };
-        }
-
-        return { received: true, action: "subscription_update_acknowledged" };
-      }
-
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
-
-        if (userId) {
-          await billingService.cancelSubscription(userId);
-          return { received: true, action: "subscription_canceled" };
-        }
-
-        return { received: true, error: "Missing userId in subscription metadata" };
-      }
-
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
-        const customerId =
-          typeof invoice.customer === "string"
-            ? invoice.customer
-            : invoice.customer?.id;
-        const userId = invoice.subscription_details?.metadata?.userId;
-        const tier = invoice.subscription_details?.metadata?.tier;
-
-        if (userId && tier) {
-          const plan = PRICING[tier];
-          if (plan) {
-            await billingService.topUp(userId, plan.credits);
-          }
-        }
-
-        console.log(
-          `[StripeService] Payment succeeded for customer=${customerId}`,
-        );
-        return { received: true, action: "payment_recorded" };
-      }
-
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.warn(
-          `[StripeService] Payment failed for invoice=${invoice.id}`,
-        );
-        return { received: true, action: "payment_failed_recorded" };
-      }
-
-      default:
-        return { received: true, action: "unhandled_event" };
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error(`[StripeService] Webhook processing error: ${message}`);
-    return { received: true, error: message };
-  }
+export async function constructWebhookEvent(body: string | Buffer, signature: string) {
+  const s = getStripe();
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!s || !secret) return null;
+  return s.webhooks.constructEvent(body, signature, secret);
 }
 
 // --------------- Helpers ---------------
 
 export function getStripePriceId(tier: string): string | undefined {
-  return STRIPE_PRICE_IDS[tier];
+  return PRICE_IDS[tier];
 }
 
 export function getPlan(tier: string): PlanConfig | undefined {
   return PRICING[tier];
-}
-
-// --------------- In-memory fallback helpers (for tests / no-Stripe mode) ---------------
-
-const customers = new Map<string, { id: string; userId: string; email: string }>();
-const customersByUserId = new Map<string, string>();
-
-export function createCustomer(
-  userId: string,
-  email: string,
-): { id: string; userId: string; email: string } {
-  const existing = customersByUserId.get(userId);
-  if (existing) {
-    return customers.get(existing)!;
-  }
-
-  const customer = {
-    id: `cus_${uuidv4().replace(/-/g, "").slice(0, 14)}`,
-    userId,
-    email,
-  };
-
-  customers.set(customer.id, customer);
-  customersByUserId.set(userId, customer.id);
-  return customer;
-}
-
-export function getCustomerByUserId(
-  userId: string,
-): { id: string; userId: string; email: string } | undefined {
-  const customerId = customersByUserId.get(userId);
-  return customerId ? customers.get(customerId) : undefined;
-}
-
-export function _resetStores(): void {
-  customers.clear();
-  customersByUserId.clear();
-  billingService._resetStores();
 }
