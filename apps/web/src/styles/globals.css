@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono&display=swap');
+
 :root {
+  /* Legacy vars (keep for existing components) */
   --color-primary: #8B5CF6;
   --color-secondary: #06B6D4;
   --color-surface: #1E1E2E;
@@ -10,9 +13,78 @@
   --color-text: #E2E8F0;
   --color-text-muted: #94A3B8;
   --color-border: #2D2D3F;
+
+  /* Base surfaces */
+  --bg-base: #0a0a0f;
+  --bg-surface: #0f0f1a;
+  --bg-elevated: #13131f;
+  --bg-overlay: #1a1a2e;
+  --bg-hover: rgba(255, 255, 255, 0.04);
+  --bg-active: rgba(124, 58, 237, 0.15);
+
+  /* Brand */
+  --brand: #7c3aed;
+  --brand-light: #a78bfa;
+  --brand-dim: rgba(124, 58, 237, 0.2);
+  --brand-border: rgba(124, 58, 237, 0.35);
+
+  /* Text */
+  --text-primary: #e2e8f0;
+  --text-secondary: rgba(226, 232, 240, 0.55);
+  --text-tertiary: rgba(226, 232, 240, 0.28);
+  --text-brand: #c4b5fd;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --border-brand: rgba(124, 58, 237, 0.4);
+
+  /* Status colors */
+  --status-generating-bg: rgba(234, 179, 8, 0.12);
+  --status-generating-text: #fbbf24;
+  --status-generating-border: rgba(234, 179, 8, 0.3);
+
+  --status-review-bg: rgba(96, 165, 250, 0.12);
+  --status-review-text: #93c5fd;
+  --status-review-border: rgba(96, 165, 250, 0.3);
+
+  --status-draft-bg: rgba(255, 255, 255, 0.06);
+  --status-draft-text: rgba(255, 255, 255, 0.4);
+  --status-draft-border: rgba(255, 255, 255, 0.12);
+
+  --status-complete-bg: rgba(52, 211, 153, 0.12);
+  --status-complete-text: #6ee7b7;
+  --status-complete-border: rgba(52, 211, 153, 0.3);
+
+  /* Render / progress */
+  --progress-track: rgba(255, 255, 255, 0.07);
+  --progress-fill: #7c3aed;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing */
+  --sidebar-width: 200px;
+  --topbar-height: 52px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-pill: 20px;
 }
 
 body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
 }

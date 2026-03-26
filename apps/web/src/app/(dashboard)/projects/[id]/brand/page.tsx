@@ -197,7 +197,7 @@ export default function BrandKitPage() {
         {/* Tab content */}
         <div className="rounded-xl bg-gray-800/30 border border-gray-800 p-6">
           {activeTab === 'colors' && (
-            <ColorPicker colors={colors} onChange={setColors} />
+            <ColorPicker colors={colors} onChange={setColors as any} />
           )}
 
           {activeTab === 'typography' && (

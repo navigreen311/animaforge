@@ -28,11 +28,17 @@
     "docker:down": "docker-compose -f docker/docker-compose.yml down"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.0",
     "concurrently": "^8.2.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.0",
-    "typescript": "^5.4.2",
-    "vitest": "^1.6.0",
-    "@playwright/test": "^1.44.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^1.6.0"
+  },
+  "dependencies": {
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
+    "sonner": "^2.0.7"
   }
 }
