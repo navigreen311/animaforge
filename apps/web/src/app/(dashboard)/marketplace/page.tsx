@@ -786,7 +786,7 @@ export default function MarketplacePage() {
                 right: 0,
                 width: 480,
                 height: '100vh',
-                background: 'var(--bg-primary)',
+                background: 'var(--bg-surface)',
                 borderLeft: '0.5px solid var(--border)',
                 zIndex: 1000,
                 display: 'flex',
@@ -1040,7 +1040,7 @@ export default function MarketplacePage() {
                         rows={3}
                         style={{
                           width: '100%',
-                          background: 'var(--bg-primary)',
+                          background: 'var(--bg-surface)',
                           border: '0.5px solid var(--border)',
                           borderRadius: 'var(--radius-md)',
                           padding: 10,
@@ -1218,7 +1218,7 @@ export default function MarketplacePage() {
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'var(--bg-primary)',
+              background: 'var(--bg-surface)',
               border: '0.5px solid var(--border)',
               borderRadius: 'var(--radius-xl)',
               width: 400,

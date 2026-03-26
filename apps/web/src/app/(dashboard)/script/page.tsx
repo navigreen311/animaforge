@@ -266,7 +266,7 @@ export default function ScriptPage() {
   /* ── Render ───────────────────────────────────────────────── */
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="flex h-full flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
 
       {/* ════════════════════════════════════════════════════════
           TOP BAR
