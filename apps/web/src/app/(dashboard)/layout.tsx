@@ -61,20 +61,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setRenderPanelExpanded,
   ]);
 
-  // Loading state
-  if (isLoading) {
+  // Loading or not authenticated — show dark loading screen
+  if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <div
+        style={{
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#0a0a0f',
+        }}
+      >
         <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"
+          style={{
+            width: 32,
+            height: 32,
+            border: '2px solid rgba(124, 58, 237, 0.3)',
+            borderTopColor: '#7c3aed',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
         />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
-  }
-
-  // Not authenticated — will redirect, render nothing
-  if (!isAuthenticated) {
-    return null;
   }
 
   return (
