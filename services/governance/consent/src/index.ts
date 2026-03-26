@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import consentRoutes from "./routes/consent";
+import rightsRouter from "./routes/rights";
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use(consentRoutes);
+app.use(rightsRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "consent" });
