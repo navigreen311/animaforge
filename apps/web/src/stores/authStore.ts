@@ -55,53 +55,75 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   isAuthenticated: false,
   isLoading: true,
 
-  login: async (email: string, _password: string) => {
+  login: async (email: string, password: string) => {
     set({ isLoading: true });
     try {
-      // Simulated API call — replace with real endpoint
-      const mockUser: AuthUser = {
-        id: `user_${Date.now()}`,
-        email,
-        displayName: email.split('@')[0],
-        tier: 'free',
-      };
-      const mockToken = `mock_token_${Date.now()}`;
+      const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3003';
+      const res = await fetch(`${AUTH_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      persistAuth(mockUser, mockToken);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Login failed' }));
+        throw new Error(err.error || 'Login failed');
+      }
+
+      const data = await res.json();
+      const user: AuthUser = {
+        id: data.user.id,
+        email: data.user.email,
+        displayName: data.user.displayName,
+        tier: data.user.tier || 'free',
+      };
+
+      persistAuth(user, data.token);
       set({
-        user: mockUser,
-        token: mockToken,
+        user,
+        token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch {
+    } catch (err) {
       set({ isLoading: false });
-      throw new Error('Login failed');
+      throw err instanceof Error ? err : new Error('Login failed');
     }
   },
 
-  register: async (email: string, _password: string, displayName: string) => {
+  register: async (email: string, password: string, displayName: string) => {
     set({ isLoading: true });
     try {
-      // Simulated API call — replace with real endpoint
-      const mockUser: AuthUser = {
-        id: `user_${Date.now()}`,
-        email,
-        displayName,
-        tier: 'free',
-      };
-      const mockToken = `mock_token_${Date.now()}`;
+      const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3003';
+      const res = await fetch(`${AUTH_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, displayName }),
+      });
 
-      persistAuth(mockUser, mockToken);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Registration failed' }));
+        throw new Error(err.error || 'Registration failed');
+      }
+
+      const data = await res.json();
+      const user: AuthUser = {
+        id: data.user.id,
+        email: data.user.email,
+        displayName: data.user.displayName,
+        tier: data.user.tier || 'free',
+      };
+
+      persistAuth(user, data.token);
       set({
-        user: mockUser,
-        token: mockToken,
+        user,
+        token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch {
+    } catch (err) {
       set({ isLoading: false });
-      throw new Error('Registration failed');
+      throw err instanceof Error ? err : new Error('Registration failed');
     }
   },
 
