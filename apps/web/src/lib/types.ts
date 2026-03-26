@@ -96,6 +96,123 @@ export interface SceneGraph {
   styleRef?: string;
 }
 
+export interface SceneBlock {
+  id: string;
+  sceneNumber: number;
+  heading: string;
+  action: string;
+  dialogue?: DialogueLine[];
+  isEditing?: boolean;
+}
+
+export interface DialogueLine {
+  characterName: string;
+  parenthetical?: string;
+  line: string;
+}
+
+export interface ShotBreakdown {
+  id: string;
+  shotNumber: number;
+  cameraType: string;
+  description: string;
+  durationSeconds: number;
+  characterIds?: string[];
+  sceneId: string;
+  sceneGraph?: Partial<SceneGraph>;
+}
+
+export interface DetectedCharacter {
+  name: string;
+  characterId?: string;
+  occurrences: number;
+}
+
+export interface Script {
+  id: string;
+  title: string;
+  prompt: string;
+  format: string;
+  tone: string;
+  targetDuration: number;
+  targetShotCount: number;
+  content: SceneBlock[];
+  shotBreakdown: ShotBreakdown[];
+  detectedChars: DetectedCharacter[];
+  projectId?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StyleFingerprint {
+  colorPalette: string[];
+  contrastProfile: { level: 'low' | 'medium' | 'high'; value: number };
+  grainNoise: { intensity: number; type: 'film' | 'digital' | 'none' };
+  colorGrade: string;
+  cameraMotion: { type: string; intensity: 'low' | 'medium' | 'high' };
+  editingRhythm: { avgCutLength: number; style: 'fast' | 'moderate' | 'slow' };
+  lensCharacter: { focalLength: number; aberration: 'low' | 'medium' | 'high' };
+  confidence: number;
+}
+
+export interface CartoonProSettings {
+  lineThickness: number;
+  lineCleanup: 'off' | 'subtle' | 'strong';
+  lineColor: string;
+  shadingMode: 'cel-hard' | 'cel-soft' | 'painterly' | 'flat' | 'none';
+  shadowIntensity: number;
+  lightDirection: number;
+  squashStretch: number;
+  smearFrames: boolean;
+  smearIntensity?: number;
+  poseExaggeration: number;
+  anticipation: number;
+  animationStyle: '24fps' | '12fps' | '8fps' | 'custom';
+  holdFrames: number;
+  inbetweenQuality: 'auto' | 'draft' | 'final';
+  visemeStyle: 'anime' | 'western' | 'disney' | 'realistic' | 'simple';
+  comicPanelMode: boolean;
+  panelLayout?: '2panel' | '3panel' | '4panel';
+  onionSkin: boolean;
+  onionSkinFrames?: number;
+}
+
+export interface Avatar {
+  id: string;
+  name: string;
+  status: 'draft' | 'processing' | 'complete' | 'failed';
+  pipelineStep: string;
+  styleMode: string;
+  sourcePhotos: string[];
+  voiceId?: string;
+  qualityScore?: number;
+  polyCount?: number;
+  textureRes?: string;
+  rigType?: string;
+  blendShapes?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AudioTrack {
+  id: string;
+  type: 'music' | 'voice' | 'sfx';
+  name: string;
+  audioUrl?: string;
+  duration?: number;
+  waveformData?: number[];
+  genre?: string;
+  mood?: string;
+  bpm?: number;
+  style?: string;
+  language?: string;
+  characterId?: string;
+  beatMap?: { timecodeMs: number; type: 'hit' | 'beat' | 'downbeat' }[];
+  isFavorite: boolean;
+  createdAt: string;
+}
+
 export interface ProjectFolder {
   id: string;
   name: string;
