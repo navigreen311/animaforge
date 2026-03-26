@@ -176,22 +176,22 @@ export default function Sidebar() {
             href="/projects"
             icon={FolderKanban}
             label="Projects"
-            active={pathname.startsWith("/projects")}
+            active={pathname === "/projects" || pathname.startsWith("/projects/")}
             collapsed={collapsed}
           />
           <NavItem
-            href="/timeline"
+            href="/projects"
             icon={Film}
             label="Timeline"
-            active={pathname.startsWith("/timeline")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
           <NavItem
-            href="/characters"
+            href="/projects"
             icon={Users}
             label="Characters"
-            active={pathname.startsWith("/characters")}
+            active={false}
             collapsed={collapsed}
           />
         </NavSection>
@@ -220,10 +220,10 @@ export default function Sidebar() {
             collapsed={collapsed}
           />
           <NavItem
-            href="/audio"
+            href="/projects"
             icon={Music}
             label="Audio Studio"
-            active={pathname.startsWith("/audio")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
@@ -232,26 +232,26 @@ export default function Sidebar() {
         {/* MANAGE */}
         <NavSection title="MANAGE" collapsed={collapsed}>
           <NavItem
-            href="/assets"
+            href="/projects"
             icon={Image}
             label="Asset Library"
-            active={pathname.startsWith("/assets")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
           <NavItem
-            href="/brand"
+            href="/projects"
             icon={Brush}
             label="Brand Kit"
-            active={pathname.startsWith("/brand")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
           <NavItem
-            href="/analytics"
+            href="/projects"
             icon={BarChart3}
             label="Analytics"
-            active={pathname.startsWith("/analytics")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
@@ -260,18 +260,18 @@ export default function Sidebar() {
         {/* PLATFORM */}
         <NavSection title="PLATFORM" collapsed={collapsed}>
           <NavItem
-            href="/marketplace"
+            href="/browse"
             icon={Store}
             label="Marketplace"
-            active={pathname.startsWith("/marketplace")}
+            active={pathname.startsWith("/browse")}
             collapsed={collapsed}
             badge="dot"
           />
           <NavItem
-            href="/team"
+            href="/projects"
             icon={UserPlus}
             label="Team"
-            active={pathname.startsWith("/team")}
+            active={false}
             collapsed={collapsed}
             badge="new"
           />
@@ -293,10 +293,10 @@ export default function Sidebar() {
         />
 
         <NavItem
-          href="/settings"
+          href="/projects"
           icon={Settings}
           label="Settings"
-          active={pathname.startsWith("/settings")}
+          active={false}
           collapsed={collapsed}
           badge="new"
         />
