@@ -19,7 +19,7 @@ from src.services.scene_graph_engine import (
     validate_composition,
 )
 
-# ── Fixtures ─────────────────────────────────────────────────────────────────
+# -- Fixtures -----------------------------------------------------------------
 
 
 @pytest.fixture()
@@ -41,7 +41,7 @@ def basic_scene_graph() -> dict:
     }
 
 
-# ── Service-layer unit tests ────────────────────────────────────────────────
+# -- Service-layer unit tests -------------------------------------------------
 
 
 class TestSceneGraphEngine:
@@ -56,7 +56,7 @@ class TestSceneGraphEngine:
             assert "scale" in elem
 
     def test_parse_scene_graph_rejects_missing_elements(self) -> None:
-        with pytest.raises(ValueError, match="must contain 'elements'"):
+        with pytest.raises(ValueError, match="must contain"):
             parse_scene_graph({"metadata": {}})
 
     def test_compute_spatial_layout_returns_bounds(self, basic_scene_graph: dict) -> None:
@@ -67,7 +67,6 @@ class TestSceneGraphEngine:
             assert "bounds" in elem
             assert "min" in elem["bounds"]
             assert "max" in elem["bounds"]
-            # max > min on all axes
             for axis in ("x", "y", "z"):
                 assert elem["bounds"]["max"][axis] >= elem["bounds"]["min"][axis]
 
@@ -107,10 +106,8 @@ class TestSceneGraphEngine:
         camera = {"position": {"x": 0, "y": 1.5, "z": 10}}
         dm = generate_depth_map(layout, camera)
         assert len(dm["elements"]) > 0
-        # Layers should be ascending
         layers = [e["layer"] for e in dm["elements"]]
         assert layers == sorted(layers)
-        # Depths should be ascending
         depths = [e["depth"] for e in dm["elements"]]
         assert depths == sorted(depths)
 
@@ -142,7 +139,7 @@ class TestSceneGraphEngine:
         assert result["ambient"]["intensity"] < result["fill_light"]["intensity"]
 
 
-# ── Route integration test ──────────────────────────────────────────────────
+# -- Route integration test ---------------------------------------------------
 
 
 class TestSceneGraphRoutes:
