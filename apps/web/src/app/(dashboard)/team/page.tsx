@@ -191,7 +191,7 @@ const cardStyle: React.CSSProperties = {
   background: 'var(--bg-card)',
   border: '0.5px solid var(--border)',
   borderRadius: 'var(--radius-md)',
-  overflow: 'hidden',
+  overflow: 'visible',
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -1180,7 +1180,7 @@ export default function TeamPage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [creditLimitMember, setCreditLimitMember] = useState<TeamMember | null>(null);
-  const [creditsOpen, setCreditsOpen] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(true);
   const [contextMenu, setContextMenu] = useState<{ member: TeamMember; rect: DOMRect } | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -1257,7 +1257,7 @@ export default function TeamPage() {
       {/* Keyframes for spinner */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1 }}>
         <main
           style={{
             padding: '20px 24px',
