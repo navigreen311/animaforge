@@ -188,7 +188,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
 };
 
 const cardStyle: React.CSSProperties = {
-  background: 'var(--bg-card)',
+  background: 'var(--bg-elevated)',
   border: '0.5px solid var(--border)',
   borderRadius: 'var(--radius-md)',
   overflow: 'visible',
@@ -265,7 +265,7 @@ const modalOverlayStyle: React.CSSProperties = {
 };
 
 const modalBoxStyle: React.CSSProperties = {
-  background: 'var(--bg-card)',
+  background: 'var(--bg-elevated)',
   border: '0.5px solid var(--border)',
   borderRadius: 'var(--radius-md)',
   padding: 24,
@@ -276,7 +276,7 @@ const modalBoxStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: 'var(--bg-primary)',
+  background: 'var(--bg-surface)',
   border: '0.5px solid var(--border)',
   borderRadius: 'var(--radius-md)',
   padding: '8px 12px',
@@ -388,7 +388,7 @@ function AvatarStack({ memberIds }: { memberIds: string[] }) {
           key={m.id}
           style={{
             marginLeft: i > 0 ? -8 : 0,
-            border: '2px solid var(--bg-card)',
+            border: '2px solid var(--bg-elevated)',
             borderRadius: '50%',
             zIndex: members.length - i,
             position: 'relative',
@@ -411,7 +411,7 @@ function AvatarStack({ memberIds }: { memberIds: string[] }) {
             fontSize: 9,
             fontWeight: 600,
             color: 'var(--text-tertiary)',
-            border: '2px solid var(--bg-card)',
+            border: '2px solid var(--bg-elevated)',
           }}
         >
           +{members.length - 4}
@@ -834,7 +834,7 @@ function MemberDetailPanel({
         right: 0,
         width: 360,
         height: '100vh',
-        background: 'var(--bg-card)',
+        background: 'var(--bg-elevated)',
         borderLeft: '0.5px solid var(--border)',
         zIndex: 900,
         display: 'flex',
@@ -895,11 +895,11 @@ function MemberDetailPanel({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
             <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>Shots generated</p>
             <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: '2px 0 0' }}>{member.shotsGenerated}</p>
           </div>
-          <div style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
             <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>Approved</p>
             <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: '2px 0 0' }}>{member.shotsApproved}</p>
           </div>
@@ -920,7 +920,7 @@ function MemberDetailPanel({
                 alignItems: 'center',
                 gap: 8,
                 padding: '6px 10px',
-                background: 'var(--bg-primary)',
+                background: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-md)',
                 fontSize: 12,
                 color: 'var(--text-primary)',
@@ -1063,7 +1063,7 @@ function RowContextMenu({
         top,
         left,
         width: 220,
-        background: 'var(--bg-card)',
+        background: 'var(--bg-elevated)',
         border: '0.5px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
@@ -1118,7 +1118,7 @@ function RowContextMenu({
                 top: 0,
                 left: '100%',
                 width: 160,
-                background: 'var(--bg-card)',
+                background: 'var(--bg-elevated)',
                 border: '0.5px solid var(--border)',
                 borderRadius: 'var(--radius-md)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
@@ -1345,7 +1345,7 @@ export default function TeamPage() {
                       alignItems: 'center',
                       gap: 10,
                       padding: '8px 14px',
-                      background: 'var(--bg-primary)',
+                      background: 'var(--bg-surface)',
                       borderRadius: 'var(--radius-md)',
                       border: '0.5px solid var(--border)',
                       minWidth: 200,
@@ -1362,7 +1362,7 @@ export default function TeamPage() {
                           height: 8,
                           borderRadius: '50%',
                           background: '#22c55e',
-                          border: '2px solid var(--bg-primary)',
+                          border: '2px solid var(--bg-surface)',
                         }}
                       />
                     </div>

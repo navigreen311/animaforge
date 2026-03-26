@@ -133,7 +133,7 @@ const SFX_LIBRARY: SfxItem[] = [
 
 // ── Shared Styles ────────────────────────────────────────────
 const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-primary)',
+  background: 'var(--bg-surface)',
   color: 'var(--text-primary)',
   border: '0.5px solid var(--border)',
   borderRadius: 'var(--radius-md)',
@@ -193,7 +193,7 @@ const primaryBtnStyle: React.CSSProperties = {
 };
 
 const smallBtnStyle: React.CSSProperties = {
-  background: 'var(--bg-primary)',
+  background: 'var(--bg-surface)',
   color: 'var(--text-secondary)',
   border: '0.5px solid var(--border)',
   padding: '4px 10px',
@@ -294,7 +294,7 @@ function DropdownMenu({
                 textAlign: 'left',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--bg-primary)';
+                e.currentTarget.style.background = 'var(--bg-surface)';
                 if (!item.danger) e.currentTarget.style.color = 'var(--text-primary)';
               }}
               onMouseLeave={(e) => {
@@ -720,7 +720,7 @@ export default function AudioStudioPage() {
                       display: 'flex',
                       gap: 2,
                       height: 36,
-                      background: 'var(--bg-primary)',
+                      background: 'var(--bg-surface)',
                       borderRadius: 'var(--radius-md)',
                       overflow: 'hidden',
                       border: '0.5px solid var(--border)',
@@ -1093,7 +1093,7 @@ export default function AudioStudioPage() {
                         type="button"
                         onClick={() => setSfxDuration(d)}
                         style={{
-                          background: sfxDuration === d ? 'var(--brand)' : 'var(--bg-primary)',
+                          background: sfxDuration === d ? 'var(--brand)' : 'var(--bg-surface)',
                           color: sfxDuration === d ? '#ffffff' : 'var(--text-secondary)',
                           border: sfxDuration === d ? '0.5px solid var(--brand)' : '0.5px solid var(--border)',
                           padding: '5px 10px',
