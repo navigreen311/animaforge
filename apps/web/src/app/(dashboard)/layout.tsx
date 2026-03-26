@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from './components/sidebar/Sidebar';
 import { useUIStore } from '@/store/useUIStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,8 +10,6 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const setSearchModalOpen = useUIStore((s) => s.setSearchModalOpen);
   const setNewProjectModalOpen = useUIStore((s) => s.setNewProjectModalOpen);
@@ -21,12 +18,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const newProjectModalOpen = useUIStore((s) => s.newProjectModalOpen);
   const renderPanelExpanded = useUIStore((s) => s.renderPanelExpanded);
 
-  // Auth guard: redirect to login if not authenticated
+  // Auto-login: ensure demo session exists on mount
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+    const store = useAuthStore.getState();
+    if (!store.isAuthenticated) {
+      store.loadFromStorage();
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -60,34 +58,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setNewProjectModalOpen,
     setRenderPanelExpanded,
   ]);
-
-  // Loading or not authenticated — show dark loading screen
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div
-        style={{
-          height: '100vh',
-          width: '100vw',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0a0a0f',
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            border: '2px solid rgba(124, 58, 237, 0.3)',
-            borderTopColor: '#7c3aed',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }}
-        />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
 
   return (
     <div
