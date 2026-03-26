@@ -1,3 +1,4 @@
 export * from './types';
 export * from './constants';
-export * from './redis';
+export * from './errors';
+export * from './logging';
