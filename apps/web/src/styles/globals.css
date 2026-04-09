@@ -106,6 +106,21 @@ body {
   animation: shot-pulse 1.5s ease-in-out infinite;
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; }
+
+/* ── Toolbar buttons ──────────────────────────────────── */
+.toolbar-btn {
+  display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px;
+  border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 11px;
+  cursor: pointer; transition: all 150ms;
+}
+.toolbar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.toolbar-btn.active { background: var(--brand-dim); color: var(--text-brand); border-color: var(--border-brand); }
+
 /* ── Project card overlays ─────────────────────────────── */
 .project-card[data-status="generating"] .thumbnail-gradient {
   animation: thumbnail-shimmer 2s ease-in-out infinite;

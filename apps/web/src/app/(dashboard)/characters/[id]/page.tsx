@@ -587,6 +587,8 @@ export default function CharacterDetailPage() {
   }
 
   function renderExportTab() {
+    const isExporting = (id: string) => exportingId === id;
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>
@@ -594,37 +596,111 @@ export default function CharacterDetailPage() {
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {EXPORT_FORMATS.map((fmt) => (
-            <button
+            <div
               key={fmt.id}
-              onClick={() => handleExport(fmt.label)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                gap: 8,
-                padding: '18px 10px',
+                gap: 10,
+                padding: 20,
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border)',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                transition: 'border-color 0.15s, background-color 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--brand-border)';
-                e.currentTarget.style.backgroundColor = 'var(--bg-elevated)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.backgroundColor = 'var(--bg-surface)';
+                backgroundColor: 'var(--bg-elevated)',
               }}
             >
-              <Download size={20} style={{ color: 'var(--brand-light)' }} />
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{fmt.label}</span>
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{fmt.ext}</span>
-            </button>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {fmt.label}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                {fmt.compat}
+              </span>
+
+              {/* MP4 extra settings */}
+              {fmt.id === 'mp4' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Resolution</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {(['720p', '1080p', '4K'] as const).map((r) => (
+                        <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: mp4Resolution === r ? 'var(--text-brand)' : 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <input type="radio" name="mp4res" checked={mp4Resolution === r} onChange={() => setMp4Resolution(r)} style={{ accentColor: 'var(--brand)' }} />
+                          {r}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Duration: {mp4Duration}s</span>
+                    <input type="range" min={1} max={30} value={mp4Duration} onChange={(e) => setMp4Duration(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--brand)' }} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Background</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {(['Transparent', 'Black', 'White'] as const).map((bg) => (
+                        <label key={bg} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: mp4Background === bg ? 'var(--text-brand)' : 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <input type="radio" name="mp4bg" checked={mp4Background === bg} onChange={() => setMp4Background(bg)} style={{ accentColor: 'var(--brand)' }} />
+                          {bg}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => handleExport(fmt.id, fmt.label)}
+                disabled={isExporting(fmt.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  marginTop: 'auto', padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                  border: 'none', backgroundColor: 'var(--brand)', color: '#fff',
+                  fontSize: 12, fontWeight: 600,
+                  cursor: isExporting(fmt.id) ? 'not-allowed' : 'pointer',
+                  opacity: isExporting(fmt.id) ? 0.7 : 1, transition: 'opacity 150ms',
+                }}
+              >
+                {isExporting(fmt.id) ? (
+                  <>
+                    <svg className="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                    Exporting&hellip;
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
           ))}
         </div>
+
+        {/* Download All (ZIP) */}
+        <button
+          onClick={handleExportAll}
+          disabled={exportAllLoading}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--brand-border)', backgroundColor: 'var(--brand-dim)',
+            color: 'var(--text-brand)', fontSize: 13, fontWeight: 600,
+            cursor: exportAllLoading ? 'not-allowed' : 'pointer',
+            opacity: exportAllLoading ? 0.7 : 1,
+            transition: 'opacity 150ms, background-color 150ms',
+          }}
+        >
+          {exportAllLoading ? (
+            <>
+              <svg className="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+              Exporting All&hellip;
+            </>
+          ) : (
+            <>
+              <Download size={16} />
+              Download All (ZIP)
+            </>
+          )}
+        </button>
       </div>
     );
   }
