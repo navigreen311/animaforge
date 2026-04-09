@@ -10,6 +10,7 @@ import {
   SkipForward,
   Maximize2,
   Film,
+  ChevronsUpDown,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -24,14 +25,16 @@ interface PreviewPanelProps {
   selectedShot?: {
     name: string;
     status: string;
+    thumbnailUrl?: string;
   };
+  onGenerate?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const EXPANDED_HEIGHT = 180;
+const EXPANDED_HEIGHT = 200;
 const COLLAPSED_HEIGHT = 24;
 const CONTROLS_HEIGHT = 32;
 
@@ -86,48 +89,81 @@ function TransportButton({
 
 function PreviewContent({
   selectedShot,
+  onGenerate,
 }: {
   selectedShot?: PreviewPanelProps['selectedShot'];
+  onGenerate?: () => void;
 }) {
-  /* No shot selected */
+  /* No shot selected — dark bg with "AF" watermark */
   if (!selectedShot) {
     return (
       <div
-        className="flex flex-1 items-center justify-center"
         style={{
-          background: 'var(--bg-surface)',
+          flex: 1,
+          aspectRatio: '16 / 9',
+          maxHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          background: '#0a0a0f',
           borderRadius: 'var(--radius-md, 6px)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* AF watermark */}
         <span
           style={{
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            color: 'var(--text-tertiary)',
+            fontSize: 32,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            color: 'rgba(255,255,255,0.04)',
             userSelect: 'none',
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -60%)',
           }}
         >
-          AnimaForge
+          AF
+        </span>
+        <span
+          style={{
+            fontSize: 11,
+            color: 'var(--text-tertiary)',
+            userSelect: 'none',
+            zIndex: 1,
+          }}
+        >
+          No content at this position
         </span>
       </div>
     );
   }
 
-  /* Shot exists but not yet generated */
-  if (selectedShot.status !== 'generated') {
+  /* Shot exists but not yet generated — gradient bg + shot name */
+  if (selectedShot.status !== 'generated' && selectedShot.status !== 'approved') {
     return (
       <div
-        className="flex flex-1 flex-col items-center justify-center gap-[6px]"
         style={{
-          background: 'var(--bg-surface)',
+          flex: 1,
+          aspectRatio: '16 / 9',
+          maxHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
           borderRadius: 'var(--radius-md, 6px)',
         }}
       >
         <span
           style={{
-            fontSize: 11,
-            fontWeight: 500,
+            fontSize: 12,
+            fontWeight: 600,
             color: 'var(--text-primary)',
           }}
         >
@@ -143,9 +179,10 @@ function PreviewContent({
         </span>
         <button
           type="button"
+          onClick={onGenerate}
           style={{
             marginTop: 4,
-            padding: '3px 12px',
+            padding: '4px 14px',
             fontSize: 10,
             fontWeight: 600,
             color: '#fff',
@@ -168,24 +205,38 @@ function PreviewContent({
     );
   }
 
-  /* Shot generated — show placeholder frame */
+  /* Shot generated — show thumbnail image placeholder */
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-[4px]"
       style={{
-        background: 'var(--bg-surface)',
+        flex: 1,
+        aspectRatio: '16 / 9',
+        maxHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        background: selectedShot.thumbnailUrl
+          ? `url(${selectedShot.thumbnailUrl}) center/cover no-repeat`
+          : 'var(--bg-surface)',
         borderRadius: 'var(--radius-md, 6px)',
+        border: '1px solid var(--border)',
       }}
     >
-      <Film size={20} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)' }} />
-      <span
-        style={{
-          fontSize: 10,
-          color: 'var(--text-tertiary)',
-        }}
-      >
-        Generated Frame Preview
-      </span>
+      {!selectedShot.thumbnailUrl && (
+        <>
+          <Film size={20} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)' }} />
+          <span
+            style={{
+              fontSize: 10,
+              color: 'var(--text-tertiary)',
+            }}
+          >
+            Generated Frame Preview
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -200,6 +251,7 @@ export function PreviewPanel({
   currentTimecode,
   totalDuration,
   selectedShot,
+  onGenerate,
 }: PreviewPanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -218,17 +270,34 @@ export function PreviewPanel({
           transition: 'height 200ms ease',
         }}
       >
-        {/* Timecode */}
-        <span
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--font-mono, monospace)',
-            color: 'var(--text-tertiary)',
-            userSelect: 'none',
-          }}
-        >
-          {currentTimecode} / {totalDuration}
-        </span>
+        {/* Left side: Preview label + timecode */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              userSelect: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <Play size={9} strokeWidth={2.5} />
+            Preview
+          </span>
+
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily: 'var(--font-mono, monospace)',
+              color: 'var(--text-tertiary)',
+              userSelect: 'none',
+            }}
+          >
+            {currentTimecode} / {totalDuration}
+          </span>
+        </div>
 
         {/* Expand button */}
         <button
@@ -238,15 +307,17 @@ export function PreviewPanel({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            width: 20,
-            height: 20,
+            gap: 3,
+            height: 18,
+            padding: '0 6px',
             background: 'none',
             border: 'none',
             color: 'var(--text-tertiary)',
             cursor: 'pointer',
             borderRadius: 'var(--radius-sm, 4px)',
             transition: 'color 120ms',
+            fontSize: 10,
+            fontWeight: 500,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--text-primary)';
@@ -255,7 +326,8 @@ export function PreviewPanel({
             e.currentTarget.style.color = 'var(--text-tertiary)';
           }}
         >
-          <ChevronUp size={14} strokeWidth={2} />
+          <ChevronsUpDown size={11} strokeWidth={2} />
+          Expand
         </button>
       </div>
     );
@@ -274,21 +346,58 @@ export function PreviewPanel({
         transition: 'height 200ms ease',
       }}
     >
-      {/* Preview area */}
+      {/* Preview area: left = 16:9 frame, right = transport controls */}
       <div
-        className="flex"
         style={{
           flex: 1,
           minHeight: 0,
-          padding: '6px 10px 0 10px',
+          display: 'flex',
+          gap: 10,
+          padding: '8px 10px 0 10px',
         }}
       >
-        <PreviewContent selectedShot={selectedShot} />
+        {/* Left: 16:9 preview frame */}
+        <PreviewContent selectedShot={selectedShot} onGenerate={onGenerate} />
+
+        {/* Right: vertical transport controls */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            minWidth: 28,
+          }}
+        >
+          <TransportButton label="Skip back" onClick={() => {}}>
+            <SkipBack size={14} strokeWidth={1.8} />
+          </TransportButton>
+
+          <TransportButton
+            label={isPlaying ? 'Pause' : 'Play'}
+            onClick={() => setIsPlaying((p) => !p)}
+          >
+            {isPlaying ? (
+              <Pause size={14} strokeWidth={1.8} />
+            ) : (
+              <Play size={14} strokeWidth={1.8} />
+            )}
+          </TransportButton>
+
+          <TransportButton label="Skip forward" onClick={() => {}}>
+            <SkipForward size={14} strokeWidth={1.8} />
+          </TransportButton>
+
+          <TransportButton label="Fullscreen" onClick={() => {}}>
+            <Maximize2 size={14} strokeWidth={1.8} />
+          </TransportButton>
+        </div>
       </div>
 
       {/* Controls bar */}
       <div
-        className="flex items-center gap-[4px]"
+        className="flex items-center"
         style={{
           height: CONTROLS_HEIGHT,
           minHeight: CONTROLS_HEIGHT,
@@ -297,44 +406,18 @@ export function PreviewPanel({
           borderTop: '0.5px solid var(--border)',
         }}
       >
-        {/* Transport controls */}
-        <TransportButton label="Skip back" onClick={() => {}}>
-          <SkipBack size={16} strokeWidth={1.8} />
-        </TransportButton>
-
-        <TransportButton
-          label={isPlaying ? 'Pause' : 'Play'}
-          onClick={() => setIsPlaying((p) => !p)}
-        >
-          {isPlaying ? (
-            <Pause size={16} strokeWidth={1.8} />
-          ) : (
-            <Play size={16} strokeWidth={1.8} />
-          )}
-        </TransportButton>
-
-        <TransportButton label="Skip forward" onClick={() => {}}>
-          <SkipForward size={16} strokeWidth={1.8} />
-        </TransportButton>
-
         {/* Timecode display */}
         <span
-          className="flex-1"
           style={{
+            flex: 1,
             fontSize: 10,
             fontFamily: 'var(--font-mono, monospace)',
             color: 'var(--text-secondary)',
-            marginLeft: 6,
             userSelect: 'none',
           }}
         >
           {currentTimecode} / {totalDuration}
         </span>
-
-        {/* Fullscreen */}
-        <TransportButton label="Fullscreen" onClick={() => {}}>
-          <Maximize2 size={16} strokeWidth={1.8} />
-        </TransportButton>
 
         {/* Collapse button */}
         <button

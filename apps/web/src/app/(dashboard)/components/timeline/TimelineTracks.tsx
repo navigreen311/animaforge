@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { CameraTrack } from '@/components/timeline/CameraTrack';
+import { KeyframeTrack } from '@/components/timeline/KeyframeTrack';
 
 // ── Types ──────────────────────────────────────────────────────
 interface Clip {
@@ -19,7 +21,7 @@ interface TimelineTracksProps {
 
 // ── Mock Data ──────────────────────────────────────────────────
 
-type ShotStatus = 'approved' | 'generating' | 'draft';
+type ShotStatus = 'approved' | 'generating' | 'review' | 'draft' | 'failed';
 
 interface ShotBlock {
   id: string;
@@ -30,36 +32,11 @@ interface ShotBlock {
 }
 
 const VIDEO_SHOTS: ShotBlock[] = [
-  { id: 'shot-1', label: 'Shot 1 - Intro', leftPct: 0, widthPct: 26, status: 'approved' },
-  { id: 'shot-2', label: 'Shot 2 - Battle', leftPct: 29, widthPct: 37, status: 'generating' },
-  { id: 'shot-3', label: 'Shot 3 - Epilogue', leftPct: 69, widthPct: 27, status: 'draft' },
-];
-
-interface CameraBlock {
-  id: string;
-  label: string;
-  leftPct: number;
-  widthPct: number;
-  properties: string;
-}
-
-const CAMERA_BLOCKS: CameraBlock[] = [
-  { id: 'cam-1', label: 'Dolly In', leftPct: 2, widthPct: 20, properties: 'Speed: 1.2x | Ease: Cubic In-Out | Distance: 4m' },
-  { id: 'cam-2', label: 'Pan Right', leftPct: 30, widthPct: 25, properties: 'Speed: 0.8x | Angle: 90° | Pivot: Center' },
-  { id: 'cam-3', label: 'Static', leftPct: 70, widthPct: 24, properties: 'Locked | FOV: 50mm | No Motion' },
-];
-
-interface KeyframeMarker {
-  id: string;
-  positionPct: number;
-  type: string;
-}
-
-const KEYFRAME_MARKERS: KeyframeMarker[] = [
-  { id: 'kf-1', positionPct: 8, type: 'Position' },
-  { id: 'kf-2', positionPct: 32, type: 'Rotation' },
-  { id: 'kf-3', positionPct: 58, type: 'Scale' },
-  { id: 'kf-4', positionPct: 85, type: 'Opacity' },
+  { id: 'shot-1', label: 'Shot 1 - Intro', leftPct: 0, widthPct: 18, status: 'approved' },
+  { id: 'shot-2', label: 'Shot 2 - Battle', leftPct: 20, widthPct: 22, status: 'generating' },
+  { id: 'shot-3', label: 'Shot 3 - Dialogue', leftPct: 44, widthPct: 16, status: 'review' },
+  { id: 'shot-4', label: 'Shot 4 - Epilogue', leftPct: 62, widthPct: 18, status: 'draft' },
+  { id: 'shot-5', label: 'Shot 5 - Outtake', leftPct: 82, widthPct: 14, status: 'failed' },
 ];
 
 interface AudioBlock {
@@ -91,12 +68,17 @@ interface CommentMarker {
   positionPct: number;
   color: string;
   text: string;
+  author: string;
+  timeAgo: string;
+  resolved: boolean;
 }
 
-const COMMENT_MARKERS: CommentMarker[] = [
-  { id: 'mk-1', positionPct: 15, color: '#eab308', text: 'Note: Check pacing on intro' },
-  { id: 'mk-2', positionPct: 48, color: '#ef4444', text: 'Issue: Battle lighting too dark' },
-  { id: 'mk-3', positionPct: 82, color: '#22c55e', text: 'Approved: Epilogue looks great' },
+const MARKER_COLORS = ['#eab308', '#ef4444', '#22c55e', '#3b82f6'];
+
+const INITIAL_MARKERS: CommentMarker[] = [
+  { id: 'mk-1', positionPct: 15, color: '#eab308', text: 'Note: Check pacing on intro', author: 'Sarah K.', timeAgo: '2h ago', resolved: false },
+  { id: 'mk-2', positionPct: 48, color: '#ef4444', text: 'Issue: Battle lighting too dark', author: 'James R.', timeAgo: '45m ago', resolved: false },
+  { id: 'mk-3', positionPct: 82, color: '#22c55e', text: 'Approved: Epilogue looks great', author: 'Mia L.', timeAgo: '10m ago', resolved: true },
 ];
 
 // ── Shared Styles ──────────────────────────────────────────────
@@ -149,6 +131,105 @@ const blockBaseStyle: React.CSSProperties = {
   transition: 'opacity 120ms ease, filter 120ms ease',
 };
 
+// ── Shot Block Status Styles ──────────────────────────────────
+
+function getShotBlockStyle(status: ShotStatus): {
+  background: string;
+  border: string;
+  extraClassName: string;
+} {
+  switch (status) {
+    case 'approved':
+      return {
+        background: 'rgba(16,185,129,0.25)',
+        border: '2px solid rgba(16,185,129,0.7)',
+        extraClassName: '',
+      };
+    case 'generating':
+      return {
+        background: 'rgba(124,58,237,0.35)',
+        border: '2px solid rgba(124,58,237,0.6)',
+        extraClassName: 'shot-generating',
+      };
+    case 'review':
+      return {
+        background: 'rgba(59,130,246,0.25)',
+        border: '2px solid rgba(59,130,246,0.5)',
+        extraClassName: '',
+      };
+    case 'draft':
+      return {
+        background: 'rgba(255,255,255,0.06)',
+        border: '2px dashed rgba(255,255,255,0.15)',
+        extraClassName: '',
+      };
+    case 'failed':
+      return {
+        background: 'rgba(239,68,68,0.2)',
+        border: '2px solid rgba(239,68,68,0.5)',
+        extraClassName: '',
+      };
+    default:
+      return {
+        background: 'rgba(255,255,255,0.06)',
+        border: '2px dashed rgba(255,255,255,0.15)',
+        extraClassName: '',
+      };
+  }
+}
+
+function ShotStatusIcon({ status }: { status: ShotStatus }) {
+  const iconStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 2,
+    right: 3,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  };
+
+  switch (status) {
+    case 'approved':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(16,185,129,0.9)" strokeWidth="2" />
+            <path d="M8 12l3 3 5-5" stroke="rgba(16,185,129,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'generating':
+      return (
+        <span style={iconStyle} className="shot-status-spin">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="rgba(124,58,237,0.9)" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </span>
+      );
+    case 'review':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(59,130,246,0.9)" strokeWidth="2" />
+            <path d="M12 6v6l4 2" stroke="rgba(59,130,246,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'failed':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(239,68,68,0.9)" strokeWidth="2" />
+            <path d="M15 9l-6 6M9 9l6 6" stroke="rgba(239,68,68,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    default:
+      return null;
+  }
+}
+
 // ── Pulse keyframes (injected once) ────────────────────────────
 
 const PULSE_CSS = `
@@ -159,7 +240,27 @@ const PULSE_CSS = `
 .shot-generating {
   animation: shot-pulse 2s ease-in-out infinite;
 }
+@keyframes shot-status-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.shot-status-spin svg {
+  animation: shot-status-spin 1s linear infinite;
+}
 `;
+
+// ── Marker action button style ────────────────────────────────
+
+const markerActionBtnStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 500,
+  padding: '3px 8px',
+  borderRadius: 4,
+  border: '1px solid var(--border)',
+  background: 'transparent',
+  color: 'var(--text-secondary)',
+  cursor: 'pointer',
+};
 
 // ── Component ──────────────────────────────────────────────────
 
@@ -169,25 +270,111 @@ export default function TimelineTracks({
   playheadPosition,
 }: TimelineTracksProps) {
   const [activePopover, setActivePopover] = useState<string | null>(null);
-  const [activeCameraPopover, setActiveCameraPopover] = useState<string | null>(null);
-  const [activeKeyframePopover, setActiveKeyframePopover] = useState<string | null>(null);
+  const [markers, setMarkers] = useState<CommentMarker[]>(INITIAL_MARKERS);
+  const [editingMarkerId, setEditingMarkerId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+
+  /* ── Add-marker context menu state ──────────────────────── */
+  const [addMarkerCtx, setAddMarkerCtx] = useState<{ x: number; y: number; pct: number } | null>(null);
+  const [addMarkerForm, setAddMarkerForm] = useState<{ pct: number } | null>(null);
+  const [newMarkerColor, setNewMarkerColor] = useState(MARKER_COLORS[0]);
+  const [newMarkerText, setNewMarkerText] = useState('');
+
+  const markerLaneRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const addCtxRef = useRef<HTMLDivElement>(null);
+  const addFormRef = useRef<HTMLDivElement>(null);
+
+  /* ── Close popovers on outside click / Escape ──────────── */
+  const handleDocClick = useCallback((e: MouseEvent) => {
+    if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      setActivePopover(null);
+      setEditingMarkerId(null);
+    }
+    if (addCtxRef.current && !addCtxRef.current.contains(e.target as Node)) {
+      setAddMarkerCtx(null);
+    }
+    if (addFormRef.current && !addFormRef.current.contains(e.target as Node)) {
+      setAddMarkerForm(null);
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setActivePopover(null);
+      setEditingMarkerId(null);
+      setAddMarkerCtx(null);
+      setAddMarkerForm(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleDocClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleDocClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleDocClick, handleKeyDown]);
 
   const handleMarkerClick = (id: string) => {
     setActivePopover((prev) => (prev === id ? null : id));
-    setActiveCameraPopover(null);
-    setActiveKeyframePopover(null);
+    setEditingMarkerId(null);
+    setAddMarkerCtx(null);
+    setAddMarkerForm(null);
   };
 
-  const handleCameraClick = (id: string) => {
-    setActiveCameraPopover((prev) => (prev === id ? null : id));
-    setActivePopover(null);
-    setActiveKeyframePopover(null);
+  const handleResolve = (id: string) => {
+    setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, resolved: !m.resolved } : m)));
   };
 
-  const handleKeyframeClick = (id: string) => {
-    setActiveKeyframePopover((prev) => (prev === id ? null : id));
+  const handleDeleteMarker = (id: string) => {
+    setMarkers((prev) => prev.filter((m) => m.id !== id));
     setActivePopover(null);
-    setActiveCameraPopover(null);
+  };
+
+  const handleEditStart = (marker: CommentMarker) => {
+    setEditingMarkerId(marker.id);
+    setEditText(marker.text);
+  };
+
+  const handleEditSave = (id: string) => {
+    setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, text: editText } : m)));
+    setEditingMarkerId(null);
+  };
+
+  /* ── Right-click on marker lane → "Add marker here" ────── */
+  const handleLaneContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!markerLaneRef.current) return;
+    const rect = markerLaneRef.current.getBoundingClientRect();
+    const pct = ((e.clientX - rect.left) / rect.width) * 100;
+    setAddMarkerCtx({ x: e.clientX, y: e.clientY, pct });
+    setAddMarkerForm(null);
+    setActivePopover(null);
+  };
+
+  const openAddMarkerForm = () => {
+    if (!addMarkerCtx) return;
+    setAddMarkerForm({ pct: addMarkerCtx.pct });
+    setAddMarkerCtx(null);
+    setNewMarkerColor(MARKER_COLORS[0]);
+    setNewMarkerText('');
+  };
+
+  const handleAddMarker = () => {
+    if (!addMarkerForm || !newMarkerText.trim()) return;
+    const newMarker: CommentMarker = {
+      id: `mk-${Date.now()}`,
+      positionPct: Math.round(addMarkerForm.pct * 100) / 100,
+      color: newMarkerColor,
+      text: newMarkerText.trim(),
+      author: 'You',
+      timeAgo: 'just now',
+      resolved: false,
+    };
+    setMarkers((prev) => [...prev, newMarker]);
+    setAddMarkerForm(null);
   };
 
   const isSelected = (id: string) => selectedClip?.id === id;
@@ -200,8 +387,12 @@ export default function TimelineTracks({
       {/* ── 1. Markers Strip ────────────────────────────────── */}
       <div style={{ ...trackRowStyle, height: 24 }}>
         <div style={{ ...labelStyle, height: 24 }}>Markers</div>
-        <div style={{ ...laneStyle, background: 'rgba(0,0,0,0.02)' }}>
-          {COMMENT_MARKERS.map((marker) => (
+        <div
+          ref={markerLaneRef}
+          onContextMenu={handleLaneContextMenu}
+          style={{ ...laneStyle, background: 'rgba(0,0,0,0.02)' }}
+        >
+          {markers.map((marker) => (
             <div
               key={marker.id}
               onClick={() => handleMarkerClick(marker.id)}
@@ -215,6 +406,8 @@ export default function TimelineTracks({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                opacity: marker.resolved ? 0.35 : 1,
+                transition: 'opacity 150ms ease',
               }}
             >
               {/* Flag icon */}
@@ -229,43 +422,248 @@ export default function TimelineTracks({
                 <path d="M2.5 1 L11 3.5 L2.5 6.5 Z" fill={marker.color} />
               </svg>
 
-              {/* Popover */}
+              {/* Popover — below marker */}
               {activePopover === marker.id && (
                 <div
+                  ref={popoverRef}
                   style={{
                     position: 'absolute',
-                    bottom: '100%',
+                    top: '100%',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    marginBottom: 6,
-                    padding: '6px 10px',
+                    marginTop: 6,
+                    padding: '8px 12px',
                     background: 'var(--bg-elevated)',
                     border: '1px solid var(--border)',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     fontSize: 11,
                     color: 'var(--text-primary)',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
                     zIndex: 50,
                     pointerEvents: 'auto',
+                    minWidth: 200,
+                    whiteSpace: 'normal',
                   }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: marker.color,
-                      marginRight: 6,
-                      verticalAlign: 'middle',
-                    }}
-                  />
-                  {marker.text}
+                  {/* Color dot + comment text */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: marker.color,
+                        marginTop: 3,
+                        flexShrink: 0,
+                      }}
+                    />
+                    {editingMarkerId === marker.id ? (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          style={{
+                            width: '100%',
+                            minHeight: 40,
+                            fontSize: 11,
+                            padding: '4px 6px',
+                            borderRadius: 4,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-surface)',
+                            color: 'var(--text-primary)',
+                            resize: 'vertical',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => setEditingMarkerId(null)}
+                            style={{ ...markerActionBtnStyle, color: 'var(--text-tertiary)' }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleEditSave(marker.id)}
+                            style={{ ...markerActionBtnStyle, color: 'var(--brand, #a855f7)' }}
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ flex: 1, lineHeight: 1.4 }}>{marker.text}</span>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  {editingMarkerId !== marker.id && (
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                      <button
+                        onClick={() => handleEditStart(marker)}
+                        style={markerActionBtnStyle}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleResolve(marker.id)}
+                        style={{
+                          ...markerActionBtnStyle,
+                          color: marker.resolved ? '#f59e0b' : '#22c55e',
+                        }}
+                      >
+                        {marker.resolved ? 'Unresolve' : 'Resolve'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMarker(marker.id)}
+                        style={{ ...markerActionBtnStyle, color: '#ef4444' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Author + timeAgo */}
+                  <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                    {marker.author} &middot; {marker.timeAgo}
+                    {marker.resolved && (
+                      <span style={{ marginLeft: 6, color: '#22c55e', fontWeight: 500 }}>Resolved</span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           ))}
+
+          {/* ── "Add marker here" context menu (right-click) ── */}
+          {addMarkerCtx && (
+            <div
+              ref={addCtxRef}
+              style={{
+                position: 'fixed',
+                left: addMarkerCtx.x,
+                top: addMarkerCtx.y,
+                zIndex: 1000,
+                minWidth: 160,
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--border-strong)',
+                borderRadius: 'var(--radius-lg, 8px)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                padding: '4px 0',
+              }}
+            >
+              <button
+                onClick={openAddMarkerForm}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  fontSize: 11,
+                  padding: '6px 12px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                + Add marker here
+              </button>
+            </div>
+          )}
+
+          {/* ── Add marker form popover ───────────────────── */}
+          {addMarkerForm && (
+            <div
+              ref={addFormRef}
+              style={{
+                position: 'absolute',
+                left: `${addMarkerForm.pct}%`,
+                top: '100%',
+                transform: 'translateX(-50%)',
+                marginTop: 6,
+                padding: '10px 12px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                zIndex: 60,
+                minWidth: 220,
+              }}
+            >
+              {/* Color picker */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                {MARKER_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewMarkerColor(c)}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: c,
+                      border: newMarkerColor === c ? '2px solid #fff' : '2px solid transparent',
+                      cursor: 'pointer',
+                      boxShadow: newMarkerColor === c ? `0 0 0 1px ${c}` : 'none',
+                      padding: 0,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Comment textarea */}
+              <textarea
+                value={newMarkerText}
+                onChange={(e) => setNewMarkerText(e.target.value)}
+                placeholder="Add a comment..."
+                style={{
+                  width: '100%',
+                  minHeight: 50,
+                  fontSize: 11,
+                  padding: '6px 8px',
+                  borderRadius: 4,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  marginBottom: 8,
+                  boxSizing: 'border-box',
+                }}
+              />
+
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                <button
+                  onClick={() => setAddMarkerForm(null)}
+                  style={{ ...markerActionBtnStyle, color: 'var(--text-tertiary)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddMarker}
+                  disabled={!newMarkerText.trim()}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: 4,
+                    border: 'none',
+                    background: 'var(--brand, #a855f7)',
+                    color: '#fff',
+                    cursor: newMarkerText.trim() ? 'pointer' : 'not-allowed',
+                    opacity: newMarkerText.trim() ? 1 : 0.5,
+                  }}
+                >
+                  Add marker
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -289,85 +687,45 @@ export default function TimelineTracks({
 
           {VIDEO_SHOTS.map((shot) => {
             const selected = isSelected(shot.id);
-            let borderStyle: string;
-            let borderColor: string;
-            let bgColor: string;
-            let icon: React.ReactNode = null;
-            let extraClassName = '';
-
-            switch (shot.status) {
-              case 'approved':
-                borderStyle = '2px solid var(--status-complete-text)';
-                borderColor = 'var(--status-complete-text)';
-                bgColor = 'rgba(110,231,183,0.12)';
-                icon = (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    style={{ marginRight: 4, flexShrink: 0 }}
-                  >
-                    <path
-                      d="M2.5 6L5 8.5L9.5 3.5"
-                      stroke="var(--status-complete-text)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                );
-                break;
-              case 'generating':
-                borderStyle = '2px solid var(--brand)';
-                borderColor = 'var(--brand)';
-                bgColor = 'var(--brand-dim)';
-                extraClassName = 'shot-generating';
-                break;
-              case 'draft':
-              default:
-                borderStyle = '2px dashed var(--border)';
-                borderColor = 'var(--border)';
-                bgColor = 'rgba(255,255,255,0.03)';
-                break;
-            }
+            const shotStyle = getShotBlockStyle(shot.status);
 
             return (
               <div
                 key={shot.id}
-                className={extraClassName || undefined}
+                className={shotStyle.extraClassName || undefined}
                 onClick={() =>
                   onSelectClip({
                     id: shot.id,
                     label: shot.label,
                     startSec: 0,
                     durationSec: 0,
-                    color: borderColor,
+                    color: shotStyle.background,
                   })
                 }
                 style={{
                   ...blockBaseStyle,
                   left: `${shot.leftPct}%`,
                   width: `${shot.widthPct}%`,
-                  background: bgColor,
-                  border: borderStyle,
+                  background: shotStyle.background,
+                  border: shotStyle.border,
                   color: 'var(--text-primary)',
                   textShadow: 'none',
-                  boxShadow: selected ? `0 0 0 1px var(--brand)` : 'none',
+                  boxShadow: selected ? '0 0 0 1px var(--brand)' : 'none',
                   opacity: selected ? 1 : 0.9,
                 }}
               >
-                {icon}
                 <span
                   style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     fontSize: 10,
                     fontWeight: 500,
+                    flex: 1,
                   }}
                 >
                   {shot.label}
                 </span>
+                <ShotStatusIcon status={shot.status} />
               </div>
             );
           })}
@@ -375,157 +733,22 @@ export default function TimelineTracks({
       </div>
 
       {/* ── 3. Camera Track ─────────────────────────────────── */}
-      <div style={trackRowStyle}>
-        <div style={labelStyle}>Camera</div>
-        <div style={{ ...laneStyle, background: 'rgba(99,102,241,0.05)' }}>
-          <div
-            style={{
-              position: 'absolute',
-              left: `${playheadPosition}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'rgba(239,68,68,0.5)',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-
-          {CAMERA_BLOCKS.map((cam) => {
-            const selected = isSelected(cam.id);
-            return (
-              <div key={cam.id} style={{ position: 'absolute', left: `${cam.leftPct}%`, width: `${cam.widthPct}%`, top: 0, bottom: 0 }}>
-                <div
-                  onClick={() => {
-                    handleCameraClick(cam.id);
-                    onSelectClip({
-                      id: cam.id,
-                      label: cam.label,
-                      startSec: 0,
-                      durationSec: 0,
-                      color: '#4f46e5',
-                    });
-                  }}
-                  style={{
-                    ...blockBaseStyle,
-                    position: 'absolute',
-                    left: 0,
-                    width: '100%',
-                    background: '#4f46e5',
-                    border: selected ? '2px solid #fff' : '2px solid transparent',
-                    boxShadow: selected ? '0 0 0 1px var(--brand)' : 'none',
-                    opacity: selected ? 1 : 0.85,
-                  }}
-                >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.label}</span>
-                </div>
-
-                {/* Camera properties popover */}
-                {activeCameraPopover === cam.id && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      marginBottom: 6,
-                      padding: '8px 12px',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      zIndex: 50,
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, marginBottom: 4, color: '#4f46e5' }}>
-                      {cam.label}
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)' }}>{cam.properties}</div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <CameraTrack
+        playheadPosition={playheadPosition}
+        selectedId={selectedClip?.id ?? null}
+        onSelectMove={(move) =>
+          onSelectClip({
+            id: move.id,
+            label: move.label,
+            startSec: 0,
+            durationSec: 0,
+            color: '#4f46e5',
+          })
+        }
+      />
 
       {/* ── 4. Keyframe Track ───────────────────────────────── */}
-      <div style={trackRowStyle}>
-        <div style={labelStyle}>Keyframe</div>
-        <div style={{ ...laneStyle, background: 'rgba(245,158,11,0.04)' }}>
-          <div
-            style={{
-              position: 'absolute',
-              left: `${playheadPosition}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'rgba(239,68,68,0.5)',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-
-          {KEYFRAME_MARKERS.map((kf) => (
-            <div
-              key={kf.id}
-              style={{
-                position: 'absolute',
-                left: `${kf.positionPct}%`,
-                top: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 20,
-              }}
-            >
-              <span
-                onClick={() => handleKeyframeClick(kf.id)}
-                style={{
-                  fontSize: 16,
-                  color: '#f59e0b',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                  userSelect: 'none',
-                  filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))',
-                  transform: 'translateX(-50%)',
-                }}
-              >
-                ◆
-              </span>
-
-              {/* Keyframe type popover */}
-              {activeKeyframePopover === kf.id && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginBottom: 6,
-                    padding: '6px 10px',
-                    background: 'var(--bg-elevated)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    color: 'var(--text-primary)',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 50,
-                  }}
-                >
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Keyframe:</span>{' '}
-                  {kf.type}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <KeyframeTrack playheadPosition={playheadPosition} />
 
       {/* ── 5. Audio Track ──────────────────────────────────── */}
       <div style={trackRowStyle}>

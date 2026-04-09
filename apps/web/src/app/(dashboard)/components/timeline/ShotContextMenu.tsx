@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Layers,
   CheckCircle,
-  XCircle,
+  Send,
   Timer,
   Trash2,
 } from 'lucide-react';
@@ -59,23 +59,23 @@ const MENU_ENTRIES: MenuEntry[] = [
   },
   { type: 'separator' },
   { type: 'item', label: 'Edit Properties', action: 'edit-properties', icon: Settings2 },
-  { type: 'item', label: 'Duplicate Shot', action: 'duplicate', icon: Copy },
-  { type: 'item', label: 'Split Here', action: 'split', icon: Scissors },
+  { type: 'item', label: 'Duplicate', action: 'duplicate', icon: Copy },
+  { type: 'item', label: 'Split at Playhead', action: 'split', icon: Scissors },
   { type: 'separator' },
   { type: 'item', label: 'Add Comment', action: 'add-comment', icon: MessageSquare },
   { type: 'item', label: 'View All Takes', action: 'view-takes', icon: Layers },
   { type: 'separator' },
   {
     type: 'item',
-    label: 'Approve Shot',
+    label: 'Approve',
     action: 'approve',
     icon: CheckCircle,
     variant: 'success',
   },
-  { type: 'item', label: 'Reject Shot', action: 'reject', icon: XCircle },
+  { type: 'item', label: 'Send for Review', action: 'send-review', icon: Send },
   { type: 'separator' },
   { type: 'item', label: 'Copy Timecode', action: 'copy-timecode', icon: Timer },
-  { type: 'item', label: 'Delete Shot', action: 'delete', icon: Trash2, variant: 'danger' },
+  { type: 'item', label: 'Delete', action: 'delete', icon: Trash2, variant: 'danger' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -214,7 +214,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   separator: {
-    height: 1,
+    height: 0.5,
     margin: '4px 8px',
     background: 'var(--border-strong)',
     opacity: 0.5,

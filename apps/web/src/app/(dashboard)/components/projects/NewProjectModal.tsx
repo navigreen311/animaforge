@@ -16,6 +16,13 @@ const PROJECT_TYPES = [
   { value: 'Documentary', label: 'Documentary', icon: FileVideo },
 ] as const;
 
+const ASPECT_RATIOS = [
+  { value: '16:9', label: '16:9', description: 'Landscape / YouTube' },
+  { value: '9:16', label: '9:16', description: 'Portrait / TikTok' },
+  { value: '1:1', label: '1:1', description: 'Square / Instagram' },
+  { value: '21:9', label: '21:9', description: 'Cinematic' },
+] as const;
+
 const TEMPLATES = [
   { id: '30s-ad', label: '30s Ad', description: 'Quick advertisement spot' },
   { id: '2min-short', label: '2min Short', description: 'Short-form content' },
@@ -36,6 +43,7 @@ export default function NewProjectModal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<string>(PROJECT_TYPES[0].value);
+  const [aspectRatio, setAspectRatio] = useState<string>(ASPECT_RATIOS[0].value);
   const [template, setTemplate] = useState<string>(TEMPLATES[2].id);
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,6 +66,7 @@ export default function NewProjectModal() {
       setTitle('');
       setDescription('');
       setProjectType(PROJECT_TYPES[0].value);
+      setAspectRatio(ASPECT_RATIOS[0].value);
       setTemplate(TEMPLATES[2].id);
     }
   }, [open]);
@@ -76,6 +85,7 @@ export default function NewProjectModal() {
           title: title.trim(),
           description: description.trim(),
           projectType,
+          aspectRatio,
           template,
         }),
       });
@@ -265,6 +275,73 @@ export default function NewProjectModal() {
                   >
                     <Icon size={20} />
                     <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </FieldGroup>
+
+          {/* Aspect Ratio */}
+          <FieldGroup label="Aspect Ratio">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+              }}
+            >
+              {ASPECT_RATIOS.map((ar) => {
+                const selected = aspectRatio === ar.value;
+                return (
+                  <button
+                    key={ar.value}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setAspectRatio(ar.value)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 4,
+                      padding: '12px 4px',
+                      borderRadius: 'var(--radius-md)',
+                      border: selected
+                        ? '1.5px solid var(--border-brand)'
+                        : '0.5px solid var(--border)',
+                      background: selected ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      transition: 'all 150ms',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selected)
+                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selected)
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: selected ? 'var(--brand)' : 'var(--text-primary)',
+                      }}
+                    >
+                      {ar.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--text-tertiary)',
+                        textAlign: 'center',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {ar.description}
+                    </span>
                   </button>
                 );
               })}

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import type { DashboardStats } from '@/lib/types';
 import { formatCredits, getProgressPercent } from '@/lib/utils/format';
 
@@ -131,7 +132,21 @@ export default function StatsRow({ stats, loading }: StatsRowProps) {
       </div>
 
       {/* Render queue */}
-      <div style={cardStyle}>
+      <Link
+        href="/render-queue"
+        style={{
+          ...cardStyle,
+          textDecoration: 'none',
+          cursor: 'pointer',
+          transition: 'border-color 150ms',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--status-generating-border)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border)';
+        }}
+      >
         <p style={labelStyle}>Render queue</p>
         <p
           style={{
@@ -144,8 +159,19 @@ export default function StatsRow({ stats, loading }: StatsRowProps) {
         >
           {stats.activeRenderJobs}
         </p>
-        <p style={subStyle}>active jobs</p>
-      </div>
+        <p style={subStyle}>
+          <span>active jobs</span>
+          {' \u00B7 '}
+          <span
+            style={{
+              color: 'var(--brand)',
+              fontWeight: 500,
+            }}
+          >
+            View all
+          </span>
+        </p>
+      </Link>
     </div>
   );
 }

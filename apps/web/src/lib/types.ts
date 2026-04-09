@@ -53,6 +53,8 @@ export interface Character {
   lastUsedAt?: string;
   createdAt: string;
   updatedAt: string;
+  thumbnailUrl?: string;
+  previewUrls?: Record<string, string>;
 }
 
 export interface CharacterStats {

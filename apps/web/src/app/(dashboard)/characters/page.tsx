@@ -8,8 +8,12 @@ import {
   User,
   Pencil,
   FolderOpen,
+  FolderPlus,
   MoreHorizontal,
   Volume2,
+  Copy,
+  Download,
+  Trash2,
 } from 'lucide-react';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import EmptyState from '@/components/ui/EmptyState';
@@ -68,6 +72,7 @@ const PROJECT_FILTER_MAP: Record<string, string> = {
 export default function CharactersPage() {
   const router = useRouter();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState<string | null>(null);
   const [newCharModalOpen, setNewCharModalOpen] = useState(false);
   const [filters, setFilters] = useState<CharacterFilters>({
     search: '',
@@ -307,7 +312,7 @@ export default function CharactersPage() {
                   key={character.id}
                   onClick={() => router.push(`/characters/${character.id}`)}
                   onMouseEnter={() => setHoveredCard(character.id)}
-                  onMouseLeave={() => setHoveredCard(null)}
+                  onMouseLeave={() => { setHoveredCard(null); setMoreMenuOpen(null); }}
                   style={{
                     background: 'var(--bg-elevated)',
                     border: isHovered
@@ -337,90 +342,91 @@ export default function CharactersPage() {
                   >
                     <User size={32} style={{ color: 'rgba(255,255,255,0.6)' }} />
 
-                    {/* ── Quick action overlay on hover ──── */}
-                    {isHovered && (
-                      <div
+                    {/* ── Quick action buttons (bottom-right, fade in) ── */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 8,
+                        display: 'flex',
+                        gap: 4,
+                        opacity: isHovered ? 1 : 0,
+                        transition: 'opacity 180ms ease',
+                        pointerEvents: isHovered ? 'auto' : 'none',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        title="Edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/characters/${character.id}?edit=true`);
+                        }}
                         style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'rgba(0, 0, 0, 0.45)',
+                          width: 28,
+                          height: 28,
+                          borderRadius: 'var(--radius-md)',
+                          background: 'rgba(0, 0, 0, 0.70)',
+                          border: '0.5px solid rgba(255, 255, 255, 0.15)',
+                          color: '#ffffff',
+                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 8,
+                          transition: 'background 150ms ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--brand)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.70)';
                         }}
                       >
-                        <button
-                          type="button"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/characters/${character.id}?edit=true`);
-                          }}
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 'var(--radius-md)',
-                            background: 'rgba(255, 255, 255, 0.15)',
-                            border: '0.5px solid rgba(255, 255, 255, 0.2)',
-                            color: '#ffffff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 150ms ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          title="Use in Project"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // TODO: open project assignment dialog
-                          }}
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 'var(--radius-md)',
-                            background: 'rgba(255, 255, 255, 0.15)',
-                            border: '0.5px solid rgba(255, 255, 255, 0.2)',
-                            color: '#ffffff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 150ms ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                          }}
-                        >
-                          <FolderOpen size={14} />
-                        </button>
+                        <Pencil size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Use in Project"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: open project assignment dialog
+                        }}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 'var(--radius-md)',
+                          background: 'rgba(0, 0, 0, 0.70)',
+                          border: '0.5px solid rgba(255, 255, 255, 0.15)',
+                          color: '#ffffff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background 150ms ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--brand)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.70)';
+                        }}
+                      >
+                        <FolderPlus size={12} />
+                      </button>
+                      <div style={{ position: 'relative' }}>
                         <button
                           type="button"
                           title="More options"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: open context menu
+                            setMoreMenuOpen(moreMenuOpen === character.id ? null : character.id);
                           }}
                           style={{
-                            width: 32,
-                            height: 32,
+                            width: 28,
+                            height: 28,
                             borderRadius: 'var(--radius-md)',
-                            background: 'rgba(255, 255, 255, 0.15)',
-                            border: '0.5px solid rgba(255, 255, 255, 0.2)',
+                            background: moreMenuOpen === character.id ? 'var(--brand)' : 'rgba(0, 0, 0, 0.70)',
+                            border: '0.5px solid rgba(255, 255, 255, 0.15)',
                             color: '#ffffff',
                             cursor: 'pointer',
                             display: 'flex',
@@ -429,16 +435,76 @@ export default function CharactersPage() {
                             transition: 'background 150ms ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                            e.currentTarget.style.background = 'var(--brand)';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                            if (moreMenuOpen !== character.id) {
+                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.70)';
+                            }
                           }}
                         >
-                          <MoreHorizontal size={14} />
+                          <MoreHorizontal size={12} />
                         </button>
+
+                        {/* ── More dropdown ── */}
+                        {moreMenuOpen === character.id && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              right: 0,
+                              marginTop: 4,
+                              minWidth: 160,
+                              background: 'var(--bg-elevated)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius-md)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                              zIndex: 20,
+                              padding: '4px 0',
+                            }}
+                          >
+                            {[
+                              { icon: Copy, label: 'Clone character', action: () => {} },
+                              { icon: Download, label: 'Export...', action: () => {} },
+                              { icon: Trash2, label: 'Delete', action: () => {}, danger: true },
+                            ].map((item) => (
+                              <button
+                                key={item.label}
+                                type="button"
+                                onClick={() => {
+                                  item.action();
+                                  setMoreMenuOpen(null);
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: (item as any).danger ? '#f87171' : 'var(--text-secondary)',
+                                  cursor: 'pointer',
+                                  transition: 'background 120ms ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = 'var(--bg-hover)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                }}
+                              >
+                                <item.icon size={13} />
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* ── Card Body ────────────────────────── */}
