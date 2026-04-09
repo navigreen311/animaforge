@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import { Toaster } from "sonner";
+import CookieConsent from "@/components/legal/CookieConsent";
 
 const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-dm-sans" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400"], variable: "--font-jetbrains" });
@@ -36,6 +37,7 @@ export default function RootLayout({
                 },
               }}
             />
+            <CookieConsent />
           </AuthProvider>
         </QueryProvider>
       </body>
