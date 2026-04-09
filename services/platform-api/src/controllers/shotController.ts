@@ -49,9 +49,9 @@ export const shotController = {
     apiResponse.success(res, updated);
   },
 
-  approve(req: Request, res: Response): void {
+  async approve(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const shot = shotService.getById(id);
+    const shot = await shotService.getById(id);
     if (!shot) {
       apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
       return;
@@ -61,8 +61,24 @@ export const shotController = {
       return;
     }
     const userId = req.user?.id ?? "system";
-    const approved = shotService.approve(id, userId);
+    const approved = await shotService.approve(id, userId);
     apiResponse.success(res, approved);
+  },
+
+  async reject(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const shot = await shotService.getById(id);
+    if (!shot) {
+      apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
+      return;
+    }
+    if (shot.status === "locked") {
+      apiResponse.error(res, "LOCKED", "Shot is locked and cannot be modified", 409);
+      return;
+    }
+    const { rejectionReason } = req.body ?? {};
+    const rejected = await shotService.reject(id, rejectionReason);
+    apiResponse.success(res, rejected);
   },
 
   lock(req: Request, res: Response): void {

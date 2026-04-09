@@ -2,6 +2,7 @@ import type { Server } from "socket.io";
 import type {
   AuthenticatedSocket,
   ClientToServerEvents,
+  NotificationNewEvent,
   ServerToClientEvents,
 } from "../types";
 
@@ -48,5 +49,12 @@ export function registerNotificationEvents(
       isTyping: data.isTyping,
       timestamp: Date.now(),
     });
+  });
+
+  // ── notification:new ──────────────────────────────────────────
+  socket.on("notification:new", (data: NotificationNewEvent) => {
+    const targetUserId = data.notification.userId;
+    const room = `user:${targetUserId}`;
+    io.to(room).emit("notification:new", data);
   });
 }

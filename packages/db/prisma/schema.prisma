@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  extensions = [pgvector(map: "vector"), uuidOssp(map: "uuid-ossp")]
+  extensions = [uuidOssp(map: "uuid-ossp")]
 }
 
 // ============================================
@@ -26,6 +26,7 @@ model User {
   consentFlags  Json     @default("{}") @map("consent_flags")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  onboardingComplete Boolean @default(false) @map("onboarding_complete")
   deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
 
   organization  Organization? @relation(fields: [orgId], references: [id])
@@ -110,6 +111,8 @@ model Project {
   modelVersion String?  @map("model_version")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  reviewToken          String?   @unique @map("review_token")
+  reviewTokenExpiresAt DateTime? @map("review_token_expires_at") @db.Timestamptz
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
 
   owner        User         @relation(fields: [ownerId], references: [id])
@@ -331,4 +334,77 @@ model UsageMeter {
 
   @@unique([userId, period])
   @@map("usage_meters")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  body      String?
+  actionUrl String?  @map("action_url")
+  isRead    Boolean  @default(false) @map("is_read")
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// REVIEW PORTAL
+// ============================================
+
+model ShotReview {
+  id           String   @id @default(cuid())
+  shotId       String   @map("shot_id")
+  projectId    String   @map("project_id")
+  reviewerName String   @map("reviewer_name")
+  action       String
+  comment      String?
+  token        String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([shotId])
+  @@index([projectId])
+  @@map("shot_reviews")
+}
+
+// ============================================
+// PUBLISHING
+// ============================================
+
+model PublishJob {
+  id          String    @id @default(cuid())
+  projectId   String    @map("project_id")
+  userId      String    @map("user_id")
+  exportUrl   String    @map("export_url")
+  platform    String
+  title       String
+  description String?
+  tags        String[]  @default([])
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  status      String    @default("scheduled")
+  platformId  String?   @map("platform_id")
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  @@map("publish_jobs")
+}
+
+// ============================================
+// PRESENCE
+// ============================================
+
+model UserPresence {
+  userId      String   @id @map("user_id")
+  orgId       String?  @map("org_id")
+  currentPage String?  @map("current_page")
+  status      String   @default("offline")
+  lastSeen    DateTime @default(now()) @map("last_seen") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("user_presences")
 }

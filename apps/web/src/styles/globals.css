@@ -107,9 +107,9 @@ body {
 }
 
 [data-theme="light"] {
-  --bg-base: #f8f8fc;
+  --bg-base: #f4f4f8;
   --bg-surface: #ffffff;
-  --bg-elevated: #f0f0f8;
+  --bg-elevated: #f0f0f6;
   --bg-overlay: #e8e8f0;
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-active: rgba(124, 58, 237, 0.1);
@@ -117,25 +117,36 @@ body {
   --brand-light: #6d28d9;
   --brand-dim: rgba(124, 58, 237, 0.12);
   --brand-border: rgba(124, 58, 237, 0.3);
-  --text-primary: #1a1a2e;
-  --text-secondary: rgba(26, 26, 46, 0.6);
-  --text-tertiary: rgba(26, 26, 46, 0.35);
+  --text-primary: #111118;
+  --text-secondary: rgba(17, 17, 24, 0.6);
+  --text-tertiary: rgba(17, 17, 24, 0.35);
   --text-brand: #6d28d9;
-  --border: rgba(0, 0, 0, 0.09);
+  --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.15);
   --border-brand: rgba(124, 58, 237, 0.35);
   --status-generating-bg: rgba(234, 179, 8, 0.1);
   --status-generating-text: #b45309;
-  --status-generating-border: rgba(234, 179, 8, 0.25);
+  --status-generating-border: rgba(180, 83, 9, 0.25);
   --status-review-bg: rgba(59, 130, 246, 0.1);
-  --status-review-text: #2563eb;
-  --status-review-border: rgba(59, 130, 246, 0.25);
+  --status-review-text: #1d4ed8;
+  --status-review-border: rgba(29, 78, 216, 0.25);
   --status-draft-bg: rgba(0, 0, 0, 0.05);
-  --status-draft-text: rgba(0, 0, 0, 0.4);
+  --status-draft-text: rgba(17, 17, 24, 0.5);
   --status-draft-border: rgba(0, 0, 0, 0.1);
   --status-complete-bg: rgba(16, 185, 129, 0.1);
-  --status-complete-text: #059669;
-  --status-complete-border: rgba(16, 185, 129, 0.25);
+  --status-complete-text: #047857;
+  --status-complete-border: rgba(4, 120, 87, 0.25);
   --progress-track: rgba(0, 0, 0, 0.08);
   --progress-fill: #7c3aed;
+}
+
+/* ── Responsive sidebar ────────────────────────────────── */
+@media (max-width: 1280px) {
+  .sidebar { width: 56px; }
+  .sidebar .nav-label, .sidebar .logo-name, .sidebar .credits-widget, .sidebar .nav-section-title { display: none; }
+  .sidebar .nav-item { justify-content: center; padding: 8px; }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .mobile-menu-btn { display: flex; }
 }

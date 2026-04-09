@@ -6,6 +6,7 @@ import { Server } from "socket.io";
 import { socketAuth } from "./middleware/socketAuth";
 import { registerJobEvents } from "./handlers/jobEvents";
 import { registerCollabEvents } from "./handlers/collabEvents";
+import { registerShotEvents } from "./handlers/shotEvents";
 import { registerNotificationEvents } from "./handlers/notificationEvents";
 import { presenceService } from "./services/presenceService";
 import { roomManager } from "./services/roomManager";
@@ -60,6 +61,7 @@ io.on("connection", (socket) => {
   // Register domain event handlers
   registerJobEvents(io, authedSocket);
   registerCollabEvents(io, authedSocket);
+  registerShotEvents(io, authedSocket);
   registerNotificationEvents(io, authedSocket);
 
   authedSocket.on("disconnect", (reason) => {

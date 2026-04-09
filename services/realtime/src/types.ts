@@ -26,14 +26,44 @@ export interface JobProgressEvent {
 export interface JobCompleteEvent {
   jobId: string;
   projectId: string;
-  result: Record<string, unknown>;
+  outputUrl: string;
+  qualityScores?: Record<string, number>;
+  result?: Record<string, unknown>;
 }
 
 export interface JobFailedEvent {
   jobId: string;
   projectId: string;
   error: string;
+  reason?: string;
   code?: string;
+}
+
+// ── Shot events ────────────────────────────────────────────────────
+export interface ShotUpdatedEvent {
+  shotId: string;
+  projectId: string;
+  status: string;
+  approvedBy?: string;
+}
+
+export interface ShotStatusChangedEvent {
+  shotId: string;
+  projectId: string;
+  status: string;
+}
+
+// ── Notification events ────────────────────────────────────────────
+export interface NotificationNewEvent {
+  notification: {
+    id: string;
+    type: string;
+    title: string;
+    body?: string;
+    userId: string;
+    metadata?: Record<string, unknown>;
+    createdAt: number;
+  };
 }
 
 // ── Collaboration events ────────────────────────────────────────────
@@ -61,6 +91,9 @@ export interface ServerToClientEvents {
   "job:progress": (data: JobProgressEvent) => void;
   "job:complete": (data: JobCompleteEvent) => void;
   "job:failed": (data: JobFailedEvent) => void;
+  "shot:updated": (data: ShotUpdatedEvent) => void;
+  "shot:status_changed": (data: ShotStatusChangedEvent) => void;
+  "notification:new": (data: NotificationNewEvent) => void;
   "collab:cursor": (data: CollabCursorEvent) => void;
   "collab:edit": (data: CollabEditEvent) => void;
   "collab:joined": (data: { projectId: string; userId: string }) => void;
@@ -71,6 +104,9 @@ export interface ClientToServerEvents {
   "job:progress": (data: JobProgressEvent) => void;
   "job:complete": (data: JobCompleteEvent) => void;
   "job:failed": (data: JobFailedEvent) => void;
+  "shot:updated": (data: ShotUpdatedEvent) => void;
+  "shot:status_changed": (data: ShotStatusChangedEvent) => void;
+  "notification:new": (data: NotificationNewEvent) => void;
   "collab:join": (data: CollabJoinEvent) => void;
   "collab:cursor": (data: CollabCursorEvent) => void;
   "collab:edit": (data: CollabEditEvent) => void;
