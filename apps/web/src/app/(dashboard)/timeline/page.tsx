@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { PreviewPanel } from '../components/timeline/PreviewPanel';
 import { TakesDrawer, createMockTakes } from '@/components/timeline/TakesDrawer';
 import type { Take } from '@/components/timeline/TakesDrawer';
 
@@ -72,11 +73,25 @@ const INITIAL_TRACKS: Track[] = [
         characters: ['Kael', 'Morath'],
       },
       {
-        id: 'v3', label: 'Shot 3 - Epilogue', startSec: 102, durationSec: 40,
+        id: 'v3', label: 'Shot 3 - Epilogue', startSec: 102, durationSec: 30,
         color: '#8b5cf6', trackId: 'video', shotNumber: 3, status: 'draft',
         prompt: '',
         camera: 'Wide', motion: 'Static', emotion: 'Melancholic',
         characters: ['Aria'],
+      },
+      {
+        id: 'v4', label: 'Shot 4 - Chase', startSec: 136, durationSec: 35,
+        color: '#7c3aed', trackId: 'video', shotNumber: 4, status: 'generating',
+        prompt: 'A tense chase through narrow alleyways, dramatic lighting.',
+        camera: 'POV', motion: 'Handheld', emotion: 'Tense',
+        characters: ['Kael'],
+      },
+      {
+        id: 'v5', label: 'Shot 5 - Failed Render', startSec: 175, durationSec: 25,
+        color: '#6d28d9', trackId: 'video', shotNumber: 5, status: 'failed',
+        prompt: 'Wide establishing shot of the burning city at dusk.',
+        camera: 'Wide', motion: 'Dolly', emotion: 'Dramatic',
+        characters: ['Aria', 'Morath'],
       },
     ],
   },
@@ -135,17 +150,92 @@ function formatTimecodeHMS(sec: number): string {
 function statusStyle(status: ShotStatus | undefined): React.CSSProperties {
   switch (status) {
     case 'draft':
-      return { borderStyle: 'dashed', opacity: 0.6 };
+      return {
+        background: 'rgba(255,255,255,0.06)',
+        borderStyle: 'dashed',
+        borderColor: 'rgba(255,255,255,0.15)',
+        opacity: 0.6,
+      };
     case 'generating':
-      return { animation: 'brand-pulse 1.5s ease-in-out infinite', boxShadow: '0 0 12px var(--brand)' };
+      return {
+        background: 'rgba(124,58,237,0.35)',
+        borderColor: 'rgba(124,58,237,0.6)',
+        animation: 'shot-pulse 2s ease-in-out infinite',
+        boxShadow: '0 0 12px rgba(124,58,237,0.4)',
+      };
     case 'review':
-      return { borderColor: '#3b82f6', boxShadow: '0 0 0 1px #3b82f6' };
+      return {
+        background: 'rgba(59,130,246,0.25)',
+        borderColor: 'rgba(59,130,246,0.5)',
+        boxShadow: '0 0 0 1px rgba(59,130,246,0.5)',
+      };
     case 'approved':
-      return { borderColor: '#22c55e', boxShadow: '0 0 0 1px #22c55e' };
+      return {
+        background: 'rgba(16,185,129,0.25)',
+        borderColor: 'rgba(16,185,129,0.7)',
+        boxShadow: '0 0 0 1px rgba(16,185,129,0.5)',
+      };
     case 'failed':
-      return { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', opacity: 0.75 };
+      return {
+        background: 'rgba(239,68,68,0.2)',
+        borderColor: 'rgba(239,68,68,0.5)',
+        boxShadow: '0 0 0 1px rgba(239,68,68,0.5)',
+        opacity: 0.75,
+      };
     default:
       return {};
+  }
+}
+
+function ShotStatusIcon({ status }: { status: ShotStatus | undefined }) {
+  if (!status || status === 'draft') return null;
+  const iconStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 2,
+    right: 4,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  };
+  switch (status) {
+    case 'approved':
+      return (
+        <span style={iconStyle}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(16,185,129,0.9)" strokeWidth="2" />
+            <path d="M8 12l3 3 5-5" stroke="rgba(16,185,129,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'generating':
+      return (
+        <span style={iconStyle} className="shot-status-spin">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="rgba(124,58,237,0.9)" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </span>
+      );
+    case 'review':
+      return (
+        <span style={iconStyle}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(59,130,246,0.9)" strokeWidth="2" />
+            <path d="M12 6v6l4 2" stroke="rgba(59,130,246,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'failed':
+      return (
+        <span style={iconStyle}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(239,68,68,0.9)" strokeWidth="2" />
+            <path d="M15 9l-6 6M9 9l6 6" stroke="rgba(239,68,68,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    default:
+      return null;
   }
 }
 
@@ -214,6 +304,7 @@ export default function TimelinePage() {
   const [metaExpanded, setMetaExpanded] = useState(false);
   const [takesDrawerOpen, setTakesDrawerOpen] = useState(false);
   const [mockTakes, setMockTakes] = useState<Take[]>([]);
+  const [previewCollapsed, setPreviewCollapsed] = useState(true);
 
   const timelineWidthPx = 600 + zoom * 8;
 
@@ -308,6 +399,17 @@ export default function TimelinePage() {
           0%, 100% { box-shadow: 0 0 6px var(--brand); }
           50% { box-shadow: 0 0 18px var(--brand), 0 0 30px var(--brand-dim); }
         }
+        @keyframes shot-pulse {
+          0%, 100% { opacity: 1; }
+          50%      { opacity: 0.6; }
+        }
+        @keyframes shot-status-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .shot-status-spin svg {
+          animation: shot-status-spin 1s linear infinite;
+        }
       `}</style>
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -380,6 +482,23 @@ export default function TimelinePage() {
             </span>
           </div>
         </div>
+
+        {/* ── Preview Viewport ─────────────────────────────────── */}
+        <PreviewPanel
+          isCollapsed={previewCollapsed}
+          onToggleCollapse={() => setPreviewCollapsed((p) => !p)}
+          currentTimecode={formatTimecodeHMS(playheadSec)}
+          totalDuration="00:03:45"
+          selectedShot={
+            selectedClip && isVideoClip
+              ? {
+                  name: selectedClip.label,
+                  status: selectedClip.status === 'approved' ? 'generated' : (selectedClip.status ?? 'draft'),
+                }
+              : undefined
+          }
+          onGenerate={handleGenerate}
+        />
 
         {/* ── Main Content: Timeline + Properties ─────────────── */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
@@ -495,8 +614,6 @@ export default function TimelinePage() {
                       const widthPct = (clip.durationSec / TOTAL_DURATION_SEC) * 100;
                       const isSelected = selectedClipId === clip.id;
                       const sStatus = statusStyle(clip.status);
-                      const isApproved = clip.status === 'approved';
-
                       return (
                         <div
                           key={clip.id}
@@ -505,26 +622,26 @@ export default function TimelinePage() {
                             position: 'absolute',
                             left: `${leftPct}%`, width: `${widthPct}%`,
                             top: 8, bottom: 8,
-                            background: clip.color, borderRadius: 4, cursor: 'pointer',
+                            borderRadius: 4, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', padding: '0 8px',
                             overflow: 'hidden', whiteSpace: 'nowrap',
                             border: isSelected ? '2px solid #ffffff' : '2px solid transparent',
                             opacity: isSelected ? 1 : (sStatus.opacity as number | undefined) ?? 0.85,
                             transition: 'opacity 120ms ease, border-color 120ms ease, box-shadow 200ms ease',
+                            background: sStatus.background ?? clip.color,
                             ...sStatus,
                             ...(isSelected ? { border: '2px solid #ffffff', boxShadow: `0 0 0 1px var(--brand), ${sStatus.boxShadow ?? ''}` } : {}),
                           }}
                         >
-                          {isApproved && (
-                            <Check size={11} style={{ marginRight: 4, flexShrink: 0 }} color="#fff" />
-                          )}
                           <span style={{
                             fontSize: 11, fontWeight: 500, color: '#ffffff',
                             textShadow: '0 1px 2px rgba(0,0,0,0.4)',
                             overflow: 'hidden', textOverflow: 'ellipsis',
+                            flex: 1,
                           }}>
                             {clip.label}
                           </span>
+                          {clip.trackId === 'video' && <ShotStatusIcon status={clip.status} />}
                         </div>
                       );
                     })}

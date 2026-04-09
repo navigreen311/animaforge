@@ -21,7 +21,7 @@ interface TimelineTracksProps {
 
 // ── Mock Data ──────────────────────────────────────────────────
 
-type ShotStatus = 'approved' | 'generating' | 'draft';
+type ShotStatus = 'approved' | 'generating' | 'review' | 'draft' | 'failed';
 
 interface ShotBlock {
   id: string;
@@ -32,9 +32,11 @@ interface ShotBlock {
 }
 
 const VIDEO_SHOTS: ShotBlock[] = [
-  { id: 'shot-1', label: 'Shot 1 - Intro', leftPct: 0, widthPct: 26, status: 'approved' },
-  { id: 'shot-2', label: 'Shot 2 - Battle', leftPct: 29, widthPct: 37, status: 'generating' },
-  { id: 'shot-3', label: 'Shot 3 - Epilogue', leftPct: 69, widthPct: 27, status: 'draft' },
+  { id: 'shot-1', label: 'Shot 1 - Intro', leftPct: 0, widthPct: 18, status: 'approved' },
+  { id: 'shot-2', label: 'Shot 2 - Battle', leftPct: 20, widthPct: 22, status: 'generating' },
+  { id: 'shot-3', label: 'Shot 3 - Dialogue', leftPct: 44, widthPct: 16, status: 'review' },
+  { id: 'shot-4', label: 'Shot 4 - Epilogue', leftPct: 62, widthPct: 18, status: 'draft' },
+  { id: 'shot-5', label: 'Shot 5 - Outtake', leftPct: 82, widthPct: 14, status: 'failed' },
 ];
 
 interface AudioBlock {
@@ -129,6 +131,105 @@ const blockBaseStyle: React.CSSProperties = {
   transition: 'opacity 120ms ease, filter 120ms ease',
 };
 
+// ── Shot Block Status Styles ──────────────────────────────────
+
+function getShotBlockStyle(status: ShotStatus): {
+  background: string;
+  border: string;
+  extraClassName: string;
+} {
+  switch (status) {
+    case 'approved':
+      return {
+        background: 'rgba(16,185,129,0.25)',
+        border: '2px solid rgba(16,185,129,0.7)',
+        extraClassName: '',
+      };
+    case 'generating':
+      return {
+        background: 'rgba(124,58,237,0.35)',
+        border: '2px solid rgba(124,58,237,0.6)',
+        extraClassName: 'shot-generating',
+      };
+    case 'review':
+      return {
+        background: 'rgba(59,130,246,0.25)',
+        border: '2px solid rgba(59,130,246,0.5)',
+        extraClassName: '',
+      };
+    case 'draft':
+      return {
+        background: 'rgba(255,255,255,0.06)',
+        border: '2px dashed rgba(255,255,255,0.15)',
+        extraClassName: '',
+      };
+    case 'failed':
+      return {
+        background: 'rgba(239,68,68,0.2)',
+        border: '2px solid rgba(239,68,68,0.5)',
+        extraClassName: '',
+      };
+    default:
+      return {
+        background: 'rgba(255,255,255,0.06)',
+        border: '2px dashed rgba(255,255,255,0.15)',
+        extraClassName: '',
+      };
+  }
+}
+
+function ShotStatusIcon({ status }: { status: ShotStatus }) {
+  const iconStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 2,
+    right: 3,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  };
+
+  switch (status) {
+    case 'approved':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(16,185,129,0.9)" strokeWidth="2" />
+            <path d="M8 12l3 3 5-5" stroke="rgba(16,185,129,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'generating':
+      return (
+        <span style={iconStyle} className="shot-status-spin">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="rgba(124,58,237,0.9)" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </span>
+      );
+    case 'review':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(59,130,246,0.9)" strokeWidth="2" />
+            <path d="M12 6v6l4 2" stroke="rgba(59,130,246,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    case 'failed':
+      return (
+        <span style={iconStyle}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(239,68,68,0.9)" strokeWidth="2" />
+            <path d="M15 9l-6 6M9 9l6 6" stroke="rgba(239,68,68,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      );
+    default:
+      return null;
+  }
+}
+
 // ── Pulse keyframes (injected once) ────────────────────────────
 
 const PULSE_CSS = `
@@ -138,6 +239,13 @@ const PULSE_CSS = `
 }
 .shot-generating {
   animation: shot-pulse 2s ease-in-out infinite;
+}
+@keyframes shot-status-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.shot-status-spin svg {
+  animation: shot-status-spin 1s linear infinite;
 }
 `;
 
@@ -579,85 +687,45 @@ export default function TimelineTracks({
 
           {VIDEO_SHOTS.map((shot) => {
             const selected = isSelected(shot.id);
-            let borderStyle: string;
-            let borderColor: string;
-            let bgColor: string;
-            let icon: React.ReactNode = null;
-            let extraClassName = '';
-
-            switch (shot.status) {
-              case 'approved':
-                borderStyle = '2px solid var(--status-complete-text)';
-                borderColor = 'var(--status-complete-text)';
-                bgColor = 'rgba(110,231,183,0.12)';
-                icon = (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    style={{ marginRight: 4, flexShrink: 0 }}
-                  >
-                    <path
-                      d="M2.5 6L5 8.5L9.5 3.5"
-                      stroke="var(--status-complete-text)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                );
-                break;
-              case 'generating':
-                borderStyle = '2px solid var(--brand)';
-                borderColor = 'var(--brand)';
-                bgColor = 'var(--brand-dim)';
-                extraClassName = 'shot-generating';
-                break;
-              case 'draft':
-              default:
-                borderStyle = '2px dashed var(--border)';
-                borderColor = 'var(--border)';
-                bgColor = 'rgba(255,255,255,0.03)';
-                break;
-            }
+            const shotStyle = getShotBlockStyle(shot.status);
 
             return (
               <div
                 key={shot.id}
-                className={extraClassName || undefined}
+                className={shotStyle.extraClassName || undefined}
                 onClick={() =>
                   onSelectClip({
                     id: shot.id,
                     label: shot.label,
                     startSec: 0,
                     durationSec: 0,
-                    color: borderColor,
+                    color: shotStyle.background,
                   })
                 }
                 style={{
                   ...blockBaseStyle,
                   left: `${shot.leftPct}%`,
                   width: `${shot.widthPct}%`,
-                  background: bgColor,
-                  border: borderStyle,
+                  background: shotStyle.background,
+                  border: shotStyle.border,
                   color: 'var(--text-primary)',
                   textShadow: 'none',
-                  boxShadow: selected ? `0 0 0 1px var(--brand)` : 'none',
+                  boxShadow: selected ? '0 0 0 1px var(--brand)' : 'none',
                   opacity: selected ? 1 : 0.9,
                 }}
               >
-                {icon}
                 <span
                   style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     fontSize: 10,
                     fontWeight: 500,
+                    flex: 1,
                   }}
                 >
                   {shot.label}
                 </span>
+                <ShotStatusIcon status={shot.status} />
               </div>
             );
           })}
