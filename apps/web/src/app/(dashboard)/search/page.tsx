@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -71,7 +71,7 @@ function timeAgo(dateStr: string): string {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') ?? '';
   const initialType = searchParams.get('type') as ResultType | null;
@@ -375,5 +375,13 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40 }}>Loading search...</div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

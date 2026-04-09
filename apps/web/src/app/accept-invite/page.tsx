@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,7 +56,7 @@ function AnimaForgeLogo() {
 /*  Main page                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -384,5 +384,13 @@ export default function AcceptInvitePage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg-base, #0a0a0f)' }} />}>
+      <AcceptInviteContent />
+    </Suspense>
   );
 }
