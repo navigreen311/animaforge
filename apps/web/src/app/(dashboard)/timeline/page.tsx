@@ -4,9 +4,12 @@ import { useState, useCallback } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
   Check, AlertCircle, Loader2, ChevronDown, ChevronRight,
-  X, Plus, Image, Shield,
+  X, Plus, Image, Shield, ShieldCheck, RefreshCw, Layers,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { TakesDrawer, createMockTakes } from '@/components/timeline/TakesDrawer';
+import type { Take } from '@/components/timeline/TakesDrawer';
 
 // ── Types ────────────────────────────────────────────────────
 type ShotStatus = 'draft' | 'generating' | 'review' | 'approved' | 'failed';
@@ -209,6 +212,8 @@ export default function TimelinePage() {
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [selectedTier, setSelectedTier] = useState(1); // Standard
   const [metaExpanded, setMetaExpanded] = useState(false);
+  const [takesDrawerOpen, setTakesDrawerOpen] = useState(false);
+  const [mockTakes, setMockTakes] = useState<Take[]>([]);
 
   const timelineWidthPx = 600 + zoom * 8;
 
@@ -265,6 +270,10 @@ export default function TimelinePage() {
   const handleApprove = useCallback(() => {
     if (!selectedClip) return;
     updateClip(selectedClip.id, { status: 'approved' });
+    // Mock API call + toast
+    setTimeout(() => {
+      toast.success(`Shot #${selectedClip.shotNumber ?? '?'} approved`);
+    }, 200);
   }, [selectedClip, updateClip]);
 
   const handleRegenerate = useCallback(() => {
@@ -272,6 +281,22 @@ export default function TimelinePage() {
     setGenerationState(null);
     updateClip(selectedClip.id, { status: 'draft' });
   }, [selectedClip, updateClip]);
+
+  const handleOpenTakes = useCallback(() => {
+    if (!selectedClip) return;
+    setMockTakes(createMockTakes(selectedClip.shotNumber ?? 1));
+    setTakesDrawerOpen(true);
+  }, [selectedClip]);
+
+  const handleSelectTake = useCallback((takeId: string) => {
+    setMockTakes((prev) =>
+      prev.map((t) => ({ ...t, isActive: t.id === takeId })),
+    );
+  }, []);
+
+  const handleGenerateNewTake = useCallback((tier: string) => {
+    toast.success(`Generating new ${tier} take...`);
+  }, []);
 
   // ── Render ──────────────────────────────────────────────────
   return (
@@ -357,7 +382,7 @@ export default function TimelinePage() {
         </div>
 
         {/* ── Main Content: Timeline + Properties ─────────────── */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
           {/* ── Timeline Area ────────────────────────────────── */}
           <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto', background: 'var(--bg-base)' }}>
             <div style={{ minWidth: timelineWidthPx + 100, padding: '0 0 16px' }}>
@@ -781,77 +806,165 @@ export default function TimelinePage() {
                   )}
                 </div>
 
-                {/* ── Section 4: Output (after generation) ──── */}
-                {generationState && generationState.clipId === selectedClip.id && generationState.done && (
-                  <>
-                    <div style={{ height: 1, background: 'var(--border)' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Output
-                      </span>
+                {/* ── Section 4: Latest Generation Output ───── */}
+                {(() => {
+                  // Show for demo: always show when shot status is review/approved,
+                  // or when generation just completed
+                  const showOutput =
+                    (generationState && generationState.clipId === selectedClip.id && generationState.done) ||
+                    selectedClip.status === 'review' ||
+                    selectedClip.status === 'approved';
 
-                      {/* Thumbnail */}
-                      <div style={{
-                        width: '100%', height: 120, borderRadius: 'var(--radius-lg)',
-                        background: `linear-gradient(135deg, ${selectedClip.color}, #0f0f23, ${selectedClip.color}55)`,
-                        border: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        position: 'relative', overflow: 'hidden',
-                      }}>
-                        <Play size={28} style={{ color: 'rgba(255,255,255,0.5)' }} />
-                        {/* C2PA badge */}
+                  if (!showOutput) return null;
+
+                  // Quality scores: use real ones from generation or mock defaults
+                  const qualityScores = [
+                    {
+                      label: 'Temporal stability',
+                      value: generationState?.qualityScores?.consistency ?? 92,
+                    },
+                    {
+                      label: 'Identity drift',
+                      value: generationState?.qualityScores?.fidelity != null
+                        ? 100 - generationState.qualityScores.fidelity
+                        : 4,
+                    },
+                    {
+                      label: 'Lip sync',
+                      value: null as number | null, // N/A for demo
+                    },
+                  ];
+
+                  function qScoreColor(val: number | null): string {
+                    if (val === null) return 'var(--text-tertiary)';
+                    if (val >= 85) return '#4ade80';
+                    if (val >= 70) return '#facc15';
+                    return '#f87171';
+                  }
+
+                  return (
+                    <>
+                      <div style={{ height: 1, background: 'var(--border)' }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {/* Header + "View all takes" link */}
                         <div style={{
-                          position: 'absolute', bottom: 6, right: 6,
-                          display: 'flex', alignItems: 'center', gap: 3,
-                          fontSize: 9, fontWeight: 600, padding: '2px 6px',
-                          borderRadius: 4, background: 'rgba(0,0,0,0.7)',
-                          color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         }}>
-                          <Shield size={9} /> C2PA
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)',
+                            textTransform: 'uppercase', letterSpacing: '0.5px',
+                          }}>
+                            Latest Generation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleOpenTakes}
+                            style={{
+                              fontSize: 10, fontWeight: 500, color: 'var(--brand-light)',
+                              background: 'transparent', border: 'none', cursor: 'pointer',
+                              textDecoration: 'underline', padding: 0,
+                            }}
+                          >
+                            View all takes (3)
+                          </button>
+                        </div>
+
+                        {/* Output Thumbnail */}
+                        <div style={{
+                          width: '100%', height: 120, borderRadius: 'var(--radius-lg)',
+                          background: `linear-gradient(135deg, ${selectedClip.color}, #0f0f23, ${selectedClip.color}55)`,
+                          border: '1px solid var(--border)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          position: 'relative', overflow: 'hidden',
+                        }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.5)',
+                            textTransform: 'uppercase', letterSpacing: '0.5px',
+                          }}>
+                            Generated Frame
+                          </span>
+                          {/* C2PA badge overlay */}
+                          <div style={{
+                            position: 'absolute', bottom: 6, right: 6,
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            fontSize: 9, fontWeight: 600, padding: '3px 8px',
+                            borderRadius: 4, background: 'rgba(0,0,0,0.75)',
+                            color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)',
+                          }}>
+                            <ShieldCheck size={10} /> C2PA Signed
+                          </div>
+                        </div>
+
+                        {/* Quality Scores with progress bars */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {qualityScores.map((qs) => {
+                            const color = qScoreColor(qs.value);
+                            const displayValue = qs.value !== null ? `${qs.value}%` : 'N/A';
+                            const barWidth = qs.value !== null ? qs.value : 0;
+
+                            return (
+                              <div key={qs.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <div style={{
+                                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                }}>
+                                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                                    {qs.label}
+                                  </span>
+                                  <span style={{ fontSize: 10, fontWeight: 600, color }}>
+                                    {displayValue}
+                                  </span>
+                                </div>
+                                <div style={{
+                                  width: '100%', height: 3, borderRadius: 2,
+                                  background: 'var(--bg-elevated)', overflow: 'hidden',
+                                }}>
+                                  <div style={{
+                                    width: `${barWidth}%`,
+                                    height: '100%',
+                                    borderRadius: 2,
+                                    background: qs.value !== null ? color : 'transparent',
+                                    transition: 'width 300ms ease',
+                                  }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Action buttons: Approve, Regenerate, Takes */}
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button type="button" onClick={handleApprove} style={{
+                            flex: 1, padding: '7px 8px', fontSize: 11, fontWeight: 600,
+                            border: '1px solid #22c55e', borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer', background: 'rgba(34,197,94,0.12)',
+                            color: '#4ade80', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', gap: 4,
+                          }}>
+                            <Check size={12} /> Approve
+                          </button>
+                          <button type="button" onClick={handleRegenerate} style={{
+                            flex: 1, padding: '7px 8px', fontSize: 11, fontWeight: 600,
+                            border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer', background: 'var(--bg-elevated)',
+                            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', gap: 4,
+                          }}>
+                            <RefreshCw size={11} /> Regenerate
+                          </button>
+                          <button type="button" onClick={handleOpenTakes} style={{
+                            padding: '7px 10px', fontSize: 11, fontWeight: 600,
+                            border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer', background: 'var(--bg-elevated)',
+                            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', gap: 4,
+                          }}>
+                            <Layers size={11} /> Takes
+                          </button>
                         </div>
                       </div>
-
-                      {/* Quality scores */}
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {generationState.qualityScores && Object.entries(generationState.qualityScores).map(([key, val]) => (
-                          <div key={key} style={{
-                            flex: 1, padding: '6px 4px', borderRadius: 'var(--radius-lg)',
-                            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                            textAlign: 'center',
-                          }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: val >= 90 ? '#4ade80' : 'var(--text-primary)' }}>
-                              {val}
-                            </div>
-                            <div style={{ fontSize: 9, color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>
-                              {key}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Actions */}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="button" onClick={handleApprove} style={{
-                          flex: 1, padding: '8px 12px', fontSize: 12, fontWeight: 600,
-                          border: '1px solid #22c55e', borderRadius: 'var(--radius-lg)',
-                          cursor: 'pointer', background: 'rgba(34,197,94,0.12)',
-                          color: '#4ade80', display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', gap: 4,
-                        }}>
-                          <Check size={13} /> Approve
-                        </button>
-                        <button type="button" onClick={handleRegenerate} style={{
-                          flex: 1, padding: '8px 12px', fontSize: 12, fontWeight: 600,
-                          border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
-                          cursor: 'pointer', background: 'var(--bg-elevated)',
-                          color: 'var(--text-secondary)',
-                        }}>
-                          Regenerate
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  );
+                })()}
 
                 {/* ── Section 5: Meta (collapsible) ────────── */}
                 <div style={{ height: 1, background: 'var(--border)' }} />
@@ -919,6 +1032,16 @@ export default function TimelinePage() {
               </div>
             )}
           </div>
+
+          {/* ── Takes Drawer (slides over Properties panel) ── */}
+          <TakesDrawer
+            open={takesDrawerOpen}
+            onClose={() => setTakesDrawerOpen(false)}
+            shotNumber={selectedClip?.shotNumber ?? 1}
+            takes={mockTakes}
+            onSelectTake={handleSelectTake}
+            onGenerateNewTake={handleGenerateNewTake}
+          />
         </div>
       </div>
     </>
