@@ -50,6 +50,13 @@ router.put(
 );
 
 router.put(
+  "/shots/:id/reject",
+  requireAuth,
+  validate(ShotParamsSchema, "params"),
+  shotController.reject,
+);
+
+router.put(
   "/shots/:id/lock",
   requireAuth,
   validate(ShotParamsSchema, "params"),

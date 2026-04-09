@@ -142,6 +142,39 @@ export const shotService = {
     return updated;
   },
 
+  async reject(id: string, rejectionReason?: string): Promise<Shot | undefined> {
+    if (prisma) {
+      const existing = await prisma.shot.findUnique({ where: { id } });
+      if (!existing) return undefined;
+      if (existing.status === "locked") return undefined;
+
+      const updated = await prisma.shot.update({
+        where: { id },
+        data: {
+          status: "draft",
+          approvedBy: null,
+          approvedAt: null,
+        },
+      });
+      return updated as unknown as Shot;
+    }
+
+    // In-memory fallback
+    const shot = shots.get(id);
+    if (!shot) return undefined;
+    if (shot.status === "locked") return undefined;
+
+    const updated: Shot = {
+      ...shot,
+      status: "draft",
+      approvedBy: undefined,
+      approvedAt: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    shots.set(id, updated);
+    return updated;
+  },
+
   async lock(id: string): Promise<Shot | undefined> {
     if (prisma) {
       const existing = await prisma.shot.findUnique({ where: { id } });

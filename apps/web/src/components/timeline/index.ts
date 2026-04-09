@@ -10,3 +10,7 @@ export { CollabPresence } from './CollabPresence';
 export { KeyframeTrack } from './KeyframeTrack';
 export type { Keyframe, KeyframeTrackProps } from './KeyframeTrack';
 export { TimelineShortcuts } from './TimelineShortcuts';
+export { ShotApprovalActions } from './ShotApprovalActions';
+export type { ShotApprovalActionsProps } from './ShotApprovalActions';
+export { MemorySuggestions } from './MemorySuggestions';
+export type { MemorySuggestionsProps } from './MemorySuggestions';
