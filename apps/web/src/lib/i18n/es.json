@@ -1,0 +1,71 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "error": "Algo sali\u00f3 mal",
+    "retry": "Reintentar",
+    "search": "Buscar",
+    "back": "Atr\u00e1s",
+    "next": "Siguiente",
+    "close": "Cerrar",
+    "confirm": "Confirmar"
+  },
+  "dashboard": {
+    "projects": {
+      "title": "Proyectos",
+      "empty": "A\u00fan no hay proyectos",
+      "emptyDescription": "Crea tu primer proyecto para comenzar con AnimaForge.",
+      "newProject": "Nuevo Proyecto",
+      "stats": {
+        "total": "Total de Proyectos",
+        "active": "Activos",
+        "completed": "Completados",
+        "shots": "Total de Tomas"
+      }
+    },
+    "timeline": {
+      "title": "L\u00ednea de Tiempo",
+      "addShot": "Agregar Toma",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "regenerate": "Regenerar"
+    },
+    "characters": {
+      "title": "Personajes",
+      "create": "Crear Personaje",
+      "empty": "A\u00fan no hay personajes"
+    },
+    "settings": {
+      "title": "Configuraci\u00f3n",
+      "tabs": {
+        "general": "General",
+        "billing": "Facturaci\u00f3n",
+        "profile": "Perfil",
+        "workspace": "Espacio de Trabajo"
+      }
+    }
+  },
+  "onboarding": {
+    "steps": "Paso {current} de {total}",
+    "welcome": "Bienvenido a AnimaForge",
+    "profile": "Configura tu perfil",
+    "createProject": "Crea tu primer proyecto",
+    "ready": "\u00a1Todo listo!"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como le\u00eddo",
+    "clearAll": "Borrar todo",
+    "noNotifications": "Sin notificaciones"
+  },
+  "errors": {
+    "notFound": "P\u00e1gina no encontrada",
+    "serverError": "Error interno del servidor",
+    "maintenance": "Estamos en mantenimiento",
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir al inicio"
+  }
+}
