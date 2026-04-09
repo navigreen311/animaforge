@@ -460,128 +460,410 @@ export default function CharacterDetailPage() {
     return <WardrobeTab />;
   }
 
+  /* ── Web Audio preview helper ──────────────────────────────── */
+
+  function playPreviewTone() {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  }
+
+  function handleVoicePair(voiceId: string, voiceName: string) {
+    setPairedVoiceId(voiceId);
+    setPairedVoiceName(voiceName);
+    setVoiceModalOpen(false);
+    toast.success(`Voice "${voiceName}" paired`);
+  }
+
+  function handleVoiceUnpair() {
+    setPairedVoiceId(null);
+    setPairedVoiceName(null);
+    toast.success('Voice unpaired');
+  }
+
+  function simulateUpload() {
+    if (!uploadVoiceName.trim()) return;
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev === null || prev >= 100) {
+          clearInterval(interval);
+          handleVoicePair(`voice-custom-${Date.now()}`, uploadVoiceName);
+          setUploadProgress(null);
+          setUploadVoiceName('');
+          return null;
+        }
+        return prev + 20;
+      });
+    }, 400);
+  }
+
+  /* ── Voice Selector Modal ──────────────────────────────────── */
+
+  function renderVoiceSelectorModal() {
+    return (
+      <AnimatePresence>
+        {voiceModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+              zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setVoiceModalOpen(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={{
+                background: 'var(--bg-elevated)', border: '0.5px solid var(--border-strong)',
+                borderRadius: 'var(--radius-xl)', width: 440, maxHeight: '90vh',
+                overflowY: 'auto', padding: 24,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  Pair a Voice
+                </h2>
+                <button type="button" onClick={() => setVoiceModalOpen(false)} aria-label="Close"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Tab Switcher */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+                {(['select', 'upload'] as const).map((tab) => (
+                  <button key={tab} onClick={() => setVoiceModalTab(tab)}
+                    style={{
+                      flex: 1, padding: '8px 0', fontSize: 13, fontWeight: 500, border: 'none',
+                      borderBottom: voiceModalTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: voiceModalTab === tab ? 'var(--text-brand)' : 'var(--text-tertiary)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                    {tab === 'select' ? 'Select existing' : 'Upload new sample'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Select existing tab */}
+              {voiceModalTab === 'select' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {VOICE_LIBRARY.map((voice) => (
+                    <div key={voice.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                        borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg-surface)', transition: 'border-color 0.15s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-border)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                    >
+                      <Volume2 size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{voice.name}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>{voice.style}</p>
+                      </div>
+                      <button type="button" onClick={playPreviewTone}
+                        style={{
+                          background: 'transparent', border: '0.5px solid var(--border)', color: 'var(--text-secondary)',
+                          padding: '4px 10px', borderRadius: 'var(--radius-md)', fontSize: 11, fontWeight: 500,
+                          cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                        }}>
+                        &#9654; Preview
+                      </button>
+                      <button type="button" onClick={() => handleVoicePair(voice.id, voice.name)}
+                        style={{
+                          background: 'var(--brand)', color: '#fff', border: 'none', padding: '4px 12px',
+                          borderRadius: 'var(--radius-md)', fontSize: 11, fontWeight: 500,
+                          cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                        }}>
+                        Select
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload new sample tab */}
+              {voiceModalTab === 'upload' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Drop zone */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
+                    style={{
+                      border: `2px dashed ${dragOver ? 'var(--brand)' : 'var(--border-strong)'}`,
+                      borderRadius: 'var(--radius-md)', padding: '32px 16px', textAlign: 'center',
+                      backgroundColor: dragOver ? 'var(--bg-active)' : 'var(--bg-surface)',
+                      transition: 'all 0.15s', cursor: 'pointer',
+                    }}>
+                    <Upload size={28} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+                      Drop audio file here or click to browse
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                      MP3, WAV, or M4A - max 10MB
+                    </p>
+                  </div>
+
+                  {/* Voice name input */}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                      Voice name
+                    </label>
+                    <input
+                      type="text" value={uploadVoiceName} onChange={(e) => setUploadVoiceName(e.target.value)}
+                      placeholder="e.g. My custom voice"
+                      style={{
+                        width: '100%', padding: '8px 12px', fontSize: 13, borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  {/* Create button + progress */}
+                  <button type="button" onClick={simulateUpload}
+                    disabled={!uploadVoiceName.trim() || uploadProgress !== null}
+                    style={{
+                      padding: '10px 20px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
+                      border: 'none', backgroundColor: uploadVoiceName.trim() ? 'var(--brand)' : 'var(--bg-surface)',
+                      color: uploadVoiceName.trim() ? '#fff' : 'var(--text-tertiary)',
+                      cursor: uploadVoiceName.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s',
+                    }}>
+                    {uploadProgress !== null ? `Creating... ${uploadProgress}%` : 'Create Voice Clone'}
+                  </button>
+
+                  {uploadProgress !== null && (
+                    <div style={{ height: 4, borderRadius: 2, backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', width: `${uploadProgress}%`, backgroundColor: 'var(--brand)',
+                        borderRadius: 2, transition: 'width 0.3s ease',
+                      }} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  /* ── Voice Tab ─────────────────────────────────────────────── */
+
   function renderVoiceTab() {
-    const hasPairedVoice = Boolean(character.voiceId);
+    const hasPairedVoice = Boolean(pairedVoiceId);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', paddingTop: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {hasPairedVoice ? (
           <>
-            <Volume2 size={36} style={{ color: 'var(--brand-light)' }} />
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-                {character.voiceName}
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
-                Voice ID: {character.voiceId}
-              </p>
+            {/* Identity Lock Card */}
+            <div style={{
+              borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-surface)', padding: 20,
+            }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, margin: 0 }}>
+                Identity Lock
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Check size={14} style={{ color: '#34d399' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Visual Identity</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>Appearance locked to style reference</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Check size={14} style={{ color: '#34d399' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Audio Identity</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>{pairedVoiceName} - Voice cloned and lip-sync ready</p>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Action buttons */}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
+              <button onClick={playPreviewTone}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--brand-border)',
-                  backgroundColor: 'var(--bg-active)',
-                  color: 'var(--text-brand)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Play size={14} /> Play Sample
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '10px 16px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--brand-border)', backgroundColor: 'var(--bg-active)',
+                  color: 'var(--text-brand)', cursor: 'pointer',
+                }}>
+                <Play size={14} /> Preview voice
               </button>
-              <button
+              <button onClick={handleVoiceUnpair}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                }}
-              >
-                Unpair
+                  flex: 1, padding: '10px 16px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}>
+                Unpair voice
               </button>
             </div>
           </>
         ) : (
-          <>
-            <VolumeX size={36} style={{ color: 'var(--text-tertiary)' }} />
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>No voice paired</p>
-          </>
+          /* Unpaired state */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 32, paddingBottom: 16 }}>
+            <Mic size={48} style={{ color: 'var(--text-tertiary)', opacity: 0.2 }} />
+            <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              No voice paired
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', maxWidth: 280, lineHeight: 1.5, margin: 0 }}>
+              Pair a voice to enable voice cloning and automatic lip-sync for this character across all projects.
+            </p>
+            <button onClick={() => { setVoiceModalTab('select'); setVoiceModalOpen(true); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 13, fontWeight: 500,
+                borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)',
+                backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', marginTop: 8,
+              }}>
+              <Plus size={14} /> Pair a Voice
+            </button>
+          </div>
         )}
-        <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '10px 20px',
-            fontSize: 13,
-            fontWeight: 500,
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--brand-border)',
-            backgroundColor: 'var(--brand-dim)',
-            color: 'var(--text-brand)',
-            cursor: 'pointer',
-            marginTop: 8,
-          }}
-        >
-          <Plus size={14} /> Pair Voice
-        </button>
       </div>
     );
   }
 
+  /* ── History Tab ───────────────────────────────────────────── */
+
   function renderHistoryTab() {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>
-          Shot History
-        </h4>
-        {MOCK_HISTORY.map((entry) => (
-          <div
-            key={entry.id}
+    const hasHistory = ENHANCED_HISTORY.length > 0;
+    const uniqueProjects = new Set(ENHANCED_HISTORY.map((e) => e.projectId));
+
+    function scoreColor(score: number) {
+      if (score > 80) return { bg: 'rgba(52, 211, 153, 0.12)', fg: '#6ee7b7', border: 'rgba(52, 211, 153, 0.3)' };
+      if (score >= 60) return { bg: 'rgba(234, 179, 8, 0.12)', fg: '#fbbf24', border: 'rgba(234, 179, 8, 0.3)' };
+      return { bg: 'rgba(248, 113, 113, 0.12)', fg: '#f87171', border: 'rgba(248, 113, 113, 0.3)' };
+    }
+
+    if (!hasHistory) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 40, paddingBottom: 20 }}>
+          <FolderOpen size={40} style={{ color: 'var(--text-tertiary)', opacity: 0.3 }} />
+          <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
+            This character hasn&apos;t been used in any shots yet.
+          </p>
+          <button onClick={() => router.push('/projects')}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)',
-              backgroundColor: 'var(--bg-surface)',
-            }}
-          >
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
-                {entry.project}
-              </p>
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                Shot #{entry.shotNumber} &middot; {entry.date}
-              </p>
-            </div>
-            <div
-              style={{
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: 12,
-                fontWeight: 500,
-                backgroundColor:
-                  entry.consistencyScore >= 90
-                    ? 'rgba(52, 211, 153, 0.12)'
-                    : 'rgba(234, 179, 8, 0.12)',
-                color:
-                  entry.consistencyScore >= 90 ? '#6ee7b7' : '#fbbf24',
-                border: `1px solid ${entry.consistencyScore >= 90 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(234, 179, 8, 0.3)'}`,
-              }}
-            >
-              {entry.consistencyScore}%
-            </div>
+              display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', fontSize: 13, fontWeight: 500,
+              borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)',
+              backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', marginTop: 4,
+            }}>
+            Use in Project &rarr;
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Drift Score Chart */}
+        <div style={{
+          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+          backgroundColor: 'var(--bg-surface)', padding: '16px 16px 8px',
+        }}>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+            Drift Score Over Time
+          </h4>
+          <ResponsiveContainer width="100%" height={140}>
+            <LineChart data={DRIFT_CHART_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: 'var(--text-secondary)' }}
+                itemStyle={{ color: 'var(--text-primary)' }}
+              />
+              <ReferenceLine y={80} stroke="#34d399" strokeDasharray="4 4" strokeOpacity={0.5} />
+              <ReferenceLine y={60} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.5} />
+              <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3, fill: '#8b5cf6' }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Shot History List */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8 }}>
+            Appears in {ENHANCED_HISTORY.length} shots across {uniqueProjects.size} projects
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {ENHANCED_HISTORY.map((entry) => {
+              const sc = scoreColor(entry.score);
+              return (
+                <div key={entry.id}
+                  onClick={() => router.push(`/projects/${entry.projectId}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg-surface)', cursor: 'pointer', transition: 'border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-border)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                >
+                  {/* Project thumbnail placeholder */}
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <FolderOpen size={14} style={{ color: 'var(--text-tertiary)' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                      {entry.project} &rarr; Shot {entry.shotNumber}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, margin: 0 }}>
+                      {formatDate(entry.date)}
+                    </p>
+                  </div>
+                  <div style={{
+                    padding: '4px 10px', borderRadius: 'var(--radius-pill)', fontSize: 12, fontWeight: 500,
+                    backgroundColor: sc.bg, color: sc.fg, border: `1px solid ${sc.border}`, flexShrink: 0,
+                  }}>
+                    {entry.score}%
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
       </div>
     );
   }
@@ -770,6 +1052,9 @@ export default function CharacterDetailPage() {
           ))}
         </div>
       )}
+
+      {/* Voice Selector Modal */}
+      {renderVoiceSelectorModal()}
 
       {/* Page Header */}
       <div style={{ marginBottom: 24 }}>
