@@ -172,7 +172,9 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
           handleCardClick();
         }
       }}
-      className="group"
+      className="group project-card"
+      data-status={project.status}
+      data-pinned={isPinned ? '' : undefined}
       style={{
         background: 'var(--bg-elevated)',
         border: '0.5px solid var(--border)',
@@ -197,7 +199,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
       <div style={{ position: 'relative', height: 100, overflow: 'hidden' }}>
         {/* Gradient background — always rendered behind content */}
         <div
-          className={project.status === 'generating' ? 'thumbnail-generating' : undefined}
+          className={`thumbnail-gradient${project.status === 'generating' ? ' thumbnail-generating' : ''}`}
           style={{
             position: 'absolute',
             inset: 0,
@@ -244,6 +246,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         {/* Pin button — top-left */}
         <button
           type="button"
+          className="pin-btn"
           aria-label={isPinned ? 'Unpin project' : 'Pin project'}
           onClick={handleTogglePin}
           style={{
@@ -251,8 +254,8 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
             top: 8,
             left: 8,
             zIndex: 5,
-            width: 28,
-            height: 28,
+            width: 24,
+            height: 24,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -303,6 +306,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
 
         {/* Quick action buttons — bottom-right of thumbnail */}
         <div
+          className="quick-actions-overlay"
           style={{
             position: 'absolute',
             bottom: 8,

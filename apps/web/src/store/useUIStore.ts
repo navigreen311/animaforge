@@ -32,8 +32,11 @@ export const useUIStore = create<UIState>()((set) => ({
   setStatusFilter: (s) => set({ statusFilter: s }),
   sortOption: 'recent',
   setSortOption: (s) => set({ sortOption: s }),
-  viewMode: 'grid',
-  setViewMode: (m) => set({ viewMode: m }),
+  viewMode: (typeof window !== 'undefined' && (localStorage.getItem('animaforge-viewMode') as 'grid' | 'list')) || 'grid',
+  setViewMode: (m) => {
+    if (typeof window !== 'undefined') localStorage.setItem('animaforge-viewMode', m);
+    set({ viewMode: m });
+  },
   searchQuery: '',
   setSearchQuery: (q) => set({ searchQuery: q }),
 

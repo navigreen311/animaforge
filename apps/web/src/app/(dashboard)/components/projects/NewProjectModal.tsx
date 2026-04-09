@@ -16,6 +16,13 @@ const PROJECT_TYPES = [
   { value: 'Documentary', label: 'Documentary', icon: FileVideo },
 ] as const;
 
+const ASPECT_RATIOS = [
+  { value: '16:9', label: '16:9', description: 'Landscape / YouTube' },
+  { value: '9:16', label: '9:16', description: 'Portrait / TikTok' },
+  { value: '1:1', label: '1:1', description: 'Square / Instagram' },
+  { value: '21:9', label: '21:9', description: 'Cinematic' },
+] as const;
+
 const TEMPLATES = [
   { id: '30s-ad', label: '30s Ad', description: 'Quick advertisement spot' },
   { id: '2min-short', label: '2min Short', description: 'Short-form content' },
@@ -36,6 +43,7 @@ export default function NewProjectModal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<string>(PROJECT_TYPES[0].value);
+  const [aspectRatio, setAspectRatio] = useState<string>(ASPECT_RATIOS[0].value);
   const [template, setTemplate] = useState<string>(TEMPLATES[2].id);
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,6 +66,7 @@ export default function NewProjectModal() {
       setTitle('');
       setDescription('');
       setProjectType(PROJECT_TYPES[0].value);
+      setAspectRatio(ASPECT_RATIOS[0].value);
       setTemplate(TEMPLATES[2].id);
     }
   }, [open]);

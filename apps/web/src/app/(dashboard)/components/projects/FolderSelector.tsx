@@ -247,9 +247,9 @@ function Chip({ active, onClick, children }: ChipProps) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        background: active ? 'var(--brand-dim)' : 'transparent',
+        background: active ? 'var(--bg-active)' : 'transparent',
         border: active
-          ? '0.5px solid var(--brand-border)'
+          ? '0.5px solid var(--border-brand)'
           : '0.5px solid var(--border)',
         color: active ? 'var(--text-brand)' : 'var(--text-tertiary)',
         borderRadius: 'var(--radius-pill)',
