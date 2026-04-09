@@ -11,6 +11,8 @@ import {
   MoreHorizontal,
   Volume2,
 } from 'lucide-react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import EmptyState from '@/components/ui/EmptyState';
 import CharacterStatsRow from '../components/characters/CharacterStatsRow';
 import CharacterFilterBar, {
   type CharacterFilters,
@@ -281,24 +283,12 @@ export default function CharactersPage() {
           </div>
         ) : filteredCharacters.length === 0 ? (
           /* ── Empty state ──────────────────────────────── */
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '48px 0',
-              gap: 8,
-            }}
-          >
-            <User size={32} style={{ color: 'var(--text-tertiary)' }} />
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-              No characters match your filters
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
+          <EmptyState
+            icon={User}
+            title="No characters yet"
+            description="Create your first character to start building your cast. Characters can be reused across multiple projects."
+            action={{ label: 'Create Character', onClick: () => setNewCharModalOpen(true) }}
+          />
         ) : (
           /* ── Character Grid ──────────────────────────── */
           <div

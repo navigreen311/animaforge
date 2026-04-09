@@ -20,6 +20,7 @@ import {
   Edit3,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import EmptyState from '@/components/ui/EmptyState';
 
 // ── Types ────────────────────────────────────────────────────
 type AudioTab = 'music' | 'voice' | 'sfx';
@@ -1271,16 +1272,11 @@ export default function AudioStudioPage() {
               </div>
 
               {filteredSfx.length === 0 && (
-                <div
-                  style={{
-                    padding: 32,
-                    textAlign: 'center',
-                    color: 'var(--text-tertiary)',
-                    fontSize: 12,
-                  }}
-                >
-                  No sound effects found matching your search.
-                </div>
+                <EmptyState
+                  icon={Music}
+                  title="No sound effects found"
+                  description="Try adjusting your search query or browse a different category."
+                />
               )}
             </div>
           </>

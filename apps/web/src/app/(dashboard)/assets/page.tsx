@@ -30,6 +30,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import EmptyState from '@/components/ui/EmptyState';
 
 // ── Types ────────────────────────────────────────────────────────
 type AssetType = 'image' | 'video' | 'audio' | '3d' | 'style-pack' | 'preset';
@@ -1376,22 +1377,12 @@ export default function AssetsPage() {
 
             {/* ── Empty State ────────────────────────────── */}
             {filtered.length === 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '48px 0',
-                  gap: 8,
-                }}
-              >
-                <Search size={24} style={{ color: 'var(--text-tertiary)' }} />
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>No assets found</p>
-                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
-                  Try adjusting your filters or search query
-                </p>
-              </div>
+              <EmptyState
+                icon={Package}
+                title="No assets found"
+                description="Try adjusting your filters or search query, or upload your first asset."
+                action={{ label: 'Upload Asset', onClick: () => toast('Upload coming soon') }}
+              />
             )}
           </div>
         </div>
