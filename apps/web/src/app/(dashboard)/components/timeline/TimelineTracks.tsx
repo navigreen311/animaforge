@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { CameraTrack } from '@/components/timeline/CameraTrack';
+import { KeyframeTrack } from '@/components/timeline/KeyframeTrack';
 
 // ── Types ──────────────────────────────────────────────────────
 interface Clip {
@@ -33,33 +35,6 @@ const VIDEO_SHOTS: ShotBlock[] = [
   { id: 'shot-1', label: 'Shot 1 - Intro', leftPct: 0, widthPct: 26, status: 'approved' },
   { id: 'shot-2', label: 'Shot 2 - Battle', leftPct: 29, widthPct: 37, status: 'generating' },
   { id: 'shot-3', label: 'Shot 3 - Epilogue', leftPct: 69, widthPct: 27, status: 'draft' },
-];
-
-interface CameraBlock {
-  id: string;
-  label: string;
-  leftPct: number;
-  widthPct: number;
-  properties: string;
-}
-
-const CAMERA_BLOCKS: CameraBlock[] = [
-  { id: 'cam-1', label: 'Dolly In', leftPct: 2, widthPct: 20, properties: 'Speed: 1.2x | Ease: Cubic In-Out | Distance: 4m' },
-  { id: 'cam-2', label: 'Pan Right', leftPct: 30, widthPct: 25, properties: 'Speed: 0.8x | Angle: 90° | Pivot: Center' },
-  { id: 'cam-3', label: 'Static', leftPct: 70, widthPct: 24, properties: 'Locked | FOV: 50mm | No Motion' },
-];
-
-interface KeyframeMarker {
-  id: string;
-  positionPct: number;
-  type: string;
-}
-
-const KEYFRAME_MARKERS: KeyframeMarker[] = [
-  { id: 'kf-1', positionPct: 8, type: 'Position' },
-  { id: 'kf-2', positionPct: 32, type: 'Rotation' },
-  { id: 'kf-3', positionPct: 58, type: 'Scale' },
-  { id: 'kf-4', positionPct: 85, type: 'Opacity' },
 ];
 
 interface AudioBlock {
@@ -169,25 +144,9 @@ export default function TimelineTracks({
   playheadPosition,
 }: TimelineTracksProps) {
   const [activePopover, setActivePopover] = useState<string | null>(null);
-  const [activeCameraPopover, setActiveCameraPopover] = useState<string | null>(null);
-  const [activeKeyframePopover, setActiveKeyframePopover] = useState<string | null>(null);
 
   const handleMarkerClick = (id: string) => {
     setActivePopover((prev) => (prev === id ? null : id));
-    setActiveCameraPopover(null);
-    setActiveKeyframePopover(null);
-  };
-
-  const handleCameraClick = (id: string) => {
-    setActiveCameraPopover((prev) => (prev === id ? null : id));
-    setActivePopover(null);
-    setActiveKeyframePopover(null);
-  };
-
-  const handleKeyframeClick = (id: string) => {
-    setActiveKeyframePopover((prev) => (prev === id ? null : id));
-    setActivePopover(null);
-    setActiveCameraPopover(null);
   };
 
   const isSelected = (id: string) => selectedClip?.id === id;
@@ -375,157 +334,22 @@ export default function TimelineTracks({
       </div>
 
       {/* ── 3. Camera Track ─────────────────────────────────── */}
-      <div style={trackRowStyle}>
-        <div style={labelStyle}>Camera</div>
-        <div style={{ ...laneStyle, background: 'rgba(99,102,241,0.05)' }}>
-          <div
-            style={{
-              position: 'absolute',
-              left: `${playheadPosition}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'rgba(239,68,68,0.5)',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-
-          {CAMERA_BLOCKS.map((cam) => {
-            const selected = isSelected(cam.id);
-            return (
-              <div key={cam.id} style={{ position: 'absolute', left: `${cam.leftPct}%`, width: `${cam.widthPct}%`, top: 0, bottom: 0 }}>
-                <div
-                  onClick={() => {
-                    handleCameraClick(cam.id);
-                    onSelectClip({
-                      id: cam.id,
-                      label: cam.label,
-                      startSec: 0,
-                      durationSec: 0,
-                      color: '#4f46e5',
-                    });
-                  }}
-                  style={{
-                    ...blockBaseStyle,
-                    position: 'absolute',
-                    left: 0,
-                    width: '100%',
-                    background: '#4f46e5',
-                    border: selected ? '2px solid #fff' : '2px solid transparent',
-                    boxShadow: selected ? '0 0 0 1px var(--brand)' : 'none',
-                    opacity: selected ? 1 : 0.85,
-                  }}
-                >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cam.label}</span>
-                </div>
-
-                {/* Camera properties popover */}
-                {activeCameraPopover === cam.id && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      marginBottom: 6,
-                      padding: '8px 12px',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      zIndex: 50,
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, marginBottom: 4, color: '#4f46e5' }}>
-                      {cam.label}
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)' }}>{cam.properties}</div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <CameraTrack
+        playheadPosition={playheadPosition}
+        selectedId={selectedClip?.id ?? null}
+        onSelectMove={(move) =>
+          onSelectClip({
+            id: move.id,
+            label: move.label,
+            startSec: 0,
+            durationSec: 0,
+            color: '#4f46e5',
+          })
+        }
+      />
 
       {/* ── 4. Keyframe Track ───────────────────────────────── */}
-      <div style={trackRowStyle}>
-        <div style={labelStyle}>Keyframe</div>
-        <div style={{ ...laneStyle, background: 'rgba(245,158,11,0.04)' }}>
-          <div
-            style={{
-              position: 'absolute',
-              left: `${playheadPosition}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'rgba(239,68,68,0.5)',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-
-          {KEYFRAME_MARKERS.map((kf) => (
-            <div
-              key={kf.id}
-              style={{
-                position: 'absolute',
-                left: `${kf.positionPct}%`,
-                top: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 20,
-              }}
-            >
-              <span
-                onClick={() => handleKeyframeClick(kf.id)}
-                style={{
-                  fontSize: 16,
-                  color: '#f59e0b',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                  userSelect: 'none',
-                  filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))',
-                  transform: 'translateX(-50%)',
-                }}
-              >
-                ◆
-              </span>
-
-              {/* Keyframe type popover */}
-              {activeKeyframePopover === kf.id && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginBottom: 6,
-                    padding: '6px 10px',
-                    background: 'var(--bg-elevated)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    color: 'var(--text-primary)',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 50,
-                  }}
-                >
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Keyframe:</span>{' '}
-                  {kf.type}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <KeyframeTrack playheadPosition={playheadPosition} />
 
       {/* ── 5. Audio Track ──────────────────────────────────── */}
       <div style={trackRowStyle}>
