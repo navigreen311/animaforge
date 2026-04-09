@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
   User,
   Eye,
@@ -22,9 +22,17 @@ import {
   Angry,
   Heart,
   Zap,
+  Mic,
+  Upload,
+  X,
+  ChevronDown,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from 'recharts';
 import type { Character, StyleMode } from '@/lib/types';
 import { Toast, useToast } from '@/components/shared/Toast';
+import HairTab from './HairTab';
+import WardrobeTab from './WardrobeTab';
 
 /* ── Mock Data ──────────────────────────────────────────────── */
 
@@ -86,11 +94,12 @@ type Tab = (typeof TABS)[number];
 const WARDROBE_CATEGORIES = ['Tops', 'Bottoms', 'Shoes', 'Accessories'] as const;
 
 const EXPORT_FORMATS = [
-  { id: 'gltf', label: 'glTF 2.0', ext: '.glb' },
-  { id: 'fbx', label: 'FBX', ext: '.fbx' },
-  { id: 'usd', label: 'USD/USDZ', ext: '.usdz' },
-  { id: 'bvh', label: 'BVH', ext: '.bvh' },
-  { id: 'arkit', label: 'ARKit', ext: '.reality' },
+  { id: 'gltf', label: 'glTF 2.0', compat: 'Blender \u00b7 Unreal' },
+  { id: 'fbx', label: 'FBX', compat: 'Maya \u00b7 Max \u00b7 Unity' },
+  { id: 'usd', label: 'USD / USDZ', compat: 'Apple Vision Pro' },
+  { id: 'bvh', label: 'BVH Motion', compat: 'MotionBuilder' },
+  { id: 'arkit', label: 'ARKit', compat: 'iOS / Xcode' },
+  { id: 'mp4', label: 'MP4 Rendered', compat: 'Any platform' },
 ];
 
 const EMOTION_PREVIEWS = [
@@ -106,6 +115,37 @@ const MOCK_HISTORY = [
   { id: 'h-1', project: 'Cyber Samurai: Origin', shotNumber: 7, date: '2026-03-20', consistencyScore: 94 },
   { id: 'h-2', project: 'Neon Drift', shotNumber: 3, date: '2026-03-18', consistencyScore: 88 },
   { id: 'h-3', project: 'Cyber Samurai: Origin', shotNumber: 12, date: '2026-03-15', consistencyScore: 91 },
+];
+
+/* ── Voice Modal Mock Voices ──────────────────────────────────── */
+
+const VOICE_LIBRARY = [
+  { id: 'voice-001', name: 'Kenji Smooth', style: 'Warm baritone' },
+  { id: 'voice-002', name: 'Aria Crystal', style: 'Ethereal soprano' },
+  { id: 'voice-003', name: 'Marcus Gravel', style: 'Gritty narrator' },
+];
+
+/* ── Drift Chart Data ─────────────────────────────────────────── */
+
+const DRIFT_CHART_DATA = [
+  { date: 'Jan 20', score: 92 },
+  { date: 'Feb 03', score: 88 },
+  { date: 'Feb 14', score: 85 },
+  { date: 'Feb 28', score: 78 },
+  { date: 'Mar 05', score: 82 },
+  { date: 'Mar 12', score: 91 },
+  { date: 'Mar 18', score: 88 },
+  { date: 'Mar 22', score: 85 },
+];
+
+/* ── Enhanced History Data ────────────────────────────────────── */
+
+const ENHANCED_HISTORY = [
+  { id: 'h-1', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 7, date: '2026-03-20', score: 94 },
+  { id: 'h-2', project: 'Neon Drift', projectId: 'proj-2', shotNumber: 3, date: '2026-03-18', score: 88 },
+  { id: 'h-3', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 12, date: '2026-03-15', score: 91 },
+  { id: 'h-4', project: 'Neon Drift', projectId: 'proj-2', shotNumber: 8, date: '2026-03-10', score: 55 },
+  { id: 'h-5', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 2, date: '2026-03-01', score: 72 },
 ];
 
 /* ── Helpers ─────────────────────────────────────────────────── */
@@ -149,12 +189,63 @@ export default function CharacterDetailPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(character.name);
 
+  /* Voice tab state */
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
+  const [pairedVoiceId, setPairedVoiceId] = useState<string | null>(character.voiceId ?? null);
+  const [pairedVoiceName, setPairedVoiceName] = useState<string | null>(character.voiceName ?? null);
+  const [voiceModalTab, setVoiceModalTab] = useState<'select' | 'upload'>('select');
+  const [uploadVoiceName, setUploadVoiceName] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const router = useRouter();
+
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [exportAllLoading, setExportAllLoading] = useState(false);
+  const [mp4Resolution, setMp4Resolution] = useState<'720p' | '1080p' | '4K'>('1080p');
+  const [mp4Duration, setMp4Duration] = useState(10);
+  const [mp4Background, setMp4Background] = useState<'Transparent' | 'Black' | 'White'>('Black');
+
+  /* Advanced facial sliders state */
+  const [facialOpen, setFacialOpen] = useState(false);
+  const [facialSliders, setFacialSliders] = useState<Record<string, number>>({
+    eyeSize: 50,
+    eyeSpacing: 50,
+    noseWidth: 50,
+    noseLength: 50,
+    jawDefinition: 50,
+    jawWidth: 50,
+    lipFullness: 50,
+    cheekVolume: 50,
+  });
+  const facialDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updateFacialSlider = useCallback((key: string, value: number) => {
+    setFacialSliders((prev) => ({ ...prev, [key]: value }));
+    if (facialDebounceRef.current) clearTimeout(facialDebounceRef.current);
+    facialDebounceRef.current = setTimeout(() => {
+      // Auto-save: would POST to API here
+    }, 800);
+  }, []);
+
   const handleExport = useCallback(
-    (format: string) => {
-      toast.success(`Export started: ${format}`);
+    (formatId: string, formatLabel: string) => {
+      setExportingId(formatId);
+      setTimeout(() => {
+        setExportingId(null);
+        toast.success(`Export ready: ${formatLabel}`);
+      }, 2000);
     },
     [toast],
   );
+
+  const handleExportAll = useCallback(() => {
+    setExportAllLoading(true);
+    setTimeout(() => {
+      setExportAllLoading(false);
+      toast.success('All exports ready (ZIP)');
+    }, 2000);
+  }, [toast]);
 
   const handleNameSave = useCallback(() => {
     setIsEditingName(false);
@@ -267,6 +358,70 @@ export default function CharacterDetailPage() {
           </div>
         </div>
 
+        {/* ── Advanced Facial Features (collapsible) ── */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setFacialOpen(!facialOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '10px 0',
+              background: 'transparent',
+              border: 'none',
+              borderTop: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Advanced facial features</span>
+            <ChevronDown
+              size={14}
+              style={{
+                transition: 'transform 200ms ease',
+                transform: facialOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            />
+          </button>
+
+          {facialOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 8 }}>
+              {([
+                { key: 'eyeSize', label: 'Eye size' },
+                { key: 'eyeSpacing', label: 'Eye spacing' },
+                { key: 'noseWidth', label: 'Nose width' },
+                { key: 'noseLength', label: 'Nose length' },
+                { key: 'jawDefinition', label: 'Jaw definition' },
+                { key: 'jawWidth', label: 'Jaw width' },
+                { key: 'lipFullness', label: 'Lip fullness' },
+                { key: 'cheekVolume', label: 'Cheek volume' },
+              ] as const).map(({ key, label }) => (
+                <div key={key}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', minWidth: 24, textAlign: 'right' }}>{facialSliders[key]}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={facialSliders[key]}
+                    onChange={(e) => updateFacialSlider(key, Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      accentColor: 'var(--brand)',
+                      height: 4,
+                      cursor: 'pointer',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Emotion Previews */}
         <div>
           <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
@@ -298,6 +453,10 @@ export default function CharacterDetailPage() {
   }
 
   function renderHairTab() {
+    return <HairTab />;
+  }
+
+  function __UNUSED_renderHairTab() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {/* Hair Color */}
@@ -731,28 +890,29 @@ export default function CharacterDetailPage() {
       <div style={{ display: 'flex', gap: 24 }}>
         {/* ── LEFT COLUMN (60%) ─────────────────────────────────── */}
         <div style={{ flex: '0 0 60%', minWidth: 0 }}>
-          {/* Preview Area */}
-          <div
-            style={{
-              height: 300,
-              backgroundColor: 'var(--bg-surface)',
-              border: '2px dashed var(--border-strong)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-            }}
-          >
-            <User size={48} style={{ color: 'var(--text-tertiary)' }} />
-            <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 500 }}>
-              Character Preview
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-              {activeView} View
-            </span>
-          </div>
+          {/* Preview Area — shows image if available, placeholder + generate button otherwise */}
+          {(() => {
+            const viewKey = activeView.toLowerCase().replace('/', '');
+            const previewSrc = character.previewUrls?.[viewKey] ?? character.thumbnailUrl ?? null;
+            if (previewSrc) {
+              return (
+                <div style={{ height: 300, backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', position: 'relative' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewSrc} alt={`${character.name} - ${activeView} view`} style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'var(--bg-surface)' }} />
+                  <span style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 10, color: 'var(--text-tertiary)', background: 'rgba(0,0,0,0.55)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{activeView} View</span>
+                </div>
+              );
+            }
+            return (
+              <div style={{ height: 300, backgroundColor: 'var(--bg-surface)', border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                <User size={48} style={{ color: 'var(--text-tertiary)' }} />
+                <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 500 }}>{activeView} View</span>
+                <button type="button" onClick={() => toast.info('Generating preview...')} style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', fontSize: 12, fontWeight: 500, borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)', backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', transition: 'background 150ms ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--brand)'; e.currentTarget.style.color = '#fff'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--brand-dim)'; e.currentTarget.style.color = 'var(--text-brand)'; }}>
+                  <Zap size={13} /> Generate preview
+                </button>
+              </div>
+            );
+          })()}
 
           {/* View Angle Toggles */}
           <div
