@@ -1,240 +1,305 @@
-import VerificationBadge from '@/components/verify/VerificationBadge';
-import ManifestViewer from '@/components/verify/ManifestViewer';
-import ProvenanceTimeline from '@/components/verify/ProvenanceTimeline';
+'use client';
 
-interface VerifyPageProps {
-  params: Promise<{ outputId: string }>;
+import { useParams } from 'next/navigation';
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function AnimaForgeLogo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 24 }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+      <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary, #e2e8f0)' }}>AnimaForge</span>
+    </div>
+  );
 }
 
-const mockVerification = {
-  verified: true,
-  outputId: 'out_abc123def456',
-  generator: 'AnimaForge v2.1',
-  createdAt: 'March 25, 2026 at 8:35 AM UTC',
-  model: 'animaforge-v2',
-  projectInfo: 'Animation Project #4821',
-  inputHash: 'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-  consentStatus: 'All likenesses approved',
-  watermarkDetected: true,
-};
-
-const mockManifest = [
-  {
-    label: 'Claim Generator',
-    value: 'AnimaForge/2.1.0',
-  },
-  {
-    label: 'Signature',
-    children: [
-      { label: 'Algorithm', value: 'ES256' },
-      { label: 'Issuer', value: 'AnimaForge Inc.' },
-      { label: 'Certificate', value: 'CN=animaforge.ai, O=AnimaForge Inc.' },
-    ],
-  },
-  {
-    label: 'Actions',
-    children: [
-      { label: 'Action', value: 'c2pa.created' },
-      { label: 'Software Agent', value: 'AnimaForge Generation Engine v2.1' },
-      { label: 'Digital Source Type', value: 'trainedAlgorithmicMedia' },
-    ],
-  },
-  {
-    label: 'Assertions',
-    children: [
-      { label: 'AI Generated', value: 'true' },
-      { label: 'Model', value: 'animaforge-v2' },
-      { label: 'Training Data', value: 'Licensed + Synthetic' },
-      {
-        label: 'Consent Records',
-        children: [
-          { label: 'Likeness: Kira', value: 'Approved (perpetual)' },
-        ],
-      },
-    ],
-  },
-];
-
-const mockTimeline = [
-  {
-    label: 'Project Created',
-    timestamp: 'Mar 20, 2026 - 2:00 PM',
-    description: 'Animation project initialized with script and storyboard.',
-    status: 'completed' as const,
-  },
-  {
-    label: 'Character Consent Verified',
-    timestamp: 'Mar 21, 2026 - 10:30 AM',
-    description: 'Likeness consent confirmed for all referenced characters.',
-    status: 'completed' as const,
-  },
-  {
-    label: 'Generation Submitted',
-    timestamp: 'Mar 25, 2026 - 8:30 AM',
-    description: 'Shot generation job submitted to AnimaForge engine.',
-    status: 'completed' as const,
-  },
-  {
-    label: 'Content Generated',
-    timestamp: 'Mar 25, 2026 - 8:35 AM',
-    description: 'AI-generated content produced with C2PA manifest attached.',
-    status: 'completed' as const,
-  },
-  {
-    label: 'Watermark Embedded',
-    timestamp: 'Mar 25, 2026 - 8:35 AM',
-    description: 'Invisible watermark embedded for provenance tracking.',
-    status: 'completed' as const,
-  },
-  {
-    label: 'Public Verification Available',
-    timestamp: 'Mar 25, 2026 - 8:36 AM',
-    description: 'Verification page published for public access.',
-    status: 'current' as const,
-  },
-];
-
-export default async function VerifyPage({ params }: VerifyPageProps) {
-  const { outputId } = await params;
-  const verification = { ...mockVerification, outputId };
-
+function CheckRow({ label, value, passed }: { label: string; value: string; passed: boolean }) {
   return (
-    <html lang="en" className="light">
-      <body className="bg-gray-50 min-h-screen">
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <svg className="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span className="text-xl font-bold text-gray-900">AnimaForge</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Content Verification</h1>
-            <p className="text-gray-500 mt-1 text-sm">
-              Output ID: <code className="text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded text-xs font-mono">{verification.outputId}</code>
-            </p>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
+      <div>
+        <div style={{ fontSize: 12, color: 'var(--text-tertiary, rgba(226,232,240,0.28))' }}>{label}</div>
+        <div style={{ fontSize: 14, color: 'var(--text-primary, #e2e8f0)', marginTop: 2 }}>{value}</div>
+      </div>
+      <span style={{ fontSize: 18, color: passed ? '#6ee7b7' : '#f87171' }}>{passed ? '\u2713' : '\u2717'}</span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Valid state                                                        */
+/* ------------------------------------------------------------------ */
+
+function ValidState({ outputId }: { outputId: string }) {
+  return (
+    <div>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: 'rgba(52,211,153,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}
+        >
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#6ee7b7', margin: '0 0 4px' }}>Verified Content</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary, rgba(226,232,240,0.55))', margin: 0 }}>
+          This content has a valid C2PA manifest and passes all integrity checks.
+        </p>
+      </div>
+
+      {/* Details card */}
+      <div
+        style={{
+          background: 'var(--bg-elevated, #13131f)',
+          border: '1px solid var(--border, rgba(255,255,255,0.07))',
+          borderRadius: 'var(--radius-lg, 10px)',
+          padding: '20px 24px',
+          marginBottom: 16,
+        }}
+      >
+        <h3 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 12px' }}>
+          Verification Details
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Generated</div>
+            <div style={{ fontSize: 13, color: 'var(--text-primary, #e2e8f0)' }}>March 25, 2026 at 8:35 AM UTC</div>
           </div>
-
-          {/* Verification Status */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 text-center">
-            <div className="flex justify-center mb-3">
-              <VerificationBadge verified={verification.verified} size="lg" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {verification.verified ? 'Content Verified' : 'Content Unverified'}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {verification.verified
-                ? 'This content has a valid C2PA manifest and passes all integrity checks.'
-                : 'This content could not be verified. The manifest may be missing or tampered with.'}
-            </p>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Platform Version</div>
+            <div style={{ fontSize: 13, color: 'var(--text-primary, #e2e8f0)' }}>AnimaForge v2.1.0</div>
           </div>
-
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* C2PA Manifest Details */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Generation Details</h3>
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-xs text-gray-500">Generator</dt>
-                  <dd className="text-sm font-medium text-gray-900">{verification.generator}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-500">Created</dt>
-                  <dd className="text-sm font-medium text-gray-900">{verification.createdAt}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-500">Model</dt>
-                  <dd className="text-sm font-medium text-gray-900">{verification.model}</dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Content Metadata */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Content Metadata</h3>
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-xs text-gray-500">Project</dt>
-                  <dd className="text-sm font-medium text-gray-900">{verification.projectInfo}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-500">Input Hash</dt>
-                  <dd className="text-xs font-mono text-gray-600 break-all">{verification.inputHash}</dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Consent Status */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Consent Status</h3>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">{verification.consentStatus}</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                All individuals whose likeness appears in this content have given explicit consent.
-              </p>
-            </div>
-
-            {/* Watermark Detection */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Watermark Detection</h3>
-              <div className="flex items-center gap-2">
-                {verification.watermarkDetected ? (
-                  <>
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-900">Watermark Detected</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-900">No Watermark Found</span>
-                  </>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Invisible watermark used for tracking provenance across distribution channels.
-              </p>
-            </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Model</div>
+            <div style={{ fontSize: 13, color: 'var(--text-primary, #e2e8f0)' }}>animaforge-v2</div>
           </div>
-
-          {/* C2PA Manifest Tree */}
-          <div className="mb-6">
-            <ManifestViewer manifest={mockManifest} />
-          </div>
-
-          {/* Provenance Timeline */}
-          <div className="mb-8">
-            <ProvenanceTimeline steps={mockTimeline} />
-          </div>
-
-          {/* Disclaimer */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <p className="text-sm font-medium text-amber-800">
-              This content was AI-generated by AnimaForge.
-            </p>
-            <p className="text-xs text-amber-600 mt-1">
-              AnimaForge attaches C2PA manifests and invisible watermarks to all generated content for transparency and provenance verification.
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-xs text-gray-400">
-              AnimaForge Content Verification System &middot; Powered by C2PA
-            </p>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Output ID</div>
+            <div style={{ fontSize: 13, color: 'var(--brand-light, #a78bfa)', fontFamily: 'var(--font-mono, monospace)' }}>{outputId}</div>
           </div>
         </div>
-      </body>
-    </html>
+      </div>
+
+      {/* Checks */}
+      <div
+        style={{
+          background: 'var(--bg-elevated, #13131f)',
+          border: '1px solid var(--border, rgba(255,255,255,0.07))',
+          borderRadius: 'var(--radius-lg, 10px)',
+          padding: '20px 24px',
+          marginBottom: 16,
+        }}
+      >
+        <h3 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>
+          Integrity Checks
+        </h3>
+        <CheckRow label="Provenance" value="Valid C2PA manifest with signed claim" passed={true} />
+        <CheckRow label="Watermark" value="Invisible watermark detected and verified" passed={true} />
+        <CheckRow label="Consent" value="All likenesses have documented consent" passed={true} />
+      </div>
+
+      {/* C2PA details */}
+      <div
+        style={{
+          background: 'var(--bg-elevated, #13131f)',
+          border: '1px solid var(--border, rgba(255,255,255,0.07))',
+          borderRadius: 'var(--radius-lg, 10px)',
+          padding: '20px 24px',
+          marginBottom: 24,
+        }}
+      >
+        <h3 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', margin: '0 0 12px' }}>
+          C2PA Manifest
+        </h3>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Claim Generator:</strong> AnimaForge/2.1.0</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Signature Algorithm:</strong> ES256</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Issuer:</strong> AnimaForge Inc.</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Action:</strong> c2pa.created</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Digital Source Type:</strong> trainedAlgorithmicMedia</div>
+        </div>
+      </div>
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <button
+          style={{
+            padding: '10px 20px',
+            fontSize: 13,
+            fontWeight: 600,
+            background: 'var(--brand, #7c3aed)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 'var(--radius-md, 8px)',
+            cursor: 'pointer',
+          }}
+        >
+          View C2PA manifest
+        </button>
+        <button
+          style={{
+            padding: '10px 20px',
+            fontSize: 13,
+            fontWeight: 500,
+            background: 'transparent',
+            color: 'var(--text-secondary, rgba(226,232,240,0.55))',
+            border: '1px solid var(--border, rgba(255,255,255,0.07))',
+            borderRadius: 'var(--radius-md, 8px)',
+            cursor: 'pointer',
+          }}
+        >
+          Download verification report
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Disputed state                                                     */
+/* ------------------------------------------------------------------ */
+
+function DisputedState({ outputId }: { outputId: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          background: 'rgba(234,179,8,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+        }}
+      >
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 9v2m0 4h.01M10.29 3.86l-8.6 14.91A1 1 0 002.54 20h18.92a1 1 0 00.85-1.23l-8.6-14.91a1 1 0 00-1.42 0z" />
+        </svg>
+      </div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24', margin: '0 0 8px' }}>Disputed Content</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary, rgba(226,232,240,0.55))', margin: '0 0 24px', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+        This content has been flagged for dispute. The verification is pending review and the C2PA manifest may have been altered or is under investigation.
+      </p>
+
+      <div
+        style={{
+          background: 'rgba(234,179,8,0.08)',
+          border: '1px solid rgba(234,179,8,0.25)',
+          borderRadius: 'var(--radius-lg, 10px)',
+          padding: '20px 24px',
+          textAlign: 'left',
+          maxWidth: 460,
+          margin: '0 auto',
+        }}
+      >
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', margin: '0 0 12px' }}>Dispute Information</h3>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Output ID:</strong> <span style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--brand-light, #a78bfa)' }}>{outputId}</span></div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Dispute Filed:</strong> April 2, 2026</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Reason:</strong> Potential unauthorized likeness usage</div>
+          <div><strong style={{ color: 'var(--text-primary)' }}>Status:</strong> Under review by Trust & Safety team</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Invalid state                                                      */
+/* ------------------------------------------------------------------ */
+
+function InvalidState({ outputId }: { outputId: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          background: 'rgba(239,68,68,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+        }}
+      >
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M15 9l-6 6M9 9l6 6" />
+        </svg>
+      </div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#f87171', margin: '0 0 8px' }}>Not Found</h2>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary, rgba(226,232,240,0.55))', margin: '0 0 8px', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+        No AnimaForge content was found with the identifier <code style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--brand-light, #a78bfa)', background: 'var(--bg-overlay, #1a1a2e)', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>{outputId}</code>.
+      </p>
+      <p style={{ fontSize: 13, color: 'var(--text-tertiary, rgba(226,232,240,0.28))', margin: 0 }}>
+        Please check the ID and try again, or contact support if you believe this is an error.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main page                                                          */
+/* ------------------------------------------------------------------ */
+
+export default function VerifyPage() {
+  const params = useParams<{ outputId: string }>();
+  const outputId = params.outputId ?? '';
+
+  // Determine state based on prefix
+  const isValid = outputId.startsWith('af_');
+  const isDisputed = outputId.startsWith('disputed_');
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg-base, #0a0a0f)',
+        fontFamily: 'var(--font-sans, system-ui)',
+        color: 'var(--text-primary, #e2e8f0)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '48px 24px',
+      }}
+    >
+      <div style={{ maxWidth: 560, width: '100%' }}>
+        <AnimaForgeLogo />
+
+        <h1 style={{ fontSize: 20, fontWeight: 600, textAlign: 'center', margin: '0 0 32px', color: 'var(--text-primary)' }}>
+          Content Verification
+        </h1>
+
+        {isValid ? (
+          <ValidState outputId={outputId} />
+        ) : isDisputed ? (
+          <DisputedState outputId={outputId} />
+        ) : (
+          <InvalidState outputId={outputId} />
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', marginTop: 40 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-tertiary, rgba(226,232,240,0.28))' }}>
+            AnimaForge Content Verification System &middot; Powered by C2PA
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
