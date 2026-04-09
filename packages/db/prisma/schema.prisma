@@ -27,6 +27,13 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
   onboardingComplete Boolean @default(false) @map("onboarding_complete")
+  referralCode         String?   @unique @map("referral_code")
+  referredBy           String?   @map("referred_by")
+  referralCredits      Int       @default(0) @map("referral_credits")
+  triggeredMilestones  String[]  @default([]) @map("triggered_milestones")
+  cookieConsent        Json      @default("{}") @map("cookie_consent")
+  welcomeEmailSent     Boolean   @default(false) @map("welcome_email_sent")
+  pushToken            String?   @map("push_token")
   deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
 
   organization  Organization? @relation(fields: [orgId], references: [id])
@@ -244,6 +251,10 @@ model GenerationJob {
   completedAt  DateTime? @map("completed_at") @db.Timestamptz
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
+  isPublic       Boolean  @default(false) @map("is_public")
+  publicCaption  String?  @map("public_caption")
+  publicLikes    Int      @default(0) @map("public_likes")
+
   shot    Shot?   @relation(fields: [shotId], references: [id])
   project Project @relation(fields: [projectId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
@@ -407,4 +418,110 @@ model UserPresence {
   lastSeen    DateTime @default(now()) @map("last_seen") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
   @@map("user_presences")
+}
+
+// ============================================
+// FEEDBACK & CHANGELOG
+// ============================================
+
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  type       String
+  message    String
+  currentUrl String?  @map("current_url")
+  userAgent  String?  @map("user_agent")
+  metadata   Json     @default("{}")
+  status     String   @default("new")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([type, status])
+  @@map("feedbacks")
+}
+
+model ChangelogView {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  version   String
+  viewedAt  DateTime @default(now()) @map("viewed_at") @db.Timestamptz
+  @@unique([userId, version])
+  @@map("changelog_views")
+}
+
+// ============================================
+// REFERRALS
+// ============================================
+
+model ReferralRecord {
+  id          String    @id @default(cuid())
+  referrerId  String    @map("referrer_id")
+  refereeId   String    @unique @map("referee_id")
+  status      String    @default("pending")
+  creditedAt  DateTime? @map("credited_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  @@index([referrerId])
+  @@map("referral_records")
+}
+
+// ============================================
+// FEATURE FLAGS
+// ============================================
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  enabled     Boolean  @default(false)
+  rolloutPct  Int      @default(0) @map("rollout_pct")
+  allowlist   String[] @default([])
+  blocklist   String[] @default([])
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("feature_flags")
+}
+
+// ============================================
+// INCIDENTS
+// ============================================
+
+model Incident {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  severity    String
+  services    String[]
+  status      String   @default("investigating")
+  resolvedAt  DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updates     IncidentUpdate[]
+  @@map("incidents")
+}
+
+model IncidentUpdate {
+  id         String   @id @default(cuid())
+  incidentId String   @map("incident_id")
+  message    String
+  status     String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  @@map("incident_updates")
+}
+
+// ============================================
+// WEBHOOK DELIVERIES
+// ============================================
+
+model WebhookDelivery {
+  id             String   @id @default(cuid())
+  webhookId      String   @map("webhook_id")
+  event          String
+  requestBody    String   @map("request_body")
+  requestHeaders Json     @map("request_headers")
+  responseStatus Int?     @map("response_status")
+  responseBody   String?  @map("response_body")
+  durationMs     Int?     @map("duration_ms")
+  success        Boolean  @default(false)
+  error          String?
+  attemptNumber  Int      @default(1) @map("attempt_number")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([webhookId, createdAt])
+  @@map("webhook_deliveries")
 }

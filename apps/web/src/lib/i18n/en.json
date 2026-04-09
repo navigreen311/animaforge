@@ -1,0 +1,71 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "dashboard": {
+    "projects": {
+      "title": "Projects",
+      "empty": "No projects yet",
+      "emptyDescription": "Create your first project to get started with AnimaForge.",
+      "newProject": "New Project",
+      "stats": {
+        "total": "Total Projects",
+        "active": "Active",
+        "completed": "Completed",
+        "shots": "Total Shots"
+      }
+    },
+    "timeline": {
+      "title": "Timeline",
+      "addShot": "Add Shot",
+      "approve": "Approve",
+      "reject": "Reject",
+      "regenerate": "Regenerate"
+    },
+    "characters": {
+      "title": "Characters",
+      "create": "Create Character",
+      "empty": "No characters yet"
+    },
+    "settings": {
+      "title": "Settings",
+      "tabs": {
+        "general": "General",
+        "billing": "Billing",
+        "profile": "Profile",
+        "workspace": "Workspace"
+      }
+    }
+  },
+  "onboarding": {
+    "steps": "Step {current} of {total}",
+    "welcome": "Welcome to AnimaForge",
+    "profile": "Set up your profile",
+    "createProject": "Create your first project",
+    "ready": "You're all set!"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "clearAll": "Clear all",
+    "noNotifications": "No notifications"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Internal server error",
+    "maintenance": "We're down for maintenance",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
+  }
+}

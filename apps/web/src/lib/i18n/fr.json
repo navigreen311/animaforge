@@ -1,0 +1,71 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "R\u00e9essayer",
+    "search": "Rechercher",
+    "back": "Retour",
+    "next": "Suivant",
+    "close": "Fermer",
+    "confirm": "Confirmer"
+  },
+  "dashboard": {
+    "projects": {
+      "title": "Projets",
+      "empty": "Aucun projet pour le moment",
+      "emptyDescription": "Cr\u00e9ez votre premier projet pour commencer avec AnimaForge.",
+      "newProject": "Nouveau Projet",
+      "stats": {
+        "total": "Total des Projets",
+        "active": "Actifs",
+        "completed": "Termin\u00e9s",
+        "shots": "Total des Prises"
+      }
+    },
+    "timeline": {
+      "title": "Chronologie",
+      "addShot": "Ajouter une Prise",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "regenerate": "R\u00e9g\u00e9n\u00e9rer"
+    },
+    "characters": {
+      "title": "Personnages",
+      "create": "Cr\u00e9er un Personnage",
+      "empty": "Aucun personnage pour le moment"
+    },
+    "settings": {
+      "title": "Param\u00e8tres",
+      "tabs": {
+        "general": "G\u00e9n\u00e9ral",
+        "billing": "Facturation",
+        "profile": "Profil",
+        "workspace": "Espace de Travail"
+      }
+    }
+  },
+  "onboarding": {
+    "steps": "\u00c9tape {current} sur {total}",
+    "welcome": "Bienvenue sur AnimaForge",
+    "profile": "Configurez votre profil",
+    "createProject": "Cr\u00e9ez votre premier projet",
+    "ready": "Vous \u00eates pr\u00eat !"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "clearAll": "Tout effacer",
+    "noNotifications": "Aucune notification"
+  },
+  "errors": {
+    "notFound": "Page non trouv\u00e9e",
+    "serverError": "Erreur interne du serveur",
+    "maintenance": "Nous sommes en maintenance",
+    "tryAgain": "R\u00e9essayer",
+    "goHome": "Retour \u00e0 l'accueil"
+  }
+}
