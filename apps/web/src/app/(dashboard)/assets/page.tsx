@@ -30,6 +30,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import EmptyState from '@/components/ui/EmptyState';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -472,6 +473,7 @@ export default function AssetsPage() {
 
   // ── Render ─────────────────────────────────────────────────────
   return (
+    <ErrorBoundary>
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <main
         style={{
@@ -1718,6 +1720,7 @@ export default function AssetsPage() {
         />
       )}
     </div>
+    </ErrorBoundary>
   );
 }
 

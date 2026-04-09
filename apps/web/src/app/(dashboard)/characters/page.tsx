@@ -158,6 +158,7 @@ export default function CharactersPage() {
 
   // ── Render ──────────────────────────────────────────────
   return (
+    <ErrorBoundary>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
       <main
         style={{
@@ -672,5 +673,6 @@ export default function CharactersPage() {
         onClose={() => setNewCharModalOpen(false)}
       />
     </div>
+    </ErrorBoundary>
   );
 }

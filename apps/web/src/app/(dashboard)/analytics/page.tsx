@@ -11,6 +11,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -591,6 +592,7 @@ export default function AnalyticsPage() {
 
   // ── Render ──────────────────────────────────────────────────
   return (
+    <ErrorBoundary>
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
 
       {/* ═══ HEADER ═══════════════════════════════════════════ */}
@@ -1490,5 +1492,6 @@ export default function AnalyticsPage() {
         </>
       )}
     </div>
+    </ErrorBoundary>
   );
 }

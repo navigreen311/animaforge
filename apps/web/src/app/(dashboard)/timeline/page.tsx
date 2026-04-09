@@ -6,6 +6,7 @@ import {
   Check, AlertCircle, Loader2, ChevronDown, ChevronRight,
   X, Plus, Image, Shield,
 } from 'lucide-react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 // ── Types ────────────────────────────────────────────────────
 type ShotStatus = 'draft' | 'generating' | 'review' | 'approved' | 'failed';
@@ -274,6 +275,7 @@ export default function TimelinePage() {
 
   // ── Render ──────────────────────────────────────────────────
   return (
+    <ErrorBoundary>
     <>
       {/* Inject keyframe for pulse animation */}
       <style>{`
@@ -920,5 +922,6 @@ export default function TimelinePage() {
         </div>
       </div>
     </>
+    </ErrorBoundary>
   );
 }
