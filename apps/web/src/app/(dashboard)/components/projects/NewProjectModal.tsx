@@ -85,6 +85,7 @@ export default function NewProjectModal() {
           title: title.trim(),
           description: description.trim(),
           projectType,
+          aspectRatio,
           template,
         }),
       });
@@ -274,6 +275,73 @@ export default function NewProjectModal() {
                   >
                     <Icon size={20} />
                     <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </FieldGroup>
+
+          {/* Aspect Ratio */}
+          <FieldGroup label="Aspect Ratio">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+              }}
+            >
+              {ASPECT_RATIOS.map((ar) => {
+                const selected = aspectRatio === ar.value;
+                return (
+                  <button
+                    key={ar.value}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setAspectRatio(ar.value)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 4,
+                      padding: '12px 4px',
+                      borderRadius: 'var(--radius-md)',
+                      border: selected
+                        ? '1.5px solid var(--border-brand)'
+                        : '0.5px solid var(--border)',
+                      background: selected ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      transition: 'all 150ms',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selected)
+                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selected)
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: selected ? 'var(--brand)' : 'var(--text-primary)',
+                      }}
+                    >
+                      {ar.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--text-tertiary)',
+                        textAlign: 'center',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {ar.description}
+                    </span>
                   </button>
                 );
               })}
