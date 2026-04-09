@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Magnet,
-  Maximize,
+  Maximize2,
   ZoomOut,
   ZoomIn,
   Plus,
@@ -12,6 +12,8 @@ import {
   Video,
   KeyRound,
   ChevronDown,
+  Zap,
+  Download,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -25,6 +27,8 @@ export interface TimelineToolbarProps {
   onAddTrack: (type: string) => void;
   zoom: number;
   onZoomChange: (z: number) => void;
+  onBatchGenerate?: () => void;
+  onExport?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,6 +67,8 @@ export default function TimelineToolbar({
   onAddTrack,
   zoom,
   onZoomChange,
+  onBatchGenerate,
+  onExport,
 }: TimelineToolbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -115,7 +121,7 @@ export default function TimelineToolbar({
 
       {/* ── Zoom to fit ─────────────────────────────────── */}
       <button style={styles.iconBtn} onClick={onZoomToFit} title="Zoom to Fit">
-        <Maximize size={14} />
+        <Maximize2 size={14} />
       </button>
 
       {/* ── Zoom controls ───────────────────────────────── */}
@@ -152,6 +158,42 @@ export default function TimelineToolbar({
 
       {/* ── Spacer ──────────────────────────────────────── */}
       <div style={{ flex: 1 }} />
+
+      {/* ── Batch Generate ──────────────────────────────── */}
+      {onBatchGenerate && (
+        <button
+          style={styles.actionBtn}
+          onClick={onBatchGenerate}
+          title="Batch Generate"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <Zap size={14} />
+          <span>Batch</span>
+        </button>
+      )}
+
+      {/* ── Export ───────────────────────────────────────── */}
+      {onExport && (
+        <button
+          style={styles.actionBtn}
+          onClick={onExport}
+          title="Export"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <Download size={14} />
+          <span>Export</span>
+        </button>
+      )}
 
       {/* ── Add Track dropdown ──────────────────────────── */}
       <div ref={dropdownRef} style={styles.dropdownWrapper}>
@@ -215,22 +257,23 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 4,
-    height: 26,
+    height: 28,
     padding: '0 8px',
     fontSize: 11,
     fontWeight: 500,
     color: 'var(--text-secondary)',
     background: 'transparent',
-    border: '1px solid transparent',
+    border: '1px solid var(--border)',
     borderRadius: 'var(--radius-sm)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
+    transition: 'background 120ms ease',
   },
 
   iconBtnActive: {
-    color: 'var(--brand-purple, #a855f7)',
-    background: 'color-mix(in srgb, var(--brand-purple, #a855f7) 10%, transparent)',
-    borderColor: 'color-mix(in srgb, var(--brand-purple, #a855f7) 25%, transparent)',
+    color: 'var(--brand, var(--brand-purple, #a855f7))',
+    background: 'var(--brand-dim, color-mix(in srgb, var(--brand-purple, #a855f7) 10%, transparent))',
+    borderColor: 'color-mix(in srgb, var(--brand, var(--brand-purple, #a855f7)) 25%, transparent)',
   },
 
   btnLabel: {
@@ -264,6 +307,24 @@ const styles: Record<string, React.CSSProperties> = {
     height: 4,
     accentColor: 'var(--brand-purple, #a855f7)',
     cursor: 'pointer',
+  },
+
+  /* ── Action button (Batch, Export) ───────────────── */
+  actionBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    height: 28,
+    padding: '0 10px',
+    fontSize: 11,
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    background: 'transparent',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'background 120ms ease',
   },
 
   /* ── Add Track button + dropdown ────────────────── */
