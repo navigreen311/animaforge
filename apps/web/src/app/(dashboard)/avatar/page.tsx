@@ -14,7 +14,7 @@ import {
 // ── Types ────────────────────────────────────────────────────
 type PipelineStepId = 'upload' | 'detect' | 'reconstruct' | 'rig' | 'texture' | 'animate' | 'voice' | 'export';
 type StepStatus = 'completed' | 'current' | 'future';
-type StyleMode = 'realistic' | 'anime' | 'cartoon' | 'cel-shaded' | 'pixel';
+type StyleMode = 'realistic' | 'anime' | 'cartoon' | 'cel-shaded' | 'pixel' | 'clay';
 type EditTab = 'appearance' | 'hair' | 'wardrobe' | 'expression' | 'animation';
 type WardrobeCategory = 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessories';
 type ExportFormat = 'gltf' | 'fbx' | 'usd' | 'bvh' | 'arkit' | 'mp4';
@@ -24,8 +24,9 @@ interface UploadedPhoto {
   name: string;
   size: number;
   url: string;
-  faceDetected: boolean;
-  goodLighting: boolean;
+  faceDetected: boolean | null;
+  goodLighting: boolean | null;
+  lowResolution: boolean;
   hasGlasses: boolean;
 }
 
@@ -61,6 +62,7 @@ const STYLE_MODES: { id: StyleMode; label: string; icon: string; desc: string }[
   { id: 'cartoon', label: 'Cartoon', icon: '🎨', desc: 'Western cartoon aesthetic' },
   { id: 'cel-shaded', label: 'Cel-shaded', icon: '🖌️', desc: 'Flat shading, bold outlines' },
   { id: 'pixel', label: 'Pixel', icon: '👾', desc: 'Retro pixel art style' },
+  { id: 'clay', label: 'Clay', icon: '🧱', desc: 'Claymation / stop-motion feel' },
 ];
 
 const SKIN_TONES = ['#FFDBB4', '#E8B98D', '#D08B5B', '#AE5D29', '#694D3D', '#3B2219', '#F5D7C3', '#C68642'];
@@ -104,8 +106,8 @@ const VOICE_PRESETS = [
 ];
 
 const SAMPLE_AVATARS = [
-  { id: 'avatar-1', name: 'Luna Avatar', status: 'complete' as const, style: 'Realistic', quality: 92, gradient: 'linear-gradient(135deg, #10b981, #34d399)' },
-  { id: 'avatar-2', name: 'Dr. Echo Avatar', status: 'draft' as const, style: 'Anime', quality: 78, gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)' },
+  { id: 'avatar-1', name: 'Luna Avatar', status: 'complete' as const, style: 'Realistic', quality: 92, gradient: 'linear-gradient(135deg, #10b981, #34d399)', thumbnailUrl: null as string | null },
+  { id: 'avatar-2', name: 'Dr. Echo Avatar', status: 'draft' as const, style: 'Anime', quality: 78, gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)', thumbnailUrl: null as string | null },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -115,9 +117,31 @@ function getStepStatus(stepIndex: number, currentIndex: number): StepStatus {
   return 'future';
 }
 
-function QualityGauge({ score }: { score: number }) {
+function getQualityLabel(score: number): string {
+  if (score >= 95) return 'Excellent';
+  if (score >= 85) return 'Great';
+  if (score >= 70) return 'Good';
+  return 'Fair';
+}
+
+function QualityGauge({ score, status }: { score?: number; status?: 'idle' | 'processing' | 'complete' }) {
   const r = 36;
   const c = 2 * Math.PI * r;
+  const isComplete = status === 'complete' && score !== undefined;
+  const isProcessing = status === 'processing';
+
+  if (!isComplete) {
+    return (
+      <svg width="88" height="88" viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
+        <text x="44" y="40" textAnchor="middle" fill="var(--text-tertiary)" fontSize="18" fontWeight="700">--</text>
+        <text x="44" y="56" textAnchor="middle" fill="var(--text-tertiary)" fontSize="8">
+          {isProcessing ? 'Calculating...' : 'Pending reconstruction'}
+        </text>
+      </svg>
+    );
+  }
+
   const offset = c - (score / 100) * c;
   const color = score >= 80 ? '#22c55e' : score >= 50 ? '#eab308' : '#ef4444';
   return (
@@ -129,8 +153,9 @@ function QualityGauge({ score }: { score: number }) {
         strokeLinecap="round" transform="rotate(-90 44 44)"
         style={{ transition: 'stroke-dashoffset 0.6s ease' }}
       />
-      <text x="44" y="40" textAnchor="middle" fill="var(--text-primary)" fontSize="16" fontWeight="700">{score}</text>
-      <text x="44" y="54" textAnchor="middle" fill="var(--text-tertiary)" fontSize="9">Quality</text>
+      <text x="44" y="36" textAnchor="middle" fill="var(--text-primary)" fontSize="16" fontWeight="700">{score}</text>
+      <text x="44" y="50" textAnchor="middle" fill="var(--text-tertiary)" fontSize="9">Quality</text>
+      <text x="44" y="62" textAnchor="middle" fill={color} fontSize="8" fontWeight="600">{getQualityLabel(score)}</text>
     </svg>
   );
 }
@@ -277,6 +302,16 @@ export default function AvatarStudioPage() {
   const [mp4Duration, setMp4Duration] = useState('10s');
   const [mp4Background, setMp4Background] = useState('Black');
 
+  // Expression intensity
+  const [emotionIntensity, setEmotionIntensity] = useState(75);
+
+  // Animation speed
+  const [animationSpeed, setAnimationSpeed] = useState(50);
+
+  // Export per-format download state
+  const [downloadingFormats, setDownloadingFormats] = useState<Set<ExportFormat>>(new Set());
+  const [downloadingAll, setDownloadingAll] = useState(false);
+
   // Properties panel
   const [qualityScore] = useState(87);
 
@@ -315,6 +350,21 @@ export default function AvatarStudioPage() {
     }
   }, [currentStepIndex, pipelineComplete]);
 
+  // ── Delayed quality check (1.5s after upload) ─────────────
+  useEffect(() => {
+    const unchecked = photos.filter(p => p.faceDetected === null);
+    if (unchecked.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setPhotos(prev => prev.map(p =>
+        p.faceDetected === null
+          ? { ...p, faceDetected: Math.random() > 0.1, goodLighting: Math.random() > 0.25 }
+          : p
+      ));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [photos]);
+
   // ── File handling ──────────────────────────────────────────
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -331,8 +381,9 @@ export default function AvatarStudioPage() {
         name: f.name,
         size: f.size,
         url: URL.createObjectURL(f),
-        faceDetected: Math.random() > 0.1,
-        goodLighting: Math.random() > 0.25,
+        faceDetected: null,
+        goodLighting: null,
+        lowResolution: f.size < 200 * 1024,
         hasGlasses: Math.random() > 0.7,
       });
     }
@@ -419,7 +470,7 @@ export default function AvatarStudioPage() {
                     color: status === 'completed' ? '#fff' : status === 'current' ? '#eab308' : '#6b7280',
                     animation: status === 'current' ? 'pulse 2s ease-in-out infinite' : undefined,
                   }}>
-                    {status === 'completed' ? <Check size={11} strokeWidth={3} /> : index + 1}
+                    {status === 'completed' ? <Check size={11} strokeWidth={3} /> : status === 'current' && isProcessing ? <Loader size={11} style={{ animation: 'spin 1.5s linear infinite' }} /> : index + 1}
                   </div>
                   <span style={{
                     fontSize: 10, marginTop: 6,
@@ -431,6 +482,29 @@ export default function AvatarStudioPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Overall pipeline progress bar */}
+          <div style={{ marginTop: 10 }}>
+            <div style={{
+              width: '100%', height: 4, borderRadius: 2,
+              background: 'var(--border)', overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${(currentStepIndex / PIPELINE_STEPS.length) * 100}%`,
+                height: '100%', borderRadius: 2,
+                background: 'linear-gradient(90deg, #22c55e, var(--brand))',
+                transition: 'width 300ms ease',
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                Step {Math.min(currentStepIndex + 1, PIPELINE_STEPS.length)} of {PIPELINE_STEPS.length}
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                {Math.round((currentStepIndex / PIPELINE_STEPS.length) * 100)}%
+              </span>
+            </div>
           </div>
         </div>
 
@@ -503,19 +577,43 @@ export default function AvatarStudioPage() {
                             {photo.name}
                           </span>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: 9, color: photo.faceDetected ? '#22c55e' : '#ef4444' }}>
-                              {photo.faceDetected ? '✓ Face detected' : '✗ No face'}
-                            </span>
-                            <span style={{ fontSize: 9, color: photo.goodLighting ? '#22c55e' : '#eab308' }}>
-                              {photo.goodLighting ? '✓ Good lighting' : '⚠ Low light'}
-                            </span>
-                            {photo.hasGlasses && (
-                              <span style={{ fontSize: 9, color: '#eab308' }}>⚠ Glasses</span>
+                            {photo.faceDetected === null ? (
+                              <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>Analyzing...</span>
+                            ) : (
+                              <>
+                                <span style={{ fontSize: 9, color: photo.faceDetected ? '#22c55e' : '#ef4444' }}>
+                                  {photo.faceDetected ? 'Face detected ✓' : 'No face ✗'}
+                                </span>
+                                <span style={{ fontSize: 9, color: photo.goodLighting ? '#22c55e' : '#eab308' }}>
+                                  {photo.goodLighting ? 'Good lighting ✓' : 'Low light ⚠'}
+                                </span>
+                                {photo.lowResolution && (
+                                  <span style={{ fontSize: 9, color: '#eab308' }}>Low resolution ⚠</span>
+                                )}
+                                {photo.hasGlasses && (
+                                  <span style={{ fontSize: 9, color: '#eab308' }}>Glasses ⚠</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
                       </div>
                     ))}
+                    {photos.length < 3 && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          width: 140, height: 130, borderRadius: 'var(--radius-md)',
+                          border: '2px dashed var(--border)', background: 'var(--bg-surface)',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center', gap: 6,
+                          transition: 'border-color 150ms ease',
+                        }}
+                      >
+                        <Plus size={20} style={{ color: 'var(--text-tertiary)' }} />
+                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Add Photo</span>
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -536,7 +634,7 @@ export default function AvatarStudioPage() {
                 {/* Style mode cards */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <SectionLabel>Style Mode</SectionLabel>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {STYLE_MODES.map(mode => (
                       <button
                         key={mode.id} onClick={() => setStyleMode(mode.id)}
@@ -569,15 +667,31 @@ export default function AvatarStudioPage() {
                 </label>
 
                 {/* Start button */}
-                <Btn
-                  primary
-                  disabled={photos.length === 0 || !consentChecked || !avatarName.trim()}
-                  onClick={startReconstruction}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Sparkles size={14} /> Start Reconstruction
-                  </span>
-                </Btn>
+                {(() => {
+                  const canStart = photos.length > 0 && consentChecked && avatarName.trim().length > 0;
+                  const missingParts: string[] = [];
+                  if (photos.length === 0) missingParts.push('Upload at least one photo');
+                  if (!avatarName.trim()) missingParts.push('Enter an avatar name');
+                  if (!consentChecked) missingParts.push('Accept consent checkbox');
+                  return (
+                    <button
+                      title={canStart ? 'Start avatar reconstruction' : `Missing: ${missingParts.join(', ')}`}
+                      disabled={!canStart}
+                      onClick={startReconstruction}
+                      style={{
+                        padding: '8px 16px', fontSize: 12, fontWeight: 600,
+                        borderRadius: 'var(--radius-md)', border: 'none',
+                        background: 'var(--brand)', color: '#fff',
+                        cursor: canStart ? 'pointer' : 'not-allowed',
+                        opacity: canStart ? 1 : 0.45,
+                        transition: 'all 150ms ease',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      <Sparkles size={14} /> Start Reconstruction
+                    </button>
+                  );
+                })()}
               </div>
             )}
 
@@ -635,8 +749,8 @@ export default function AvatarStudioPage() {
               </div>
             )}
 
-            {/* ── EDITING TABS (after animate completes) ── */}
-            {editingUnlocked && currentStep?.id !== 'voice' && currentStep?.id !== 'export' && (
+            {/* ── EDITING TABS (after animate completes, also visible at voice/export) ── */}
+            {editingUnlocked && (
               <div style={{
                 background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
                 borderRadius: 'var(--radius-xl)', overflow: 'hidden',
@@ -668,6 +782,28 @@ export default function AvatarStudioPage() {
                   {/* ── Appearance ── */}
                   {editTab === 'appearance' && (
                     <>
+                      {/* Style modes */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <SectionLabel>Style Mode</SectionLabel>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                          {STYLE_MODES.map(mode => (
+                            <button
+                              key={mode.id} onClick={() => setStyleMode(mode.id)}
+                              style={{
+                                padding: '8px 6px', borderRadius: 'var(--radius-md)',
+                                border: styleMode === mode.id ? '2px solid var(--brand-light)' : '1px solid var(--border)',
+                                background: styleMode === mode.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                                cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                                alignItems: 'center', gap: 4, transition: 'all 150ms ease',
+                              }}
+                            >
+                              <span style={{ fontSize: 16 }}>{mode.icon}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>{mode.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <SectionLabel>Skin Tone</SectionLabel>
                         <SwatchRow colors={SKIN_TONES} selected={skinTone} onSelect={setSkinTone} size={28} />
@@ -850,6 +986,8 @@ export default function AvatarStudioPage() {
                           </button>
                         ))}
                       </div>
+                      <SliderControl label="Intensity" value={emotionIntensity} min={0} max={100} onChange={setEmotionIntensity} unit="%" />
+
                       <button
                         onClick={() => setShowFACS(!showFACS)}
                         style={{
@@ -938,6 +1076,8 @@ export default function AvatarStudioPage() {
                           ))}
                         </div>
                       </div>
+
+                      <SliderControl label="Animation Speed" value={animationSpeed} min={0} max={100} onChange={setAnimationSpeed} unit="%" />
 
                       {/* Continue to voice */}
                       <Btn primary onClick={() => setCurrentStepIndex(6)}>
@@ -1068,31 +1208,59 @@ export default function AvatarStudioPage() {
                   {EXPORT_FORMATS.map(fmt => {
                     const isSelected = selectedFormats.has(fmt.id);
                     return (
-                      <button
+                      <div
                         key={fmt.id}
-                        onClick={() => {
-                          setSelectedFormats(prev => {
-                            const next = new Set(prev);
-                            if (next.has(fmt.id)) next.delete(fmt.id);
-                            else next.add(fmt.id);
-                            return next;
-                          });
-                        }}
                         style={{
                           padding: '14px 12px', borderRadius: 'var(--radius-md)',
                           border: isSelected ? '2px solid var(--brand)' : '1px solid var(--border)',
                           background: isSelected ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                          cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6,
+                          display: 'flex', flexDirection: 'column', gap: 6,
                           alignItems: 'flex-start', transition: 'all 150ms',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt.label}</span>
-                          {isSelected && <CheckCircle2 size={14} style={{ color: 'var(--brand-light)' }} />}
+                        <div
+                          onClick={() => {
+                            setSelectedFormats(prev => {
+                              const next = new Set(prev);
+                              if (next.has(fmt.id)) next.delete(fmt.id);
+                              else next.add(fmt.id);
+                              return next;
+                            });
+                          }}
+                          style={{ cursor: 'pointer', width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt.label}</span>
+                            {isSelected && <CheckCircle2 size={14} style={{ color: 'var(--brand-light)' }} />}
+                          </div>
+                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{fmt.desc}</span>
+                          <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{fmt.ext}</span>
                         </div>
-                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{fmt.desc}</span>
-                        <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{fmt.ext}</span>
-                      </button>
+                        <button
+                          onClick={() => {
+                            if (downloadingFormats.has(fmt.id)) return;
+                            setDownloadingFormats(prev => { const n = new Set(prev); n.add(fmt.id); return n; });
+                            setTimeout(() => {
+                              setDownloadingFormats(prev => { const n = new Set(prev); n.delete(fmt.id); return n; });
+                            }, 2000);
+                          }}
+                          disabled={downloadingFormats.has(fmt.id)}
+                          style={{
+                            marginTop: 2, padding: '5px 10px', fontSize: 10, fontWeight: 600,
+                            borderRadius: 'var(--radius-md)', border: 'none',
+                            background: downloadingFormats.has(fmt.id) ? '#374151' : 'var(--brand)',
+                            color: '#fff', cursor: downloadingFormats.has(fmt.id) ? 'wait' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 4, width: '100%',
+                            justifyContent: 'center', transition: 'all 150ms ease',
+                          }}
+                        >
+                          {downloadingFormats.has(fmt.id) ? (
+                            <><Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> Downloading...</>
+                          ) : (
+                            <><Download size={10} /> Download</>
+                          )}
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1140,11 +1308,30 @@ export default function AvatarStudioPage() {
                   </div>
                 )}
 
-                <Btn primary disabled={selectedFormats.size === 0}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Download size={14} /> Download All ZIP
-                  </span>
-                </Btn>
+                <button
+                  disabled={selectedFormats.size === 0 || downloadingAll}
+                  onClick={() => {
+                    if (downloadingAll || selectedFormats.size === 0) return;
+                    setDownloadingAll(true);
+                    setTimeout(() => setDownloadingAll(false), 2000);
+                  }}
+                  style={{
+                    padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                    borderRadius: 'var(--radius-md)', border: 'none',
+                    background: (selectedFormats.size === 0 || downloadingAll) ? '#374151' : 'var(--brand)',
+                    color: '#fff',
+                    cursor: (selectedFormats.size === 0 || downloadingAll) ? 'not-allowed' : 'pointer',
+                    opacity: selectedFormats.size === 0 ? 0.45 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    width: '100%', transition: 'all 150ms ease',
+                  }}
+                >
+                  {downloadingAll ? (
+                    <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Preparing ZIP...</>
+                  ) : (
+                    <><Package size={14} /> Download All ZIP</>
+                  )}
+                </button>
               </div>
             )}
           </div>
@@ -1203,7 +1390,10 @@ export default function AvatarStudioPage() {
 
             {/* Quality gauge */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '4px 0' }}>
-              <QualityGauge score={qualityScore} />
+              <QualityGauge
+                score={qualityScore}
+                status={editingUnlocked ? 'complete' : isProcessing ? 'processing' : 'idle'}
+              />
             </div>
 
             {/* Pipeline progress */}
@@ -1278,6 +1468,18 @@ export default function AvatarStudioPage() {
               <div
                 key={avatar.id}
                 className="avatar-card"
+                onClick={() => {
+                  setAvatarName(avatar.name);
+                  setStyleMode(STYLE_MODES.find(m => m.label === avatar.style)?.id ?? 'realistic');
+                  setConsentChecked(true);
+                  if (avatar.status === 'complete') {
+                    setCurrentStepIndex(7);
+                    setPipelineComplete(true);
+                  } else {
+                    setCurrentStepIndex(0);
+                    setPipelineComplete(false);
+                  }
+                }}
                 style={{
                   background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
                   borderRadius: 'var(--radius-xl)', overflow: 'hidden',
@@ -1288,7 +1490,11 @@ export default function AvatarStudioPage() {
                   height: 80, background: avatar.gradient,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
                 }}>
-                  <User size={28} style={{ color: 'rgba(255,255,255,0.6)' }} />
+                  {avatar.thumbnailUrl ? (
+                    <img src={avatar.thumbnailUrl} alt={avatar.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={28} style={{ color: 'rgba(255,255,255,0.6)' }} />
+                  )}
 
                   {/* Hover actions overlay */}
                   <div className="avatar-hover-actions" style={{
