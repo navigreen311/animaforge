@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Music,
   Play,
   Pause,
+  Square,
   Mic,
   Volume2,
   Download,
@@ -18,9 +19,20 @@ import {
   Trash2,
   FileText,
   Edit3,
+  Loader2,
+  Upload,
+  X,
+  FolderPlus,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import EmptyState from '@/components/ui/EmptyState';
+import WaveformVisualizer from '@/components/ui/WaveformVisualizer';
+import { audioPlayer } from '@/lib/audioPlayer';
+
+// Mock audio URL used for all preview playback in the UI.
+const MOCK_AUDIO_URL =
+  'https://cdn.jsdelivr.net/gh/anars/blank-audio@master/2-seconds-of-silence.mp3';
 
 // ── Types ────────────────────────────────────────────────────
 type AudioTab = 'music' | 'voice' | 'sfx';
@@ -53,6 +65,28 @@ interface SfxItem {
   icon: string;
 }
 
+type ShotStatus = 'approved' | 'in-progress' | 'draft' | 'needs-review';
+
+interface SceneShot {
+  id: string;
+  label: string;
+  durationSec: number;
+  status: ShotStatus;
+  emotionalBeat: string;
+}
+
+interface BeatMarker {
+  timecodeMs: number;
+  type: 'hit' | 'beat' | 'downbeat';
+}
+
+interface VoiceOption {
+  id: string;
+  name: string;
+  gender: 'female' | 'male' | 'non-binary';
+  pitch: 'low' | 'mid' | 'high';
+}
+
 // ── Constants ────────────────────────────────────────────────
 const TABS: { label: string; value: AudioTab; icon: React.ReactNode }[] = [
   { label: 'Music', value: 'music', icon: <Music size={13} /> },
@@ -63,13 +97,13 @@ const TABS: { label: string; value: AudioTab; icon: React.ReactNode }[] = [
 const GENRES = ['Cinematic', 'Electronic', 'Ambient', 'Jazz', 'Rock', 'Classical'] as const;
 const MOODS = ['Tense', 'Peaceful', 'Epic', 'Mysterious', 'Romantic', 'Energetic'] as const;
 
-const CHARACTERS = [
-  { id: 'char-1', name: 'Elena (Female, Mid)' },
-  { id: 'char-2', name: 'Marcus (Male, Deep)' },
-  { id: 'char-3', name: 'Kai (Non-binary, Soft)' },
-  { id: 'char-4', name: 'Amara (Female, Young)' },
-  { id: 'char-5', name: 'Viktor (Male, Gruff)' },
-] as const;
+const CHARACTER_VOICES: VoiceOption[] = [
+  { id: 'voice-elena', name: 'Elena', gender: 'female', pitch: 'mid' },
+  { id: 'voice-kenji', name: 'Kenji', gender: 'male', pitch: 'low' },
+  { id: 'voice-aria', name: 'Aria', gender: 'female', pitch: 'high' },
+  { id: 'voice-marcus', name: 'Marcus', gender: 'male', pitch: 'mid' },
+];
+
 
 const SPEAKING_STYLES = ['Neutral', 'Dramatic', 'Whisper', 'Excited', 'Sad', 'Angry'] as const;
 
@@ -88,13 +122,82 @@ const PROJECTS = [
   { id: 'proj-3', name: 'Product Launch Ad' },
 ] as const;
 
-const SCENE_SHOTS = [
-  { id: 's1', label: 'Shot 1', color: '#6366f1', width: '18%' },
-  { id: 's2', label: 'Shot 2', color: '#8b5cf6', width: '25%' },
-  { id: 's3', label: 'Shot 3', color: '#ec4899', width: '12%' },
-  { id: 's4', label: 'Shot 4', color: '#f59e0b', width: '22%' },
-  { id: 's5', label: 'Shot 5', color: '#10b981', width: '23%' },
-] as const;
+const STATUS_COLORS: Record<ShotStatus, string> = {
+  approved: '#10b981',
+  'in-progress': '#f59e0b',
+  draft: '#6b7280',
+  'needs-review': '#ec4899',
+};
+
+const PROJECT_SHOTS: Record<string, SceneShot[]> = {
+  'proj-1': [
+    { id: 'p1-s1', label: 'Shot 1', durationSec: 3.2, status: 'approved', emotionalBeat: 'Tense' },
+    { id: 'p1-s2', label: 'Shot 2', durationSec: 5.4, status: 'approved', emotionalBeat: 'Mysterious' },
+    { id: 'p1-s3', label: 'Shot 3', durationSec: 2.1, status: 'in-progress', emotionalBeat: 'Tense' },
+    { id: 'p1-s4', label: 'Shot 4', durationSec: 4.8, status: 'draft', emotionalBeat: 'Epic' },
+    { id: 'p1-s5', label: 'Shot 5', durationSec: 2.6, status: 'needs-review', emotionalBeat: 'Epic' },
+    { id: 'p1-s6', label: 'Shot 6', durationSec: 5.9, status: 'approved', emotionalBeat: 'Triumphant' },
+    { id: 'p1-s7', label: 'Shot 7', durationSec: 3.5, status: 'in-progress', emotionalBeat: 'Triumphant' },
+    { id: 'p1-s8', label: 'Shot 8', durationSec: 4.2, status: 'draft', emotionalBeat: 'Resolute' },
+  ],
+  'proj-2': [
+    { id: 'p2-s1', label: 'Shot 1', durationSec: 5.8, status: 'approved', emotionalBeat: 'Peaceful' },
+    { id: 'p2-s2', label: 'Shot 2', durationSec: 4.2, status: 'approved', emotionalBeat: 'Peaceful' },
+    { id: 'p2-s3', label: 'Shot 3', durationSec: 3.1, status: 'in-progress', emotionalBeat: 'Curious' },
+    { id: 'p2-s4', label: 'Shot 4', durationSec: 5.5, status: 'draft', emotionalBeat: 'Awe' },
+    { id: 'p2-s5', label: 'Shot 5', durationSec: 2.4, status: 'approved', emotionalBeat: 'Awe' },
+    { id: 'p2-s6', label: 'Shot 6', durationSec: 4.7, status: 'needs-review', emotionalBeat: 'Uplifting' },
+    { id: 'p2-s7', label: 'Shot 7', durationSec: 3.8, status: 'in-progress', emotionalBeat: 'Uplifting' },
+    { id: 'p2-s8', label: 'Shot 8', durationSec: 5.2, status: 'approved', emotionalBeat: 'Peaceful' },
+  ],
+  'proj-3': [
+    { id: 'p3-s1', label: 'Shot 1', durationSec: 2.0, status: 'approved', emotionalBeat: 'Energetic' },
+    { id: 'p3-s2', label: 'Shot 2', durationSec: 2.4, status: 'approved', emotionalBeat: 'Energetic' },
+    { id: 'p3-s3', label: 'Shot 3', durationSec: 2.1, status: 'in-progress', emotionalBeat: 'Bold' },
+    { id: 'p3-s4', label: 'Shot 4', durationSec: 2.8, status: 'draft', emotionalBeat: 'Bold' },
+    { id: 'p3-s5', label: 'Shot 5', durationSec: 2.3, status: 'approved', emotionalBeat: 'Confident' },
+    { id: 'p3-s6', label: 'Shot 6', durationSec: 2.6, status: 'needs-review', emotionalBeat: 'Confident' },
+    { id: 'p3-s7', label: 'Shot 7', durationSec: 2.2, status: 'in-progress', emotionalBeat: 'Triumphant' },
+    { id: 'p3-s8', label: 'Shot 8', durationSec: 2.5, status: 'approved', emotionalBeat: 'Triumphant' },
+  ],
+};
+
+// Legacy flat list (used by SFX "add to timeline" modal)
+const SCENE_SHOTS = PROJECT_SHOTS['proj-1'];
+
+function formatDuration(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = Math.round(totalSec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function computePacing(shots: SceneShot[]): string {
+  if (shots.length === 0) return '—';
+  const avg = shots.reduce((a, b) => a + b.durationSec, 0) / shots.length;
+  if (avg < 3) return 'Fast';
+  if (avg < 6) return 'Medium';
+  return 'Slow';
+}
+
+function generateMockBeatMap(totalDurationSec: number, bpm = 120): BeatMarker[] {
+  const beatIntervalMs = 60000 / bpm;
+  const totalMs = totalDurationSec * 1000;
+  const markers: BeatMarker[] = [];
+  let beatCount = 0;
+  for (let t = 0; t <= totalMs; t += beatIntervalMs) {
+    const type: BeatMarker['type'] = beatCount % 4 === 0 ? 'downbeat' : 'beat';
+    markers.push({ timecodeMs: Math.round(t), type });
+    beatCount++;
+  }
+  // Add some hits
+  for (let i = 0; i < 5; i++) {
+    markers.push({
+      timecodeMs: Math.round(Math.random() * totalMs),
+      type: 'hit',
+    });
+  }
+  return markers.sort((a, b) => a.timecodeMs - b.timecodeMs);
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 function generateBars(count: number): number[] {
@@ -329,8 +432,13 @@ export default function AudioStudioPage() {
   const [bpmMax, setBpmMax] = useState('140');
   const [selectedProject, setSelectedProject] = useState(PROJECTS[0].id);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
   const [editingTrackName, setEditingTrackName] = useState<string | null>(null);
+  // SFX Add-to-project modal (AU-4)
+  const [sfxAddModal, setSfxAddModal] = useState<{ sfx: SfxItem } | null>(null);
+  const [sfxModalProject, setSfxModalProject] = useState<string>(PROJECTS[0].id);
+  const [sfxModalShot, setSfxModalShot] = useState<string>('s1');
   const [trackNames, setTrackNames] = useState<Record<string, string>>(() => {
     const m: Record<string, string> = {};
     MUSIC_TRACKS.forEach((t) => (m[t.id] = t.name));
@@ -344,12 +452,27 @@ export default function AudioStudioPage() {
   const [tapBpm, setTapBpm] = useState<number | null>(null);
 
   // Voice tab state
-  const [voiceCharacter, setVoiceCharacter] = useState(CHARACTERS[0].id);
+  const [voiceCharacter, setVoiceCharacter] = useState<string>('');
   const [voiceText, setVoiceText] = useState('');
   const [voiceStyle, setVoiceStyle] = useState<string>('Neutral');
   const [voiceSpeed, setVoiceSpeed] = useState(1.0);
   const [voicePitch, setVoicePitch] = useState(0);
   const [voiceLang, setVoiceLang] = useState('English');
+  const [voiceUploadModalOpen, setVoiceUploadModalOpen] = useState(false);
+  const [voiceGenerating, setVoiceGenerating] = useState(false);
+  const [voiceGenProgress, setVoiceGenProgress] = useState(0);
+  const [voiceGenEtaSec, setVoiceGenEtaSec] = useState(0);
+
+  // Score from Scene state (AU-5 / AU-6)
+  const [sceneShots, setSceneShots] = useState<SceneShot[]>(PROJECT_SHOTS[PROJECTS[0].id] ?? []);
+  const [selectedShotIds, setSelectedShotIds] = useState<Set<string>>(new Set());
+  const [sceneGenerating, setSceneGenerating] = useState(false);
+  const [beatMap, setBeatMap] = useState<BeatMarker[] | null>(null);
+
+  // Music gen loading state (AU-8)
+  const [musicGenerating, setMusicGenerating] = useState(false);
+  const [pendingTrackIds, setPendingTrackIds] = useState<string[]>([]);
+  const [extraTracks, setExtraTracks] = useState<MusicTrack[]>([]);
 
   // SFX tab state
   const [sfxDescription, setSfxDescription] = useState('');
@@ -378,9 +501,44 @@ export default function AudioStudioPage() {
     }
   }, []);
 
-  const togglePlay = (id: string) => {
-    setPlayingTrack((prev) => (prev === id ? null : id));
-  };
+  const togglePlay = useCallback((id: string) => {
+    // If this track is already playing, stop it.
+    if (audioPlayer.isPlaying(id)) {
+      audioPlayer.stop();
+      setPlayingTrack(null);
+      setPlaybackProgress(0);
+      return;
+    }
+
+    // Otherwise start playback via the shared audioPlayer. We optimistically
+    // flip UI state so the play button, waveform, and progress overlays all
+    // react immediately even while the buffer is being fetched/decoded.
+    setPlayingTrack(id);
+    setPlaybackProgress(0);
+    audioPlayer
+      .play(
+        id,
+        MOCK_AUDIO_URL,
+        (progress) => setPlaybackProgress(progress),
+        () => {
+          setPlayingTrack((curr) => (curr === id ? null : curr));
+          setPlaybackProgress(0);
+        }
+      )
+      .catch((err) => {
+        console.error('[audio] play failed', err);
+        toast.error('Playback failed');
+        setPlayingTrack((curr) => (curr === id ? null : curr));
+        setPlaybackProgress(0);
+      });
+  }, []);
+
+  // Stop playback when the component unmounts.
+  useEffect(() => {
+    return () => {
+      audioPlayer.stop();
+    };
+  }, []);
 
   const handleTrackNameSave = (id: string, value: string) => {
     setTrackNames((prev) => ({ ...prev, [id]: value || prev[id] }));
@@ -392,6 +550,91 @@ export default function AudioStudioPage() {
     const matchSearch = !sfxSearch || s.name.toLowerCase().includes(sfxSearch.toLowerCase());
     return matchCat && matchSearch;
   });
+
+  // AU-5: reload shots when project changes
+  useEffect(() => {
+    setSceneShots(PROJECT_SHOTS[selectedProject] ?? []);
+    setSelectedShotIds(new Set());
+    setBeatMap(null);
+  }, [selectedProject]);
+
+  const selectedShots = sceneShots.filter((s) => selectedShotIds.has(s.id));
+  const selectedTotalSec = selectedShots.reduce((a, b) => a + b.durationSec, 0);
+  const selectedTotalDuration = selectedShots.length > 0 ? formatDuration(selectedTotalSec) : '\u2014';
+  const selectedMoodArc =
+    selectedShots.length === 0
+      ? '\u2014'
+      : selectedShots.length === 1
+      ? selectedShots[0].emotionalBeat
+      : `${selectedShots[0].emotionalBeat} \u2192 ${selectedShots[selectedShots.length - 1].emotionalBeat}`;
+  const selectedPacing = computePacing(selectedShots);
+
+  const toggleShotSelection = (id: string) => {
+    setSelectedShotIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleGenerateSceneScore = () => {
+    if (sceneGenerating) return;
+    setSceneGenerating(true);
+    setBeatMap(null);
+    toast.success('Generating scene score...');
+    const durationForBeats = selectedTotalSec > 0 ? selectedTotalSec : 32;
+    setTimeout(() => {
+      setBeatMap(generateMockBeatMap(durationForBeats, 120));
+      setSceneGenerating(false);
+      toast.success('Scene score generated');
+    }, 2000);
+  };
+
+  const voiceCanGenerate = voiceCharacter !== '' && voiceText.trim().length > 0 && !voiceGenerating;
+  const handleGenerateVoice = () => {
+    if (!voiceCanGenerate) return;
+    setVoiceGenerating(true);
+    setVoiceGenProgress(0);
+    const totalSec = 8;
+    setVoiceGenEtaSec(totalSec);
+    const startedAt = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      const pct = Math.min(100, (elapsed / totalSec) * 100);
+      setVoiceGenProgress(pct);
+      setVoiceGenEtaSec(Math.max(0, Math.ceil(totalSec - elapsed)));
+      if (pct >= 100) {
+        clearInterval(interval);
+        setVoiceGenerating(false);
+        toast.success('Voice generated');
+      }
+    }, 150);
+  };
+
+  const handleGenerateMusic = () => {
+    if (musicGenerating) return;
+    setMusicGenerating(true);
+    const pendingId = `pending-${Date.now()}`;
+    setPendingTrackIds((prev) => [...prev, pendingId]);
+    toast.success('Generating music... (~20s)');
+    setTimeout(() => {
+      const newTrack: MusicTrack = {
+        id: `mt-${Date.now()}`,
+        name: `${selectedGenre} ${selectedMood} Track`,
+        genre: selectedGenre,
+        mood: selectedMood,
+        duration: duration || '0:30',
+        bpm: parseInt(bpm) || 120,
+        bars: generateBars(60),
+      };
+      setExtraTracks((prev) => [newTrack, ...prev]);
+      setPendingTrackIds((prev) => prev.filter((id) => id !== pendingId));
+      setMusicGenerating(false);
+      setTrackNames((prev) => ({ ...prev, [newTrack.id]: newTrack.name }));
+      toast.success('Music track ready');
+    }, 3000);
+  };
 
   // Close dropdowns on outside click
   const handlePageClick = () => {
@@ -434,60 +677,76 @@ export default function AudioStudioPage() {
     );
   };
 
-  const renderTrackActions = (id: string) => {
+  const renderTrackActions = (id: string, isMusic: boolean) => {
+    const displayName = trackNames[id] ?? id;
+
+    const timelineItems = PROJECTS.map((p) => ({
+      label: p.name,
+      icon: <FolderPlus size={12} />,
+      onClick: () => toast.success(`"${displayName}" added to ${p.name} timeline`),
+    }));
+
+    const downloadItems = [
+      { label: 'MP3', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.mp3`) },
+      { label: 'WAV', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.wav`) },
+      { label: 'AIFF', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.aiff`) },
+    ];
+
     const stemsItems = [
-      { label: 'All Stems (ZIP)', icon: <Download size={12} />, onClick: () => toast.success('Downloading all stems...') },
+      { label: 'All stems (ZIP)', icon: <Download size={12} />, onClick: () => toast.success('Downloading all stems...') },
       { label: 'Drums', icon: <Layers size={12} />, onClick: () => toast.success('Downloading drums stem...') },
       { label: 'Bass', icon: <Layers size={12} />, onClick: () => toast.success('Downloading bass stem...') },
       { label: 'Melody', icon: <Layers size={12} />, onClick: () => toast.success('Downloading melody stem...') },
-      { label: 'Harmony', icon: <Layers size={12} />, onClick: () => toast.success('Downloading harmony stem...') },
     ];
 
     const moreItems = [
       { label: 'Rename', icon: <Edit3 size={12} />, onClick: () => setEditingTrackName(id) },
-      { label: 'Duplicate', icon: <Copy size={12} />, onClick: () => toast.success('Track duplicated') },
-      { label: 'Favorites', icon: <Star size={12} />, onClick: () => toast.success('Added to favorites') },
-      { label: 'Cue Sheet', icon: <FileText size={12} />, onClick: () => toast.success('Cue sheet exported') },
+      { label: 'Add to favorites', icon: <Star size={12} />, onClick: () => toast.success('Added to favorites') },
+      { label: 'Generate cue sheet', icon: <FileText size={12} />, onClick: () => toast.success('Cue sheet generated') },
       { label: 'Delete', icon: <Trash2 size={12} />, onClick: () => toast('Track deleted'), danger: true },
     ];
 
+    const visible = hoveredTrack === id || openDropdown?.endsWith(`-${id}`);
+
     return (
-      <div
-        style={{
-          display: 'flex',
-          gap: 4,
-          opacity: hoveredTrack === id ? 1 : 0,
-          transition: 'opacity 150ms ease',
-          pointerEvents: hoveredTrack === id ? 'auto' : 'none',
-        }}
-      >
-        <button
-          type="button"
-          style={smallBtnStyle}
-          onClick={(e) => { e.stopPropagation(); toast.success('Add to Project menu'); }}
-        >
-          Add to Project <ChevronDown size={10} />
-        </button>
-        <button
-          type="button"
-          style={smallBtnStyle}
-          onClick={(e) => { e.stopPropagation(); toast.success('Downloading...'); }}
-        >
-          <Download size={11} /> Download <ChevronDown size={10} />
-        </button>
-        <DropdownMenu
-          trigger={<><Layers size={11} /> Stems <ChevronDown size={10} /></>}
-          items={stemsItems}
-          open={openDropdown === `stems-${id}`}
-          onToggle={() => setOpenDropdown(openDropdown === `stems-${id}` ? null : `stems-${id}`)}
-        />
-        <DropdownMenu
-          trigger={<MoreHorizontal size={13} />}
-          items={moreItems}
-          open={openDropdown === `more-${id}`}
-          onToggle={() => setOpenDropdown(openDropdown === `more-${id}` ? null : `more-${id}`)}
-        />
-      </div>
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            style={{ display: 'flex', gap: 4 }}
+          >
+            <DropdownMenu
+              trigger={<>Add to Timeline <ChevronDown size={10} /></>}
+              items={timelineItems}
+              open={openDropdown === `timeline-${id}`}
+              onToggle={() => setOpenDropdown(openDropdown === `timeline-${id}` ? null : `timeline-${id}`)}
+            />
+            <DropdownMenu
+              trigger={<><Download size={11} /> Download <ChevronDown size={10} /></>}
+              items={downloadItems}
+              open={openDropdown === `download-${id}`}
+              onToggle={() => setOpenDropdown(openDropdown === `download-${id}` ? null : `download-${id}`)}
+            />
+            {isMusic && (
+              <DropdownMenu
+                trigger={<><Layers size={11} /> Stems <ChevronDown size={10} /></>}
+                items={stemsItems}
+                open={openDropdown === `stems-${id}`}
+                onToggle={() => setOpenDropdown(openDropdown === `stems-${id}` ? null : `stems-${id}`)}
+              />
+            )}
+            <DropdownMenu
+              trigger={<MoreHorizontal size={13} />}
+              items={moreItems}
+              open={openDropdown === `more-${id}`}
+              onToggle={() => setOpenDropdown(openDropdown === `more-${id}` ? null : `more-${id}`)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     );
   };
 
@@ -689,13 +948,27 @@ export default function AudioStudioPage() {
 
                 <button
                   type="button"
-                  style={primaryBtnStyle}
-                  onClick={() => toast.success('Generating music...')}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  disabled={musicGenerating}
+                  style={{
+                    ...primaryBtnStyle,
+                    opacity: musicGenerating ? 0.7 : 1,
+                    cursor: musicGenerating ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={handleGenerateMusic}
+                  onMouseEnter={(e) => { if (!musicGenerating) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseLeave={(e) => { if (!musicGenerating) e.currentTarget.style.opacity = '1'; }}
                 >
-                  <Music size={13} />
-                  Generate Music
+                  {musicGenerating ? (
+                    <>
+                      <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                      Generating... (~20s)
+                    </>
+                  ) : (
+                    <>
+                      <Music size={13} />
+                      Generate Music
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -713,48 +986,89 @@ export default function AudioStudioPage() {
                   </select>
                 </div>
 
-                {/* Simplified Timeline */}
+                {/* Scene Timeline with real shots (AU-5) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={labelStyle}>Scene Timeline</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={labelStyle}>Scene Timeline</label>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      {selectedShotIds.size > 0
+                        ? `${selectedShotIds.size} shot${selectedShotIds.size === 1 ? '' : 's'} selected`
+                        : 'Click shots to select'}
+                    </span>
+                  </div>
                   <div
                     style={{
                       display: 'flex',
                       gap: 2,
-                      height: 36,
+                      height: 44,
                       background: 'var(--bg-surface)',
                       borderRadius: 'var(--radius-md)',
                       overflow: 'hidden',
                       border: '0.5px solid var(--border)',
+                      padding: 2,
                     }}
                   >
-                    {SCENE_SHOTS.map((shot) => (
-                      <div
-                        key={shot.id}
-                        style={{
-                          width: shot.width,
-                          background: shot.color,
-                          opacity: 0.75,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 9,
-                          fontWeight: 600,
-                          color: '#ffffff',
-                          borderRadius: 2,
-                        }}
-                      >
-                        {shot.label}
+                    {sceneShots.map((shot) => {
+                      const totalAllSec = sceneShots.reduce((a, b) => a + b.durationSec, 0);
+                      const widthPct = (shot.durationSec / totalAllSec) * 100;
+                      const isSelected = selectedShotIds.has(shot.id);
+                      return (
+                        <button
+                          key={shot.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleShotSelection(shot.id);
+                          }}
+                          title={`${shot.label} — ${shot.durationSec.toFixed(1)}s — ${shot.status} — ${shot.emotionalBeat}`}
+                          style={{
+                            width: `${widthPct}%`,
+                            background: STATUS_COLORS[shot.status],
+                            opacity: isSelected ? 1 : 0.65,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 9,
+                            fontWeight: 600,
+                            color: '#ffffff',
+                            borderRadius: 2,
+                            border: isSelected ? '1.5px solid var(--brand)' : '1.5px solid transparent',
+                            cursor: 'pointer',
+                            transition: 'opacity 150ms ease, border-color 150ms ease',
+                            padding: 0,
+                          }}
+                        >
+                          {shot.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Status legend */}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 2 }}>
+                    {(Object.keys(STATUS_COLORS) as ShotStatus[]).map((st) => (
+                      <div key={st} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 2,
+                            background: STATUS_COLORS[st],
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>{st}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Auto-detected Params */}
+                {/* Derived metadata (updates live from selection) */}
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                   {[
-                    { label: 'Duration', value: '2:34' },
-                    { label: 'Mood', value: 'Tense → Epic' },
-                    { label: 'Pacing', value: 'Medium → Fast' },
+                    { label: 'Total Duration', value: selectedTotalDuration },
+                    { label: 'Mood', value: selectedMoodArc },
+                    { label: 'Pacing', value: selectedPacing },
                   ].map((p) => (
                     <div key={p.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>{p.label}</span>
@@ -765,14 +1079,105 @@ export default function AudioStudioPage() {
 
                 <button
                   type="button"
-                  style={primaryBtnStyle}
-                  onClick={() => toast.success('Generating scene score...')}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  disabled={sceneGenerating}
+                  style={{
+                    ...primaryBtnStyle,
+                    opacity: sceneGenerating ? 0.7 : 1,
+                    cursor: sceneGenerating ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={handleGenerateSceneScore}
+                  onMouseEnter={(e) => { if (!sceneGenerating) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseLeave={(e) => { if (!sceneGenerating) e.currentTarget.style.opacity = '1'; }}
                 >
-                  <Music size={13} />
-                  Generate Scene Score
+                  {sceneGenerating ? (
+                    <>
+                      <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Music size={13} />
+                      Generate Scene Score
+                    </>
+                  )}
                 </button>
+
+                {/* AU-6: Beat map visualization overlaid on waveform */}
+                {beatMap && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    <label style={labelStyle}>Beat Map</label>
+                    <div
+                      style={{
+                        position: 'relative',
+                        height: 48,
+                        background: 'var(--bg-surface)',
+                        border: '0.5px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Mock waveform */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          padding: '0 6px',
+                        }}
+                      >
+                        {generateBars(80).map((h, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              width: 2,
+                              height: h,
+                              background: 'var(--text-tertiary)',
+                              opacity: 0.3,
+                              borderRadius: 1,
+                              flexShrink: 0,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {/* Beat ticks */}
+                      {(() => {
+                        const totalMs = Math.max(...beatMap.map((m) => m.timecodeMs), 1);
+                        return beatMap.map((m, i) => {
+                          const leftPct = (m.timecodeMs / totalMs) * 100;
+                          const isDownbeat = m.type === 'downbeat';
+                          const isHit = m.type === 'hit';
+                          return (
+                            <div
+                              key={i}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                bottom: 0,
+                                left: `${leftPct}%`,
+                                width: isDownbeat ? 2 : 1,
+                                background: isHit
+                                  ? 'var(--brand)'
+                                  : isDownbeat
+                                  ? '#ffffff'
+                                  : 'rgba(255,255,255,0.2)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          );
+                        });
+                      })()}
+                    </div>
+                    <button
+                      type="button"
+                      style={{ ...smallBtnStyle, alignSelf: 'flex-start' }}
+                      onClick={() => toast.success('Beats aligned to cuts')}
+                    >
+                      Align beats to cuts
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -780,7 +1185,45 @@ export default function AudioStudioPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2 style={sectionTitleStyle}>Generated Tracks</h2>
 
-              {MUSIC_TRACKS.map((track) => (
+              {/* AU-8: Skeleton rows for pending generations */}
+              {pendingTrackIds.map((pid) => (
+                <div
+                  key={pid}
+                  className="animate-pulse"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: 'var(--radius-xl)',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: 'var(--bg-surface)',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Loader2 size={14} style={{ color: 'var(--brand)', animation: 'spin 1s linear infinite' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
+                    <div style={{ width: 140, height: 12, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                    <div style={{ width: 100, height: 10, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 80, height: 14, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                  <div style={{ width: 32, height: 10, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                </div>
+              ))}
+
+              {[...extraTracks, ...MUSIC_TRACKS].map((track) => (
                 <div
                   key={track.id}
                   onMouseEnter={() => setHoveredTrack(track.id)}
@@ -823,7 +1266,11 @@ export default function AudioStudioPage() {
                       />
                     ) : (
                       <span
-                        onDoubleClick={() => setEditingTrackName(track.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingTrackName(track.id);
+                        }}
+                        title="Click to rename"
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
@@ -842,7 +1289,16 @@ export default function AudioStudioPage() {
                     </span>
                   </div>
 
-                  <Waveform bars={track.bars} playing={playingTrack === track.id} />
+                  <div style={{ flex: 1, minWidth: 80 }}>
+                    <WaveformVisualizer
+                      trackId={track.id}
+                      isPlaying={playingTrack === track.id}
+                      progress={playingTrack === track.id ? playbackProgress : 0}
+                      color="var(--brand)"
+                      staticData={track.bars.map((b) => b / 32)}
+                      height={32}
+                    />
+                  </div>
 
                   <span
                     style={{
@@ -856,7 +1312,7 @@ export default function AudioStudioPage() {
                     {track.duration}
                   </span>
 
-                  {renderTrackActions(track.id)}
+                  {renderTrackActions(track.id, true)}
                 </div>
               ))}
             </div>
@@ -869,23 +1325,45 @@ export default function AudioStudioPage() {
             <div style={cardStyle}>
               <h2 style={sectionTitleStyle}>Generate Voice</h2>
 
-              {/* Character Selector */}
+              {/* Character Selector (AU-7) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 280 }}>
                 <label style={labelStyle}>Character Voice</label>
-                <select value={voiceCharacter} onChange={(e) => setVoiceCharacter(e.target.value)} style={selectStyle}>
-                  {CHARACTERS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <select
+                  value={voiceCharacter}
+                  onChange={(e) => {
+                    if (e.target.value === '__upload__') {
+                      setVoiceUploadModalOpen(true);
+                    } else {
+                      setVoiceCharacter(e.target.value);
+                    }
+                  }}
+                  style={selectStyle}
+                >
+                  <option value="" disabled>Select a voice...</option>
+                  {CHARACTER_VOICES.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.gender}, {v.pitch} pitch)
+                    </option>
+                  ))}
+                  <option value="__upload__">+ Upload voice sample</option>
                 </select>
               </div>
 
-              {/* Text Input */}
+              {/* Text Input (AU-7: char count warnings at 400 / 490) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={labelStyle}>Script Text</label>
                   <span
                     style={{
                       fontSize: 10,
-                      color: voiceText.length > 500 ? '#ef4444' : 'var(--text-tertiary)',
+                      color:
+                        voiceText.length > 490
+                          ? '#ef4444'
+                          : voiceText.length > 400
+                          ? '#eab308'
+                          : 'var(--text-tertiary)',
                       fontVariantNumeric: 'tabular-nums',
+                      fontWeight: voiceText.length > 400 ? 600 : 400,
                     }}
                   >
                     {voiceText.length}/500
@@ -970,14 +1448,50 @@ export default function AudioStudioPage() {
 
               <button
                 type="button"
-                style={primaryBtnStyle}
-                onClick={() => toast.success('Generating voice...')}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                disabled={!voiceCanGenerate}
+                onClick={handleGenerateVoice}
+                style={{
+                  ...primaryBtnStyle,
+                  opacity: !voiceCanGenerate ? 0.5 : 1,
+                  cursor: !voiceCanGenerate ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={(e) => { if (voiceCanGenerate) e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={(e) => { if (voiceCanGenerate) e.currentTarget.style.opacity = '1'; }}
               >
-                <Mic size={13} />
-                Generate Voice
+                {voiceGenerating ? (
+                  <>
+                    <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                    Generating voice... ~{voiceGenEtaSec}s
+                  </>
+                ) : (
+                  <>
+                    <Mic size={13} />
+                    Generate Voice
+                  </>
+                )}
               </button>
+
+              {/* Voice generation progress bar */}
+              {voiceGenerating && (
+                <div
+                  style={{
+                    width: '100%',
+                    height: 4,
+                    background: 'var(--bg-surface)',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${voiceGenProgress}%`,
+                      height: '100%',
+                      background: 'var(--brand)',
+                      transition: 'width 150ms linear',
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Generated Voices */}
@@ -1026,7 +1540,11 @@ export default function AudioStudioPage() {
                       />
                     ) : (
                       <span
-                        onDoubleClick={() => setEditingTrackName(voice.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingTrackName(voice.id);
+                        }}
+                        title="Click to rename"
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
@@ -1045,7 +1563,16 @@ export default function AudioStudioPage() {
                     </span>
                   </div>
 
-                  <Waveform bars={voice.bars} playing={playingTrack === voice.id} />
+                  <div style={{ flex: 1, minWidth: 80 }}>
+                    <WaveformVisualizer
+                      trackId={voice.id}
+                      isPlaying={playingTrack === voice.id}
+                      progress={playingTrack === voice.id ? playbackProgress : 0}
+                      color="var(--brand)"
+                      staticData={voice.bars.map((b) => b / 32)}
+                      height={32}
+                    />
+                  </div>
 
                   <span
                     style={{
@@ -1059,7 +1586,7 @@ export default function AudioStudioPage() {
                     {voice.duration}
                   </span>
 
-                  {renderTrackActions(voice.id)}
+                  {renderTrackActions(voice.id, false)}
                 </div>
               ))}
             </div>
@@ -1200,75 +1727,112 @@ export default function AudioStudioPage() {
                   gap: 10,
                 }}
               >
-                {filteredSfx.map((sfx) => (
-                  <div
-                    key={sfx.id}
-                    style={{
-                      background: 'var(--bg-elevated)',
-                      border: '0.5px solid var(--border)',
-                      borderRadius: 'var(--radius-xl)',
-                      padding: 14,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 8,
-                      transition: 'border-color 150ms ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-brand)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                    }}
-                  >
-                    <span style={{ fontSize: 22 }}>{sfx.icon}</span>
-                    <span
+                {filteredSfx.map((sfx) => {
+                  const isSfxPlaying = playingTrack === sfx.id;
+                  return (
+                    <div
+                      key={sfx.id}
                       style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        textAlign: 'center',
-                        lineHeight: 1.3,
+                        background: isSfxPlaying ? 'var(--brand-dim)' : 'var(--bg-elevated)',
+                        border: isSfxPlaying
+                          ? '0.5px solid var(--brand-border, var(--brand))'
+                          : '0.5px solid var(--border)',
+                        borderRadius: 'var(--radius-xl)',
+                        padding: 14,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'border-color 150ms ease, background 150ms ease',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSfxPlaying) {
+                          e.currentTarget.style.borderColor = 'var(--border-brand)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSfxPlaying) {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                        }
                       }}
                     >
-                      {sfx.name}
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                      {sfx.duration}
-                    </span>
-                    <div style={{ display: 'flex', gap: 4, width: '100%' }}>
-                      <button
-                        type="button"
-                        onClick={() => togglePlay(sfx.id)}
+                      {/* Playing progress bar overlay */}
+                      {isSfxPlaying && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: 0,
+                            bottom: 0,
+                            height: 2,
+                            width: `${Math.round(playbackProgress * 100)}%`,
+                            background: 'var(--brand)',
+                            transition: 'width 80ms linear',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      )}
+                      <span style={{ fontSize: 22 }}>{sfx.icon}</span>
+                      <span
                         style={{
-                          ...smallBtnStyle,
-                          flex: 1,
-                          justifyContent: 'center',
-                          padding: '5px 0',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          textAlign: 'center',
+                          lineHeight: 1.3,
                         }}
                       >
-                        {playingTrack === sfx.id ? <Pause size={11} /> : <Play size={11} />}
-                        {playingTrack === sfx.id ? 'Stop' : 'Preview'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toast.success(`${sfx.name} added to project`)}
-                        style={{
-                          ...smallBtnStyle,
-                          flex: 1,
-                          justifyContent: 'center',
-                          padding: '5px 0',
-                          background: 'var(--brand-dim)',
-                          color: 'var(--brand-light)',
-                          borderColor: 'var(--brand-border)',
-                        }}
-                      >
-                        <Plus size={11} />
-                        Add
-                      </button>
+                        {sfx.name}
+                      </span>
+                      <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                        {sfx.duration}
+                      </span>
+                      <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePlay(sfx.id);
+                          }}
+                          style={{
+                            ...smallBtnStyle,
+                            flex: 1,
+                            justifyContent: 'center',
+                            padding: '5px 0',
+                            background: isSfxPlaying ? 'var(--brand)' : 'var(--bg-surface)',
+                            color: isSfxPlaying ? '#ffffff' : 'var(--text-secondary)',
+                            borderColor: isSfxPlaying ? 'var(--brand)' : 'var(--border)',
+                          }}
+                        >
+                          {isSfxPlaying ? <Square size={11} /> : <Play size={11} />}
+                          {isSfxPlaying ? 'Stop' : 'Preview'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSfxAddModal({ sfx });
+                            setSfxModalProject(PROJECTS[0].id);
+                            setSfxModalShot('s1');
+                          }}
+                          style={{
+                            ...smallBtnStyle,
+                            flex: 1,
+                            justifyContent: 'center',
+                            padding: '5px 0',
+                            background: 'var(--brand-dim)',
+                            color: 'var(--brand-light)',
+                            borderColor: 'var(--brand-border)',
+                          }}
+                        >
+                          <Plus size={11} />
+                          Add
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {filteredSfx.length === 0 && (
@@ -1282,6 +1846,258 @@ export default function AudioStudioPage() {
           </>
         )}
       </main>
+
+      {/* ── SFX Add-to-Project Modal (AU-4) ────────────────── */}
+      <AnimatePresence>
+        {sfxAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setSfxAddModal(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 8 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-xl)',
+                padding: 20,
+                minWidth: 360,
+                maxWidth: 420,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 22 }}>{sfxAddModal.sfx.icon}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Add &quot;{sfxAddModal.sfx.name}&quot; to project
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      {sfxAddModal.sfx.category} &middot; {sfxAddModal.sfx.duration}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSfxAddModal(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={labelStyle}>Project</label>
+                <select
+                  value={sfxModalProject}
+                  onChange={(e) => setSfxModalProject(e.target.value)}
+                  style={selectStyle}
+                >
+                  {PROJECTS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={labelStyle}>Shot</label>
+                <select
+                  value={sfxModalShot}
+                  onChange={(e) => setSfxModalShot(e.target.value)}
+                  style={selectStyle}
+                >
+                  {SCENE_SHOTS.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setSfxAddModal(null)}
+                  style={{
+                    ...smallBtnStyle,
+                    padding: '7px 14px',
+                    fontSize: 12,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const proj = PROJECTS.find((p) => p.id === sfxModalProject);
+                    const shot = SCENE_SHOTS.find((s) => s.id === sfxModalShot);
+                    toast.success(
+                      `SFX added to timeline — ${proj?.name ?? 'project'} / ${shot?.label ?? 'shot'}`
+                    );
+                    setSfxAddModal(null);
+                  }}
+                  style={{
+                    ...primaryBtnStyle,
+                    padding: '7px 14px',
+                    fontSize: 12,
+                    alignSelf: 'auto',
+                  }}
+                >
+                  <Plus size={12} />
+                  Add to Timeline
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Voice Sample Upload Modal (AU-7) ───────────────── */}
+      <AnimatePresence>
+        {voiceUploadModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setVoiceUploadModalOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 100,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-xl)',
+                padding: 20,
+                width: '100%',
+                maxWidth: 420,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ ...sectionTitleStyle, fontSize: 15 }}>Upload Voice Sample</h3>
+                <button
+                  type="button"
+                  onClick={() => setVoiceUploadModalOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Upload a 30-second clean audio sample (WAV or MP3). The model will clone the voice
+                characteristics for use in generation.
+              </p>
+
+              <label
+                style={{
+                  border: '1px dashed var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  background: 'var(--bg-surface)',
+                }}
+              >
+                <Upload size={20} style={{ color: 'var(--text-tertiary)' }} />
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Click to browse or drag a file
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                  WAV, MP3 up to 10MB
+                </span>
+                <input type="file" accept="audio/*" style={{ display: 'none' }} />
+              </label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={labelStyle}>Voice name</label>
+                <input type="text" placeholder="e.g. Narrator" style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setVoiceUploadModalOpen(false)}
+                  style={{ ...smallBtnStyle, padding: '7px 14px', fontSize: 12 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success('Voice sample uploaded');
+                    setVoiceUploadModalOpen(false);
+                  }}
+                  style={{
+                    ...primaryBtnStyle,
+                    padding: '7px 14px',
+                    fontSize: 12,
+                    alignSelf: 'auto',
+                  }}
+                >
+                  <Upload size={12} />
+                  Upload
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
