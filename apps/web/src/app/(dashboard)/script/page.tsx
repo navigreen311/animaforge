@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Sparkles,
   FileText,
+  FileCode,
+  FileType,
   Clock,
   Save,
   ChevronDown,
@@ -16,11 +19,17 @@ import {
   Users,
   Check,
   Link,
+  Unlink,
   UserPlus,
   GripVertical,
   Timer,
   Play,
+  Loader,
+  Pencil,
+  Search,
+  X,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import type {
   SceneBlock,
@@ -35,15 +44,40 @@ const FORMATS = ['Short Film', 'Ad 30s', 'Explainer', 'Music Video', 'Documentar
 const TONES = ['Action', 'Drama', 'Comedy', 'Horror', 'Mystery', 'Fantasy'] as const;
 const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const;
 const CAMERA_TYPES = [
-  'Wide', 'Medium', 'Close-up', 'Extreme Close-up', 'Over-the-shoulder',
-  'POV', 'Aerial', 'Tracking', 'Dutch Angle', 'Insert',
+  'Wide', 'Medium', 'Close-up', 'Extreme CU', 'Insert',
+  'Aerial', 'POV', 'Two-Shot', 'Over-Shoulder', 'Slow-mo',
 ] as const;
 
+const DURATION_OPTIONS = [1, 2, 3, 4, 5, 8, 10, 15] as const;
+
 const MOCK_PROJECTS = [
-  { id: 'proj-1', title: 'Neo-Tokyo Cyberpunk' },
-  { id: 'proj-2', title: 'Nature Documentary S2' },
-  { id: 'proj-3', title: 'Brand Ad - Summer Campaign' },
+  { id: 'proj-1', title: 'Neo-Tokyo Cyberpunk', status: 'In Progress', color: '#facc15' },
+  { id: 'proj-2', title: 'Nature Documentary S2', status: 'Active', color: '#4ade80' },
+  { id: 'proj-3', title: 'Brand Ad - Summer Campaign', status: 'Draft', color: '#94a3b8' },
 ];
+
+const MOCK_VERSIONS = [
+  { id: 'v3', label: 'Current', timestamp: new Date(), },
+  { id: 'v2', label: 'Auto-save', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), },
+  { id: 'v1', label: 'Initial draft', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), },
+];
+
+const EXPORT_OPTIONS = [
+  { label: 'PDF', icon: FileText },
+  { label: 'Fountain', icon: FileCode },
+  { label: 'Final Draft', icon: FileType },
+] as const;
+
+function timeAgo(date: Date) {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 /* ── Mock Data ──────────────────────────────────────────────── */
 
@@ -105,13 +139,19 @@ function uid() {
 /* ── Page Component ─────────────────────────────────────────── */
 
 export default function ScriptPage() {
+  const router = useRouter();
+
   /* Top bar state */
   const [scriptTitle, setScriptTitle] = useState('Untitled Script');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(MOCK_PROJECTS[0].id);
+  const [selectedProject, setSelectedProject] = useState<string | null>(MOCK_PROJECTS[0].id);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showVersionDrawer, setShowVersionDrawer] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
+  const projectSearchRef = useRef<HTMLInputElement>(null);
 
   /* Generation controls state */
   const [format, setFormat] = useState<string>(FORMATS[0]);
@@ -132,12 +172,29 @@ export default function ScriptPage() {
   /* Shot panel state */
   const [expandedShot, setExpandedShot] = useState<string | null>(null);
 
-  /* Auto-save indicator */
+  /* Push to Timeline state */
+  const [showPushConfirm, setShowPushConfirm] = useState(false);
+  const [isPushing, setIsPushing] = useState(false);
+
+  /* Debounced shot auto-save (500ms) */
+  const shotSaveTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const debouncedShotSave = useCallback(() => {
+    if (shotSaveTimeout.current) clearTimeout(shotSaveTimeout.current);
+    shotSaveTimeout.current = setTimeout(() => {
+      console.log('[auto-save] Shot breakdown saved');
+    }, 500);
+  }, []);
+
+  /* Auto-save indicator (800ms debounce) */
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>();
   const markDirty = useCallback(() => {
     setSaved(false);
+    setIsSaving(true);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => setSaved(true), 1500);
+    saveTimeout.current = setTimeout(() => {
+      setIsSaving(false);
+      setSaved(true);
+    }, 800);
   }, []);
 
   /* Close dropdowns on outside click */
@@ -145,10 +202,16 @@ export default function ScriptPage() {
     const handler = () => {
       setShowProjectDropdown(false);
       setShowExportDropdown(false);
+      setProjectSearch('');
     };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
+
+  /* Focus project search when dropdown opens */
+  useEffect(() => {
+    if (showProjectDropdown && projectSearchRef.current) projectSearchRef.current.focus();
+  }, [showProjectDropdown]);
 
   /* Focus title input when editing */
   useEffect(() => {
@@ -231,6 +294,61 @@ export default function ScriptPage() {
   const updateShot = (id: string, patch: Partial<ShotBreakdown>) => {
     setShots((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
     markDirty();
+    debouncedShotSave();
+  };
+
+  const removeCharacterFromShot = (shotId: string, charId: string) => {
+    setShots((prev) =>
+      prev.map((s) =>
+        s.id === shotId
+          ? { ...s, characterIds: (s.characterIds || []).filter((c) => c !== charId) }
+          : s
+      )
+    );
+    markDirty();
+    debouncedShotSave();
+  };
+
+  const addCharacterToShot = (shotId: string) => {
+    // Pick the first unassigned character, or cycle through
+    const shot = shots.find((s) => s.id === shotId);
+    const assigned = new Set(shot?.characterIds || []);
+    const available = detectedCharacters.find((c) => c.characterId && !assigned.has(c.characterId));
+    if (available && available.characterId) {
+      setShots((prev) =>
+        prev.map((s) =>
+          s.id === shotId
+            ? { ...s, characterIds: [...(s.characterIds || []), available.characterId!] }
+            : s
+        )
+      );
+      markDirty();
+      debouncedShotSave();
+      toast.success(`Added ${available.name}`);
+    } else {
+      toast.info('No more characters to add');
+    }
+  };
+
+  /* ── Push to Timeline handler ────────────────────────────── */
+
+  const handlePushToTimeline = () => {
+    if (!selectedProject) {
+      toast.error('Please assign a project first');
+      return;
+    }
+    setShowPushConfirm(true);
+  };
+
+  const confirmPushToTimeline = () => {
+    setShowPushConfirm(false);
+    setIsPushing(true);
+    console.log('[Push to Timeline]', { projectId: selectedProject, shots });
+    setTimeout(() => {
+      setIsPushing(false);
+      toast.success(`${shots.length} shots pushed to timeline`);
+      router.push(`/projects/${selectedProject}/timeline`);
+    }, 1500);
   };
 
   const totalDuration = shots.reduce((sum, s) => sum + s.durationSeconds, 0);
@@ -254,8 +372,11 @@ export default function ScriptPage() {
   /* ── Export handler ───────────────────────────────────────── */
 
   const handleExport = (fmt: string) => {
-    toast.success(`Exporting as ${fmt}...`);
     setShowExportDropdown(false);
+    toast.loading(`Exporting as ${fmt}...`, { id: 'export' });
+    setTimeout(() => {
+      toast.success(`Exported as ${fmt} successfully`, { id: 'export' });
+    }, 1500);
   };
 
   const handleSave = () => {
@@ -309,8 +430,8 @@ export default function ScriptPage() {
           {/* Divider */}
           <span className="mx-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>|</span>
 
-          {/* Project selector */}
-          <div className="relative">
+          {/* Project selector (SA-5) */}
+          <div className="relative group/proj">
             <button
               onClick={(e) => { e.stopPropagation(); setShowProjectDropdown((p) => !p); setShowExportDropdown(false); }}
               className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors hover:opacity-80"
@@ -320,19 +441,67 @@ export default function ScriptPage() {
                 color: 'var(--text-secondary)',
               }}
             >
-              {MOCK_PROJECTS.find((p) => p.id === selectedProject)?.title}
+              {selectedProject ? (
+                <>
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: MOCK_PROJECTS.find((p) => p.id === selectedProject)?.color || '#94a3b8' }}
+                  />
+                  {MOCK_PROJECTS.find((p) => p.id === selectedProject)?.title}
+                </>
+              ) : (
+                <span style={{ color: 'var(--text-tertiary)' }}>No project</span>
+              )}
               <ChevronDown size={12} />
             </button>
+            {/* Unlink on hover (only when project assigned) */}
+            {selectedProject && !showProjectDropdown && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedProject(null);
+                  toast.success('Project unlinked');
+                }}
+                className="absolute -right-6 top-1/2 -translate-y-1/2 hidden rounded p-1 transition-colors group-hover/proj:inline-flex"
+                style={{ color: 'var(--text-tertiary)' }}
+                title="Unlink project"
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--error, #f87171)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >
+                <Unlink size={12} />
+              </button>
+            )}
             {showProjectDropdown && (
               <div
-                className="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border py-1 shadow-lg"
+                className="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border py-1 shadow-lg"
                 style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {MOCK_PROJECTS.map((p) => (
+                {/* Search input */}
+                <div className="px-2 pb-1.5 pt-1">
+                  <div className="relative">
+                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
+                    <input
+                      ref={projectSearchRef}
+                      value={projectSearch}
+                      onChange={(e) => setProjectSearch(e.target.value)}
+                      placeholder="Search projects..."
+                      className="w-full rounded border py-1.5 pl-7 pr-2 text-[11px] outline-none"
+                      style={{
+                        borderColor: 'var(--border)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Project list */}
+                {MOCK_PROJECTS
+                  .filter((p) => p.title.toLowerCase().includes(projectSearch.toLowerCase()))
+                  .map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => { setSelectedProject(p.id); setShowProjectDropdown(false); }}
+                    onClick={() => { setSelectedProject(p.id); setShowProjectDropdown(false); setProjectSearch(''); toast.success(`Assigned to ${p.title}`); }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
                     style={{
                       color: p.id === selectedProject ? 'var(--brand-light)' : 'var(--text-primary)',
@@ -341,23 +510,49 @@ export default function ScriptPage() {
                     onMouseEnter={(e) => { if (p.id !== selectedProject) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
                     onMouseLeave={(e) => { if (p.id !== selectedProject) e.currentTarget.style.backgroundColor = 'transparent'; }}
                   >
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="flex-1">{p.title}</span>
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
+                      style={{ backgroundColor: `${p.color}22`, color: p.color }}
+                    >
+                      {p.status}
+                    </span>
                     {p.id === selectedProject && <Check size={12} />}
-                    {p.title}
                   </button>
                 ))}
+                {/* Create new project */}
+                <div className="border-t" style={{ borderColor: 'var(--border)' }}>
+                  <button
+                    onClick={() => { setShowProjectDropdown(false); setProjectSearch(''); toast.info('Create new project (coming soon)'); }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
+                    style={{ color: 'var(--brand-light)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Plus size={12} />
+                    Create new project
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Auto-save indicator */}
           <span className="ml-2 flex items-center gap-1 text-[11px]" style={{ color: saved ? 'var(--success, #4ade80)' : 'var(--text-tertiary)' }}>
-            {saved ? <><Check size={11} /> Saved</> : 'Unsaved changes...'}
+            {saved ? (
+              <><Check size={11} /> {'Saved \u2713'}</>
+            ) : isSaving ? (
+              <><Loader size={11} className="animate-spin" /> Saving...</>
+            ) : (
+              'Unsaved changes...'
+            )}
           </span>
         </div>
 
         {/* Right side: Export, Save, History */}
         <div className="flex items-center gap-2">
-          {/* Export dropdown */}
+          {/* Export dropdown (SA-6) */}
           <div className="relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowExportDropdown((p) => !p); setShowProjectDropdown(false); }}
@@ -369,22 +564,26 @@ export default function ScriptPage() {
             </button>
             {showExportDropdown && (
               <div
-                className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border py-1 shadow-lg"
+                className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border py-1 shadow-lg"
                 style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {['PDF', 'Fountain', 'Final Draft'].map((fmt) => (
-                  <button
-                    key={fmt}
-                    onClick={() => handleExport(fmt)}
-                    className="flex w-full px-3 py-2 text-left text-xs transition-colors"
-                    style={{ color: 'var(--text-primary)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    {fmt}
-                  </button>
-                ))}
+                {EXPORT_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.label}
+                      onClick={() => handleExport(opt.label)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
+                      style={{ color: 'var(--text-primary)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <Icon size={13} style={{ color: 'var(--text-tertiary)' }} />
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -399,9 +598,9 @@ export default function ScriptPage() {
             Save
           </button>
 
-          {/* History */}
+          {/* History (SA-4) */}
           <button
-            onClick={() => toast.info('Version history coming soon')}
+            onClick={() => setShowVersionDrawer(true)}
             className="flex items-center justify-center rounded-md border p-1.5 transition-colors"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
@@ -638,23 +837,37 @@ export default function ScriptPage() {
                 </div>
 
                 <div className="p-4">
-                  {/* Editable heading */}
-                  <input
-                    value={scene.heading}
-                    onChange={(e) => updateScene(scene.id, { heading: e.target.value })}
-                    className="mb-2 w-full bg-transparent text-xs font-semibold uppercase tracking-wide outline-none"
-                    style={{ color: 'var(--text-brand)' }}
-                  />
+                  {/* Editable heading with pencil hint */}
+                  <div className="group/heading relative mb-2">
+                    <input
+                      value={scene.heading}
+                      onChange={(e) => updateScene(scene.id, { heading: e.target.value })}
+                      className="w-full bg-transparent text-xs font-semibold uppercase tracking-wide outline-none focus:ring-1 focus:ring-[var(--brand)] rounded px-1 -ml-1"
+                      style={{ color: 'var(--text-brand)' }}
+                    />
+                    <Pencil
+                      size={11}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/heading:opacity-60 pointer-events-none"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    />
+                  </div>
 
-                  {/* Editable action text */}
-                  <textarea
-                    value={scene.action}
-                    onChange={(e) => updateScene(scene.id, { action: e.target.value })}
-                    rows={3}
-                    className="mb-2 w-full resize-none bg-transparent text-sm leading-relaxed outline-none"
-                    style={{ color: 'var(--text-secondary)' }}
-                    placeholder="Scene action description..."
-                  />
+                  {/* Editable action text with pencil hint */}
+                  <div className="group/action relative mb-2">
+                    <textarea
+                      value={scene.action}
+                      onChange={(e) => updateScene(scene.id, { action: e.target.value })}
+                      rows={3}
+                      className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none focus:ring-1 focus:ring-[var(--brand)] rounded px-1 -ml-1"
+                      style={{ color: 'var(--text-secondary)' }}
+                      placeholder="Scene action description..."
+                    />
+                    <Pencil
+                      size={11}
+                      className="absolute right-1 top-2 opacity-0 transition-opacity group-hover/action:opacity-60 pointer-events-none"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    />
+                  </div>
 
                   {/* Dialogue lines */}
                   {scene.dialogue && scene.dialogue.length > 0 && (
@@ -801,6 +1014,7 @@ export default function ScriptPage() {
           <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
             {shots.map((shot) => {
               const isExpanded = expandedShot === shot.id;
+              const sceneLabel = scenes.find((s) => s.id === shot.sceneId)?.heading || shot.sceneId;
               return (
                 <div
                   key={shot.id}
@@ -829,88 +1043,142 @@ export default function ScriptPage() {
                         {shot.cameraType} &middot; {shot.durationSeconds}s
                       </span>
                     </div>
-                    {isExpanded ? <ChevronDown size={12} style={{ color: 'var(--text-tertiary)' }} /> : <ChevronRight size={12} style={{ color: 'var(--text-tertiary)' }} />}
+                    <motion.span
+                      animate={{ rotate: isExpanded ? 90 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="shrink-0"
+                    >
+                      <ChevronRight size={12} style={{ color: 'var(--text-tertiary)' }} />
+                    </motion.span>
                   </button>
 
-                  {/* Expanded content */}
-                  {isExpanded && (
-                    <div className="flex flex-col gap-2 border-t px-3 py-2.5" style={{ borderColor: 'var(--border)' }}>
-                      {/* Camera type */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Camera</label>
-                        <select
-                          value={shot.cameraType}
-                          onChange={(e) => updateShot(shot.id, { cameraType: e.target.value })}
-                          className="rounded border px-2 py-1 text-[11px] outline-none"
-                          style={{
-                            borderColor: 'var(--border)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {CAMERA_TYPES.map((ct) => (
-                            <option key={ct} value={ct}>{ct}</option>
-                          ))}
-                        </select>
-                      </div>
+                  {/* Expanded content with AnimatePresence */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        key={`expanded-${shot.id}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex flex-col gap-2 border-t px-3 py-2.5" style={{ borderColor: 'var(--border)' }}>
+                          {/* Camera type dropdown */}
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Camera</label>
+                            <select
+                              value={shot.cameraType}
+                              onChange={(e) => updateShot(shot.id, { cameraType: e.target.value })}
+                              className="rounded border px-2 py-1 text-[11px] outline-none"
+                              style={{
+                                borderColor: 'var(--border)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {CAMERA_TYPES.map((ct) => (
+                                <option key={ct} value={ct}>{ct}</option>
+                              ))}
+                            </select>
+                          </div>
 
-                      {/* Duration */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Duration (s)</label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={60}
-                          value={shot.durationSeconds}
-                          onChange={(e) => updateShot(shot.id, { durationSeconds: Math.max(1, Number(e.target.value)) })}
-                          className="rounded border px-2 py-1 text-[11px] outline-none"
-                          style={{
-                            borderColor: 'var(--border)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            color: 'var(--text-primary)',
-                            width: 70,
-                          }}
-                        />
-                      </div>
+                          {/* Duration dropdown */}
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Duration (s)</label>
+                            <select
+                              value={shot.durationSeconds}
+                              onChange={(e) => updateShot(shot.id, { durationSeconds: Number(e.target.value) })}
+                              className="rounded border px-2 py-1 text-[11px] outline-none"
+                              style={{
+                                borderColor: 'var(--border)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {DURATION_OPTIONS.map((d) => (
+                                <option key={d} value={d}>{d}s</option>
+                              ))}
+                            </select>
+                          </div>
 
-                      {/* Description */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Description</label>
-                        <textarea
-                          value={shot.description}
-                          onChange={(e) => updateShot(shot.id, { description: e.target.value })}
-                          rows={2}
-                          className="resize-none rounded border px-2 py-1 text-[11px] outline-none"
-                          style={{
-                            borderColor: 'var(--border)',
-                            backgroundColor: 'var(--bg-elevated)',
-                            color: 'var(--text-primary)',
-                          }}
-                        />
-                      </div>
+                          {/* Description textarea (2 rows) */}
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Description</label>
+                            <textarea
+                              value={shot.description}
+                              onChange={(e) => updateShot(shot.id, { description: e.target.value })}
+                              rows={2}
+                              className="resize-none rounded border px-2 py-1 text-[11px] outline-none"
+                              style={{
+                                borderColor: 'var(--border)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                color: 'var(--text-primary)',
+                              }}
+                            />
+                          </div>
 
-                      {/* Character chips */}
-                      {shot.characterIds && shot.characterIds.length > 0 && (
-                        <div className="flex flex-col gap-0.5">
-                          <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Characters</label>
-                          <div className="flex flex-wrap gap-1">
-                            {shot.characterIds.map((cId) => {
-                              const charName = detectedCharacters.find((c) => c.characterId === cId)?.name || cId;
-                              return (
-                                <span
-                                  key={cId}
-                                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                                  style={{ backgroundColor: 'var(--brand-dim)', color: 'var(--brand-light)' }}
-                                >
-                                  {charName}
-                                </span>
-                              );
-                            })}
+                          {/* Character chips with remove + add */}
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Characters</label>
+                            <div className="flex flex-wrap items-center gap-1">
+                              {(shot.characterIds || []).map((cId) => {
+                                const charName = detectedCharacters.find((c) => c.characterId === cId)?.name || cId;
+                                return (
+                                  <span
+                                    key={cId}
+                                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                                    style={{ backgroundColor: 'var(--brand-dim)', color: 'var(--brand-light)' }}
+                                  >
+                                    {charName}
+                                    <button
+                                      onClick={() => removeCharacterFromShot(shot.id, cId)}
+                                      className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-white/10"
+                                      title={`Remove ${charName}`}
+                                    >
+                                      <X size={8} />
+                                    </button>
+                                  </span>
+                                );
+                              })}
+                              <button
+                                onClick={() => addCharacterToShot(shot.id)}
+                                className="inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors"
+                                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <Plus size={8} />
+                                Add
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Scene reference */}
+                          <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Scene</label>
+                            <select
+                              value={shot.sceneId}
+                              onChange={(e) => updateShot(shot.id, { sceneId: e.target.value })}
+                              className="rounded border px-2 py-1 text-[11px] outline-none"
+                              style={{
+                                borderColor: 'var(--border)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {scenes.map((sc) => (
+                                <option key={sc.id} value={sc.id}>Scene {sc.sceneNumber}</option>
+                              ))}
+                            </select>
+                            <span className="truncate text-[9px]" style={{ color: 'var(--text-tertiary)' }}>
+                              {sceneLabel}
+                            </span>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
@@ -941,6 +1209,99 @@ export default function ScriptPage() {
           </div>
         </aside>
       </div>
+
+      {/* ════════════════════════════════════════════════════════
+          VERSION HISTORY DRAWER (SA-4)
+         ════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showVersionDrawer && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black"
+              onClick={() => setShowVersionDrawer(false)}
+            />
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: 320 }}
+              animate={{ x: 0 }}
+              exit={{ x: 320 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className="fixed right-0 top-0 z-50 flex h-full w-[320px] flex-col border-l shadow-xl"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
+            >
+              {/* Drawer header */}
+              <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-center gap-2">
+                  <Clock size={15} style={{ color: 'var(--brand-light)' }} />
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    Version History
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowVersionDrawer(false)}
+                  className="rounded p-1 transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Version list */}
+              <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+                {MOCK_VERSIONS.map((version, idx) => (
+                  <div
+                    key={version.id}
+                    className="rounded-lg border p-3"
+                    style={{
+                      borderColor: idx === 0 ? 'var(--brand)' : 'var(--border)',
+                      backgroundColor: idx === 0 ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                    }}
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {version.label}
+                      </span>
+                      {idx === 0 ? (
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                          style={{ backgroundColor: 'var(--brand)', color: '#fff' }}
+                        >
+                          Current
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            toast.success(`Restored to version from ${timeAgo(version.timestamp)}`);
+                            setShowVersionDrawer(false);
+                          }}
+                          className="rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors"
+                          style={{
+                            borderColor: 'var(--border)',
+                            color: 'var(--brand-light)',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          Restore
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {timeAgo(version.timestamp)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
