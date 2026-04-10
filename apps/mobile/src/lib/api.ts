@@ -87,3 +87,80 @@ export class ApiError extends Error {
 }
 
 export const api = new ApiClient(API_BASE_URL);
+
+// ---------------------------------------------------------------------------
+// Domain types
+// ---------------------------------------------------------------------------
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  thumbnailUrl?: string;
+  status: 'active' | 'archived' | 'draft';
+}
+
+export interface Shot {
+  id: string;
+  projectId: string;
+  name: string;
+  status: 'pending' | 'rendering' | 'review' | 'approved' | 'rejected';
+  previewUrl?: string;
+  durationSeconds?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Job {
+  id: string;
+  shotId?: string;
+  projectId?: string;
+  type: string;
+  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+  progress?: number;
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// TanStack Query helpers
+// ---------------------------------------------------------------------------
+
+export const queryKeys = {
+  projects: ['projects'] as const,
+  project: (id: string) => ['projects', id] as const,
+  shots: (projectId: string) => ['projects', projectId, 'shots'] as const,
+  shot: (id: string) => ['shots', id] as const,
+  jobs: ['jobs'] as const,
+};
+
+export function listProjects(): Promise<Project[]> {
+  return api.get<Project[]>('/projects');
+}
+
+export function getProject(projectId: string): Promise<Project> {
+  return api.get<Project>(`/projects/${projectId}`);
+}
+
+export function listShots(projectId: string): Promise<Shot[]> {
+  return api.get<Shot[]>(`/projects/${projectId}/shots`);
+}
+
+export function getShot(shotId: string): Promise<Shot> {
+  return api.get<Shot>(`/shots/${shotId}`);
+}
+
+export function approveShot(shotId: string, notes?: string): Promise<Shot> {
+  return api.post<Shot>(`/shots/${shotId}/approve`, { notes });
+}
+
+export function listJobs(params?: { status?: Job['status']; projectId?: string }): Promise<Job[]> {
+  const search = new URLSearchParams();
+  if (params?.status) search.set('status', params.status);
+  if (params?.projectId) search.set('projectId', params.projectId);
+  const query = search.toString();
+  return api.get<Job[]>(`/jobs${query ? `?${query}` : ''}`);
+}

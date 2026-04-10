@@ -3,17 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "target": "ESNext",
-    "module": "ESNext",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "index.js"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts", "**/*.tsx"]
 }

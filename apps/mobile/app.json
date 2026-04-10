@@ -2,28 +2,30 @@
   "expo": {
     "name": "AnimaForge",
     "slug": "animaforge",
-    "scheme": "animaforge",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0a0a0f"
     },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.animaforge.mobile"
+      "bundleIdentifier": "com.greencompanies.animaforge"
     },
     "android": {
+      "package": "com.greencompanies.animaforge",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
-      },
-      "package": "com.animaforge.mobile"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#7c3aed"
+      }
     },
-    "plugins": ["expo-notifications", "expo-av"]
+    "scheme": "animaforge",
+    "plugins": [
+      ["expo-notifications", { "icon": "./assets/notification-icon.png", "color": "#7c3aed" }],
+      "expo-camera"
+    ]
   }
 }
