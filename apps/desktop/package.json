@@ -1,19 +1,51 @@
 {
-  "name": "@animaforge/desktop",
-  "version": "0.1.0",
-  "main": "src/main.js",
+  "name": "animaforge-desktop",
+  "version": "1.0.0",
+  "description": "AnimaForge Desktop — Electron wrapper",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "dev": "concurrently \"npm run dev:web --prefix ../web\" \"electron .\""
-  },
-  "dependencies": {
-    "electron-updater": "^6.2.0",
-    "electron-store": "^8.2.0"
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "dev": "NODE_ENV=development electron ."
   },
   "devDependencies": {
     "electron": "^30.0.0",
-    "electron-builder": "^24.13.0",
-    "concurrently": "^8.2.0"
+    "electron-builder": "^24.13.3",
+    "electron-updater": "^6.1.8"
+  },
+  "build": {
+    "appId": "com.greencompanies.animaforge",
+    "productName": "AnimaForge",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "icon": "assets/icon.icns",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": ["AppImage", "deb"],
+      "category": "Graphics"
+    },
+    "publish": {
+      "provider": "s3",
+      "bucket": "animaforge-releases",
+      "region": "us-east-1"
+    }
   }
 }
