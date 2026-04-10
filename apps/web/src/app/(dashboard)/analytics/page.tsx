@@ -1821,6 +1821,7 @@ function AnalyticsPageContent() {
               </h3>
               <button
                 type="button"
+                aria-label="Close"
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}
                 onClick={() => setDrawerProject(null)}
               >

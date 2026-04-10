@@ -348,15 +348,17 @@ function DropdownMenu({
   items,
   open,
   onToggle,
+  ariaLabel,
 }: {
   trigger: React.ReactNode;
   items: { label: string; icon?: React.ReactNode; onClick: () => void; danger?: boolean }[];
   open: boolean;
   onToggle: () => void;
+  ariaLabel?: string;
 }) {
   return (
     <div style={{ position: 'relative' }}>
-      <button type="button" onClick={onToggle} style={smallBtnStyle}>
+      <button type="button" onClick={onToggle} style={smallBtnStyle} aria-label={ariaLabel} aria-haspopup="menu" aria-expanded={open}>
         {trigger}
       </button>
       {open && (
@@ -648,6 +650,8 @@ export default function AudioStudioPage() {
     return (
       <button
         type="button"
+        aria-label={isPlaying ? 'Pause' : 'Play'}
+        aria-pressed={isPlaying}
         onClick={(e) => {
           e.stopPropagation();
           togglePlay(id);
@@ -740,6 +744,7 @@ export default function AudioStudioPage() {
             )}
             <DropdownMenu
               trigger={<MoreHorizontal size={13} />}
+              ariaLabel="More options"
               items={moreItems}
               open={openDropdown === `more-${id}`}
               onToggle={() => setOpenDropdown(openDropdown === `more-${id}` ? null : `more-${id}`)}
@@ -890,8 +895,8 @@ export default function AudioStudioPage() {
 
                   {/* Duration */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 80 }}>
-                    <label style={labelStyle}>Duration</label>
-                    <input type="text" value={duration} onChange={(e) => setDuration(e.target.value)} style={inputStyle} placeholder="0:30" />
+                    <label style={labelStyle} htmlFor="audio-duration">Duration</label>
+                    <input id="audio-duration" type="text" value={duration} onChange={(e) => setDuration(e.target.value)} style={inputStyle} placeholder="0:30" />
                   </div>
 
                   {/* BPM */}
@@ -917,12 +922,12 @@ export default function AudioStudioPage() {
                     </div>
                     {bpmRangeOn ? (
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        <input type="text" value={bpmMin} onChange={(e) => setBpmMin(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Min" />
+                        <input aria-label="Minimum BPM" type="text" value={bpmMin} onChange={(e) => setBpmMin(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Min" />
                         <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>-</span>
-                        <input type="text" value={bpmMax} onChange={(e) => setBpmMax(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Max" />
+                        <input aria-label="Maximum BPM" type="text" value={bpmMax} onChange={(e) => setBpmMax(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Max" />
                       </div>
                     ) : (
-                      <input type="text" value={bpm} onChange={(e) => setBpm(e.target.value)} style={inputStyle} placeholder="120" />
+                      <input aria-label="BPM" type="text" value={bpm} onChange={(e) => setBpm(e.target.value)} style={inputStyle} placeholder="120" />
                     )}
                   </div>
 
@@ -1376,6 +1381,7 @@ export default function AudioStudioPage() {
                   }}
                   rows={4}
                   placeholder="Enter the dialogue or narration text..."
+                  aria-label="Voice dialogue text"
                   style={{
                     ...inputStyle,
                     resize: 'vertical',
@@ -1408,6 +1414,10 @@ export default function AudioStudioPage() {
                     step={0.1}
                     value={voiceSpeed}
                     onChange={(e) => setVoiceSpeed(parseFloat(e.target.value))}
+                    aria-label="Voice speed"
+                    aria-valuenow={voiceSpeed}
+                    aria-valuemin={0.7}
+                    aria-valuemax={1.5}
                     style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1429,6 +1439,10 @@ export default function AudioStudioPage() {
                     step={1}
                     value={voicePitch}
                     onChange={(e) => setVoicePitch(parseInt(e.target.value))}
+                    aria-label="Voice pitch (semitones)"
+                    aria-valuenow={voicePitch}
+                    aria-valuemin={-5}
+                    aria-valuemax={5}
                     style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1601,8 +1615,9 @@ export default function AudioStudioPage() {
               <h2 style={sectionTitleStyle}>Generate SFX</h2>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={labelStyle}>Description</label>
+                <label style={labelStyle} htmlFor="sfx-description">Description</label>
                 <input
+                  id="sfx-description"
                   type="text"
                   value={sfxDescription}
                   onChange={(e) => setSfxDescription(e.target.value)}
@@ -1640,8 +1655,9 @@ export default function AudioStudioPage() {
 
                 {sfxDuration === 'Custom' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 80 }}>
-                    <label style={labelStyle}>Seconds</label>
+                    <label style={labelStyle} htmlFor="sfx-custom-duration">Seconds</label>
                     <input
+                      id="sfx-custom-duration"
                       type="text"
                       value={sfxCustomDuration}
                       onChange={(e) => setSfxCustomDuration(e.target.value)}
@@ -1682,7 +1698,8 @@ export default function AudioStudioPage() {
                   }}
                 />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search sound effects"
                   value={sfxSearch}
                   onChange={(e) => setSfxSearch(e.target.value)}
                   placeholder="Search sound effects..."
@@ -1900,6 +1917,7 @@ export default function AudioStudioPage() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Close"
                   onClick={() => setSfxAddModal(null)}
                   style={{
                     background: 'transparent',
@@ -2021,6 +2039,7 @@ export default function AudioStudioPage() {
                 <h3 style={{ ...sectionTitleStyle, fontSize: 15 }}>Upload Voice Sample</h3>
                 <button
                   type="button"
+                  aria-label="Close"
                   onClick={() => setVoiceUploadModalOpen(false)}
                   style={{
                     background: 'transparent',
@@ -2061,12 +2080,12 @@ export default function AudioStudioPage() {
                 <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                   WAV, MP3 up to 10MB
                 </span>
-                <input type="file" accept="audio/*" style={{ display: 'none' }} />
+                <input type="file" accept="audio/*" aria-label="Upload voice sample" style={{ display: 'none' }} />
               </label>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={labelStyle}>Voice name</label>
-                <input type="text" placeholder="e.g. Narrator" style={inputStyle} />
+                <label style={labelStyle} htmlFor="voice-name">Voice name</label>
+                <input id="voice-name" type="text" placeholder="e.g. Narrator" style={inputStyle} />
               </div>
 
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

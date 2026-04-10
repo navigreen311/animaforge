@@ -5,14 +5,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   FolderKanban,
   Film,
+  Calendar,
   Users,
   FileText,
   Palette,
   User,
   Music,
+  Radio,
   Image,
   Brush,
   BarChart3,
+  Shield,
   Store,
   UserPlus,
   Settings,
@@ -188,6 +191,14 @@ export default function Sidebar() {
             badge="new"
           />
           <NavItem
+            href="/calendar"
+            icon={Calendar}
+            label="Calendar"
+            active={pathname.startsWith("/calendar")}
+            collapsed={collapsed}
+            badge="new"
+          />
+          <NavItem
             href="/characters"
             icon={Users}
             label="Characters"
@@ -227,6 +238,14 @@ export default function Sidebar() {
             collapsed={collapsed}
             badge="new"
           />
+          <NavItem
+            href="/live"
+            icon={Radio}
+            label="Live"
+            active={pathname.startsWith("/live")}
+            collapsed={collapsed}
+            badge="new"
+          />
         </NavSection>
 
         {/* MANAGE */}
@@ -252,6 +271,14 @@ export default function Sidebar() {
             icon={BarChart3}
             label="Analytics"
             active={pathname.startsWith("/analytics")}
+            collapsed={collapsed}
+            badge="new"
+          />
+          <NavItem
+            href="/piracy"
+            icon={Shield}
+            label="Content Protection"
+            active={pathname.startsWith("/piracy")}
             collapsed={collapsed}
             badge="new"
           />

@@ -512,12 +512,14 @@ export default function StyleStudioPage() {
                       <input
                         type="text"
                         placeholder="https://example.com/video.mp4"
+                        aria-label="Video URL"
                         value={cloneUrl}
                         onChange={(e) => setCloneUrl(e.target.value)}
                         style={{ ...inputStyle, flex: 1 }}
                       />
                       <button
                         type="button"
+                        aria-label="Fetch video from URL"
                         onClick={() => {
                           if (!cloneUrl.trim()) { toast.error('Enter a URL'); return; }
                           toast.info('Fetching video from URL...');
@@ -538,6 +540,7 @@ export default function StyleStudioPage() {
                     <p style={labelStyle}>Describe style to clone</p>
                     <textarea
                       placeholder='e.g. "Warm Wes Anderson palette with symmetrical framing, pastel tones, 35mm film grain..."'
+                      aria-label="Describe style to clone"
                       value={discoveryQuery}
                       onChange={(e) => setDiscoveryQuery(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDiscoverySearch(); } }}
@@ -710,6 +713,7 @@ export default function StyleStudioPage() {
                     <p style={labelStyle}>Style Name</p>
                     <input
                       type="text"
+                      aria-label="Style name"
                       value={styleName}
                       onChange={(e) => setStyleName(e.target.value)}
                       placeholder="Name this style..."
@@ -1185,6 +1189,7 @@ export default function StyleStudioPage() {
                 <input
                   type="text"
                   placeholder="Search styles..."
+                  aria-label="Search styles"
                   value={librarySearch}
                   onChange={(e) => setLibrarySearch(e.target.value)}
                   style={{ ...inputStyle, paddingLeft: 28 }}
@@ -1235,6 +1240,7 @@ export default function StyleStudioPage() {
               {/* My Styles Toggle */}
               <button
                 type="button"
+                aria-pressed={showMyStyles}
                 onClick={() => setShowMyStyles(!showMyStyles)}
                 style={{
                   ...(showMyStyles
@@ -1777,6 +1783,7 @@ export default function StyleStudioPage() {
                 </p>
                 <button
                   type="button"
+                  aria-label="Close"
                   onClick={() => setApplyModalOpen(false)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}
                 >
@@ -1980,6 +1987,7 @@ export default function StyleStudioPage() {
                   </p>
                   <button
                     type="button"
+                    aria-label="Close"
                     onClick={() => setDetailPanelStyleId(null)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}
                   >

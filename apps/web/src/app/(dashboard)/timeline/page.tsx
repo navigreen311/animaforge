@@ -433,14 +433,14 @@ export default function TimelinePage() {
         }}>
           {/* Transport */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button type="button" onClick={() => {}} style={{
+            <button type="button" aria-label="Skip back" onClick={() => {}} style={{
               background: 'transparent', border: 'none', color: 'var(--text-secondary)',
               cursor: 'pointer', padding: 6, borderRadius: 'var(--radius-lg)',
               display: 'flex', alignItems: 'center',
             }}>
               <SkipBack size={15} />
             </button>
-            <button type="button" onClick={() => setPlaying(!playing)} style={{
+            <button type="button" aria-label={playing ? 'Pause' : 'Play'} aria-pressed={playing} onClick={() => setPlaying(!playing)} style={{
               background: 'var(--brand)', border: 'none', color: '#ffffff',
               cursor: 'pointer', padding: 8, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -448,7 +448,7 @@ export default function TimelinePage() {
             }}>
               {playing ? <Pause size={14} /> : <Play size={14} style={{ marginLeft: 1 }} />}
             </button>
-            <button type="button" onClick={() => {}} style={{
+            <button type="button" aria-label="Skip forward" onClick={() => {}} style={{
               background: 'transparent', border: 'none', color: 'var(--text-secondary)',
               cursor: 'pointer', padding: 6, borderRadius: 'var(--radius-lg)',
               display: 'flex', alignItems: 'center',
