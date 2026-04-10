@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   Upload,
   Image,
   Film,
   Music,
   Box,
+  Play,
+  Pause,
+  File as FileIcon,
   Search,
   LayoutGrid,
   List,
@@ -19,7 +22,9 @@ import {
   Star,
   Clock,
   AlertCircle,
+  AlertTriangle,
   Archive,
+  RefreshCw,
   Check,
   Trash2,
   FolderInput,
@@ -32,6 +37,9 @@ import {
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import EmptyState from '@/components/ui/EmptyState';
+import WaveformVisualizer from '@/components/ui/WaveformVisualizer';
+import UploadModal from '@/components/assets/UploadModal';
+import { audioPlayer } from '@/lib/audioPlayer';
 
 // ── Types ────────────────────────────────────────────────────────
 type AssetType = 'image' | 'video' | 'audio' | '3d' | 'style-pack' | 'preset';
@@ -67,6 +75,12 @@ interface Asset {
   source?: string;
   commercialUse?: boolean;
   usageRefs?: string[];
+  thumbnailUrl?: string;
+  url?: string;
+  duration?: string;
+  polyCount?: string;
+  waveformBars?: number[];
+  gradient?: string;
 }
 
 // ── Constants ────────────────────────────────────────────────────
@@ -165,6 +179,8 @@ const ASSETS: Asset[] = [
     license: 'AI Output License',
     commercialUse: true,
     usageRefs: ['Project Alpha / Shot 3', 'Project Alpha / Shot 7', 'Project Beta / Shot 1', 'Project Beta / Shot 12', 'Project Gamma / Shot 2'],
+    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #7c3aed 100%)',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%233b82f6"/><stop offset="1" stop-color="%237c3aed"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g)"/><circle cx="60" cy="36" r="18" fill="%23fbbf24" opacity="0.9"/></svg>',
   },
   {
     id: 'asset-2',
@@ -185,6 +201,9 @@ const ASSETS: Asset[] = [
     license: 'Royalty-Free Commercial',
     commercialUse: true,
     usageRefs: ['Project Alpha / Shot 5', 'Project Alpha / Shot 9'],
+    duration: '0:03',
+    gradient: 'linear-gradient(135deg, #22c55e 0%, #0f766e 100%)',
+    waveformBars: [0.2, 0.9, 0.5, 1, 0.7, 0.3, 0.8, 0.4, 0.6, 0.9, 0.2, 0.7, 0.5, 0.3, 0.8, 0.6, 0.4, 0.9, 0.3, 0.5],
   },
   {
     id: 'asset-3',
@@ -205,6 +224,8 @@ const ASSETS: Asset[] = [
     license: 'Owned',
     commercialUse: true,
     usageRefs: ['Project Alpha / Shot 1', 'Project Alpha / Shot 2', 'Project Alpha / Shot 4'],
+    polyCount: '45K',
+    gradient: 'linear-gradient(135deg, #a855f7 0%, #6b21a8 100%)',
   },
   {
     id: 'asset-4',
@@ -225,6 +246,9 @@ const ASSETS: Asset[] = [
     license: 'AI Output License',
     commercialUse: true,
     usageRefs: ['Project Beta / Shot 4', 'Project Gamma / Shot 6'],
+    duration: '0:12',
+    gradient: 'linear-gradient(135deg, #f97316 0%, #9a3412 50%, #1e293b 100%)',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g2" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%23f97316"/><stop offset="1" stop-color="%231e293b"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g2)"/></svg>',
   },
   {
     id: 'asset-5',
@@ -245,6 +269,8 @@ const ASSETS: Asset[] = [
     license: 'Owned',
     commercialUse: true,
     usageRefs: [],
+    gradient: 'linear-gradient(135deg, #60a5fa 0%, #c084fc 50%, #f472b6 100%)',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g3" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%2360a5fa"/><stop offset="0.5" stop-color="%23c084fc"/><stop offset="1" stop-color="%23f472b6"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g3)"/></svg>',
   },
   {
     id: 'asset-6',
@@ -265,6 +291,9 @@ const ASSETS: Asset[] = [
     license: 'Royalty-Free Commercial',
     commercialUse: true,
     usageRefs: ['Project Alpha / Shot 2', 'Project Beta / Shot 8'],
+    duration: '0:08',
+    gradient: 'linear-gradient(135deg, #16a34a 0%, #065f46 100%)',
+    waveformBars: [0.4, 0.3, 0.6, 0.8, 0.5, 0.7, 0.3, 0.9, 0.4, 0.6, 0.5, 0.7, 0.8, 0.4, 0.3, 0.6, 0.5, 0.7, 0.4, 0.3],
   },
   {
     id: 'asset-7',
@@ -285,6 +314,8 @@ const ASSETS: Asset[] = [
     license: 'Expired Dec 2025',
     commercialUse: false,
     usageRefs: ['Project Alpha / Shot 10'],
+    polyCount: '62K',
+    gradient: 'linear-gradient(135deg, #c084fc 0%, #4c1d95 100%)',
   },
   {
     id: 'asset-8',
@@ -305,7 +336,42 @@ const ASSETS: Asset[] = [
     license: 'AI Output License',
     commercialUse: true,
     usageRefs: ['Project Alpha / Shot 1', 'Project Beta / Shot 1', 'Project Beta / Shot 14', 'Project Gamma / Shot 1'],
+    duration: '0:04',
+    gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #dc2626 100%)',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g4" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%23fbbf24"/><stop offset="1" stop-color="%23dc2626"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g4)"/></svg>',
   },
+  {
+    id: 'asset-9',
+    filename: 'stock_crowd_cheer.wav',
+    type: 'audio',
+    sizeBytes: 3145728,
+    size: '3.0 MB',
+    dimensions: '0:15 stereo',
+    rights: 'expired',
+    tags: ['sfx', 'crowd', 'ambient'],
+    usedInShots: 2,
+    uploadDate: '2025-08-04',
+    lastUsed: '2025-10-12',
+    category: 'Audio Presets',
+    favourite: false,
+    color: TYPE_COLORS.audio,
+    source: 'StockAudio Inc',
+    license: 'Expired Jan 2026',
+    commercialUse: false,
+    usageRefs: ['Project Beta / Shot 3', 'Project Gamma / Shot 5'],
+    duration: '0:15',
+    gradient: 'linear-gradient(135deg, #16a34a 0%, #1e293b 100%)',
+    waveformBars: [0.3, 0.5, 0.8, 0.6, 0.9, 0.4, 0.7, 0.5, 0.3, 0.8, 0.6, 0.4, 0.9, 0.5, 0.7, 0.3, 0.8, 0.6, 0.4, 0.5],
+  },
+];
+
+// ── Tag autocomplete suggestions ─────────────────────────────────
+const ALL_TAG_SUGGESTIONS = [
+  'character', 'hero', 'villain', 'pose', 'action', 'background', 'loop',
+  'ambient', 'texture', 'watercolor', 'style', 'sfx', 'explosion', 'footsteps',
+  'foley', 'motion', 'intro', 'outro', 'title', '3d', 'rigged', 'rig',
+  'environment', 'lighting', 'shadow', 'color', 'grade', 'cinematic',
+  'vfx', 'particle', 'dust', 'smoke', 'fire', 'water', 'wind',
 ];
 
 // ── Storage breakdown (mock) ─────────────────────────────────────
@@ -348,25 +414,37 @@ function AssetIcon({ type, size }: { type: AssetType; size: number }) {
   }
 }
 
-// ── Waveform bars (audio thumbnail) ──────────────────────────────
-function WaveformBars() {
-  const bars = [0.3, 0.6, 1, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.3];
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 28 }}>
-      {bars.map((h, i) => (
-        <div
-          key={i}
-          style={{
-            width: 3,
-            height: h * 28,
-            borderRadius: 1,
-            background: 'rgba(255,255,255,0.5)',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+// ── Mock projects & shots for "Use in Shot" modal ───────────────
+interface MockProject { id: string; name: string; }
+interface MockShot { id: string; label: string; }
+const MOCK_PROJECTS: MockProject[] = [
+  { id: 'proj-alpha', name: 'Project Alpha' },
+  { id: 'proj-beta', name: 'Project Beta' },
+  { id: 'proj-gamma', name: 'Project Gamma' },
+];
+const MOCK_SHOTS_BY_PROJECT: Record<string, MockShot[]> = {
+  'proj-alpha': [
+    { id: 'a-shot-1', label: 'Shot 1 — Opening pan' },
+    { id: 'a-shot-2', label: 'Shot 2 — Character reveal' },
+    { id: 'a-shot-3', label: 'Shot 3 — Dialogue close-up' },
+    { id: 'a-shot-4', label: 'Shot 4 — Chase wide' },
+    { id: 'a-shot-5', label: 'Shot 5 — Finale' },
+  ],
+  'proj-beta': [
+    { id: 'b-shot-1', label: 'Shot 1 — Establishing' },
+    { id: 'b-shot-2', label: 'Shot 2 — Interior' },
+    { id: 'b-shot-3', label: 'Shot 3 — Action beat' },
+    { id: 'b-shot-4', label: 'Shot 4 — Transition' },
+    { id: 'b-shot-5', label: 'Shot 5 — Closing' },
+  ],
+  'proj-gamma': [
+    { id: 'g-shot-1', label: 'Shot 1 — Title' },
+    { id: 'g-shot-2', label: 'Shot 2 — Montage' },
+    { id: 'g-shot-3', label: 'Shot 3 — Solo focus' },
+    { id: 'g-shot-4', label: 'Shot 4 — Crowd wide' },
+    { id: 'g-shot-5', label: 'Shot 5 — Epilogue' },
+  ],
+};
 
 // ── Category icon helper ─────────────────────────────────────────
 function CategoryIcon({ icon }: { icon?: string }) {
@@ -374,6 +452,92 @@ function CategoryIcon({ icon }: { icon?: string }) {
   if (icon === 'clock') return <Clock size={12} style={{ color: 'var(--text-tertiary)' }} />;
   if (icon === 'alert') return <AlertCircle size={12} style={{ color: 'var(--text-tertiary)' }} />;
   return null;
+}
+
+// ── Asset Thumbnail (type-aware) ────────────────────────────────
+function AssetThumbnail({ asset, height = 72 }: { asset: Asset; height?: number }) {
+  const bg = asset.gradient ?? asset.color;
+  if (asset.type === 'image') {
+    return (
+      <div style={{ width: '100%', height, background: bg, position: 'relative', overflow: 'hidden' }}>
+        {asset.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={asset.thumbnailUrl} alt={asset.filename} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+            <Image size={28} style={{ color: 'rgba(255,255,255,0.7)' }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (asset.type === 'video') {
+    return (
+      <div style={{ width: '100%', height, background: bg, position: 'relative', overflow: 'hidden' }}>
+        {asset.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={asset.thumbnailUrl} alt={asset.filename} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+            <Film size={28} style={{ color: 'rgba(255,255,255,0.7)' }} />
+          </div>
+        )}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(255,255,255,0.25)' }}>
+            <Play size={14} style={{ color: '#fff', marginLeft: 2 }} fill="#fff" />
+          </div>
+        </div>
+        {asset.duration && (
+          <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 'var(--radius-sm)', fontVariantNumeric: 'tabular-nums' }}>
+            {asset.duration}
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (asset.type === 'audio') {
+    const bars = asset.waveformBars ?? [0.3, 0.6, 1, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.3, 0.5, 0.8];
+    return (
+      <div style={{ width: '100%', height, background: bg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px' }}>
+        <div style={{ width: '100%' }}>
+          <WaveformVisualizer trackId={asset.id} bars={bars} playing={false} height={40} barColor="rgba(255,255,255,0.9)" idleColor="rgba(255,255,255,0.6)" />
+        </div>
+        {asset.duration && (
+          <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 'var(--radius-sm)', fontVariantNumeric: 'tabular-nums' }}>
+            {asset.duration}
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (asset.type === '3d') {
+    return (
+      <div style={{ width: '100%', height, background: bg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {asset.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={asset.thumbnailUrl} alt={asset.filename} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <Box size={32} style={{ color: 'rgba(255,255,255,0.85)' }} />
+        )}
+        {asset.polyCount && (
+          <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+            {asset.polyCount} polys
+          </div>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div style={{ width: '100%', height, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {asset.type === 'style-pack' ? (
+        <Palette size={28} style={{ color: 'rgba(255,255,255,0.85)' }} />
+      ) : asset.type === 'preset' ? (
+        <Sliders size={28} style={{ color: 'rgba(255,255,255,0.85)' }} />
+      ) : (
+        <FileIcon size={28} style={{ color: 'rgba(255,255,255,0.7)' }} />
+      )}
+    </div>
+  );
 }
 
 // ── Main Component ───────────────────────────────────────────────
@@ -388,11 +552,23 @@ export default function AssetsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailAssetId, setDetailAssetId] = useState<string | null>(null);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
   const [editingTags, setEditingTags] = useState(false);
   const [newTagValue, setNewTagValue] = useState('');
+  const [assetTagsOverride, setAssetTagsOverride] = useState<Record<string, string[]>>({});
+  const tagInputRef = useRef<HTMLInputElement | null>(null);
+
+  // AL-3: Use in Shot modal state
+  const [showUseShotModal, setShowUseShotModal] = useState(false);
+  const [useShotProjectId, setUseShotProjectId] = useState<string | null>(null);
+  const [useShotShotId, setUseShotShotId] = useState<string | null>(null);
+
+  // AL-4: Audio preview play/pause state (for detail panel)
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const editNameInputRef = useRef<HTMLInputElement | null>(null);
 
   // Rights filter checkboxes
   const [rightsFilters, setRightsFilters] = useState<Set<RightsType>>(new Set());
@@ -471,6 +647,100 @@ export default function AssetsPage() {
     setEditNameValue(asset.filename);
   }, []);
 
+  // AL-3: Open Use in Shot modal
+  const openUseShotModal = useCallback(() => {
+    setUseShotProjectId(null);
+    setUseShotShotId(null);
+    setShowUseShotModal(true);
+  }, []);
+
+  // AL-3: Mock link asset to shot
+  const handleLinkToShot = useCallback(async () => {
+    if (!detailAsset || !useShotProjectId || !useShotShotId) return;
+    const project = MOCK_PROJECTS.find((p) => p.id === useShotProjectId);
+    // Mock API call
+    await new Promise((r) => setTimeout(r, 300));
+    toast.success(`Asset linked to shot in ${project?.name ?? 'project'}`);
+    setShowUseShotModal(false);
+    setUseShotProjectId(null);
+    setUseShotShotId(null);
+  }, [detailAsset, useShotProjectId, useShotShotId]);
+
+  // AL-5: Commit rename
+  const commitRename = useCallback(async () => {
+    if (!detailAsset) return;
+    const next = editNameValue.trim();
+    if (!next || next === detailAsset.filename) {
+      setEditingName(false);
+      setEditNameValue(detailAsset.filename);
+      return;
+    }
+    // Mock API call
+    await new Promise((r) => setTimeout(r, 200));
+    // Mutate in-memory mock so the UI reflects the change immediately.
+    const idx = ASSETS.findIndex((a) => a.id === detailAsset.id);
+    if (idx >= 0) ASSETS[idx] = { ...ASSETS[idx], filename: next };
+    toast.success(`Renamed to ${next}`);
+    setEditingName(false);
+  }, [detailAsset, editNameValue]);
+
+  const cancelRename = useCallback(() => {
+    if (detailAsset) setEditNameValue(detailAsset.filename);
+    setEditingName(false);
+  }, [detailAsset]);
+
+  // AL-5: Download handler
+  const handleDownload = useCallback(async (asset: Asset) => {
+    // Mock API call returns a downloadUrl
+    await new Promise((r) => setTimeout(r, 150));
+    const downloadUrl = asset.url ?? asset.thumbnailUrl ?? `https://assets.animaforge.mock/${asset.id}/${encodeURIComponent(asset.filename)}`;
+    try {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = asset.filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      // ignore — mock environment
+    }
+    toast.success(`Downloading ${asset.filename}`);
+  }, []);
+
+  // AL-4: Toggle audio preview playback in detail panel
+  const toggleAudioPreview = useCallback(async (asset: Asset) => {
+    const url = asset.url ?? `/mock-audio/${asset.id}.wav`;
+    if (playingAudioId === asset.id) {
+      audioPlayer.stop();
+      setPlayingAudioId(null);
+      return;
+    }
+    try {
+      await audioPlayer.play(asset.id, url, undefined, () => setPlayingAudioId(null));
+      setPlayingAudioId(asset.id);
+    } catch {
+      // Web Audio likely cannot fetch the mock url — still reflect play state briefly
+      toast.info('Audio preview unavailable in demo');
+    }
+  }, [playingAudioId]);
+
+  // Focus the rename input when entering edit mode
+  useEffect(() => {
+    if (editingName && editNameInputRef.current) {
+      editNameInputRef.current.focus();
+      editNameInputRef.current.select();
+    }
+  }, [editingName]);
+
+  // Stop any audio preview when the detail panel closes
+  useEffect(() => {
+    if (!detailAssetId && playingAudioId) {
+      audioPlayer.stop();
+      setPlayingAudioId(null);
+    }
+  }, [detailAssetId, playingAudioId]);
+
   // ── Render ─────────────────────────────────────────────────────
   return (
     <ErrorBoundary>
@@ -494,7 +764,7 @@ export default function AssetsPage() {
               </h1>
               <button
                 type="button"
-                onClick={() => toast.success('Upload dialog opened')}
+                onClick={() => setShowUploadModal(true)}
                 style={{
                   background: 'var(--brand)',
                   color: '#ffffff',
@@ -969,23 +1239,33 @@ export default function AssetsPage() {
                 }}
               >
                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {selectedIds.size} selected
+                  {selectedIds.size} asset{selectedIds.size !== 1 ? 's' : ''} selected
                 </span>
-                <button type="button" onClick={selectAll} style={bulkBtnStyle}>Select all</button>
+                <button type="button" onClick={selectAll} style={bulkBtnStyle}>
+                  Select all ({filtered.length})
+                </button>
                 <button type="button" onClick={clearSelection} style={bulkBtnStyle}>Clear</button>
                 <div style={{ width: 1, height: 16, background: 'var(--border)' }} />
-                <button type="button" onClick={() => toast.success('Downloading ZIP...')} style={bulkBtnStyle}>
-                  <Download size={11} /> Download ZIP
+                <button
+                  type="button"
+                  onClick={() => toast.success(`Preparing ZIP of ${selectedIds.size} asset${selectedIds.size !== 1 ? 's' : ''}...`)}
+                  style={bulkBtnStyle}
+                >
+                  <Download size={11} /> Download (ZIP)
                 </button>
-                <button type="button" onClick={() => toast.success('Added to project')} style={bulkBtnStyle}>
-                  <Plus size={11} /> Add to Project
-                </button>
-                <button type="button" onClick={() => toast.info('Move dialog opened')} style={bulkBtnStyle}>
+                <button
+                  type="button"
+                  onClick={() => toast.info(`Move ${selectedIds.size} asset${selectedIds.size !== 1 ? 's' : ''} to...`)}
+                  style={bulkBtnStyle}
+                >
                   <FolderInput size={11} /> Move to...
                 </button>
                 <button
                   type="button"
-                  onClick={() => { toast.error('Delete not available in demo'); }}
+                  onClick={() => {
+                    toast.success(`Deleted ${selectedIds.size} asset${selectedIds.size !== 1 ? 's' : ''}`);
+                    clearSelection();
+                  }}
                   style={{ ...bulkBtnStyle, color: '#f87171' }}
                 >
                   <Trash2 size={11} /> Delete
@@ -1006,6 +1286,7 @@ export default function AssetsPage() {
                   const isHovered = hoveredCard === asset.id;
                   const isSelected = selectedIds.has(asset.id);
                   const showCheckbox = isHovered || hasSelection;
+                  const isExpired = asset.rights === 'expired';
 
                   return (
                     <div
@@ -1015,18 +1296,46 @@ export default function AssetsPage() {
                       onClick={() => openDetail(asset)}
                       style={{
                         background: 'var(--bg-elevated)',
-                        border: isHovered
-                          ? '0.5px solid var(--border-brand)'
-                          : isSelected
-                            ? '0.5px solid var(--brand-border)'
-                            : '0.5px solid var(--border)',
+                        border: isExpired
+                          ? '1px solid #f97316'
+                          : isHovered
+                            ? '0.5px solid var(--border-brand)'
+                            : isSelected
+                              ? '0.5px solid var(--brand-border)'
+                              : '0.5px solid var(--border)',
                         borderRadius: 'var(--radius-lg)',
                         overflow: 'hidden',
                         cursor: 'pointer',
                         transition: 'border-color 150ms ease',
                         position: 'relative',
+                        boxShadow: isExpired ? '0 0 0 1px rgba(249,115,22,0.25)' : undefined,
                       }}
                     >
+                      {/* Expired rights badge */}
+                      {isExpired && (
+                        <div
+                          title="Rights expired — commercial use not permitted"
+                          style={{
+                            position: 'absolute',
+                            top: 6,
+                            right: 6,
+                            zIndex: 6,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            background: 'rgba(249,115,22,0.92)',
+                            color: '#fff',
+                            padding: '3px 7px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 9,
+                            fontWeight: 600,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                          }}
+                        >
+                          <AlertTriangle size={10} />
+                          Rights expired
+                        </div>
+                      )}
                       {/* Checkbox */}
                       {showCheckbox && (
                         <div
@@ -1052,21 +1361,8 @@ export default function AssetsPage() {
                       )}
 
                       {/* Thumbnail area */}
-                      <div
-                        style={{
-                          height: 72,
-                          background: asset.color,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative',
-                        }}
-                      >
-                        {asset.type === 'audio' ? (
-                          <WaveformBars />
-                        ) : (
-                          <AssetIcon type={asset.type} size={28} />
-                        )}
+                      <div style={{ position: 'relative' }}>
+                        <AssetThumbnail asset={asset} height={72} />
 
                         {/* Quick action buttons on hover */}
                         {isHovered && (
@@ -1440,18 +1736,186 @@ export default function AssetsPage() {
               </button>
             </div>
 
-            {/* Large preview */}
+            {/* Expired rights banner */}
+            {detailAsset.rights === 'expired' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 16px',
+                  background: 'rgba(249,115,22,0.12)',
+                  borderBottom: '0.5px solid rgba(249,115,22,0.35)',
+                  color: '#fb923c',
+                  fontSize: 11,
+                  fontWeight: 500,
+                }}
+              >
+                <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                <span>Rights expired — commercial use not permitted</span>
+              </div>
+            )}
+
+            {/* AL-4: Large preview (type-specific) */}
             <div
               style={{
                 height: 180,
-                background: detailAsset.color,
+                background: detailAsset.gradient ?? detailAsset.color,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              {detailAsset.type === 'audio' ? (
-                <WaveformBars />
+              {detailAsset.type === 'image' ? (
+                detailAsset.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={detailAsset.thumbnailUrl}
+                    alt={detailAsset.filename}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <AssetIcon type="image" size={48} />
+                )
+              ) : detailAsset.type === 'video' ? (
+                detailAsset.url ? (
+                  <video
+                    src={detailAsset.url}
+                    poster={detailAsset.thumbnailUrl}
+                    controls
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                    }}
+                  >
+                    {detailAsset.thumbnailUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={detailAsset.thumbnailUrl}
+                        alt={detailAsset.filename}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.55)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Play size={20} style={{ color: '#fff', marginLeft: 2 }} />
+                    </div>
+                  </div>
+                )
+              ) : detailAsset.type === 'audio' ? (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    padding: '0 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <WaveformVisualizer
+                    trackId={detailAsset.id}
+                    bars={detailAsset.waveformBars ?? [0.3, 0.6, 1, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.3, 0.8, 0.5, 0.7, 0.4, 0.9, 0.6, 0.3, 0.8, 0.5, 0.7]}
+                    playing={playingAudioId === detailAsset.id}
+                    height={80}
+                    barColor="#fff"
+                    idleColor="rgba(255,255,255,0.85)"
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleAudioPreview(detailAsset); }}
+                      aria-label={playingAudioId === detailAsset.id ? 'Pause preview' : 'Play preview'}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.55)',
+                        border: '0.5px solid rgba(255,255,255,0.25)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      {playingAudioId === detailAsset.id ? (
+                        <Pause size={14} />
+                      ) : (
+                        <Play size={14} style={{ marginLeft: 2 }} />
+                      )}
+                    </button>
+                    <span style={{ fontSize: 11, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      {detailAsset.duration ?? detailAsset.dimensions}
+                    </span>
+                  </div>
+                </div>
+              ) : detailAsset.type === '3d' ? (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    position: 'relative',
+                  }}
+                >
+                  {detailAsset.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={detailAsset.thumbnailUrl}
+                      alt={detailAsset.filename}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }}
+                    />
+                  ) : (
+                    <Box size={48} style={{ color: 'rgba(255,255,255,0.85)', position: 'relative' }} />
+                  )}
+                  <span
+                    style={{
+                      position: 'relative',
+                      fontSize: 10,
+                      color: 'rgba(255,255,255,0.95)',
+                      background: 'rgba(0,0,0,0.5)',
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    3D preview coming soon
+                  </span>
+                </div>
               ) : (
                 <AssetIcon type={detailAsset.type} size={48} />
               )}
@@ -1459,15 +1923,26 @@ export default function AssetsPage() {
 
             {/* Metadata */}
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Editable name */}
+              {/* AL-5: Editable name (click name / Rename button, blur saves, Enter saves, Escape cancels) */}
               <div>
                 <label style={detailLabelStyle}>Name</label>
                 {editingName ? (
                   <div style={{ display: 'flex', gap: 4 }}>
                     <input
+                      ref={editNameInputRef}
                       type="text"
                       value={editNameValue}
                       onChange={(e) => setEditNameValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          commitRename();
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          cancelRename();
+                        }
+                      }}
                       style={{
                         flex: 1,
                         background: 'var(--bg-elevated)',
@@ -1481,14 +1956,18 @@ export default function AssetsPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => { toast.success('Name updated'); setEditingName(false); }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={commitRename}
+                      title="Save (Enter)"
                       style={{ ...detailActionBtnStyle, background: 'var(--brand)', color: '#fff' }}
                     >
                       <Check size={12} />
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setEditNameValue(detailAsset.filename); setEditingName(false); }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={cancelRename}
+                      title="Cancel (Esc)"
                       style={detailActionBtnStyle}
                     >
                       <X size={12} />
@@ -1496,12 +1975,21 @@ export default function AssetsPage() {
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                    <span
+                      onClick={() => { setEditNameValue(detailAsset.filename); setEditingName(true); }}
+                      title="Click to rename"
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-primary)',
+                        wordBreak: 'break-all',
+                        cursor: 'pointer',
+                      }}
+                    >
                       {detailAsset.filename}
                     </span>
                     <button
                       type="button"
-                      onClick={() => setEditingName(true)}
+                      onClick={() => { setEditNameValue(detailAsset.filename); setEditingName(true); }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                     >
                       <Pencil size={11} style={{ color: 'var(--text-tertiary)' }} />
@@ -1538,83 +2026,178 @@ export default function AssetsPage() {
                 </div>
               </div>
 
-              {/* Tags */}
-              <div>
-                <label style={detailLabelStyle}>Tags</label>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                  {detailAsset.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--text-secondary)',
-                        background: 'var(--bg-hover)',
-                        padding: '3px 8px',
-                        borderRadius: 'var(--radius-pill)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => toast.info(`Remove tag: ${tag}`)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-                      >
-                        <X size={8} style={{ color: 'var(--text-tertiary)' }} />
-                      </button>
-                    </span>
-                  ))}
-                  {editingTags ? (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <input
-                        type="text"
-                        value={newTagValue}
-                        onChange={(e) => setNewTagValue(e.target.value)}
-                        placeholder="New tag..."
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newTagValue.trim()) {
-                            toast.success(`Tag added: ${newTagValue.trim()}`);
-                            setNewTagValue('');
-                            setEditingTags(false);
-                          }
-                        }}
-                        style={{
-                          width: 80,
-                          background: 'var(--bg-elevated)',
-                          border: '0.5px solid var(--border)',
-                          borderRadius: 'var(--radius-pill)',
-                          padding: '3px 8px',
-                          fontSize: 10,
-                          color: 'var(--text-primary)',
-                          outline: 'none',
-                        }}
-                        autoFocus
-                      />
+              {/* Tags (AL-8: inline input with autocomplete) */}
+              {(() => {
+                const effectiveTags = assetTagsOverride[detailAsset.id] ?? detailAsset.tags;
+                const trimmed = newTagValue.trim().toLowerCase();
+                const suggestions = trimmed
+                  ? ALL_TAG_SUGGESTIONS.filter(
+                      (t) => t.toLowerCase().includes(trimmed) && !effectiveTags.includes(t),
+                    ).slice(0, 6)
+                  : [];
+                const addTag = (tag: string) => {
+                  const clean = tag.trim();
+                  if (!clean) return;
+                  if (effectiveTags.includes(clean)) {
+                    toast.info(`Tag "${clean}" already exists`);
+                  } else {
+                    setAssetTagsOverride((prev) => ({
+                      ...prev,
+                      [detailAsset.id]: [...effectiveTags, clean],
+                    }));
+                    toast.success(`Tag added: ${clean}`);
+                  }
+                  setNewTagValue('');
+                  setTimeout(() => tagInputRef.current?.focus(), 0);
+                };
+                const removeTag = (tag: string) => {
+                  setAssetTagsOverride((prev) => ({
+                    ...prev,
+                    [detailAsset.id]: effectiveTags.filter((t) => t !== tag),
+                  }));
+                  toast.success(`Tag removed: ${tag}`);
+                };
+                const cancelEditing = () => {
+                  setNewTagValue('');
+                  setEditingTags(false);
+                };
+                return (
+                  <div>
+                    <label style={detailLabelStyle}>Tags</label>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                      {effectiveTags.map((tag) => (
+                        <span
+                          key={tag}
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--text-secondary)',
+                            background: 'var(--bg-hover)',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-pill)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+                          >
+                            <X size={8} style={{ color: 'var(--text-tertiary)' }} />
+                          </button>
+                        </span>
+                      ))}
+                      {editingTags ? (
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            ref={tagInputRef}
+                            type="text"
+                            value={newTagValue}
+                            onChange={(e) => setNewTagValue(e.target.value)}
+                            placeholder="Type tag..."
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newTagValue.trim()) addTag(newTagValue);
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelEditing();
+                              }
+                            }}
+                            onBlur={() => {
+                              setTimeout(() => {
+                                if (document.activeElement !== tagInputRef.current) {
+                                  cancelEditing();
+                                }
+                              }, 120);
+                            }}
+                            style={{
+                              width: 120,
+                              background: 'var(--bg-elevated)',
+                              border: '0.5px solid var(--brand-border)',
+                              borderRadius: 'var(--radius-pill)',
+                              padding: '3px 8px',
+                              fontSize: 10,
+                              color: 'var(--text-primary)',
+                              outline: 'none',
+                            }}
+                            autoFocus
+                          />
+                          {suggestions.length > 0 && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 4px)',
+                                left: 0,
+                                minWidth: 140,
+                                background: 'var(--bg-overlay)',
+                                border: '0.5px solid var(--border)',
+                                borderRadius: 'var(--radius-md)',
+                                padding: 4,
+                                zIndex: 40,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                              }}
+                            >
+                              {suggestions.map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    addTag(s);
+                                  }}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: 11,
+                                    textAlign: 'left',
+                                    padding: '4px 8px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                                  }}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setEditingTags(true); setNewTagValue(''); }}
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--text-tertiary)',
+                            background: 'var(--bg-hover)',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-pill)',
+                            border: '0.5px dashed var(--border)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                        >
+                          <Plus size={9} /> Add
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setEditingTags(true)}
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--text-tertiary)',
-                        background: 'var(--bg-hover)',
-                        padding: '3px 8px',
-                        borderRadius: 'var(--radius-pill)',
-                        border: '0.5px dashed var(--border)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                      }}
-                    >
-                      <Plus size={9} /> Add
-                    </button>
-                  )}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* Rights section */}
               <div>
@@ -1670,16 +2253,26 @@ export default function AssetsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                 <button
                   type="button"
-                  onClick={() => toast.success('Added to current shot')}
+                  disabled={detailAsset.rights === 'expired'}
+                  title={
+                    detailAsset.rights === 'expired'
+                      ? 'Rights expired — renew the license before using this asset in a shot'
+                      : undefined
+                  }
+                  onClick={() => {
+                    if (detailAsset.rights === 'expired') return;
+                    openUseShotModal();
+                  }}
                   style={{
-                    background: 'var(--brand)',
-                    color: '#fff',
+                    background: detailAsset.rights === 'expired' ? 'var(--bg-hover)' : 'var(--brand)',
+                    color: detailAsset.rights === 'expired' ? 'var(--text-tertiary)' : '#fff',
                     border: 'none',
                     padding: '8px 0',
                     borderRadius: 'var(--radius-md)',
                     fontSize: 12,
                     fontWeight: 500,
-                    cursor: 'pointer',
+                    cursor: detailAsset.rights === 'expired' ? 'not-allowed' : 'pointer',
+                    opacity: detailAsset.rights === 'expired' ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1688,11 +2281,52 @@ export default function AssetsPage() {
                 >
                   <Crosshair size={13} /> Use in Shot
                 </button>
+
+                {detailAsset.rights === 'expired' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => toast.success('Opening rights renewal...')}
+                      style={{
+                        background: 'rgba(249,115,22,0.15)',
+                        color: '#fb923c',
+                        border: '0.5px solid rgba(249,115,22,0.4)',
+                        padding: '7px 0',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                      }}
+                    >
+                      <RefreshCw size={12} /> Renew rights
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.success(`Removed ${detailAsset.filename}`)}
+                      style={{
+                        ...panelSecondaryBtnStyle,
+                        color: '#f87171',
+                        borderColor: 'rgba(248,113,113,0.3)',
+                      }}
+                    >
+                      <Trash2 size={12} /> Remove asset
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <button type="button" onClick={() => toast.success('Downloading...')} style={panelSecondaryBtnStyle}>
+                  <button type="button" onClick={() => handleDownload(detailAsset)} style={panelSecondaryBtnStyle}>
                     <Download size={12} /> Download
                   </button>
-                  <button type="button" onClick={() => { setEditingName(true); }} style={panelSecondaryBtnStyle}>
+                  <button
+                    type="button"
+                    onClick={() => { setEditNameValue(detailAsset.filename); setEditingName(true); }}
+                    style={panelSecondaryBtnStyle}
+                  >
                     <Pencil size={12} /> Rename
                   </button>
                   <button type="button" onClick={() => toast.info('Move dialog opened')} style={panelSecondaryBtnStyle}>
@@ -1719,7 +2353,214 @@ export default function AssetsPage() {
           style={{ position: 'fixed', inset: 0, zIndex: 10 }}
         />
       )}
+
+      {/* AL-3: Use in Shot modal */}
+      {showUseShotModal && detailAsset && (
+        <div
+          onClick={() => setShowUseShotModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Use asset in shot"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 440,
+              background: 'var(--bg-surface)',
+              border: '0.5px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 18px',
+                borderBottom: '0.5px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Use in Shot</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-tertiary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: 340,
+                  }}
+                >
+                  {detailAsset.filename}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowUseShotModal(false)}
+                aria-label="Close"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}
+              >
+                <X size={16} style={{ color: 'var(--text-secondary)' }} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Project picker */}
+              <div>
+                <label style={detailLabelStyle}>Project</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                  {MOCK_PROJECTS.map((p) => {
+                    const active = useShotProjectId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setUseShotProjectId(p.id);
+                          setUseShotShotId(null);
+                        }}
+                        style={{
+                          textAlign: 'left',
+                          background: active ? 'var(--brand-subtle, rgba(99,102,241,0.12))' : 'var(--bg-elevated)',
+                          border: active ? '0.5px solid var(--brand)' : '0.5px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '8px 12px',
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span>{p.name}</span>
+                        {active && <Check size={12} style={{ color: 'var(--brand)' }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Shot selector — only after a project is chosen */}
+              {useShotProjectId && (
+                <div>
+                  <label style={detailLabelStyle}>Shot</label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      marginTop: 6,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: 4,
+                      background: 'var(--bg-elevated)',
+                    }}
+                  >
+                    {(MOCK_SHOTS_BY_PROJECT[useShotProjectId] ?? []).map((s) => {
+                      const active = useShotShotId === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setUseShotShotId(s.id)}
+                          style={{
+                            textAlign: 'left',
+                            background: active ? 'var(--brand-subtle, rgba(99,102,241,0.18))' : 'transparent',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '7px 10px',
+                            fontSize: 12,
+                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>{s.label}</span>
+                          {active && <Check size={12} style={{ color: 'var(--brand)' }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 8,
+                padding: '12px 18px',
+                borderTop: '0.5px solid var(--border)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowUseShotModal(false)}
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-secondary)',
+                  border: '0.5px solid var(--border)',
+                  padding: '7px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!useShotProjectId || !useShotShotId}
+                onClick={handleLinkToShot}
+                style={{
+                  background: !useShotProjectId || !useShotShotId ? 'var(--bg-hover)' : 'var(--brand)',
+                  color: !useShotProjectId || !useShotShotId ? 'var(--text-tertiary)' : '#fff',
+                  border: 'none',
+                  padding: '7px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: !useShotProjectId || !useShotShotId ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Crosshair size={12} /> Link to Shot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    <UploadModal open={showUploadModal} onClose={() => setShowUploadModal(false)} />
     </ErrorBoundary>
   );
 }

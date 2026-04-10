@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Palette,
   Type,
@@ -21,8 +21,15 @@ import {
   Pipette,
   Check,
   Monitor,
+  Volume2,
+  Music,
+  Layout,
+  CreditCard,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { WaveformVisualizer } from '@/components/ui/WaveformVisualizer';
 
 // ── Types ────────────────────────────────────────────────────────
 interface BrandColor {
@@ -35,6 +42,7 @@ interface BrandColor {
 interface FontSlot {
   role: string;
   family: string;
+  hint: string;
 }
 
 interface FontSize {
@@ -67,9 +75,20 @@ const INITIAL_COLORS: BrandColor[] = [
 ];
 
 const INITIAL_FONTS: FontSlot[] = [
-  { role: 'Primary', family: 'DM Sans' },
-  { role: 'Secondary', family: 'Inter' },
-  { role: 'Display', family: 'Space Grotesk' },
+  { role: 'Primary', family: 'DM Sans', hint: 'Body copy & UI' },
+  { role: 'Secondary', family: 'Inter', hint: 'Captions & labels' },
+  { role: 'Display', family: 'Space Grotesk', hint: 'Headlines & titles' },
+];
+
+const POPULAR_GOOGLE_FONTS = [
+  'Inter',
+  'Roboto',
+  'Playfair Display',
+  'DM Sans',
+  'Space Grotesk',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
 ];
 
 const INITIAL_FONT_SIZES: FontSize[] = [
@@ -81,7 +100,16 @@ const INITIAL_FONT_SIZES: FontSize[] = [
   { label: 'Micro', size: 10 },
 ];
 
-const BRAND_KITS = ['AnimaForge Studio', 'Client - Acme Corp', 'Personal Brand'];
+interface BrandKitSummary {
+  id: string;
+  name: string;
+}
+
+const INITIAL_BRAND_KITS: BrandKitSummary[] = [
+  { id: 'kit-1', name: 'AnimaForge Studio' },
+  { id: 'kit-2', name: 'Client - Acme Corp' },
+  { id: 'kit-3', name: 'Personal Brand' },
+];
 
 const ENFORCEMENT_RULES = [
   { key: 'blockOffBrand', label: 'Block off-brand colors' },
@@ -286,7 +314,70 @@ function RadioGroup({
   );
 }
 
-// ── Color Editor Modal ───────────────────────────────────────────
+// ── Color conversion helpers ─────────────────────────────────────
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return { h: 0, s: 0, l: 0 };
+  const r = (parseInt(clean.substring(0, 2), 16) || 0) / 255;
+  const g = (parseInt(clean.substring(2, 4), 16) || 0) / 255;
+  const b = (parseInt(clean.substring(4, 6), 16) || 0) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) h = ((b - r) / d + 2) * 60;
+    else h = ((r - g) / d + 4) * 60;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const sn = s / 100;
+  const ln = l / 100;
+  const c = (1 - Math.abs(2 * ln - 1)) * sn;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = ln - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (h < 120) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (h < 180) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (h < 240) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (h < 300) {
+    r = x;
+    g = 0;
+    b = c;
+  } else {
+    r = c;
+    g = 0;
+    b = x;
+  }
+  const toHex = (v: number) => {
+    const n = Math.round((v + m) * 255);
+    return Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+// ── Color Editor Popover ─────────────────────────────────────────
 function ColorEditor({
   color,
   onSave,
@@ -296,32 +387,30 @@ function ColorEditor({
   onSave: (c: BrandColor) => void;
   onCancel: () => void;
 }) {
+  const initialHsl = hexToHsl(color.hex);
   const [hex, setHex] = useState(color.hex);
+  const [hue, setHue] = useState(initialHsl.h);
+  const [sat, setSat] = useState(initialHsl.s);
+  const [lig, setLig] = useState(initialHsl.l);
   const [label, setLabel] = useState(color.label);
-  const [opacity, setOpacity] = useState(100);
+  const [roleLabel, setRoleLabel] = useState(color.role);
 
-  // Simple hex to HSL approximation for display
-  const hexClean = hex.replace('#', '');
-  const r = parseInt(hexClean.substring(0, 2), 16) || 0;
-  const g = parseInt(hexClean.substring(2, 4), 16) || 0;
-  const b = parseInt(hexClean.substring(4, 6), 16) || 0;
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const l = Math.round(((max + min) / 2) * 100);
-  const s = max === min ? 0 : Math.round((l > 50 ? (max - min) / (2 - max - min) : (max - min) / (max + min)) * 100);
-  let h = 0;
-  if (max !== min) {
-    if (max === rn) h = ((gn - bn) / (max - min)) * 60;
-    else if (max === gn) h = (2 + (bn - rn) / (max - min)) * 60;
-    else h = (4 + (rn - gn) / (max - min)) * 60;
-    if (h < 0) h += 360;
-  }
-  const hue = Math.round(h);
-  const sat = s;
-  const lig = l;
+  const updateHex = (newHex: string) => {
+    setHex(newHex);
+    if (/^#[0-9a-fA-F]{6}$/.test(newHex)) {
+      const hsl = hexToHsl(newHex);
+      setHue(hsl.h);
+      setSat(hsl.s);
+      setLig(hsl.l);
+    }
+  };
+
+  const updateHsl = (h: number, s: number, l: number) => {
+    setHue(h);
+    setSat(s);
+    setLig(l);
+    setHex(hslToHex(h, s, l));
+  };
 
   return (
     <div
@@ -354,17 +443,33 @@ function ColorEditor({
           <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{color.role}</span>
         </div>
 
-        {/* Preview */}
+        {/* Large preview swatch */}
         <div
           style={{
             width: '100%',
-            height: 60,
+            height: 72,
             borderRadius: 'var(--radius-md)',
             background: hex,
-            opacity: opacity / 100,
             border: '0.5px solid var(--border)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            padding: 8,
           }}
-        />
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily: 'monospace',
+              color: 'rgba(255,255,255,0.9)',
+              background: 'rgba(0,0,0,0.35)',
+              padding: '2px 6px',
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            {hex.toUpperCase()}
+          </span>
+        </div>
 
         {/* Hex input */}
         <div>
@@ -372,8 +477,21 @@ function ColorEditor({
           <input
             type="text"
             value={hex}
-            onChange={(e) => setHex(e.target.value)}
+            onChange={(e) => updateHex(e.target.value)}
+            placeholder="#______"
+            maxLength={7}
             style={{ ...inputStyle, fontFamily: 'monospace' }}
+          />
+        </div>
+
+        {/* Role label input */}
+        <div>
+          <label style={tinyLabel}>Role</label>
+          <input
+            type="text"
+            value={roleLabel}
+            onChange={(e) => setRoleLabel(e.target.value)}
+            style={inputStyle}
           />
         </div>
 
@@ -383,7 +501,7 @@ function ColorEditor({
           <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} style={inputStyle} />
         </div>
 
-        {/* HSL sliders (display) */}
+        {/* HSL sliders (bidirectional) */}
         <div>
           <label style={tinyLabel}>Hue: {hue}</label>
           <input
@@ -391,7 +509,7 @@ function ColorEditor({
             min={0}
             max={360}
             value={hue}
-            readOnly
+            onChange={(e) => updateHsl(Number(e.target.value), sat, lig)}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
           />
         </div>
@@ -402,7 +520,7 @@ function ColorEditor({
             min={0}
             max={100}
             value={sat}
-            readOnly
+            onChange={(e) => updateHsl(hue, Number(e.target.value), lig)}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
           />
         </div>
@@ -413,26 +531,8 @@ function ColorEditor({
             min={0}
             max={100}
             value={lig}
-            readOnly
+            onChange={(e) => updateHsl(hue, sat, Number(e.target.value))}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
-          />
-        </div>
-
-        {/* Opacity */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Opacity</label>
-            <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
-              {opacity}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={opacity}
-            onChange={(e) => setOpacity(Number(e.target.value))}
-            style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
           />
         </div>
 
@@ -444,8 +544,8 @@ function ColorEditor({
           <button
             type="button"
             onClick={() => {
-              onSave({ ...color, hex, label });
-              toast.success(`Updated ${color.role} color`);
+              onSave({ ...color, hex, label, role: roleLabel });
+              toast.success(`Updated ${roleLabel} color`);
             }}
             style={smallBtn}
           >
@@ -457,11 +557,265 @@ function ColorEditor({
   );
 }
 
+// ── Font Picker Modal ────────────────────────────────────────────
+function FontPickerModal({
+  currentFont,
+  slotRole,
+  onSelect,
+  onCancel,
+}: {
+  currentFont: string;
+  slotRole: string;
+  onSelect: (family: string) => void;
+  onCancel: () => void;
+}) {
+  const [tab, setTab] = useState<'google' | 'custom'>('google');
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(currentFont);
+  const [previewText, setPreviewText] = useState('The quick brown fox jumps over the lazy dog');
+  const [dragOver, setDragOver] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = POPULAR_GOOGLE_FONTS.filter((f) =>
+    f.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleCustomUpload = (file: File) => {
+    if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) {
+      toast.error('Only TTF, OTF, or WOFF files are allowed');
+      return;
+    }
+    const family = file.name.replace(/\.(ttf|otf|woff2?)$/i, '');
+    setSelected(family);
+    toast.success(`Loaded custom font: ${family}`);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          ...sectionBox,
+          width: 520,
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={sectionTitle}>Choose a font</span>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{slotRole}</span>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '0.5px solid var(--border)' }}>
+          {(['google', 'custom'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '8px 14px',
+                fontSize: 12,
+                fontWeight: tab === t ? 600 : 400,
+                color: tab === t ? 'var(--text-primary)' : 'var(--text-secondary)',
+                borderBottom: tab === t ? '2px solid var(--brand)' : '2px solid transparent',
+                cursor: 'pointer',
+                marginBottom: -0.5,
+              }}
+            >
+              {t === 'google' ? 'Google Fonts' : 'Custom Upload'}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'google' ? (
+          <>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search fonts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={inputStyle}
+            />
+
+            {/* Font list */}
+            <div
+              style={{
+                maxHeight: 180,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: 6,
+              }}
+            >
+              {filtered.length === 0 && (
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', padding: 8 }}>
+                  No fonts match "{search}"
+                </span>
+              )}
+              {filtered.map((family) => (
+                <button
+                  key={family}
+                  type="button"
+                  onClick={() => setSelected(family)}
+                  style={{
+                    background: selected === family ? 'var(--brand-dim)' : 'transparent',
+                    border:
+                      selected === family
+                        ? '0.5px solid var(--brand-border)'
+                        : '0.5px solid transparent',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{family}</span>
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontFamily: `"${family}", sans-serif`,
+                    }}
+                  >
+                    {previewText || 'The quick brown fox jumps over the lazy dog'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Custom upload */}
+            <input
+              ref={customInputRef}
+              type="file"
+              accept=".ttf,.otf,.woff,.woff2"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleCustomUpload(f);
+              }}
+            />
+            <div
+              style={{
+                ...dropZone,
+                borderColor: dragOver ? 'var(--brand)' : 'var(--border)',
+                minHeight: 140,
+              }}
+              onClick={() => customInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) handleCustomUpload(f);
+              }}
+            >
+              <Upload size={24} style={{ color: 'var(--text-tertiary)' }} />
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                Drop TTF, OTF, or WOFF file here
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                or click to browse
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Live preview */}
+        <div>
+          <label style={tinyLabel}>Live preview</label>
+          <input
+            type="text"
+            value={previewText}
+            onChange={(e) => setPreviewText(e.target.value)}
+            style={inputStyle}
+          />
+          <div
+            style={{
+              marginTop: 8,
+              padding: 14,
+              background: 'var(--bg-hover)',
+              borderRadius: 'var(--radius-md)',
+              border: '0.5px solid var(--border)',
+            }}
+          >
+            <span style={{ fontSize: 9, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>
+              {selected}
+            </span>
+            <span
+              style={{
+                fontSize: 20,
+                color: 'var(--text-primary)',
+                fontFamily: `"${selected}", sans-serif`,
+              }}
+            >
+              {previewText || 'The quick brown fox jumps over the lazy dog'}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button type="button" onClick={onCancel} style={ghostBtn}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSelect(selected);
+              toast.success(`${slotRole} font set to ${selected}`);
+            }}
+            style={smallBtn}
+          >
+            <Check size={11} /> Select this font
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page Component ──────────────────────────────────────────
 export default function BrandKitPage() {
   // Kit switcher
-  const [activeKit, setActiveKit] = useState(BRAND_KITS[0]);
+  const [brandKits, setBrandKits] = useState<BrandKitSummary[]>(INITIAL_BRAND_KITS);
+  const [activeKitId, setActiveKitId] = useState<string>(INITIAL_BRAND_KITS[0].id);
   const [kitDropdownOpen, setKitDropdownOpen] = useState(false);
+  const [createKitModalOpen, setCreateKitModalOpen] = useState(false);
+  const [newKitName, setNewKitName] = useState('');
+  const brandKit = brandKits.find((k) => k.id === activeKitId) ?? brandKits[0];
 
   // Brand enforcement
   const [enforcementProjects, setEnforcementProjects] = useState(['Hero Promo', 'Brand Story']);
@@ -488,11 +842,37 @@ export default function BrandKitPage() {
   const [tagline, setTagline] = useState('');
   const [mission, setMission] = useState('');
 
+  // Brand voice auto-save
+  const [voiceSaveStatus, setVoiceSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const voiceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceFirstRunRef = useRef(true);
+
+  useEffect(() => {
+    if (voiceFirstRunRef.current) {
+      voiceFirstRunRef.current = false;
+      return;
+    }
+    if (voiceSaveTimerRef.current) clearTimeout(voiceSaveTimerRef.current);
+    if (voiceResetTimerRef.current) clearTimeout(voiceResetTimerRef.current);
+    voiceSaveTimerRef.current = setTimeout(async () => {
+      setVoiceSaveStatus('saving');
+      // Mock API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setVoiceSaveStatus('saved');
+      voiceResetTimerRef.current = setTimeout(() => setVoiceSaveStatus('idle'), 2000);
+    }, 800);
+    return () => {
+      if (voiceSaveTimerRef.current) clearTimeout(voiceSaveTimerRef.current);
+    };
+  }, [tagline, mission, tone, voiceStyle]);
+
   // Typography
   const [fonts, setFonts] = useState<FontSlot[]>(INITIAL_FONTS);
   const [fontSizes, setFontSizes] = useState<FontSize[]>(INITIAL_FONT_SIZES);
   const [editingSizeIdx, setEditingSizeIdx] = useState<number | null>(null);
   const [editingSizeVal, setEditingSizeVal] = useState('');
+  const [editingFontIdx, setEditingFontIdx] = useState<number | null>(null);
 
   // Sonic branding
   const [audioTrack, setAudioTrack] = useState<AudioTrack | null>(null);
@@ -502,7 +882,7 @@ export default function BrandKitPage() {
     watermark: false,
     append: false,
   });
-  const [sonicVolume, setSonicVolume] = useState(80);
+  const [sonicVolume, setSonicVolume] = useState(-12); // dB, -40..0
   const audioInputRef = useRef<HTMLInputElement>(null);
 
   // Lower third
@@ -512,7 +892,7 @@ export default function BrandKitPage() {
   const [lowerThirdFont, setLowerThirdFont] = useState('DM Sans');
   const [lowerThirdPosition, setLowerThirdPosition] = useState<LowerThirdPosition>('bottom-left');
   const [lowerThirdAnimation, setLowerThirdAnimation] = useState<Animation>('slide');
-  const [lowerThirdDuration, setLowerThirdDuration] = useState(5);
+  const [lowerThirdDuration, setLowerThirdDuration] = useState(3);
 
   // End card
   const [endCardLogoPos, setEndCardLogoPos] = useState('center');
@@ -522,7 +902,7 @@ export default function BrandKitPage() {
   const [endCardTikTok, setEndCardTikTok] = useState('');
   const [endCardX, setEndCardX] = useState('');
   const [endCardBg, setEndCardBg] = useState('#0a0a0f');
-  const [endCardDuration, setEndCardDuration] = useState(8);
+  const [endCardDuration, setEndCardDuration] = useState(5);
 
   // Logo & watermark
   const [logoUploaded, setLogoUploaded] = useState(false);
@@ -580,9 +960,95 @@ export default function BrandKitPage() {
     toast.success('Extracted colors added to palette');
   };
 
+  const handleExportStyleGuide = () => {
+    const loadingId = toast.loading('Generating style guide PDF...');
+    setTimeout(() => {
+      toast.dismiss(loadingId);
+      toast.success('Style guide ready');
+      // Mock download
+      const a = document.createElement('a');
+      a.href = 'data:application/pdf;base64,';
+      a.download = `${brandKit.name}-style-guide.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }, 2000);
+  };
+
+  const handleCreateKit = () => {
+    const name = newKitName.trim();
+    if (!name) {
+      toast.error('Please enter a kit name');
+      return;
+    }
+    const newKit: BrandKitSummary = { id: `kit-${Date.now()}`, name };
+    setBrandKits((prev) => [...prev, newKit]);
+    setActiveKitId(newKit.id);
+    setCreateKitModalOpen(false);
+    setNewKitName('');
+    toast.success(`Created ${name}`);
+  };
+
   // ── Render ─────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
+      {/* Create brand kit modal */}
+      {createKitModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setCreateKitModalOpen(false)}
+        >
+          <div
+            style={{ ...sectionBox, width: 360, display: 'flex', flexDirection: 'column', gap: 14 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={sectionTitle}>Create brand kit</span>
+              <button
+                type="button"
+                onClick={() => setCreateKitModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div>
+              <label style={tinyLabel}>Name</label>
+              <input
+                type="text"
+                value={newKitName}
+                onChange={(e) => setNewKitName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateKit();
+                }}
+                placeholder="My brand kit"
+                autoFocus
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" onClick={() => setCreateKitModalOpen(false)} style={ghostBtn}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleCreateKit} style={smallBtn}>
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Color editor modal */}
       {editingColor && (
         <ColorEditor
@@ -592,6 +1058,19 @@ export default function BrandKitPage() {
             setEditingColor(null);
           }}
           onCancel={() => setEditingColor(null)}
+        />
+      )}
+
+      {/* Font picker modal */}
+      {editingFontIdx !== null && fonts[editingFontIdx] && (
+        <FontPickerModal
+          currentFont={fonts[editingFontIdx].family}
+          slotRole={fonts[editingFontIdx].role}
+          onSelect={(family) => {
+            setFonts((prev) => prev.map((f, i) => (i === editingFontIdx ? { ...f, family } : f)));
+            setEditingFontIdx(null);
+          }}
+          onCancel={() => setEditingFontIdx(null)}
         />
       )}
 
@@ -625,7 +1104,7 @@ export default function BrandKitPage() {
                   gap: 6,
                 }}
               >
-                {activeKit}
+                {brandKit.name}
                 <ChevronDown size={12} />
               </button>
               {kitDropdownOpen && (
@@ -639,41 +1118,52 @@ export default function BrandKitPage() {
                     border: '0.5px solid var(--border)',
                     borderRadius: 'var(--radius-md)',
                     padding: 4,
-                    minWidth: 200,
+                    minWidth: 220,
                     zIndex: 100,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                   }}
                 >
-                  {BRAND_KITS.map((kit) => (
-                    <button
-                      key={kit}
-                      type="button"
-                      onClick={() => {
-                        setActiveKit(kit);
-                        setKitDropdownOpen(false);
-                      }}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        background: activeKit === kit ? 'var(--brand-dim)' : 'transparent',
-                        color: activeKit === kit ? 'var(--text-brand)' : 'var(--text-primary)',
-                        border: 'none',
-                        padding: '6px 10px',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {kit}
-                    </button>
-                  ))}
+                  {brandKits.map((kit) => {
+                    const isActive = kit.id === activeKitId;
+                    return (
+                      <button
+                        key={kit.id}
+                        type="button"
+                        onClick={() => {
+                          if (!isActive) {
+                            setActiveKitId(kit.id);
+                            toast.success(`Switched to ${kit.name}`);
+                          }
+                          setKitDropdownOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                          width: '100%',
+                          textAlign: 'left',
+                          background: isActive ? 'var(--brand-dim)' : 'transparent',
+                          color: isActive ? 'var(--text-brand)' : 'var(--text-primary)',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span>{kit.name}</span>
+                        {isActive && <Check size={12} />}
+                      </button>
+                    );
+                  })}
                   <div style={{ borderTop: '0.5px solid var(--border)', margin: '4px 0' }} />
                   <button
                     type="button"
                     onClick={() => {
-                      toast.info('Create new brand kit');
                       setKitDropdownOpen(false);
+                      setNewKitName('');
+                      setCreateKitModalOpen(true);
                     }}
                     style={{
                       display: 'flex',
@@ -690,7 +1180,7 @@ export default function BrandKitPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    <Plus size={12} /> Create new
+                    <Plus size={12} /> Create new brand kit
                   </button>
                 </div>
               )}
@@ -699,7 +1189,7 @@ export default function BrandKitPage() {
 
           <button
             type="button"
-            onClick={() => toast.success('Style guide exported')}
+            onClick={handleExportStyleGuide}
             style={{ ...smallBtn, padding: '6px 14px', fontSize: 12 }}
           >
             <FileDown size={13} />
@@ -879,12 +1369,248 @@ export default function BrandKitPage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            3. BRAND VOICE
+            3. SONIC BRANDING (BK-1) — between Colors and Brand Voice
+        ══════════════════════════════════════════════════════════ */}
+        <div style={sectionBox}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Volume2 size={14} style={{ color: 'var(--text-secondary)' }} />
+            <span style={sectionTitle}>Sonic Branding</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* Audio upload / player */}
+            <div>
+              <span style={subLabel}>Brand Sound</span>
+              <input
+                ref={audioInputRef}
+                type="file"
+                accept=".mp3,.wav,audio/mpeg,audio/wav"
+                style={{ display: 'none' }}
+                onChange={handleAudioUpload}
+              />
+              {!audioTrack ? (
+                <div
+                  style={{ ...dropZone, minHeight: 120, padding: 16 }}
+                  onClick={() => audioInputRef.current?.click()}
+                >
+                  <Music size={22} style={{ color: 'var(--text-tertiary)' }} />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      fontWeight: 500,
+                      textAlign: 'center',
+                    }}
+                  >
+                    Drop brand sound here — MP3/WAV, max 5 MB
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--text-tertiary)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Logo sting, jingle, or notification tone
+                  </span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: 'var(--bg-hover)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 12,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      type="button"
+                      aria-label={audioPlaying ? 'Pause brand sound' : 'Play brand sound'}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'var(--brand)',
+                        border: 'none',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                      onClick={() => setAudioPlaying(!audioPlaying)}
+                    >
+                      {audioPlaying ? <Pause size={14} /> : <Play size={14} />}
+                    </button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {audioTrack.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                        {audioTrack.duration}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      style={ghostBtn}
+                      onClick={() => audioInputRef.current?.click()}
+                    >
+                      <RefreshCw size={10} /> Replace
+                    </button>
+                  </div>
+                  <div style={{ paddingLeft: 2, paddingRight: 2 }}>
+                    <WaveformVisualizer
+                      trackId={audioTrack.name}
+                      isPlaying={audioPlaying}
+                      progress={audioPlaying ? 0.35 : 0}
+                      color="#7c3aed"
+                      height={28}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Usage toggles & volume */}
+            <div>
+              <span style={subLabel}>Usage</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={toggleRow}>
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                    Prepend to all video exports
+                  </span>
+                  <Toggle
+                    checked={sonicToggles.prepend}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, prepend: v }))}
+                  />
+                </div>
+                <div style={toggleRow}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                      Apply as audio watermark on exports
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      Faint, at -20 dB
+                    </span>
+                  </div>
+                  <Toggle
+                    checked={sonicToggles.watermark}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, watermark: v }))}
+                  />
+                </div>
+                <div style={toggleRow}>
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                    Append to all video exports
+                  </span>
+                  <Toggle
+                    checked={sonicToggles.append}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, append: v }))}
+                  />
+                </div>
+              </div>
+              {(sonicToggles.prepend || sonicToggles.watermark) && (
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      Volume
+                    </label>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {sonicVolume} dB
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-40}
+                    max={0}
+                    step={1}
+                    value={sonicVolume}
+                    onChange={(e) => setSonicVolume(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      accentColor: 'var(--brand)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: 9,
+                      color: 'var(--text-tertiary)',
+                      fontFamily: 'monospace',
+                      marginTop: 2,
+                    }}
+                  >
+                    <span>-40 dB</span>
+                    <span>0 dB</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════
+            4. BRAND VOICE
         ══════════════════════════════════════════════════════════ */}
         <div style={sectionBox}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <MessageSquare size={14} style={{ color: 'var(--text-secondary)' }} />
             <span style={sectionTitle}>Brand Voice</span>
+            {voiceSaveStatus === 'saving' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  color: 'var(--text-tertiary)',
+                  marginLeft: 4,
+                }}
+              >
+                <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                Saving...
+              </span>
+            )}
+            {voiceSaveStatus === 'saved' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  color: '#4ade80',
+                  marginLeft: 4,
+                }}
+              >
+                <Check size={11} />
+                Saved
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1007,29 +1733,67 @@ export default function BrandKitPage() {
                   padding: 12,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
-                    {f.role}
-                  </span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: 8,
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {f.role}
+                    </span>
+                    <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                      {f.hint}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     style={{ ...ghostBtn, padding: '2px 8px', fontSize: 10 }}
-                    onClick={() => toast.info(`Change ${f.role} font`)}
+                    onClick={() => setEditingFontIdx(i)}
                   >
                     Change
                   </button>
                 </div>
-                <span
+                <button
+                  type="button"
+                  onClick={() => setEditingFontIdx(i)}
+                  title={`Change ${f.role} font`}
                   style={{
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: 'var(--text-primary)',
-                    fontFamily: `"${f.family}", sans-serif`,
-                    display: 'block',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
                   }}
                 >
-                  {f.family}
-                </span>
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                      fontFamily: `"${f.family}", sans-serif`,
+                      display: 'block',
+                      textDecoration: 'underline',
+                      textDecorationColor: 'var(--border)',
+                      textUnderlineOffset: 3,
+                    }}
+                  >
+                    {f.family}
+                  </span>
+                </button>
                 <span
                   style={{
                     fontSize: 12,
@@ -1116,14 +1880,14 @@ export default function BrandKitPage() {
         ══════════════════════════════════════════════════════════ */}
         <div style={sectionBox}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Mic2 size={14} style={{ color: 'var(--text-secondary)' }} />
+            <Volume2 size={14} style={{ color: 'var(--text-secondary)' }} />
             <span style={sectionTitle}>Sonic Branding</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {/* Audio upload zone */}
             <div>
-              <span style={subLabel}>Brand Audio</span>
+              <span style={subLabel}>Brand Sound</span>
               <input
                 ref={audioInputRef}
                 type="file"
@@ -1133,12 +1897,28 @@ export default function BrandKitPage() {
               />
               {!audioTrack ? (
                 <div
-                  style={{ ...dropZone, height: 100 }}
+                  style={{ ...dropZone, minHeight: 120, padding: 16 }}
                   onClick={() => audioInputRef.current?.click()}
                 >
-                  <Upload size={20} style={{ color: 'var(--text-tertiary)' }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                    Drop MP3 or WAV (max 5 MB)
+                  <Music size={22} style={{ color: 'var(--text-tertiary)' }} />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      fontWeight: 500,
+                      textAlign: 'center',
+                    }}
+                  >
+                    Drop brand sound here — MP3/WAV, max 5 MB
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--text-tertiary)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Logo sting, jingle, or notification tone
                   </span>
                 </div>
               ) : (
@@ -1148,48 +1928,64 @@ export default function BrandKitPage() {
                     borderRadius: 'var(--radius-md)',
                     padding: 12,
                     display: 'flex',
-                    alignItems: 'center',
+                    flexDirection: 'column',
                     gap: 10,
                   }}
                 >
-                  <button
-                    type="button"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: 'var(--brand)',
-                      border: 'none',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                    onClick={() => setAudioPlaying(!audioPlaying)}
-                  >
-                    {audioPlaying ? <Pause size={14} /> : <Play size={14} />}
-                  </button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {audioTrack.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      type="button"
+                      aria-label={audioPlaying ? 'Pause brand sound' : 'Play brand sound'}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'var(--brand)',
+                        border: 'none',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                      onClick={() => setAudioPlaying(!audioPlaying)}
+                    >
+                      {audioPlaying ? <Pause size={14} /> : <Play size={14} />}
+                    </button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {audioTrack.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                        {audioTrack.duration}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{audioTrack.duration}</div>
+                    <button
+                      type="button"
+                      style={ghostBtn}
+                      onClick={() => audioInputRef.current?.click()}
+                    >
+                      <RefreshCw size={10} /> Replace
+                    </button>
                   </div>
-                  <button type="button" style={ghostBtn} onClick={() => audioInputRef.current?.click()}>
-                    <RefreshCw size={10} /> Replace
-                  </button>
-                  <button
-                    type="button"
-                    style={{ ...ghostBtn, color: '#fca5a5' }}
-                    onClick={() => {
-                      setAudioTrack(null);
-                      setAudioPlaying(false);
-                    }}
-                  >
-                    <Trash2 size={10} /> Delete
-                  </button>
+                  <div style={{ paddingLeft: 2, paddingRight: 2 }}>
+                    <WaveformVisualizer
+                      trackId={audioTrack.name}
+                      isPlaying={audioPlaying}
+                      progress={audioPlaying ? 0.35 : 0}
+                      color="#7c3aed"
+                      height={28}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -1199,43 +1995,115 @@ export default function BrandKitPage() {
               <span style={subLabel}>Usage</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <div style={toggleRow}>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>Prepend to exports</span>
-                  <Toggle checked={sonicToggles.prepend} onChange={(v) => setSonicToggles((p) => ({ ...p, prepend: v }))} />
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                    Prepend to all video exports
+                  </span>
+                  <Toggle
+                    checked={sonicToggles.prepend}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, prepend: v }))}
+                  />
                 </div>
                 <div style={toggleRow}>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>Audio watermark (-20 dB)</span>
-                  <Toggle checked={sonicToggles.watermark} onChange={(v) => setSonicToggles((p) => ({ ...p, watermark: v }))} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                      Apply as audio watermark on exports
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      Faint, at -20 dB
+                    </span>
+                  </div>
+                  <Toggle
+                    checked={sonicToggles.watermark}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, watermark: v }))}
+                  />
                 </div>
                 <div style={toggleRow}>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>Append to exports</span>
-                  <Toggle checked={sonicToggles.append} onChange={(v) => setSonicToggles((p) => ({ ...p, append: v }))} />
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                    Append to all video exports
+                  </span>
+                  <Toggle
+                    checked={sonicToggles.append}
+                    onChange={(v) => setSonicToggles((p) => ({ ...p, append: v }))}
+                  />
                 </div>
               </div>
-              <div style={{ marginTop: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Volume</label>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{sonicVolume}%</span>
+              {(sonicToggles.prepend || sonicToggles.watermark) && (
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      Volume
+                    </label>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {sonicVolume} dB
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-40}
+                    max={0}
+                    step={1}
+                    value={sonicVolume}
+                    onChange={(e) => setSonicVolume(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      accentColor: 'var(--brand)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: 9,
+                      color: 'var(--text-tertiary)',
+                      fontFamily: 'monospace',
+                      marginTop: 2,
+                    }}
+                  >
+                    <span>-40 dB</span>
+                    <span>0 dB</span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={sonicVolume}
-                  onChange={(e) => setSonicVolume(Number(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
-                />
-              </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            6. LOWER THIRD TEMPLATE
+            6. LOWER THIRD (BK-2)
         ══════════════════════════════════════════════════════════ */}
         <div style={sectionBox}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <LayoutTemplate size={14} style={{ color: 'var(--text-secondary)' }} />
-            <span style={sectionTitle}>Lower Third Template</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Layout size={14} style={{ color: 'var(--text-secondary)' }} />
+              <span style={sectionTitle}>Lower Third</span>
+            </div>
+            <button
+              type="button"
+              style={smallBtn}
+              onClick={() => toast.success('Lower third template saved')}
+            >
+              <Save size={11} /> Save Template
+            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: 20 }}>
@@ -1273,87 +2141,112 @@ export default function BrandKitPage() {
                 >
                   <div
                     style={{
-                      background: lowerThirdBarColor,
+                      background: colors.find((c) => c.role === 'PRIMARY')?.hex || lowerThirdBarColor,
                       padding: '6px 14px 3px',
                       borderRadius: '4px 4px 0 0',
-                      fontFamily: `"${lowerThirdFont}", sans-serif`,
+                      fontFamily: `"${fonts[0]?.family || lowerThirdFont}", sans-serif`,
                     }}
                   >
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{lowerThirdName}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>
+                      {lowerThirdName || 'Name'}
+                    </div>
                   </div>
                   <div
                     style={{
-                      background: 'rgba(0,0,0,0.7)',
+                      background: colors.find((c) => c.role === 'SECONDARY')?.hex || 'rgba(0,0,0,0.7)',
                       padding: '3px 14px 5px',
                       borderRadius: '0 0 4px 4px',
-                      fontFamily: `"${lowerThirdFont}", sans-serif`,
+                      fontFamily: `"${fonts[1]?.family || lowerThirdFont}", sans-serif`,
                     }}
                   >
-                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.8)' }}>{lowerThirdTitle}</div>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.9)' }}>
+                      {lowerThirdTitle || 'Title'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Settings */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel}>Name</label>
-                <input type="text" value={lowerThirdName} onChange={(e) => setLowerThirdName(e.target.value)} style={inputStyle} />
+                <label style={tinyLabel}>Name placeholder</label>
+                <input
+                  type="text"
+                  value={lowerThirdName}
+                  onChange={(e) => setLowerThirdName(e.target.value)}
+                  placeholder="e.g. Jane Doe"
+                  style={inputStyle}
+                />
               </div>
               <div>
-                <label style={tinyLabel}>Title</label>
-                <input type="text" value={lowerThirdTitle} onChange={(e) => setLowerThirdTitle(e.target.value)} style={inputStyle} />
+                <label style={tinyLabel}>Title placeholder</label>
+                <input
+                  type="text"
+                  value={lowerThirdTitle}
+                  onChange={(e) => setLowerThirdTitle(e.target.value)}
+                  placeholder="e.g. Creative Director"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={tinyLabel}>Position</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {(
+                    [
+                      { value: 'bottom-left', label: 'Bottom-left' },
+                      { value: 'bottom-center', label: 'Bottom-center' },
+                      { value: 'bottom-right', label: 'Bottom-right' },
+                    ] as { value: LowerThirdPosition; label: string }[]
+                  ).map((opt) => (
+                    <label
+                      key={opt.value}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 12,
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="lowerThirdPosition"
+                        value={opt.value}
+                        checked={lowerThirdPosition === opt.value}
+                        onChange={() => setLowerThirdPosition(opt.value)}
+                        style={{ accentColor: 'var(--brand)', cursor: 'pointer' }}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={tinyLabel}>Bar Color</label>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="color"
-                      value={lowerThirdBarColor}
-                      onChange={(e) => setLowerThirdBarColor(e.target.value)}
-                      style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                    />
-                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{lowerThirdBarColor}</span>
-                  </div>
-                </div>
-                <div>
-                  <label style={tinyLabel}>Font</label>
-                  <select value={lowerThirdFont} onChange={(e) => setLowerThirdFont(e.target.value)} style={selectStyle}>
-                    {fonts.map((f) => (
-                      <option key={f.family} value={f.family}>{f.family}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={tinyLabel}>Position</label>
-                  <select value={lowerThirdPosition} onChange={(e) => setLowerThirdPosition(e.target.value as LowerThirdPosition)} style={selectStyle}>
-                    <option value="bottom-left">Bottom-left</option>
-                    <option value="bottom-center">Bottom-center</option>
-                    <option value="bottom-right">Bottom-right</option>
-                  </select>
-                </div>
-                <div>
                   <label style={tinyLabel}>Animation</label>
-                  <select value={lowerThirdAnimation} onChange={(e) => setLowerThirdAnimation(e.target.value as Animation)} style={selectStyle}>
-                    <option value="slide">Slide</option>
+                  <select
+                    value={lowerThirdAnimation}
+                    onChange={(e) => setLowerThirdAnimation(e.target.value as Animation)}
+                    style={selectStyle}
+                  >
+                    <option value="slide">Slide-in</option>
                     <option value="fade">Fade</option>
                     <option value="wipe">Wipe</option>
                   </select>
                 </div>
                 <div>
-                  <label style={tinyLabel}>Duration (s)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={30}
+                  <label style={tinyLabel}>Duration</label>
+                  <select
                     value={lowerThirdDuration}
                     onChange={(e) => setLowerThirdDuration(Number(e.target.value))}
-                    style={inputStyle}
-                  />
+                    style={selectStyle}
+                  >
+                    <option value={2}>2s</option>
+                    <option value={3}>3s</option>
+                    <option value={5}>5s</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1361,23 +2254,40 @@ export default function BrandKitPage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            7. END CARD TEMPLATE
+            7. END CARD (BK-3)
         ══════════════════════════════════════════════════════════ */}
         <div style={sectionBox}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Monitor size={14} style={{ color: 'var(--text-secondary)' }} />
-            <span style={sectionTitle}>End Card Template</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CreditCard size={14} style={{ color: 'var(--text-secondary)' }} />
+              <span style={sectionTitle}>End Card</span>
+            </div>
+            <button
+              type="button"
+              style={smallBtn}
+              onClick={() => toast.success('End card template saved')}
+            >
+              <Save size={11} /> Save Template
+            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: 20 }}>
-            {/* Live preview */}
+            {/* Live preview (16:9) */}
             <div>
               <span style={subLabel}>Preview</span>
               <div
                 style={{
                   width: 400,
                   height: 225,
-                  background: endCardBg,
+                  background:
+                    colors.find((c) => c.role === 'BACKGROUND')?.hex || endCardBg,
                   borderRadius: 'var(--radius-md)',
                   position: 'relative',
                   overflow: 'hidden',
@@ -1386,101 +2296,126 @@ export default function BrandKitPage() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 10,
+                  gap: 12,
+                  fontFamily: `"${fonts[0]?.family || 'DM Sans'}", sans-serif`,
                 }}
               >
-                {/* Logo placeholder */}
+                {/* Logo placeholder - centered */}
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
+                    width: 56,
+                    height: 56,
                     borderRadius: '50%',
-                    background: 'var(--brand)',
+                    background:
+                      colors.find((c) => c.role === 'PRIMARY')?.hex || 'var(--brand)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    ...(endCardLogoPos === 'top-left' ? { position: 'absolute', top: 16, left: 16 } :
-                      endCardLogoPos === 'top-right' ? { position: 'absolute', top: 16, right: 16 } :
-                      {}),
                   }}
                 >
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>A</span>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>A</span>
                 </div>
 
                 {/* CTA */}
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center' }}>
-                  {endCardCTA}
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: colors.find((c) => c.role === 'TEXT')?.hex || '#fff',
+                    textAlign: 'center',
+                    padding: '0 24px',
+                  }}
+                >
+                  {endCardCTA || 'Your CTA here'}
                 </div>
 
                 {/* Socials */}
-                <div style={{ display: 'flex', gap: 12, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
-                  {endCardYouTube && <span>YT: {endCardYouTube}</span>}
-                  {endCardInstagram && <span>IG: {endCardInstagram}</span>}
-                  {endCardTikTok && <span>TT: {endCardTikTok}</span>}
-                  {endCardX && <span>X: {endCardX}</span>}
-                  {!endCardYouTube && !endCardInstagram && !endCardTikTok && !endCardX && (
-                    <span>Add social handles</span>
-                  )}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 14,
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.65)',
+                    fontFamily: `"${fonts[1]?.family || 'Inter'}", sans-serif`,
+                  }}
+                >
+                  {endCardYouTube && <span>▶ {endCardYouTube}</span>}
+                  {endCardInstagram && <span>◉ {endCardInstagram}</span>}
+                  {endCardTikTok && <span>♪ {endCardTikTok}</span>}
+                  {endCardX && <span>𝕏 {endCardX}</span>}
+                  {!endCardYouTube &&
+                    !endCardInstagram &&
+                    !endCardTikTok &&
+                    !endCardX && <span>Add social handles</span>}
                 </div>
               </div>
             </div>
 
             {/* Settings */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={tinyLabel}>Logo Position</label>
-                  <select value={endCardLogoPos} onChange={(e) => setEndCardLogoPos(e.target.value)} style={selectStyle}>
-                    <option value="center">Center</option>
-                    <option value="top-left">Top-left</option>
-                    <option value="top-right">Top-right</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={tinyLabel}>Background</label>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="color"
-                      value={endCardBg}
-                      onChange={(e) => setEndCardBg(e.target.value)}
-                      style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                    />
-                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{endCardBg}</span>
-                  </div>
-                </div>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel}>CTA Text</label>
-                <input type="text" value={endCardCTA} onChange={(e) => setEndCardCTA(e.target.value)} style={inputStyle} />
+                <label style={tinyLabel}>CTA text</label>
+                <input
+                  type="text"
+                  value={endCardCTA}
+                  onChange={(e) => setEndCardCTA(e.target.value)}
+                  placeholder="Subscribe for more"
+                  style={inputStyle}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={tinyLabel}>YouTube</label>
-                  <input type="text" value={endCardYouTube} onChange={(e) => setEndCardYouTube(e.target.value)} placeholder="@handle" style={inputStyle} />
+                  <input
+                    type="text"
+                    value={endCardYouTube}
+                    onChange={(e) => setEndCardYouTube(e.target.value)}
+                    placeholder="@handle"
+                    style={inputStyle}
+                  />
                 </div>
                 <div>
                   <label style={tinyLabel}>Instagram</label>
-                  <input type="text" value={endCardInstagram} onChange={(e) => setEndCardInstagram(e.target.value)} placeholder="@handle" style={inputStyle} />
+                  <input
+                    type="text"
+                    value={endCardInstagram}
+                    onChange={(e) => setEndCardInstagram(e.target.value)}
+                    placeholder="@handle"
+                    style={inputStyle}
+                  />
                 </div>
                 <div>
                   <label style={tinyLabel}>TikTok</label>
-                  <input type="text" value={endCardTikTok} onChange={(e) => setEndCardTikTok(e.target.value)} placeholder="@handle" style={inputStyle} />
+                  <input
+                    type="text"
+                    value={endCardTikTok}
+                    onChange={(e) => setEndCardTikTok(e.target.value)}
+                    placeholder="@handle"
+                    style={inputStyle}
+                  />
                 </div>
                 <div>
-                  <label style={tinyLabel}>X</label>
-                  <input type="text" value={endCardX} onChange={(e) => setEndCardX(e.target.value)} placeholder="@handle" style={inputStyle} />
+                  <label style={tinyLabel}>Twitter</label>
+                  <input
+                    type="text"
+                    value={endCardX}
+                    onChange={(e) => setEndCardX(e.target.value)}
+                    placeholder="@handle"
+                    style={inputStyle}
+                  />
                 </div>
               </div>
-              <div>
-                <label style={tinyLabel}>Duration (s)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
+              <div style={{ width: 140 }}>
+                <label style={tinyLabel}>Duration</label>
+                <select
                   value={endCardDuration}
                   onChange={(e) => setEndCardDuration(Number(e.target.value))}
-                  style={{ ...inputStyle, width: 80 }}
-                />
+                  style={selectStyle}
+                >
+                  <option value={3}>3s</option>
+                  <option value={5}>5s</option>
+                  <option value={8}>8s</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1496,13 +2431,13 @@ export default function BrandKitPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            {/* Logo drop zone */}
+            {/* Logo upload */}
             <div>
               <span style={subLabel}>Logo</span>
               <input
                 ref={logoInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/svg+xml"
                 style={{ display: 'none' }}
                 onChange={(e) => {
                   if (e.target.files?.[0]) {
@@ -1512,32 +2447,130 @@ export default function BrandKitPage() {
                 }}
               />
               {!logoUploaded ? (
-                <div style={{ ...dropZone, height: 120 }} onClick={() => logoInputRef.current?.click()}>
-                  <Image size={24} style={{ color: 'var(--text-tertiary)' }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Drop logo here</span>
+                <div style={{ ...dropZone, height: 140 }} onClick={() => logoInputRef.current?.click()}>
+                  <Upload size={24} style={{ color: 'var(--text-tertiary)' }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    Drop PNG or SVG here
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>or click to browse</span>
                 </div>
               ) : (
-                <div style={{ height: 120, background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <Image size={32} style={{ color: 'var(--brand)' }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-primary)' }}>Logo uploaded</span>
-                  <button type="button" style={{ ...ghostBtn, fontSize: 10 }} onClick={() => setLogoUploaded(false)}>
-                    Remove
-                  </button>
-                </div>
+                <>
+                  <div
+                    style={{
+                      height: 140,
+                      background: 'var(--bg-hover)',
+                      borderRadius: 'var(--radius-md)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '0.5px solid var(--border)',
+                    }}
+                  >
+                    <Image size={48} style={{ color: 'var(--brand)' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      style={{ ...ghostBtn, flex: 1, justifyContent: 'center' }}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      <RefreshCw size={11} /> Replace
+                    </button>
+                    <button
+                      type="button"
+                      style={{ ...ghostBtn, flex: 1, justifyContent: 'center' }}
+                      onClick={handleExtractColors}
+                    >
+                      <Pipette size={11} /> Extract brand colors
+                    </button>
+                  </div>
+                </>
               )}
+            </div>
+
+            {/* Watermark settings */}
+            <div>
+              <span style={subLabel}>Watermark Settings</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* Position */}
+                <div>
+                  <label style={tinyLabel}>Position</label>
+                  <select
+                    value={watermarkPosition}
+                    onChange={(e) => setWatermarkPosition(e.target.value as WatermarkPosition)}
+                    style={selectStyle}
+                  >
+                    <option value="top-left">Top-left</option>
+                    <option value="top-right">Top-right</option>
+                    <option value="bottom-left">Bottom-left</option>
+                    <option value="bottom-right">Bottom-right</option>
+                    <option value="center">Center</option>
+                  </select>
+                </div>
+
+                {/* Opacity */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Opacity</label>
+                    <span
+                      style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}
+                    >
+                      {watermarkOpacity}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={5}
+                    max={100}
+                    value={watermarkOpacity}
+                    onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {/* Size */}
+                <div>
+                  <label style={tinyLabel}>Size</label>
+                  <RadioGroup
+                    options={[
+                      { value: 'small', label: 'Small' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'large', label: 'Large' },
+                    ]}
+                    value={watermarkSize}
+                    onChange={(v) => setWatermarkSize(v as WatermarkSize)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Safe Zone visual editor */}
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 10,
+              }}
+            >
+              <span style={subLabel}>Safe Zone (16:9 preview)</span>
               <button
                 type="button"
-                style={{ ...ghostBtn, marginTop: 8, width: '100%', justifyContent: 'center' }}
-                onClick={handleExtractColors}
+                style={{ ...ghostBtn, fontSize: 10 }}
+                onClick={() => {
+                  setSafeZoneMargins({ top: 5, bottom: 10, left: 5, right: 5 });
+                  toast.info('Safe zone reset to defaults');
+                }}
               >
-                <Pipette size={11} />
-                Extract brand colors
+                <RefreshCw size={10} /> Reset to defaults
               </button>
             </div>
 
-            {/* Safe zone preview & watermark */}
-            <div>
-              <span style={subLabel}>Safe Zone (16:9 frame)</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+              {/* 16:9 preview frame */}
               <div
                 style={{
                   width: '100%',
@@ -1547,10 +2580,9 @@ export default function BrandKitPage() {
                   position: 'relative',
                   overflow: 'hidden',
                   border: '0.5px solid var(--border)',
-                  maxHeight: 180,
                 }}
               >
-                {/* Green safe zone */}
+                {/* Green dashed safe area overlay */}
                 <div
                   style={{
                     position: 'absolute',
@@ -1558,88 +2590,132 @@ export default function BrandKitPage() {
                     bottom: `${safeZoneMargins.bottom}%`,
                     left: `${safeZoneMargins.left}%`,
                     right: `${safeZoneMargins.right}%`,
-                    border: '1px dashed rgba(52,211,153,0.5)',
+                    border: '1.5px dashed rgba(52,211,153,0.7)',
                     background: 'rgba(52,211,153,0.05)',
                     borderRadius: 2,
                   }}
                 />
                 {/* Red danger zones */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: `${safeZoneMargins.top}%`, background: 'rgba(239,68,68,0.1)' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${safeZoneMargins.bottom}%`, background: 'rgba(239,68,68,0.1)' }} />
-                <div style={{ position: 'absolute', top: `${safeZoneMargins.top}%`, bottom: `${safeZoneMargins.bottom}%`, left: 0, width: `${safeZoneMargins.left}%`, background: 'rgba(239,68,68,0.1)' }} />
-                <div style={{ position: 'absolute', top: `${safeZoneMargins.top}%`, bottom: `${safeZoneMargins.bottom}%`, right: 0, width: `${safeZoneMargins.right}%`, background: 'rgba(239,68,68,0.1)' }} />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: `${safeZoneMargins.top}%`,
+                    background: 'rgba(239,68,68,0.1)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: `${safeZoneMargins.bottom}%`,
+                    background: 'rgba(239,68,68,0.1)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: `${safeZoneMargins.top}%`,
+                    bottom: `${safeZoneMargins.bottom}%`,
+                    left: 0,
+                    width: `${safeZoneMargins.left}%`,
+                    background: 'rgba(239,68,68,0.1)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: `${safeZoneMargins.top}%`,
+                    bottom: `${safeZoneMargins.bottom}%`,
+                    right: 0,
+                    width: `${safeZoneMargins.right}%`,
+                    background: 'rgba(239,68,68,0.1)',
+                  }}
+                />
+                {/* Logo icon at watermark position */}
+                {(() => {
+                  const sizePx =
+                    watermarkSize === 'small' ? 18 : watermarkSize === 'medium' ? 28 : 40;
+                  const wrapperStyle: React.CSSProperties = {
+                    position: 'absolute',
+                    opacity: watermarkOpacity / 100,
+                    padding: 4,
+                    background: 'rgba(0,0,0,0.35)',
+                    borderRadius: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  };
+                  const posStyles: Record<WatermarkPosition, React.CSSProperties> = {
+                    'top-left': { top: `${safeZoneMargins.top}%`, left: `${safeZoneMargins.left}%` },
+                    'top-right': {
+                      top: `${safeZoneMargins.top}%`,
+                      right: `${safeZoneMargins.right}%`,
+                    },
+                    'bottom-left': {
+                      bottom: `${safeZoneMargins.bottom}%`,
+                      left: `${safeZoneMargins.left}%`,
+                    },
+                    'bottom-right': {
+                      bottom: `${safeZoneMargins.bottom}%`,
+                      right: `${safeZoneMargins.right}%`,
+                    },
+                    center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
+                  };
+                  return (
+                    <div style={{ ...wrapperStyle, ...posStyles[watermarkPosition] }}>
+                      <Image size={sizePx} style={{ color: '#fff' }} />
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Margin sliders */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
                   <div key={side}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <label style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{side}</label>
-                      <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{safeZoneMargins[side]}%</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: 2,
+                      }}
+                    >
+                      <label
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--text-tertiary)',
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {side} margin
+                      </label>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--text-tertiary)',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {safeZoneMargins[side]}%
+                      </span>
                     </div>
                     <input
                       type="range"
                       min={0}
-                      max={25}
+                      max={30}
                       value={safeZoneMargins[side]}
-                      onChange={(e) => setSafeZoneMargins((p) => ({ ...p, [side]: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setSafeZoneMargins((p) => ({ ...p, [side]: Number(e.target.value) }))
+                      }
                       style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
                     />
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Watermark settings */}
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
-            <span style={subLabel}>Watermark Settings</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              {/* Position */}
-              <div>
-                <label style={tinyLabel}>Position</label>
-                <select
-                  value={watermarkPosition}
-                  onChange={(e) => setWatermarkPosition(e.target.value as WatermarkPosition)}
-                  style={selectStyle}
-                >
-                  <option value="top-left">Top-left</option>
-                  <option value="top-right">Top-right</option>
-                  <option value="bottom-left">Bottom-left</option>
-                  <option value="bottom-right">Bottom-right</option>
-                  <option value="center">Center</option>
-                </select>
-              </div>
-
-              {/* Opacity */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Opacity</label>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{watermarkOpacity}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={watermarkOpacity}
-                  onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
-                />
-              </div>
-
-              {/* Size */}
-              <div>
-                <label style={tinyLabel}>Size</label>
-                <RadioGroup
-                  options={[
-                    { value: 'small', label: 'Small' },
-                    { value: 'medium', label: 'Medium' },
-                    { value: 'large', label: 'Large' },
-                  ]}
-                  value={watermarkSize}
-                  onChange={(v) => setWatermarkSize(v as WatermarkSize)}
-                />
               </div>
             </div>
           </div>
