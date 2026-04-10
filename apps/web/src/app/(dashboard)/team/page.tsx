@@ -5,6 +5,7 @@ import {
   UserPlus, Shield, Mail, MoreHorizontal, Users, Lock, Key, Activity,
   ChevronDown, ChevronRight, X, Check, AlertTriangle, Pencil, Eye,
   Trash2, FolderOpen, CreditCard, Clock, Radio, Plus, Copy, RefreshCw,
+  UserMinus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,6 +54,15 @@ interface InviteEntry {
   id: string;
 }
 
+interface ProjectAccessEntry {
+  id: string;
+  title: string;
+  status: 'Active' | 'Draft' | 'Archived';
+  dotColor: string;
+  hasAccess: boolean;
+  role: 'Editor' | 'Viewer';
+}
+
 // ══════════════════════════════════════════════════════════════
 // MOCK DATA
 // ══════════════════════════════════════════════════════════════
@@ -67,6 +77,14 @@ const MOCK_PROJECTS = [
   'Product Launch',
   'Holiday Campaign',
   'Client Reel',
+];
+
+const MOCK_PROJECT_ACCESS: ProjectAccessEntry[] = [
+  { id: 'p1', title: 'Cyber Samurai', status: 'Active', dotColor: '#7c3aed', hasAccess: true, role: 'Editor' },
+  { id: 'p2', title: 'Brand Story', status: 'Active', dotColor: '#06b6d4', hasAccess: true, role: 'Editor' },
+  { id: 'p3', title: 'Product Launch', status: 'Draft', dotColor: '#f59e0b', hasAccess: false, role: 'Viewer' },
+  { id: 'p4', title: 'Holiday Campaign', status: 'Active', dotColor: '#ef4444', hasAccess: false, role: 'Viewer' },
+  { id: 'p5', title: 'Client Reel', status: 'Archived', dotColor: '#10b981', hasAccess: false, role: 'Viewer' },
 ];
 
 const MEMBERS: TeamMember[] = [
@@ -155,7 +173,7 @@ const MEMBERS: TeamMember[] = [
   },
 ];
 
-const PENDING_INVITES: PendingInvite[] = [
+const INITIAL_PENDING_INVITES: PendingInvite[] = [
   { id: 'inv-1', email: 'frank@example.com', role: 'Editor', sentAt: 'Mar 20, 2026' },
   { id: 'inv-2', email: 'grace@example.com', role: 'Viewer', sentAt: 'Mar 22, 2026' },
 ];
@@ -442,12 +460,12 @@ function CreditLimitModal({
     <div style={modalOverlayStyle} onClick={onClose}>
       <motion.div
         {...fadeIn}
-        style={modalBoxStyle}
+        style={{ ...modalBoxStyle, width: 380 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-            Credit Limit &mdash; {member.name}
+            Credit limit for {member.name}
           </h3>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
             <X size={16} />
@@ -479,23 +497,35 @@ function CreditLimitModal({
                 onChange={() => setMode(m)}
                 style={{ accentColor: 'var(--brand)' }}
               />
-              {m === 'unlimited' ? 'Unlimited' : 'Custom limit'}
+              {m === 'unlimited' ? 'Unlimited (workspace pool)' : 'Custom monthly limit'}
             </label>
           ))}
         </div>
 
         {mode === 'custom' && (
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>
-              Monthly credit limit
-            </label>
-            <input
-              type="number"
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              style={inputStyle}
-              min={0}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="number"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                style={{ ...inputStyle, paddingRight: 110 }}
+                min={0}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: 11,
+                  color: 'var(--text-tertiary)',
+                  pointerEvents: 'none',
+                }}
+              >
+                credits / month
+              </span>
+            </div>
           </div>
         )}
 
@@ -504,14 +534,14 @@ function CreditLimitModal({
           <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
             When limit is reached
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(['block', 'warn'] as const).map((p) => (
-              <button
+              <label
                 key={p}
-                type="button"
-                onClick={() => setPolicy(p)}
                 style={{
-                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                   padding: '8px 12px',
                   fontSize: 12,
                   borderRadius: 'var(--radius-md)',
@@ -522,8 +552,15 @@ function CreditLimitModal({
                   fontWeight: policy === p ? 600 : 400,
                 }}
               >
+                <input
+                  type="radio"
+                  name="limitPolicy"
+                  checked={policy === p}
+                  onChange={() => setPolicy(p)}
+                  style={{ accentColor: 'var(--brand)' }}
+                />
                 {p === 'block' ? 'Block generation' : 'Warn only'}
-              </button>
+              </label>
             ))}
           </div>
         </div>
@@ -532,10 +569,12 @@ function CreditLimitModal({
           <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const limit = mode === 'unlimited' ? null : parseInt(customValue, 10) || 0;
+              // mock API
+              await new Promise((r) => setTimeout(r, 300));
               onSave(limit, policy);
-              toast.success(`Credit limit updated for ${member.name}`);
+              toast.success('Credit limit updated');
               onClose();
             }}
             style={primaryBtnStyle}
@@ -552,7 +591,13 @@ function CreditLimitModal({
 // INVITE MEMBER MODAL
 // ══════════════════════════════════════════════════════════════
 
-function InviteMemberModal({ onClose }: { onClose: () => void }) {
+function InviteMemberModal({
+  onClose,
+  onInvited,
+}: {
+  onClose: () => void;
+  onInvited: (email: string, role: Role) => void;
+}) {
   const [entries, setEntries] = useState<InviteEntry[]>([{ email: '', id: crypto.randomUUID() }]);
   const [role, setRole] = useState<Role>('Editor');
   const [projectAccess, setProjectAccess] = useState<'all' | 'specific'>('all');
@@ -590,7 +635,10 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
     // simulate API
     await new Promise((r) => setTimeout(r, 1200));
     setSending(false);
-    toast.success(`${validEmails.length} invitation${validEmails.length > 1 ? 's' : ''} sent`);
+    validEmails.forEach((e) => {
+      onInvited(e.email, role);
+      toast.success(`Invitation sent to ${e.email}`);
+    });
     onClose();
   };
 
@@ -812,15 +860,180 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// PROJECT ACCESS MODAL
+// ══════════════════════════════════════════════════════════════
+
+function ProjectAccessModal({
+  member,
+  onClose,
+  onSave,
+}: {
+  member: TeamMember;
+  onClose: () => void;
+  onSave: (entries: ProjectAccessEntry[]) => void;
+}) {
+  const [entries, setEntries] = useState<ProjectAccessEntry[]>(() =>
+    MOCK_PROJECT_ACCESS.map((p) => ({
+      ...p,
+      hasAccess: member.projects.includes(p.title),
+    })),
+  );
+
+  const toggleAccess = (id: string) => {
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, hasAccess: !e.hasAccess } : e)));
+  };
+
+  const setRole = (id: string, role: 'Editor' | 'Viewer') => {
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, role } : e)));
+  };
+
+  const statusBadgeStyle = (status: ProjectAccessEntry['status']): React.CSSProperties => {
+    const styles = {
+      Active: { bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80' },
+      Draft: { bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' },
+      Archived: { bg: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8' },
+    }[status];
+    return {
+      fontSize: 10,
+      fontWeight: 500,
+      padding: '1px 6px',
+      borderRadius: 9999,
+      background: styles.bg,
+      color: styles.color,
+    };
+  };
+
+  return (
+    <div style={modalOverlayStyle} onClick={onClose}>
+      <motion.div
+        {...fadeIn}
+        style={{ ...modalBoxStyle, width: 500 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            Project access &mdash; {member.name}
+          </h3>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+            <X size={16} />
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 16px' }}>
+          Choose which projects {member.name} can access and their role in each.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+          {entries.map((entry) => (
+            <div
+              key={entry.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 12px',
+                background: 'var(--bg-surface)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: entry.dotColor,
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', flex: 1 }}>
+                {entry.title}
+              </span>
+              <span style={statusBadgeStyle(entry.status)}>{entry.status}</span>
+              {entry.hasAccess && (
+                <select
+                  value={entry.role}
+                  onChange={(e) => setRole(entry.id, e.target.value as 'Editor' | 'Viewer')}
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-primary)',
+                    fontSize: 11,
+                    padding: '3px 6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="Editor">Editor</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+              )}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={entry.hasAccess}
+                onClick={() => toggleAccess(entry.id)}
+                style={{
+                  width: 32,
+                  height: 18,
+                  borderRadius: 9999,
+                  background: entry.hasAccess ? 'var(--brand)' : 'rgba(148,163,184,0.25)',
+                  border: 'none',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: entry.hasAccess ? 16 : 2,
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    transition: 'left 0.15s ease',
+                  }}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
+          <button
+            type="button"
+            onClick={async () => {
+              await new Promise((r) => setTimeout(r, 300));
+              onSave(entries);
+              toast.success('Project access updated');
+              onClose();
+            }}
+            style={primaryBtnStyle}
+          >
+            Save access settings
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // MEMBER DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
 
 function MemberDetailPanel({
   member,
   onClose,
+  onManageAccess,
 }: {
   member: TeamMember;
   onClose: () => void;
+  onManageAccess: (member: TeamMember) => void;
 }) {
   return (
     <motion.div
@@ -940,14 +1153,15 @@ function MemberDetailPanel({
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[
-            { icon: <Shield size={12} />, label: 'Change role' },
-            { icon: <CreditCard size={12} />, label: 'Set credit limit' },
-            { icon: <Activity size={12} />, label: 'View activity log' },
+            { icon: <Shield size={12} />, label: 'Change role', onClick: () => toast.info('Change role') },
+            { icon: <FolderOpen size={12} />, label: 'Manage project access', onClick: () => onManageAccess(member) },
+            { icon: <CreditCard size={12} />, label: 'Set credit limit', onClick: () => toast.info('Set credit limit') },
+            { icon: <Activity size={12} />, label: 'View activity log', onClick: () => toast.info('View activity log') },
           ].map((action) => (
             <button
               key={action.label}
               type="button"
-              onClick={() => toast.info(action.label)}
+              onClick={action.onClick}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1049,8 +1263,17 @@ function RowContextMenu({
     { key: 'manageAccess', label: 'Manage project access', icon: <FolderOpen size={12} /> },
     { key: 'setCreditLimit', label: 'Set credit limit', icon: <CreditCard size={12} /> },
     { key: 'viewActivity', label: 'View activity log', icon: <Activity size={12} /> },
-    { key: 'remove', label: 'Remove from workspace', icon: <Trash2 size={12} />, danger: true },
-  ];
+    { key: 'separator', separator: true } as const,
+    { key: 'remove', label: 'Remove from workspace', icon: <UserMinus size={12} />, danger: true, disabledForSelf: true },
+  ] as Array<{
+    key: string;
+    label?: string;
+    icon?: React.ReactNode;
+    hasSubmenu?: boolean;
+    danger?: boolean;
+    disabledForSelf?: boolean;
+    separator?: boolean;
+  }>;
 
   const top = anchorRect.bottom + 4;
   const left = Math.min(anchorRect.left, window.innerWidth - 240);
@@ -1071,11 +1294,25 @@ function RowContextMenu({
         padding: '4px 0',
       }}
     >
-      {items.map((item) => (
+      {items.map((item) => {
+        if (item.separator) {
+          return (
+            <div
+              key={item.key}
+              style={{
+                height: 1,
+                background: 'var(--border)',
+                margin: '4px 0',
+              }}
+            />
+          );
+        }
+        const itemDisabled = !!item.disabledForSelf && isOwnRow;
+        return (
         <div key={item.key} style={{ position: 'relative' }}>
           <button
             type="button"
-            disabled={isOwnRow}
+            disabled={itemDisabled}
             onClick={() => {
               if (item.key === 'changeRole') {
                 setRoleSubmenu(!roleSubmenu);
@@ -1085,7 +1322,7 @@ function RowContextMenu({
               onClose();
             }}
             onMouseEnter={(e) => {
-              if (!isOwnRow) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+              if (!itemDisabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
@@ -1098,10 +1335,10 @@ function RowContextMenu({
               padding: '7px 12px',
               background: 'transparent',
               border: 'none',
-              cursor: isOwnRow ? 'not-allowed' : 'pointer',
+              cursor: itemDisabled ? 'not-allowed' : 'pointer',
               fontSize: 12,
-              color: isOwnRow ? 'var(--text-tertiary)' : item.danger ? '#f87171' : 'var(--text-secondary)',
-              opacity: isOwnRow ? 0.4 : 1,
+              color: itemDisabled ? 'var(--text-tertiary)' : item.danger ? '#f87171' : 'var(--text-secondary)',
+              opacity: itemDisabled ? 0.4 : 1,
               textAlign: 'left',
             }}
           >
@@ -1111,7 +1348,7 @@ function RowContextMenu({
           </button>
 
           {/* Role submenu */}
-          {item.key === 'changeRole' && roleSubmenu && !isOwnRow && (
+          {item.key === 'changeRole' && roleSubmenu && (
             <div
               style={{
                 position: 'absolute',
@@ -1165,7 +1402,8 @@ function RowContextMenu({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1180,6 +1418,7 @@ export default function TeamPage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [creditLimitMember, setCreditLimitMember] = useState<TeamMember | null>(null);
+  const [projectAccessMember, setProjectAccessMember] = useState<TeamMember | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(true);
   const [contextMenu, setContextMenu] = useState<{ member: TeamMember; rect: DOMRect } | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -1190,12 +1429,19 @@ export default function TeamPage() {
     onConfirm: () => void;
   } | null>(null);
   const [members, setMembers] = useState(MEMBERS);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(INITIAL_PENDING_INVITES);
   const [livePolling, setLivePolling] = useState(0);
+  const [showSsoGate, setShowSsoGate] = useState(false);
 
   // Polling for "Live Now" every 30s
   useEffect(() => {
     const interval = setInterval(() => {
-      setLivePolling((n) => n + 1);
+      setLivePolling((n) => {
+        const next = n + 1;
+        // eslint-disable-next-line no-console
+        console.log('[TeamPage] Live presence polled (tick', next, ') at', new Date().toISOString());
+        return next;
+      });
     }, 30_000);
     return () => clearInterval(interval);
   }, []);
@@ -1214,16 +1460,12 @@ export default function TeamPage() {
       case 'changeRole': {
         const newRole = payload as Role;
         if (newRole === member.role) return;
-        setConfirmAction({
-          title: 'Change role',
-          message: `Change ${member.name}'s role from ${member.role} to ${newRole}? This will immediately change their permissions.`,
-          confirmLabel: `Change to ${newRole}`,
-          onConfirm: () => {
-            setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)));
-            toast.success(`${member.name} is now ${newRole}`);
-            setConfirmAction(null);
-          },
-        });
+        // optimistic update + mock API
+        setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)));
+        void (async () => {
+          await new Promise((r) => setTimeout(r, 250));
+          toast.success(`${member.name}'s role changed to ${newRole}`);
+        })();
         break;
       }
       case 'setCreditLimit':
@@ -1233,15 +1475,17 @@ export default function TeamPage() {
         toast.info(`Activity log for ${member.name} (coming soon)`);
         break;
       case 'manageAccess':
-        toast.info(`Manage project access for ${member.name} (coming soon)`);
+        setProjectAccessMember(member);
         break;
       case 'remove':
         setConfirmAction({
           title: 'Remove member',
-          message: `Are you sure you want to remove ${member.name} from the workspace? They will lose access to all projects immediately.`,
+          message: `Remove ${member.name} from workspace?`,
           confirmLabel: 'Remove',
           danger: true,
-          onConfirm: () => {
+          onConfirm: async () => {
+            // mock API
+            await new Promise((r) => setTimeout(r, 250));
             setMembers((prev) => prev.filter((m) => m.id !== member.id));
             toast.success(`${member.name} has been removed`);
             setConfirmAction(null);
@@ -1319,7 +1563,7 @@ export default function TeamPage() {
             {/* Pending Invites */}
             <div style={{ flex: 1, ...cardStyle, padding: '14px 16px', overflow: 'visible' }}>
               <p style={labelStyle}>Pending Invites</p>
-              <p style={bigNumberStyle}>{PENDING_INVITES.length}</p>
+              <p style={bigNumberStyle}>{pendingInvites.length}</p>
             </div>
           </div>
 
@@ -1590,11 +1834,17 @@ export default function TeamPage() {
               <Mail size={13} style={{ color: 'var(--text-tertiary)' }} />
               <span style={sectionTitleStyle}>Pending Invites</span>
               <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 4 }}>
-                ({PENDING_INVITES.length})
+                ({pendingInvites.length})
               </span>
             </div>
 
-            {PENDING_INVITES.map((invite) => (
+            {pendingInvites.length === 0 && (
+              <div style={{ padding: '16px', fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                No pending invites
+              </div>
+            )}
+
+            {pendingInvites.map((invite) => (
               <div
                 key={invite.id}
                 onMouseEnter={() => setHoveredInvite(invite.id)}
@@ -1647,7 +1897,11 @@ export default function TeamPage() {
                 <div style={{ display: 'flex', gap: 8, marginLeft: 20 }}>
                   <button
                     type="button"
-                    onClick={() => toast.success(`Invitation resent to ${invite.email}`)}
+                    onClick={async () => {
+                      // mock API
+                      await new Promise((r) => setTimeout(r, 200));
+                      toast.success(`Invitation resent to ${invite.email}`);
+                    }}
                     style={smallBtnStyle}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -1656,7 +1910,20 @@ export default function TeamPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => toast.success(`Invitation to ${invite.email} revoked`)}
+                    onClick={() => {
+                      setConfirmAction({
+                        title: 'Revoke invitation',
+                        message: `Revoke the invitation to ${invite.email}? They will no longer be able to join with the current invite link.`,
+                        confirmLabel: 'Revoke',
+                        danger: true,
+                        onConfirm: async () => {
+                          await new Promise((r) => setTimeout(r, 200));
+                          setPendingInvites((prev) => prev.filter((p) => p.id !== invite.id));
+                          toast.success(`Invitation to ${invite.email} revoked`);
+                          setConfirmAction(null);
+                        },
+                      });
+                    }}
                     style={dangerBtnStyle}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -1861,6 +2128,15 @@ export default function TeamPage() {
       <AnimatePresence>
         {showInviteModal && (
           <InviteMemberModal onClose={() => setShowInviteModal(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {projectAccessMember && (
+          <ProjectAccessModal
+            member={projectAccessMember}
+            onClose={() => setProjectAccessMember(null)}
+          />
         )}
       </AnimatePresence>
 
