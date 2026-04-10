@@ -971,7 +971,8 @@ export default function AssetsPage() {
               >
                 <Search size={13} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search assets"
                   placeholder="Search assets..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -987,6 +988,7 @@ export default function AssetsPage() {
                 {searchQuery && (
                   <button
                     type="button"
+                    aria-label="Clear search"
                     onClick={() => setSearchQuery('')}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                   >
@@ -1386,6 +1388,7 @@ export default function AssetsPage() {
                                 key={btn.label}
                                 type="button"
                                 title={btn.label}
+                                aria-label={btn.label}
                                 onClick={btn.action}
                                 style={{
                                   width: 24,
@@ -1645,6 +1648,7 @@ export default function AssetsPage() {
                         <button
                           type="button"
                           title="Preview"
+                          aria-label="Preview"
                           onClick={() => toast.info(`Preview: ${asset.filename}`)}
                           style={listActionBtnStyle}
                         >
@@ -1653,6 +1657,7 @@ export default function AssetsPage() {
                         <button
                           type="button"
                           title="Download"
+                          aria-label="Download"
                           onClick={() => toast.success('Downloading...')}
                           style={listActionBtnStyle}
                         >
@@ -1661,6 +1666,7 @@ export default function AssetsPage() {
                         <button
                           type="button"
                           title="More"
+                          aria-label="More options"
                           onClick={() => openDetail(asset)}
                           style={listActionBtnStyle}
                         >
@@ -1729,6 +1735,7 @@ export default function AssetsPage() {
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Asset Details</span>
               <button
                 type="button"
+                aria-label="Close details"
                 onClick={() => setDetailAssetId(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
               >
@@ -1931,6 +1938,7 @@ export default function AssetsPage() {
                     <input
                       ref={editNameInputRef}
                       type="text"
+                      aria-label="Asset name"
                       value={editNameValue}
                       onChange={(e) => setEditNameValue(e.target.value)}
                       onBlur={commitRename}
@@ -1959,6 +1967,7 @@ export default function AssetsPage() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={commitRename}
                       title="Save (Enter)"
+                      aria-label="Save"
                       style={{ ...detailActionBtnStyle, background: 'var(--brand)', color: '#fff' }}
                     >
                       <Check size={12} />
@@ -1968,6 +1977,7 @@ export default function AssetsPage() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={cancelRename}
                       title="Cancel (Esc)"
+                      aria-label="Cancel"
                       style={detailActionBtnStyle}
                     >
                       <X size={12} />
@@ -1989,6 +1999,7 @@ export default function AssetsPage() {
                     </span>
                     <button
                       type="button"
+                      aria-label="Rename"
                       onClick={() => { setEditNameValue(detailAsset.filename); setEditingName(true); }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                     >
@@ -2094,6 +2105,7 @@ export default function AssetsPage() {
                           <input
                             ref={tagInputRef}
                             type="text"
+                            aria-label="Add tag"
                             value={newTagValue}
                             onChange={(e) => setNewTagValue(e.target.value)}
                             placeholder="Type tag..."

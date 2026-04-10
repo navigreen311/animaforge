@@ -310,7 +310,16 @@ export default function CharactersPage() {
               return (
                 <div
                   key={character.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open character ${character.name}`}
                   onClick={() => router.push(`/characters/${character.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      router.push(`/characters/${character.id}`);
+                    }
+                  }}
                   onMouseEnter={() => setHoveredCard(character.id)}
                   onMouseLeave={() => { setHoveredCard(null); setMoreMenuOpen(null); }}
                   style={{
@@ -358,6 +367,7 @@ export default function CharactersPage() {
                       <button
                         type="button"
                         title="Edit"
+                        aria-label="Edit"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/characters/${character.id}?edit=true`);
@@ -387,6 +397,7 @@ export default function CharactersPage() {
                       <button
                         type="button"
                         title="Use in Project"
+                        aria-label="Use in Project"
                         onClick={(e) => {
                           e.stopPropagation();
                           // TODO: open project assignment dialog
@@ -417,6 +428,9 @@ export default function CharactersPage() {
                         <button
                           type="button"
                           title="More options"
+                          aria-label="More options"
+                          aria-haspopup="menu"
+                          aria-expanded={moreMenuOpen === character.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             setMoreMenuOpen(moreMenuOpen === character.id ? null : character.id);

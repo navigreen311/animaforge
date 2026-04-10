@@ -140,7 +140,16 @@ export default function ColorPicker({ colors, onChange }: ColorPickerProps) {
                 key={swatch}
                 type="button"
                 onClick={() => updateColor(activeKey, swatch)}
-                className={`h-7 w-7 rounded-md border transition-transform hover:scale-110 ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    updateColor(activeKey, swatch);
+                  }
+                }}
+                tabIndex={0}
+                aria-label={`Select color ${swatch} for ${activeEntry.label}`}
+                aria-pressed={activeEntry.value === swatch}
+                className={`h-7 w-7 rounded-md border transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-violet-500 ${
                   activeEntry.value === swatch ? 'border-violet-400 ring-2 ring-violet-500' : 'border-gray-600'
                 }`}
                 style={{ backgroundColor: swatch }}

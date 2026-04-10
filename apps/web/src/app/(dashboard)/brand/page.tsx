@@ -473,8 +473,9 @@ function ColorEditor({
 
         {/* Hex input */}
         <div>
-          <label style={tinyLabel}>Hex</label>
+          <label style={tinyLabel} htmlFor="color-hex">Hex</label>
           <input
+            id="color-hex"
             type="text"
             value={hex}
             onChange={(e) => updateHex(e.target.value)}
@@ -486,8 +487,9 @@ function ColorEditor({
 
         {/* Role label input */}
         <div>
-          <label style={tinyLabel}>Role</label>
+          <label style={tinyLabel} htmlFor="color-role">Role</label>
           <input
+            id="color-role"
             type="text"
             value={roleLabel}
             onChange={(e) => setRoleLabel(e.target.value)}
@@ -497,8 +499,8 @@ function ColorEditor({
 
         {/* Label input */}
         <div>
-          <label style={tinyLabel}>Label</label>
-          <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} style={inputStyle} />
+          <label style={tinyLabel} htmlFor="color-label">Label</label>
+          <input id="color-label" type="text" value={label} onChange={(e) => setLabel(e.target.value)} style={inputStyle} />
         </div>
 
         {/* HSL sliders (bidirectional) */}
@@ -510,6 +512,10 @@ function ColorEditor({
             max={360}
             value={hue}
             onChange={(e) => updateHsl(Number(e.target.value), sat, lig)}
+            aria-label="Hue"
+            aria-valuenow={hue}
+            aria-valuemin={0}
+            aria-valuemax={360}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
           />
         </div>
@@ -521,6 +527,10 @@ function ColorEditor({
             max={100}
             value={sat}
             onChange={(e) => updateHsl(hue, Number(e.target.value), lig)}
+            aria-label="Saturation"
+            aria-valuenow={sat}
+            aria-valuemin={0}
+            aria-valuemax={100}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
           />
         </div>
@@ -532,6 +542,10 @@ function ColorEditor({
             max={100}
             value={lig}
             onChange={(e) => updateHsl(hue, sat, Number(e.target.value))}
+            aria-label="Lightness"
+            aria-valuenow={lig}
+            aria-valuemin={0}
+            aria-valuemax={100}
             style={{ width: '100%', accentColor: hex, cursor: 'pointer' }}
           />
         </div>
@@ -651,7 +665,8 @@ function FontPickerModal({
           <>
             {/* Search */}
             <input
-              type="text"
+              type="search"
+              aria-label="Search fonts"
               placeholder="Search fonts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -717,6 +732,7 @@ function FontPickerModal({
               ref={customInputRef}
               type="file"
               accept=".ttf,.otf,.woff,.woff2"
+              aria-label="Upload custom font file"
               style={{ display: 'none' }}
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -755,8 +771,9 @@ function FontPickerModal({
 
         {/* Live preview */}
         <div>
-          <label style={tinyLabel}>Live preview</label>
+          <label style={tinyLabel} htmlFor="font-preview-text">Live preview</label>
           <input
+            id="font-preview-text"
             type="text"
             value={previewText}
             onChange={(e) => setPreviewText(e.target.value)}
@@ -1017,6 +1034,7 @@ export default function BrandKitPage() {
               <span style={sectionTitle}>Create brand kit</span>
               <button
                 type="button"
+                aria-label="Close"
                 onClick={() => setCreateKitModalOpen(false)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 0 }}
               >
@@ -1024,8 +1042,9 @@ export default function BrandKitPage() {
               </button>
             </div>
             <div>
-              <label style={tinyLabel}>Name</label>
+              <label style={tinyLabel} htmlFor="new-kit-name">Name</label>
               <input
+                id="new-kit-name"
                 type="text"
                 value={newKitName}
                 onChange={(e) => setNewKitName(e.target.value)}
@@ -1215,6 +1234,7 @@ export default function BrandKitPage() {
                   {p}
                   <button
                     type="button"
+                    aria-label={`Remove ${p}`}
                     style={chipDeleteBtn}
                     onClick={() => removeChip(enforcementProjects, setEnforcementProjects, i)}
                   >
@@ -1549,6 +1569,10 @@ export default function BrandKitPage() {
                     step={1}
                     value={sonicVolume}
                     onChange={(e) => setSonicVolume(Number(e.target.value))}
+                    aria-label="Sonic logo volume (dB)"
+                    aria-valuenow={sonicVolume}
+                    aria-valuemin={-40}
+                    aria-valuemax={0}
                     style={{
                       width: '100%',
                       accentColor: 'var(--brand)',
@@ -1650,7 +1674,7 @@ export default function BrandKitPage() {
                 {brandKeywords.map((kw, i) => (
                   <span key={kw} style={chipStyle}>
                     {kw}
-                    <button type="button" style={chipDeleteBtn} onClick={() => removeChip(brandKeywords, setBrandKeywords, i)}>
+                    <button type="button" aria-label={`Remove ${kw}`} style={chipDeleteBtn} onClick={() => removeChip(brandKeywords, setBrandKeywords, i)}>
                       <X size={10} />
                     </button>
                   </span>
@@ -1672,7 +1696,7 @@ export default function BrandKitPage() {
                 {avoidWords.map((w, i) => (
                   <span key={w} style={{ ...chipStyle, background: 'rgba(239,68,68,0.12)', border: '0.5px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
                     {w}
-                    <button type="button" style={{ ...chipDeleteBtn, color: '#fca5a5' }} onClick={() => removeChip(avoidWords, setAvoidWords, i)}>
+                    <button type="button" aria-label={`Remove ${w}`} style={{ ...chipDeleteBtn, color: '#fca5a5' }} onClick={() => removeChip(avoidWords, setAvoidWords, i)}>
                       <X size={10} />
                     </button>
                   </span>
@@ -1689,8 +1713,9 @@ export default function BrandKitPage() {
 
             {/* Tagline */}
             <div>
-              <label style={subLabel}>Tagline</label>
+              <label style={subLabel} htmlFor="brand-tagline">Tagline</label>
               <input
+                id="brand-tagline"
                 type="text"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
@@ -1701,8 +1726,9 @@ export default function BrandKitPage() {
 
             {/* Mission */}
             <div>
-              <label style={subLabel}>Mission</label>
+              <label style={subLabel} htmlFor="brand-mission">Mission</label>
               <input
+                id="brand-mission"
                 type="text"
                 value={mission}
                 onChange={(e) => setMission(e.target.value)}
@@ -1838,6 +1864,7 @@ export default function BrandKitPage() {
                   {editingSizeIdx === i ? (
                     <input
                       type="number"
+                      aria-label="Font size in pixels"
                       autoFocus
                       value={editingSizeVal}
                       onChange={(e) => setEditingSizeVal(e.target.value)}
@@ -2056,6 +2083,10 @@ export default function BrandKitPage() {
                     step={1}
                     value={sonicVolume}
                     onChange={(e) => setSonicVolume(Number(e.target.value))}
+                    aria-label="Sonic logo volume (dB)"
+                    aria-valuenow={sonicVolume}
+                    aria-valuemin={-40}
+                    aria-valuemax={0}
                     style={{
                       width: '100%',
                       accentColor: 'var(--brand)',
@@ -2170,8 +2201,9 @@ export default function BrandKitPage() {
             {/* Settings */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel}>Name placeholder</label>
+                <label style={tinyLabel} htmlFor="lower-third-name">Name placeholder</label>
                 <input
+                  id="lower-third-name"
                   type="text"
                   value={lowerThirdName}
                   onChange={(e) => setLowerThirdName(e.target.value)}
@@ -2180,8 +2212,9 @@ export default function BrandKitPage() {
                 />
               </div>
               <div>
-                <label style={tinyLabel}>Title placeholder</label>
+                <label style={tinyLabel} htmlFor="lower-third-title">Title placeholder</label>
                 <input
+                  id="lower-third-title"
                   type="text"
                   value={lowerThirdTitle}
                   onChange={(e) => setLowerThirdTitle(e.target.value)}
@@ -2354,8 +2387,9 @@ export default function BrandKitPage() {
             {/* Settings */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel}>CTA text</label>
+                <label style={tinyLabel} htmlFor="end-card-cta">CTA text</label>
                 <input
+                  id="end-card-cta"
                   type="text"
                   value={endCardCTA}
                   onChange={(e) => setEndCardCTA(e.target.value)}
@@ -2365,8 +2399,9 @@ export default function BrandKitPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={tinyLabel}>YouTube</label>
+                  <label style={tinyLabel} htmlFor="end-card-youtube">YouTube</label>
                   <input
+                    id="end-card-youtube"
                     type="text"
                     value={endCardYouTube}
                     onChange={(e) => setEndCardYouTube(e.target.value)}
@@ -2375,8 +2410,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel}>Instagram</label>
+                  <label style={tinyLabel} htmlFor="end-card-instagram">Instagram</label>
                   <input
+                    id="end-card-instagram"
                     type="text"
                     value={endCardInstagram}
                     onChange={(e) => setEndCardInstagram(e.target.value)}
@@ -2385,8 +2421,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel}>TikTok</label>
+                  <label style={tinyLabel} htmlFor="end-card-tiktok">TikTok</label>
                   <input
+                    id="end-card-tiktok"
                     type="text"
                     value={endCardTikTok}
                     onChange={(e) => setEndCardTikTok(e.target.value)}
@@ -2395,8 +2432,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel}>Twitter</label>
+                  <label style={tinyLabel} htmlFor="end-card-twitter">Twitter</label>
                   <input
+                    id="end-card-twitter"
                     type="text"
                     value={endCardX}
                     onChange={(e) => setEndCardX(e.target.value)}
@@ -2525,6 +2563,10 @@ export default function BrandKitPage() {
                     max={100}
                     value={watermarkOpacity}
                     onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+                    aria-label="Watermark opacity"
+                    aria-valuenow={watermarkOpacity}
+                    aria-valuemin={5}
+                    aria-valuemax={100}
                     style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
                   />
                 </div>
@@ -2712,6 +2754,10 @@ export default function BrandKitPage() {
                       onChange={(e) =>
                         setSafeZoneMargins((p) => ({ ...p, [side]: Number(e.target.value) }))
                       }
+                      aria-label={`Safe zone ${side} margin (percent)`}
+                      aria-valuenow={safeZoneMargins[side]}
+                      aria-valuemin={0}
+                      aria-valuemax={30}
                       style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer' }}
                     />
                   </div>

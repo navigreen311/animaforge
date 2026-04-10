@@ -562,6 +562,7 @@ export default function AvatarStudioPage() {
                           style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }}
                         />
                         <button
+                          aria-label={`Remove photo ${photo.name}`}
                           onClick={e => { e.stopPropagation(); removePhoto(photo.id); }}
                           style={{
                             position: 'absolute', top: 4, right: 4, width: 20, height: 20,
@@ -623,6 +624,7 @@ export default function AvatarStudioPage() {
                   <input
                     type="text" value={avatarName} onChange={e => setAvatarName(e.target.value)}
                     placeholder="e.g. My Digital Twin"
+                    aria-label="Avatar name"
                     style={{
                       padding: '8px 12px', fontSize: 13, borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border)', background: 'var(--bg-surface)',
@@ -1502,22 +1504,22 @@ export default function AvatarStudioPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     opacity: 0, transition: 'opacity 200ms ease',
                   }}>
-                    <button title="Edit" style={{
+                    <button title="Edit" aria-label="Edit" style={{
                       width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                     }}><Edit3 size={13} /></button>
-                    <button title="Use in Project" style={{
+                    <button title="Use in Project" aria-label="Use in Project" style={{
                       width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                     }}><FolderOpen size={13} /></button>
-                    <button title="Export" style={{
+                    <button title="Export" aria-label="Export" style={{
                       width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                     }}><Download size={13} /></button>
-                    <button title="More" style={{
+                    <button title="More" aria-label="More options" style={{
                       width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,

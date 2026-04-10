@@ -65,22 +65,43 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: sidebarCollapsed ? '56px 1fr' : 'var(--sidebar-width) 1fr',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'var(--bg-base)',
-        transition: 'grid-template-columns 200ms ease',
-      }}
-    >
-      <Sidebar />
-      <main style={{ overflowY: 'auto', height: '100vh' }}>
-        {children}
-      </main>
+    <>
+      <a
+        href="#main-content"
+        className="skip-to-content"
+        style={{
+          position: 'absolute',
+          top: -40,
+          left: 8,
+          padding: '8px 16px',
+          background: 'var(--brand)',
+          color: 'white',
+          textDecoration: 'none',
+          borderRadius: 'var(--radius-md)',
+          zIndex: 9999,
+        }}
+        onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
+        onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
+      >
+        Skip to main content
+      </a>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: sidebarCollapsed ? '56px 1fr' : 'var(--sidebar-width) 1fr',
+          height: '100vh',
+          overflow: 'hidden',
+          background: 'var(--bg-base)',
+          transition: 'grid-template-columns 200ms ease',
+        }}
+      >
+        <Sidebar />
+        <main id="main-content" tabIndex={-1} style={{ overflowY: 'auto', height: '100vh' }}>
+          {children}
+        </main>
 
-      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-    </div>
+        <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      </div>
+    </>
   );
 }

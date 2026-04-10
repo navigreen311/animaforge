@@ -525,3 +525,95 @@ model WebhookDelivery {
   @@index([webhookId, createdAt])
   @@map("webhook_deliveries")
 }
+
+// ============================================
+// LIVE RUNTIME
+// ============================================
+
+model LiveSession {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  avatarId    String?  @map("avatar_id")
+  status      String   @default("offline")
+  destinations String[] @default([])
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz
+  viewerPeak  Int      @default(0) @map("viewer_peak")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([userId])
+  @@map("live_sessions")
+}
+
+model BranchingScene {
+  id           String   @id @default(cuid())
+  narrativeId  String   @map("narrative_id")
+  name         String
+  triggerType  String   @map("trigger_type")
+  emotion      String?
+  pose         String?
+  position     Json     @default("{}")
+  @@index([narrativeId])
+  @@map("branching_scenes")
+}
+
+// ============================================
+// PIRACY MONITORING
+// ============================================
+
+model PiracyMatch {
+  id              String   @id @default(cuid())
+  outputId        String   @map("output_id")
+  userId          String   @map("user_id")
+  platform        String
+  matchUrl        String   @map("match_url")
+  matchStrength   Float    @map("match_strength")
+  watermarkFound  Boolean  @default(false) @map("watermark_found")
+  status          String   @default("pending")
+  detectedAt      DateTime @default(now()) @map("detected_at") @db.Timestamptz
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
+  @@index([userId, status])
+  @@map("piracy_matches")
+}
+
+model DMCANotice {
+  id          String   @id @default(cuid())
+  matchId     String   @map("match_id")
+  userId      String   @map("user_id")
+  status      String   @default("draft")
+  filedAt     DateTime? @map("filed_at") @db.Timestamptz
+  caseNumber  String?  @map("case_number")
+  responseAt  DateTime? @map("response_at") @db.Timestamptz
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("dmca_notices")
+}
+
+// ============================================
+// PRODUCTION CALENDAR
+// ============================================
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  projectId   String?  @map("project_id")
+  userId      String   @map("user_id")
+  title       String
+  type        String
+  startDate   DateTime @map("start_date") @db.Timestamptz
+  endDate     DateTime @map("end_date") @db.Timestamptz
+  ownerId     String?  @map("owner_id")
+  status      String   @default("pending")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([userId, startDate])
+  @@map("calendar_events")
+}
+
+model TaskDependency {
+  id          String   @id @default(cuid())
+  fromTaskId  String   @map("from_task_id")
+  toTaskId    String   @map("to_task_id")
+  type        String   @default("blocks")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@unique([fromTaskId, toTaskId])
+  @@map("task_dependencies")
+}

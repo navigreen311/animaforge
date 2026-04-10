@@ -762,6 +762,8 @@ export default function MarketplacePage() {
         {!options?.showWishlistRemove && (
           <button
             type="button"
+            aria-label={wishlistedIds.has(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-pressed={wishlistedIds.has(item.id)}
             onClick={(e) => { e.stopPropagation(); toggleWishlist(item.id); }}
             style={{
               position: 'absolute',
@@ -813,6 +815,7 @@ export default function MarketplacePage() {
         {options?.showWishlistRemove && (
           <button
             type="button"
+            aria-label="Remove from wishlist"
             onClick={(e) => { e.stopPropagation(); toggleWishlist(item.id); }}
             style={{
               position: 'absolute',
@@ -1113,6 +1116,7 @@ export default function MarketplacePage() {
                 {/* Close button */}
                 <button
                   type="button"
+                  aria-label="Close"
                   onClick={closeDetail}
                   style={{
                     position: 'absolute',
@@ -1363,6 +1367,8 @@ export default function MarketplacePage() {
                           <button
                             key={s}
                             type="button"
+                            aria-label={`Rate ${s} star${s !== 1 ? 's' : ''}`}
+                            aria-pressed={s <= reviewRating}
                             onClick={() => setReviewRating(s)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                           >
@@ -1381,6 +1387,7 @@ export default function MarketplacePage() {
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
                         placeholder="Share your experience with this item..."
+                        aria-label="Review text"
                         rows={3}
                         style={{
                           width: '100%',
@@ -1468,6 +1475,8 @@ export default function MarketplacePage() {
                   {!isOwned && (
                     <button
                       type="button"
+                      aria-label={wishlistedIds.has(selectedItem.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      aria-pressed={wishlistedIds.has(selectedItem.id)}
                       onClick={() => toggleWishlist(selectedItem.id)}
                       style={{
                         background: 'transparent',
@@ -1796,6 +1805,7 @@ export default function MarketplacePage() {
         <Search size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
         <input
           type="text"
+          aria-label="Search marketplace"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search styles, templates, characters, audio..."

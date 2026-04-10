@@ -467,7 +467,7 @@ function CreditLimitModal({
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Credit limit for {member.name}
           </h3>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
             <X size={16} />
           </button>
         </div>
@@ -653,7 +653,7 @@ function InviteMemberModal({
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Invite Member
           </h3>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
             <X size={16} />
           </button>
         </div>
@@ -668,6 +668,7 @@ function InviteMemberModal({
               <input
                 type="email"
                 placeholder="name@example.com"
+                aria-label="Invitee email"
                 value={entry.email}
                 onChange={(e) => updateEmail(entry.id, e.target.value)}
                 style={{ ...inputStyle, flex: 1 }}
@@ -675,6 +676,7 @@ function InviteMemberModal({
               {entries.length > 1 && (
                 <button
                   type="button"
+                  aria-label="Remove email"
                   onClick={() => removeEntry(entry.id)}
                   style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}
                 >
@@ -806,6 +808,7 @@ function InviteMemberModal({
           {creditMode === 'custom' && (
             <input
               type="number"
+              aria-label="Monthly credit limit"
               value={creditValue}
               onChange={(e) => setCreditValue(e.target.value)}
               style={{ ...inputStyle, marginTop: 8 }}
@@ -824,6 +827,7 @@ function InviteMemberModal({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Add a welcome message..."
+            aria-label="Personal message"
             rows={3}
             style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
           />
@@ -914,7 +918,7 @@ function ProjectAccessModal({
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Project access &mdash; {member.name}
           </h3>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
             <X size={16} />
           </button>
         </div>
@@ -1057,7 +1061,7 @@ function MemberDetailPanel({
     >
       {/* Close */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
-        <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}>
+        <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}>
           <X size={16} />
         </button>
       </div>
@@ -1802,6 +1806,9 @@ export default function TeamPage() {
                 {/* Menu Button */}
                 <button
                   type="button"
+                  aria-label={`More options for ${member.name}`}
+                  aria-haspopup="menu"
+                  aria-expanded={contextMenu?.member.id === member.id}
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();

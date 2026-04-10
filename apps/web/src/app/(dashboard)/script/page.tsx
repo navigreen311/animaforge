@@ -465,6 +465,7 @@ export default function ScriptPage() {
                 className="absolute -right-6 top-1/2 -translate-y-1/2 hidden rounded p-1 transition-colors group-hover/proj:inline-flex"
                 style={{ color: 'var(--text-tertiary)' }}
                 title="Unlink project"
+                aria-label="Unlink project"
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--error, #f87171)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
               >
@@ -486,6 +487,7 @@ export default function ScriptPage() {
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
                       placeholder="Search projects..."
+                      aria-label="Search projects"
                       className="w-full rounded border py-1.5 pl-7 pr-2 text-[11px] outline-none"
                       style={{
                         borderColor: 'var(--border)',
@@ -606,6 +608,7 @@ export default function ScriptPage() {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             title="Version history"
+            aria-label="Version history"
           >
             <Clock size={14} />
           </button>
@@ -674,6 +677,10 @@ export default function ScriptPage() {
               step={5}
               value={targetDuration}
               onChange={(e) => setTargetDuration(Number(e.target.value))}
+              aria-label="Target duration in seconds"
+              aria-valuenow={targetDuration}
+              aria-valuemin={15}
+              aria-valuemax={300}
               className="w-full accent-[var(--brand)]"
               style={{ accentColor: 'var(--brand)' }}
             />
@@ -692,6 +699,10 @@ export default function ScriptPage() {
               step={1}
               value={targetShotCount}
               onChange={(e) => setTargetShotCount(Number(e.target.value))}
+              aria-label="Target shot count"
+              aria-valuenow={targetShotCount}
+              aria-valuemin={3}
+              aria-valuemax={30}
               className="w-full"
               style={{ accentColor: 'var(--brand)' }}
             />
@@ -810,25 +821,25 @@ export default function ScriptPage() {
                     borderColor: 'var(--border)',
                   }}
                 >
-                  <button onClick={() => moveScene(scene.id, -1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move up"
+                  <button onClick={() => moveScene(scene.id, -1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move up" aria-label="Move scene up"
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <ArrowUp size={13} />
                   </button>
-                  <button onClick={() => moveScene(scene.id, 1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move down"
+                  <button onClick={() => moveScene(scene.id, 1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move down" aria-label="Move scene down"
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <ArrowDown size={13} />
                   </button>
-                  <button onClick={() => addSceneAfter(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Add scene after"
+                  <button onClick={() => addSceneAfter(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Add scene after" aria-label="Add scene after"
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={13} />
                   </button>
-                  <button onClick={() => deleteScene(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--error, #f87171)' }} title="Delete scene"
+                  <button onClick={() => deleteScene(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--error, #f87171)' }} title="Delete scene" aria-label="Delete scene"
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
@@ -1135,6 +1146,7 @@ export default function ScriptPage() {
                                       onClick={() => removeCharacterFromShot(shot.id, cId)}
                                       className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-white/10"
                                       title={`Remove ${charName}`}
+                                      aria-label={`Remove ${charName}`}
                                     >
                                       <X size={8} />
                                     </button>
@@ -1245,6 +1257,7 @@ export default function ScriptPage() {
                   onClick={() => setShowVersionDrawer(false)}
                   className="rounded p-1 transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
+                  aria-label="Close version history"
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
