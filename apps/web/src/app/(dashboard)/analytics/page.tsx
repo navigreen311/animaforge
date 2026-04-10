@@ -1,23 +1,26 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, Suspense } from 'react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import {
   BarChart3, TrendingUp, Clock, Zap, ChevronDown, Download, X,
-  MonitorPlay, Play, Share2, AlertTriangle, RotateCcw, ExternalLink,
+  MonitorPlay, Play, Share2, AlertTriangle, AlertCircle, RotateCcw, ExternalLink,
   ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, Filter,
+  FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════
 
-type DateRange = 'today' | '7d' | '30d' | '90d' | '12m' | 'custom';
+type DateRange = '7d' | '30d' | '90d' | '1y' | 'custom';
 type RenderStatus = 'Complete' | 'Failed' | 'Running';
 type RenderTier = 'Standard' | 'Pro' | 'Ultra';
 type CreditCategory = 'Video' | 'Audio' | 'Style' | 'Avatar' | 'Script';
@@ -39,7 +42,9 @@ interface RenderHistoryRow {
   id: string;
   date: string;
   project: string;
+  projectId?: string;
   shot: string;
+  shotId?: string;
   duration: string;
   credits: number;
   tier: RenderTier;
@@ -55,12 +60,16 @@ interface CreditCategoryData {
 }
 
 interface TopProjectData {
+  id: string;
   name: string;
   credits: number;
   renders: number;
   tierBreakdown: { standard: number; pro: number; ultra: number };
   timeline: { day: string; count: number }[];
   topCharacter: string;
+  firstPassApprovalRate: number; // 0..1
+  avgRenderSec: number;
+  shotsOverTime: { day: string; shots: number }[];
 }
 
 interface PlatformData {
@@ -128,16 +137,34 @@ function generateSnapshots(days: number): DaySnapshot[] {
 const ALL_SNAPSHOTS_90 = generateSnapshots(90);
 const ALL_SNAPSHOTS_365 = generateSnapshots(365);
 
-function getSnapshots(range: DateRange): DaySnapshot[] {
+function getSnapshots(range: DateRange, customFrom?: string, customTo?: string): DaySnapshot[] {
   switch (range) {
-    case 'today': return ALL_SNAPSHOTS_90.slice(-1);
     case '7d': return ALL_SNAPSHOTS_90.slice(-7);
     case '30d': return ALL_SNAPSHOTS_90.slice(-30);
     case '90d': return ALL_SNAPSHOTS_90;
-    case '12m': return ALL_SNAPSHOTS_365;
-    case 'custom': return ALL_SNAPSHOTS_90.slice(-30);
+    case '1y': return ALL_SNAPSHOTS_365;
+    case 'custom': {
+      if (!customFrom || !customTo) return ALL_SNAPSHOTS_365;
+      return ALL_SNAPSHOTS_365.filter((s) => s.date >= customFrom && s.date <= customTo);
+    }
     default: return ALL_SNAPSHOTS_90.slice(-30);
   }
+}
+
+// Compute from/to ISO dates (YYYY-MM-DD) for a given range
+function computeRangeDates(range: DateRange, customFrom?: string, customTo?: string): { from: string; to: string } {
+  const now = new Date(2026, 2, 25);
+  const to = now.toISOString().slice(0, 10);
+  const from = new Date(now);
+  switch (range) {
+    case '7d': from.setDate(from.getDate() - 6); break;
+    case '30d': from.setDate(from.getDate() - 29); break;
+    case '90d': from.setDate(from.getDate() - 89); break;
+    case '1y': from.setDate(from.getDate() - 364); break;
+    case 'custom':
+      return { from: customFrom || to, to: customTo || to };
+  }
+  return { from: from.toISOString().slice(0, 10), to };
 }
 
 const PROJECTS = ['Hero Promo', 'Product Launch', 'Brand Story', 'Tutorial Series', 'Social Campaign'];
@@ -160,11 +187,15 @@ function generateRenderHistory(): RenderHistoryRow[] {
     const credits = status === 'Failed' ? 0 : Math.floor(40 + rand() * 200);
     const mins = Math.floor(rand() * 5);
     const secs = Math.floor(rand() * 60);
+    const projSlug = proj.toLowerCase().replace(/\s+/g, '-');
+    const shotNum = Math.floor(rand() * 15) + 1;
     rows.push({
       id: `r-${i}`,
       date: d.label,
       project: proj,
-      shot: `Shot ${Math.floor(rand() * 15) + 1} - ${shot}`,
+      projectId: `proj-${projSlug}`,
+      shot: `Shot ${shotNum} - ${shot}`,
+      shotId: `shot-${projSlug}-${shotNum}`,
       duration: status === 'Running' ? '\u2014' : `${mins}m ${secs.toString().padStart(2, '0')}s`,
       credits,
       tier,
@@ -189,28 +220,52 @@ const CREDIT_TOTAL = CREDIT_CATEGORIES.reduce((s, c) => s + c.credits, 0);
 
 const TOP_PROJECTS_DATA: TopProjectData[] = [
   {
+    id: 'proj-hero-promo',
     name: 'Hero Promo',
     credits: 1840,
     renders: 124,
     tierBreakdown: { standard: 620, pro: 740, ultra: 480 },
     timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 6 + (i % 3) * 2 })),
     topCharacter: 'Captain Nova',
+    firstPassApprovalRate: 0.82,
+    avgRenderSec: 184,
+    shotsOverTime: [
+      { day: 'D1', shots: 4 }, { day: 'D2', shots: 7 }, { day: 'D3', shots: 5 },
+      { day: 'D4', shots: 9 }, { day: 'D5', shots: 12 }, { day: 'D6', shots: 8 },
+      { day: 'D7', shots: 14 }, { day: 'D8', shots: 11 },
+    ],
   },
   {
+    id: 'proj-product-launch',
     name: 'Product Launch',
     credits: 1260,
     renders: 89,
     tierBreakdown: { standard: 480, pro: 520, ultra: 260 },
     timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 4 + (i % 4) })),
     topCharacter: 'Brand Bot',
+    firstPassApprovalRate: 0.74,
+    avgRenderSec: 212,
+    shotsOverTime: [
+      { day: 'D1', shots: 3 }, { day: 'D2', shots: 5 }, { day: 'D3', shots: 6 },
+      { day: 'D4', shots: 4 }, { day: 'D5', shots: 8 }, { day: 'D6', shots: 10 },
+      { day: 'D7', shots: 7 }, { day: 'D8', shots: 9 },
+    ],
   },
   {
+    id: 'proj-brand-story',
     name: 'Brand Story',
     credits: 780,
     renders: 56,
     tierBreakdown: { standard: 300, pro: 340, ultra: 140 },
     timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 2 + (i % 5) })),
     topCharacter: 'Maya',
+    firstPassApprovalRate: 0.68,
+    avgRenderSec: 158,
+    shotsOverTime: [
+      { day: 'D1', shots: 2 }, { day: 'D2', shots: 3 }, { day: 'D3', shots: 5 },
+      { day: 'D4', shots: 4 }, { day: 'D5', shots: 6 }, { day: 'D6', shots: 5 },
+      { day: 'D7', shots: 7 }, { day: 'D8', shots: 6 },
+    ],
   },
 ];
 
@@ -320,13 +375,17 @@ const pillBadge = (bg: string, color: string): React.CSSProperties => ({
 // ══════════════════════════════════════════════════════════════
 
 const DATE_RANGE_LABELS: Record<DateRange, string> = {
-  today: 'Today',
   '7d': 'Last 7 days',
   '30d': 'Last 30 days',
   '90d': 'Last 90 days',
-  '12m': 'Last 12 months',
-  custom: 'Custom',
+  '1y': 'Last 1 year',
+  custom: 'Custom range',
 };
+
+const VALID_DATE_RANGES: DateRange[] = ['7d', '30d', '90d', '1y', 'custom'];
+function parseDateRange(v: string | null): DateRange {
+  return (v && (VALID_DATE_RANGES as string[]).includes(v)) ? (v as DateRange) : '30d';
+}
 
 function fmtNum(n: number): string {
   return n.toLocaleString();
@@ -484,24 +543,63 @@ function useDropdown() {
 // COMPONENT
 // ══════════════════════════════════════════════════════════════
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   // ── State ───────────────────────────────────────────────────
-  const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [dateRange, setDateRange] = useState<DateRange>(() => parseDateRange(searchParams?.get('range') ?? null));
+  const [customFrom, setCustomFrom] = useState<string>(() => searchParams?.get('from') ?? '2026-02-25');
+  const [customTo, setCustomTo] = useState<string>(() => searchParams?.get('to') ?? '2026-03-25');
   const dateDropdown = useDropdown();
   const exportDropdown = useDropdown();
 
+  // Sync dateRange → URL (?range=...&from=...&to=...)
+  useEffect(() => {
+    const params = new URLSearchParams(Array.from(searchParams?.entries() ?? []));
+    params.set('range', dateRange);
+    if (dateRange === 'custom') {
+      params.set('from', customFrom);
+      params.set('to', customTo);
+    } else {
+      params.delete('from');
+      params.delete('to');
+    }
+    const qs = params.toString();
+    router.replace(`/analytics${qs ? `?${qs}` : ''}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange, customFrom, customTo]);
+
   const [categoryFilter, setCategoryFilter] = useState<CreditCategory | null>(null);
+  const [categoryTooltip, setCategoryTooltip] = useState<{
+    cat: CreditCategoryData;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [runningProgress, setRunningProgress] = useState<Record<string, number>>({});
   const [tablePage, setTablePage] = useState(0);
   const [perPage, setPerPage] = useState(20);
   const [filterProject, setFilterProject] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterTier, setFilterTier] = useState('');
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [drawerProject, setDrawerProject] = useState<TopProjectData | null>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<Set<Platform>>(new Set());
 
   // ── Derived Data ────────────────────────────────────────────
-  const snapshots = useMemo(() => getSnapshots(dateRange), [dateRange]);
+  const snapshots = useMemo(
+    () => getSnapshots(dateRange, customFrom, customTo),
+    [dateRange, customFrom, customTo]
+  );
+  const rangeDates = useMemo(
+    () => computeRangeDates(dateRange, customFrom, customTo),
+    [dateRange, customFrom, customTo]
+  );
+  // Re-slice mock render history differently per range
+  const rangeFilteredHistory = useMemo(() => {
+    const limits: Record<DateRange, number> = { '7d': 20, '30d': 60, '90d': 100, '1y': 120, custom: 80 };
+    return ALL_RENDER_HISTORY.slice(0, limits[dateRange] ?? 60);
+  }, [dateRange]);
 
   const kpis = useMemo(() => {
     const totalRenders = snapshots.reduce((s, d) => s + d.completed + d.failed, 0);
@@ -566,18 +664,58 @@ export default function AnalyticsPage() {
 
   const redZoneThreshold = 10000 * 0.2; // 20% of total
 
+  // Deterministically assign a credit category to each render row (mock mapping)
+  const rowCategory = useCallback((rowId: string): CreditCategory => {
+    let h = 0;
+    for (let i = 0; i < rowId.length; i++) h = (h * 31 + rowId.charCodeAt(i)) >>> 0;
+    const cats: CreditCategory[] = ['Video', 'Audio', 'Style', 'Avatar', 'Script'];
+    return cats[h % cats.length];
+  }, []);
+
   // Table filtering
   const filteredHistory = useMemo(() => {
-    let rows = ALL_RENDER_HISTORY;
+    let rows = rangeFilteredHistory;
     if (categoryFilter) {
-      // Filter by category -> project mapping approximation
-      rows = rows.filter(() => true); // in real app this would filter
+      rows = rows.filter((r) => rowCategory(r.id) === categoryFilter);
     }
     if (filterProject) rows = rows.filter((r) => r.project === filterProject);
     if (filterStatus) rows = rows.filter((r) => r.status === filterStatus);
     if (filterTier) rows = rows.filter((r) => r.tier === filterTier);
     return rows;
-  }, [categoryFilter, filterProject, filterStatus, filterTier]);
+  }, [rangeFilteredHistory, categoryFilter, filterProject, filterStatus, filterTier, rowCategory]);
+
+  // Running rows -> animated progress simulation
+  const runningRowIds = useMemo(
+    () => ALL_RENDER_HISTORY.filter((r) => r.status === 'Running').map((r) => r.id),
+    []
+  );
+
+  useEffect(() => {
+    if (runningRowIds.length === 0) return;
+    setRunningProgress((prev) => {
+      const next = { ...prev };
+      runningRowIds.forEach((id) => {
+        if (next[id] === undefined) {
+          let h = 0;
+          for (let i = 0; i < id.length; i++) h = (h * 17 + id.charCodeAt(i)) >>> 0;
+          next[id] = h % 40;
+        }
+      });
+      return next;
+    });
+    const interval = setInterval(() => {
+      setRunningProgress((prev) => {
+        const next = { ...prev };
+        runningRowIds.forEach((id) => {
+          const cur = next[id] ?? 0;
+          const inc = 5 + ((cur * 7) % 6);
+          next[id] = cur + inc >= 100 ? 0 : cur + inc;
+        });
+        return next;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [runningRowIds]);
 
   const totalPages = Math.ceil(filteredHistory.length / perPage);
   const pageRows = filteredHistory.slice(tablePage * perPage, (tablePage + 1) * perPage);
@@ -585,10 +723,55 @@ export default function AnalyticsPage() {
   const hasFailures = failedRows.length > 0;
 
   // Export handlers
-  const handleExport = useCallback((type: string) => {
-    toast.success(`Exporting ${type}...`);
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  const handleExportCSV = useCallback(() => {
     exportDropdown.setOpen(false);
-  }, [exportDropdown]);
+    const header = ['Date', 'Project', 'Shot', 'Duration', 'Credits', 'Tier', 'Status'];
+    const lines = [header.join(',')];
+    filteredHistory.forEach((r) => {
+      const row = [r.date, r.project, r.shot, r.duration, r.credits, r.tier, r.status]
+        .map((v) => {
+          const s = String(v).replace(/"/g, '""');
+          return /[",\n]/.test(s) ? `"${s}"` : s;
+        })
+        .join(',');
+      lines.push(row);
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `analytics-${dateRange}-${rangeDates.from}_${rangeDates.to}.csv`);
+    toast.success('CSV exported');
+  }, [exportDropdown, filteredHistory, dateRange, rangeDates, downloadBlob]);
+
+  const handleExportPDF = useCallback(() => {
+    exportDropdown.setOpen(false);
+    const toastId = toast.loading('Generating PDF report...');
+    setTimeout(() => {
+      const mockPdfContent = `%PDF-1.4\n% AnimaForge Analytics Report\n% Range: ${dateRange} (${rangeDates.from} to ${rangeDates.to})\n% Renders: ${kpis.totalRenders}\n% Credits Spent: ${kpis.creditsSpent}\n%%EOF\n`;
+      const blob = new Blob([mockPdfContent], { type: 'application/pdf' });
+      downloadBlob(blob, `analytics-${dateRange}-report.pdf`);
+      toast.success('PDF report downloaded', { id: toastId });
+    }, 2000);
+  }, [exportDropdown, dateRange, rangeDates, kpis, downloadBlob]);
+
+  const handleRetryShot = useCallback((rowId: string) => {
+    toast.info('Shot queued for retry');
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      next.delete(rowId);
+      return next;
+    });
+  }, []);
 
   // ── Render ──────────────────────────────────────────────────
   return (
@@ -622,7 +805,7 @@ export default function AnalyticsPage() {
               <ChevronDown size={12} />
             </button>
             {dateDropdown.open && (
-              <div style={dropdownMenu}>
+              <div style={{ ...dropdownMenu, minWidth: 220 }}>
                 {(Object.keys(DATE_RANGE_LABELS) as DateRange[]).map((key) => (
                   <button
                     key={key}
@@ -632,13 +815,62 @@ export default function AnalyticsPage() {
                       background: key === dateRange ? 'var(--bg-hover)' : 'transparent',
                       fontWeight: key === dateRange ? 600 : 400,
                     }}
-                    onClick={() => { setDateRange(key); dateDropdown.setOpen(false); setTablePage(0); }}
+                    onClick={() => {
+                      setDateRange(key);
+                      if (key !== 'custom') dateDropdown.setOpen(false);
+                      setTablePage(0);
+                    }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = key === dateRange ? 'var(--bg-hover)' : 'transparent'; }}
                   >
                     {DATE_RANGE_LABELS[key]}
                   </button>
                 ))}
+                {dateRange === 'custom' && (
+                  <div style={{ padding: '10px 14px', borderTop: '0.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      From
+                      <input
+                        type="date"
+                        value={customFrom}
+                        max={customTo}
+                        onChange={(e) => { setCustomFrom(e.target.value); setTablePage(0); }}
+                        style={{
+                          background: 'var(--bg-elevated)',
+                          border: '0.5px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          color: 'var(--text-primary)',
+                          padding: '4px 8px',
+                          fontSize: 12,
+                        }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      To
+                      <input
+                        type="date"
+                        value={customTo}
+                        min={customFrom}
+                        onChange={(e) => { setCustomTo(e.target.value); setTablePage(0); }}
+                        style={{
+                          background: 'var(--bg-elevated)',
+                          border: '0.5px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          color: 'var(--text-primary)',
+                          padding: '4px 8px',
+                          fontSize: 12,
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      style={{ ...btnBase, justifyContent: 'center', background: 'var(--brand)', color: '#fff', border: 'none', fontWeight: 600 }}
+                      onClick={() => dateDropdown.setOpen(false)}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -658,23 +890,25 @@ export default function AnalyticsPage() {
             </button>
             {exportDropdown.open && (
               <div style={dropdownMenu}>
-                <button type="button" style={dropdownItem} onClick={() => handleExport('CSV Render History')}
+                <button
+                  type="button"
+                  style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
+                  onClick={handleExportCSV}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  CSV Render History
+                  <FileSpreadsheet size={13} />
+                  Export as CSV
                 </button>
-                <button type="button" style={dropdownItem} onClick={() => handleExport('CSV Credit Usage')}
+                <button
+                  type="button"
+                  style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
+                  onClick={handleExportPDF}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  CSV Credit Usage
-                </button>
-                <button type="button" style={dropdownItem} onClick={() => handleExport('PDF Full Report')}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  PDF Full Report
+                  <FileText size={13} />
+                  Export as PDF
                 </button>
               </div>
             )}
@@ -917,18 +1151,21 @@ export default function AnalyticsPage() {
                     cursor: 'pointer',
                     padding: '8px 10px',
                     borderRadius: 'var(--radius-md)',
-                    background: selected ? 'rgba(167,139,250,0.08)' : 'transparent',
-                    border: selected ? '1px solid rgba(167,139,250,0.2)' : '1px solid transparent',
+                    background: selected ? 'var(--brand-dim)' : 'transparent',
+                    border: selected ? '1px solid var(--brand-border)' : '1px solid transparent',
                     transition: 'all 150ms ease',
                   }}
-                  onClick={() => setCategoryFilter(selected ? null : cat.category)}
+                  onClick={() => { setCategoryFilter(selected ? null : cat.category); setTablePage(0); }}
                   onMouseEnter={(e) => {
                     if (!selected) e.currentTarget.style.background = 'var(--bg-hover)';
                   }}
+                  onMouseMove={(e) => {
+                    setCategoryTooltip({ cat, x: e.clientX, y: e.clientY });
+                  }}
                   onMouseLeave={(e) => {
                     if (!selected) e.currentTarget.style.background = 'transparent';
+                    setCategoryTooltip(null);
                   }}
-                  title={`${cat.category}: ${fmtNum(cat.credits)} credits (${cat.pct}%) | Trend: ${isUp ? '+' : ''}${cat.trend}%`}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
@@ -944,20 +1181,63 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                   </div>
-                  <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'var(--bg-overlay, rgba(255,255,255,0.04))' }}>
+                  <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'var(--progress-track)' }}>
                     <div
                       style={{
                         width: `${widthPct}%`,
                         height: '100%',
                         borderRadius: 4,
-                        background: BRAND_PURPLE,
-                        transition: 'width 300ms ease',
+                        background: selected ? 'var(--brand)' : BRAND_PURPLE,
+                        borderRight: selected ? '2px solid var(--brand-light)' : 'none',
+                        transition: 'width 300ms ease, background 150ms ease',
                       }}
                     />
                   </div>
                 </div>
               );
             })}
+
+            {/* Active category filter pill */}
+            {categoryFilter && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  marginTop: 4,
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--brand-dim)',
+                  border: '1px solid var(--brand-border)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>
+                  Showing: <strong style={{ color: 'var(--brand-light)' }}>{categoryFilter}</strong> renders only
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setCategoryFilter(null); setTablePage(0); }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 11,
+                    padding: '2px 6px',
+                    borderRadius: 'var(--radius-sm)',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                >
+                  Clear filter <X size={11} />
+                </button>
+              </div>
+            )}
+
             {/* Total row */}
             <div
               style={{
@@ -976,6 +1256,67 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+
+        {/* Credit category hover tooltip (fixed, follows cursor) */}
+        {categoryTooltip && (
+          <div
+            style={{
+              position: 'fixed',
+              top: categoryTooltip.y + 14,
+              left: categoryTooltip.x + 14,
+              zIndex: 100,
+              pointerEvents: 'none',
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '8px 12px',
+              fontSize: 11,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              minWidth: 160,
+            }}
+          >
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>
+              {categoryTooltip.cat.category}
+            </div>
+            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+              <span>Credits</span>
+              <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                {fmtNum(categoryTooltip.cat.credits)}
+              </strong>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+              <span>Share</span>
+              <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                {categoryTooltip.cat.pct}%
+              </strong>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+              <span>Trend</span>
+              <strong
+                style={{
+                  color: categoryTooltip.cat.trend > 0 ? GREEN : RED,
+                  fontFamily: 'monospace',
+                }}
+              >
+                {categoryTooltip.cat.trend > 0 ? '+' : ''}{categoryTooltip.cat.trend}%
+              </strong>
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                paddingTop: 6,
+                borderTop: '0.5px solid var(--border)',
+                color: 'var(--brand-light)',
+                fontSize: 10,
+                fontStyle: 'italic',
+              }}
+            >
+              {categoryFilter === categoryTooltip.cat.category
+                ? 'Click to clear filter'
+                : 'Click to filter'}
+            </div>
+          </div>
+        )}
 
         {/* ═══ RENDER HISTORY TABLE ═══════════════════════════ */}
         <div style={card}>
@@ -1042,7 +1383,7 @@ export default function AnalyticsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
-                  {['Date', 'Project', 'Shot', 'Duration', 'Credits', 'Tier', 'Status'].map((col) => (
+                  {['Date', 'Project', 'Shot', 'Duration', 'Credits', 'Tier', 'Status', ''].map((col) => (
                     <th
                       key={col}
                       style={{
@@ -1066,18 +1407,38 @@ export default function AnalyticsPage() {
                 {pageRows.map((row, i) => {
                   const sc = statusColor(row.status);
                   const tc = tierColor(row.tier);
-                  const isExpanded = expandedRow === row.id;
+                  const isExpanded = expandedRows.has(row.id);
                   const isFailed = row.status === 'Failed';
+                  const isNavigable = !!row.projectId;
+                  const isHovered = hoveredRowId === row.id;
                   return (
                     <React.Fragment key={row.id}>
                       <tr
                         style={{
                           borderBottom: '1px solid var(--border)',
-                          cursor: isFailed ? 'pointer' : 'default',
-                          background: isExpanded ? 'rgba(248,113,113,0.04)' : 'transparent',
+                          cursor: isNavigable || isFailed ? 'pointer' : 'default',
+                          background: isHovered
+                            ? 'var(--bg-hover)'
+                            : isExpanded
+                              ? 'rgba(248,113,113,0.04)'
+                              : 'transparent',
+                          transition: 'background 120ms ease',
                         }}
+                        onMouseEnter={() => setHoveredRowId(row.id)}
+                        onMouseLeave={() => setHoveredRowId(null)}
                         onClick={() => {
-                          if (isFailed) setExpandedRow(isExpanded ? null : row.id);
+                          if (isFailed) {
+                            setExpandedRows((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) next.delete(row.id);
+                              else next.add(row.id);
+                              return next;
+                            });
+                            return;
+                          }
+                          if (isNavigable) {
+                            router.push(`/projects/${row.projectId}/timeline?shotId=${row.shotId}`);
+                          }
                         }}
                       >
                         <td style={{ padding: '10px 10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
@@ -1088,7 +1449,36 @@ export default function AnalyticsPage() {
                         </td>
                         <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>{row.shot}</td>
                         <td style={{ padding: '10px 10px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: 11 }}>
-                          {row.duration}
+                          {row.status === 'Running' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div
+                                style={{
+                                  width: 80,
+                                  height: 4,
+                                  borderRadius: 2,
+                                  background: 'var(--progress-track)',
+                                  overflow: 'hidden',
+                                  position: 'relative',
+                                }}
+                                title={`Rendering ${Math.round(runningProgress[row.id] ?? 0)}%`}
+                              >
+                                <div
+                                  className="running-progress-fill"
+                                  style={{
+                                    width: `${runningProgress[row.id] ?? 0}%`,
+                                    height: '100%',
+                                    borderRadius: 2,
+                                    transition: 'width 700ms ease',
+                                  }}
+                                />
+                              </div>
+                              <span style={{ color: 'var(--status-generating-text)', fontSize: 10, minWidth: 28 }}>
+                                {Math.round(runningProgress[row.id] ?? 0)}%
+                              </span>
+                            </div>
+                          ) : (
+                            row.duration
+                          )}
                         </td>
                         <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>
                           {row.credits > 0 ? fmtNum(row.credits) : '\u2014'}
@@ -1097,18 +1487,62 @@ export default function AnalyticsPage() {
                           <span style={pillBadge(tc.bg, tc.color)}>{row.tier}</span>
                         </td>
                         <td style={{ padding: '10px 10px' }}>
-                          <span style={pillBadge(sc.bg, sc.color)}>{row.status}</span>
+                          <span style={{ ...pillBadge(sc.bg, sc.color), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {row.status}
+                            {isFailed && (
+                              <ChevronDown
+                                size={11}
+                                style={{
+                                  transition: 'transform 150ms ease',
+                                  transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                }}
+                              />
+                            )}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 10px', width: 24, textAlign: 'right' }}>
+                          {isNavigable && isHovered && !isFailed && (
+                            <ExternalLink size={12} style={{ color: 'var(--text-tertiary)' }} />
+                          )}
                         </td>
                       </tr>
                       {/* Expanded failure row */}
                       {isExpanded && isFailed && (
                         <tr>
-                          <td colSpan={7} style={{ padding: '8px 10px 12px 32px', background: 'rgba(248,113,113,0.04)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <AlertTriangle size={12} style={{ color: RED }} />
-                              <span style={{ fontSize: 11, color: RED, fontWeight: 500 }}>
-                                Failure reason: {row.failureReason ? FAILURE_LABELS[row.failureReason] : 'Unknown'}
-                              </span>
+                          <td colSpan={8} style={{ padding: '12px 10px 14px 32px', background: 'rgba(248,113,113,0.04)', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <AlertCircle size={14} style={{ color: RED, flexShrink: 0, marginTop: 1 }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <span style={{ fontSize: 11, color: RED, fontWeight: 600 }}>
+                                    {row.failureReason ? FAILURE_LABELS[row.failureReason] : 'Unknown failure'}
+                                  </span>
+                                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                                    This render failed and no credits were charged.
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleRetryShot(row.id); }}
+                                  style={{
+                                    ...btnBase,
+                                    background: 'var(--brand)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    fontWeight: 600,
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                                >
+                                  <RotateCcw size={11} />
+                                  Retry shot
+                                </button>
+                                <span style={{ fontSize: 11, color: GREEN, fontWeight: 500 }}>
+                                  {fmtNum(Math.max(row.credits, 40))} credits refunded
+                                </span>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1493,5 +1927,13 @@ export default function AnalyticsPage() {
       )}
     </div>
     </ErrorBoundary>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: 'var(--text-secondary)' }}>Loading analytics...</div>}>
+      <AnalyticsPageContent />
+    </Suspense>
   );
 }

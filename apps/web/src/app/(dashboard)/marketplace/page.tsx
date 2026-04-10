@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Store,
   Search,
@@ -8,6 +9,8 @@ import {
   Heart,
   Download,
   ShoppingCart,
+  ShoppingBag,
+  Wallet,
   Package,
   Eye,
   X,
@@ -23,9 +26,23 @@ import {
   BarChart3,
   DollarSign,
   ExternalLink,
+  Shield,
+  Loader,
+  AlertCircle,
+  Trophy,
+  Upload,
+  ArrowLeft,
+  ArrowRight,
+  Users,
+  FileText,
+  Music,
+  Layers,
+  Workflow,
+  ImagePlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import EmptyState from '@/components/ui/EmptyState';
 
 // ── Types ────────────────────────────────────────────────────────
 type MainTab = 'shop' | 'library' | 'published' | 'wishlist';
@@ -218,6 +235,32 @@ const SHOP_ITEMS: MarketplaceItem[] = [
 const LIBRARY_ITEMS: OwnedItem[] = [
   { ...SHOP_ITEMS[0], ownedDate: '2026-03-10' },
   { ...SHOP_ITEMS[2], ownedDate: '2026-03-05' },
+  { ...SHOP_ITEMS[1], id: 'lib-3', ownedDate: '2026-02-28' },
+  { ...SHOP_ITEMS[3], id: 'lib-4', ownedDate: '2026-02-20' },
+  { ...SHOP_ITEMS[4], id: 'lib-5', ownedDate: '2026-02-14' },
+  { ...SHOP_ITEMS[5], id: 'lib-6', ownedDate: '2026-02-08' },
+  {
+    ...SHOP_ITEMS[0],
+    id: 'lib-7',
+    name: 'Painterly Brushes',
+    category: 'Style Pack',
+    categorySlug: 'style-packs',
+    creator: 'BrushLab',
+    creatorAvatar: 'BL',
+    gradient: 'linear-gradient(135deg, #f97316, #eab308)',
+    ownedDate: '2026-01-22',
+  },
+  {
+    ...SHOP_ITEMS[4],
+    id: 'lib-8',
+    name: 'Foley Essentials',
+    category: 'Audio',
+    categorySlug: 'audio',
+    creator: 'SoundForge',
+    creatorAvatar: 'SF',
+    gradient: 'linear-gradient(135deg, #14b8a6, #0f766e)',
+    ownedDate: '2026-01-15',
+  },
 ];
 
 const PUBLISHED_ITEMS: PublishedItem[] = [
@@ -242,9 +285,72 @@ const PUBLISHED_ITEMS: PublishedItem[] = [
     status: 'live',
     revenue: 1260,
   },
+  {
+    id: 'pub-2',
+    name: 'Retro VHS Filter',
+    category: 'Style Pack',
+    categorySlug: 'style-packs',
+    creator: 'You',
+    creatorAvatar: 'ME',
+    price: 25,
+    commercialPrice: 75,
+    rating: 4.1,
+    ratingCount: 14,
+    downloads: 92,
+    license: 'personal',
+    gradient: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    description: 'Authentic 80s VHS grain, chromatic aberration, and tracking lines.',
+    included: ['6 VHS presets', 'Noise overlays', 'Tracking line animation'],
+    tags: ['vhs', 'retro', 'grain'],
+    reviews: MOCK_REVIEWS,
+    status: 'pending',
+    revenue: 0,
+  },
+  {
+    id: 'pub-3',
+    name: 'Sci-Fi HUD Kit',
+    category: 'Template',
+    categorySlug: 'templates',
+    creator: 'You',
+    creatorAvatar: 'ME',
+    price: 60,
+    commercialPrice: 180,
+    rating: 4.6,
+    ratingCount: 8,
+    downloads: 48,
+    license: 'commercial',
+    gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+    description: 'Animated sci-fi interface overlays for futuristic scenes.',
+    included: ['12 HUD elements', 'Scan line animations', 'Glitch transitions'],
+    tags: ['scifi', 'hud', 'ui'],
+    reviews: MOCK_REVIEWS,
+    status: 'draft',
+    revenue: 0,
+  },
+  {
+    id: 'pub-4',
+    name: 'Vintage Jazz Loops',
+    category: 'Audio',
+    categorySlug: 'audio',
+    creator: 'You',
+    creatorAvatar: 'ME',
+    price: 40,
+    commercialPrice: 120,
+    rating: 4.3,
+    ratingCount: 11,
+    downloads: 62,
+    license: 'personal',
+    gradient: 'linear-gradient(135deg, #a855f7, #ec4899)',
+    description: 'Smooth vintage jazz loops perfect for noir animations.',
+    included: ['8 loop packs', 'Tempo-synced stems', 'Sax & piano solos'],
+    tags: ['jazz', 'vintage', 'loop'],
+    reviews: MOCK_REVIEWS,
+    status: 'live',
+    revenue: 480,
+  },
 ];
 
-const WISHLIST_IDS_INIT = ['mp-2', 'mp-4'];
+const WISHLIST_IDS_INIT = ['mp-2', 'mp-4', 'mp-5', 'mp-6', 'mp-1'];
 
 const CATEGORY_TABS: { label: string; value: Category }[] = [
   { label: 'All', value: 'all' },
@@ -306,6 +412,8 @@ function statusColor(status: ItemStatus): string {
 
 // ── Component ────────────────────────────────────────────────────
 export default function MarketplacePage() {
+  const router = useRouter();
+
   // Main tab
   const [mainTab, setMainTab] = useState<MainTab>('shop');
 
@@ -333,9 +441,12 @@ export default function MarketplacePage() {
   const [purchaseLicense, setPurchaseLicense] = useState<LicenseType>('personal');
 
   // User state
-  const [userBalance, setUserBalance] = useState(500);
+  const [userCredits, setUserCredits] = useState(850);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [ownedIds, setOwnedIds] = useState<string[]>(LIBRARY_ITEMS.map((i) => i.id));
-  const [wishlistIds, setWishlistIds] = useState<string[]>(WISHLIST_IDS_INIT);
+  const [libraryItemIds, setLibraryItemIds] = useState<Set<string>>(() => new Set(LIBRARY_ITEMS.map((i) => i.id)));
+  const [cloningIds, setCloningIds] = useState<Set<string>>(() => new Set());
+  const [wishlistedIds, setWishlistedIds] = useState<Set<string>>(() => new Set(WISHLIST_IDS_INIT));
 
   // Review state
   const [reviewRating, setReviewRating] = useState(0);
@@ -343,6 +454,23 @@ export default function MarketplacePage() {
 
   // Card hover
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+
+  // Grid scroll ref (MP-7: Trending/New this week quick-jump)
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  // Publish Wizard (MP-8)
+  const [showPublishWizard, setShowPublishWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardType, setWizardType] = useState<'style-pack' | 'character' | 'audio-pack' | 'template' | 'workflow'>('style-pack');
+  const [wizardSource, setWizardSource] = useState('');
+  const [wizardName, setWizardName] = useState('');
+  const [wizardShortDesc, setWizardShortDesc] = useState('');
+  const [wizardFullDesc, setWizardFullDesc] = useState('');
+  const [wizardTags, setWizardTags] = useState('');
+  const [wizardPreviewFile, setWizardPreviewFile] = useState<string | null>(null);
+  const [wizardIsFree, setWizardIsFree] = useState(false);
+  const [wizardPrice, setWizardPrice] = useState(50);
+  const [wizardLicense, setWizardLicense] = useState<'personal' | 'commercial' | 'both'>('both');
 
   // ── Derived data ───────────────────────────────────────────────
   const filteredShopItems = useMemo(() => {
@@ -400,7 +528,9 @@ export default function MarketplacePage() {
   const trendingItems = SHOP_ITEMS.filter((i) => i.isTrending);
   const newItems = SHOP_ITEMS.filter((i) => i.isNewThisWeek);
   const freeItems = SHOP_ITEMS.filter((i) => i.isFreePick);
-  const wishlistItems = SHOP_ITEMS.filter((i) => wishlistIds.includes(i.id));
+  const wishlistItems = SHOP_ITEMS.filter((i) => wishlistedIds.has(i.id));
+  // ensure wishlistedIds Set dependency triggers for derived values
+
 
   // ── Handlers ───────────────────────────────────────────────────
   const openDetail = useCallback((item: MarketplaceItem) => {
@@ -416,17 +546,42 @@ export default function MarketplacePage() {
   }, []);
 
   const toggleWishlist = useCallback((itemId: string) => {
-    setWishlistIds((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
-    toast.success(wishlistIds.includes(itemId) ? 'Removed from wishlist' : 'Added to wishlist');
-  }, [wishlistIds]);
+    // MP-4: Optimistic update with mock API + revert on failure
+    const wasWishlisted = wishlistedIds.has(itemId);
+    setWishlistedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
 
-  const openPurchaseModal = useCallback(() => {
-    if (!selectedItem) return;
-    setPurchaseLicense(selectedItem.license === 'commercial' ? 'commercial' : 'personal');
+    // Toast on add only (per MP-4 spec)
+    if (!wasWishlisted) {
+      toast.success('Added to wishlist');
+    }
+
+    // Mock API call (success after 300ms)
+    setTimeout(() => {
+      const mockSuccess = true; // flip to false to simulate failure
+      if (!mockSuccess) {
+        // Revert optimistic update
+        setWishlistedIds((prev) => {
+          const next = new Set(prev);
+          if (wasWishlisted) next.add(itemId);
+          else next.delete(itemId);
+          return next;
+        });
+        toast.error('Failed to update wishlist. Please try again.');
+      }
+    }, 300);
+  }, [wishlistedIds]);
+
+  const openPurchaseModal = useCallback((item?: MarketplaceItem) => {
+    const target = item ?? selectedItem;
+    if (!target) return;
+    // When opened from a card click (not detail panel), set selectedItem so modal has data
+    if (item) setSelectedItem(item);
+    setPurchaseLicense(target.license === 'commercial' ? 'commercial' : 'personal');
     setShowPurchaseModal(true);
   }, [selectedItem]);
 
@@ -435,21 +590,70 @@ export default function MarketplacePage() {
     const cost = purchaseLicense === 'commercial'
       ? (selectedItem.commercialPrice ?? selectedItem.price ?? 0)
       : (selectedItem.price ?? 0);
-    if (cost > userBalance) {
-      toast.error('Insufficient balance');
+    if (cost > userCredits) {
+      toast.error('Insufficient credits');
       return;
     }
-    setUserBalance((b) => b - cost);
-    setOwnedIds((prev) => [...prev, selectedItem.id]);
-    setShowPurchaseModal(false);
-    toast.success(`Purchased "${selectedItem.name}" for ${cost} credits`);
-  }, [selectedItem, purchaseLicense, userBalance]);
+    // MP-3: Loading state + mock 1.5s delay, then success + close
+    setIsPurchasing(true);
+    setTimeout(() => {
+      setUserCredits((b) => b - cost);
+      setOwnedIds((prev) => [...prev, selectedItem.id]);
+      setIsPurchasing(false);
+      setShowPurchaseModal(false);
+      toast.success(`Purchased "${selectedItem.name}" for ${cost} credits`);
+    }, 1500);
+  }, [selectedItem, purchaseLicense, userCredits]);
 
   const addFreeToLibrary = useCallback(() => {
     if (!selectedItem) return;
     setOwnedIds((prev) => [...prev, selectedItem.id]);
-    toast.success(`Added "${selectedItem.name}" to your library`);
+    setLibraryItemIds((prev) => {
+      const next = new Set(prev);
+      next.add(selectedItem.id);
+      return next;
+    });
+    toast.success('Item added to your library', {
+      action: {
+        label: 'View library',
+        onClick: () => setMainTab('library'),
+      },
+    });
   }, [selectedItem]);
+
+  const handleClone = useCallback((item: MarketplaceItem | { id: string; name: string }) => {
+    const id = item.id;
+    if (libraryItemIds.has(id)) return;
+    if (cloningIds.has(id)) return;
+
+    // Start loading state
+    setCloningIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    // Mock API call
+    setTimeout(() => {
+      setLibraryItemIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      setOwnedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      setCloningIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      toast.success('Item added to your library', {
+        action: {
+          label: 'View library',
+          onClick: () => setMainTab('library'),
+        },
+      });
+    }, 700);
+  }, [libraryItemIds, cloningIds]);
 
   const submitReview = useCallback(() => {
     if (reviewRating === 0) { toast.error('Please select a rating'); return; }
@@ -462,14 +666,64 @@ export default function MarketplacePage() {
   const purchaseAllWishlist = useCallback(() => {
     const unpurchased = wishlistItems.filter((i) => !ownedIds.includes(i.id));
     const totalCost = unpurchased.reduce((sum, i) => sum + (i.price ?? 0), 0);
-    if (totalCost > userBalance) {
+    if (totalCost > userCredits) {
       toast.error('Insufficient balance for all items');
       return;
     }
-    setUserBalance((b) => b - totalCost);
+    setUserCredits((b) => b - totalCost);
     setOwnedIds((prev) => [...prev, ...unpurchased.map((i) => i.id)]);
     toast.success(`Purchased ${unpurchased.length} items for ${totalCost} credits`);
-  }, [wishlistItems, ownedIds, userBalance]);
+  }, [wishlistItems, ownedIds, userCredits]);
+
+  const purchaseAllAffordable = useCallback(() => {
+    const unpurchased = wishlistItems.filter((i) => !ownedIds.includes(i.id));
+    // Greedy select affordable items until balance exhausted
+    const affordable: MarketplaceItem[] = [];
+    let running = userCredits;
+    for (const item of unpurchased) {
+      const cost = item.price ?? 0;
+      if (cost <= running) {
+        affordable.push(item);
+        running -= cost;
+      }
+    }
+    if (affordable.length === 0) {
+      toast.error('No affordable items in your wishlist');
+      return;
+    }
+    const totalCost = affordable.reduce((sum, i) => sum + (i.price ?? 0), 0);
+    setUserCredits((b) => b - totalCost);
+    setOwnedIds((prev) => [...prev, ...affordable.map((i) => i.id)]);
+    toast.success(`Purchased ${affordable.length} affordable items for ${totalCost} credits`);
+  }, [wishlistItems, ownedIds, userCredits]);
+
+  const navigateToStudio = useCallback((item: MarketplaceItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const routeMap: Record<Category, string> = {
+      'all': '/style',
+      'style-packs': '/style',
+      'characters': '/characters',
+      'audio': '/audio',
+      'templates': '/projects',
+    };
+    const route = routeMap[item.categorySlug] ?? '/projects';
+    toast.success(`Opening "${item.name}" in Studio...`);
+    router.push(route);
+  }, [router]);
+
+  const navigateToCreator = useCallback((creator: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    router.push(`/marketplace/creator/${encodeURIComponent(creator)}`);
+  }, [router]);
+
+  const withdrawEarnings = useCallback((amount: number) => {
+    if (amount <= 0) {
+      toast.error('No earnings to withdraw');
+      return;
+    }
+    setUserCredits((b) => b + amount);
+    toast.success(`Withdrew ${amount} credits to your balance`);
+  }, []);
 
   // ── Shared card styles ─────────────────────────────────────────
   const cardStyle = (itemId: string): React.CSSProperties => ({
@@ -527,9 +781,9 @@ export default function MarketplacePage() {
           >
             <Heart
               size={14}
+              fill={wishlistedIds.has(item.id) ? 'currentColor' : 'none'}
               style={{
-                color: wishlistIds.includes(item.id) ? '#f43f5e' : 'rgba(255,255,255,0.8)',
-                fill: wishlistIds.includes(item.id) ? '#f43f5e' : 'none',
+                color: wishlistedIds.has(item.id) ? 'var(--brand)' : 'rgba(255,255,255,0.9)',
               }}
             />
           </button>
@@ -589,7 +843,30 @@ export default function MarketplacePage() {
 
         {/* Creator */}
         <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '0 0 6px' }}>
-          by {item.creator}
+          by{' '}
+          <button
+            type="button"
+            onClick={(e) => navigateToCreator(item.creator, e)}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--brand-light)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              font: 'inherit',
+              color: 'var(--text-primary)',
+              fontWeight: 500,
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            {item.creator}
+          </button>
         </p>
 
         {/* Rating row */}
@@ -634,11 +911,48 @@ export default function MarketplacePage() {
           </span>
         </div>
 
+        {/* Clone for free button on free cards (not owned, not library view) */}
+        {item.price === null && !options?.showOwned && !options?.showUseInStudio && (() => {
+          const inLibrary = libraryItemIds.has(item.id);
+          const isCloning = cloningIds.has(item.id);
+          return (
+            <button
+              type="button"
+              disabled={inLibrary || isCloning}
+              onClick={(e) => { e.stopPropagation(); handleClone(item); }}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                background: inLibrary ? 'rgba(34,197,94,0.15)' : 'var(--brand)',
+                color: inLibrary ? '#22c55e' : '#fff',
+                border: inLibrary ? '0.5px solid rgba(34,197,94,0.3)' : 'none',
+                padding: '7px 0',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: inLibrary || isCloning ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+              }}
+            >
+              {inLibrary ? (
+                <><Check size={12} /> In your library</>
+              ) : isCloning ? (
+                <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> Adding...</>
+              ) : (
+                <><Gift size={12} /> Clone for free</>
+              )}
+            </button>
+          );
+        })()}
+
         {/* Use in Studio button for library */}
         {options?.showUseInStudio && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); toast.success('Opening in Studio...'); }}
+            onClick={(e) => navigateToStudio(item, e)}
             style={{
               marginTop: 10,
               width: '100%',
@@ -656,7 +970,7 @@ export default function MarketplacePage() {
               gap: 5,
             }}
           >
-            <ExternalLink size={12} /> Use in Studio
+            <ExternalLink size={12} /> Use
           </button>
         )}
       </div>
@@ -847,9 +1161,22 @@ export default function MarketplacePage() {
                     }}>
                       {selectedItem.category}
                     </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                    <button
+                      type="button"
+                      onClick={() => toast.success(`Viewing ${selectedItem.creator}'s profile`)}
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--brand)',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textDecoration: 'underline',
+                      }}
+                    >
                       by {selectedItem.creator}
-                    </span>
+                    </button>
                   </div>
 
                   {/* Rating */}
@@ -901,16 +1228,30 @@ export default function MarketplacePage() {
                   </div>
 
                   {/* Creator info card */}
-                  <div style={{
-                    background: 'var(--bg-elevated)',
-                    border: '0.5px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: 14,
-                    marginBottom: 16,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}>
+                  <button
+                    type="button"
+                    onClick={(e) => navigateToCreator(selectedItem.creator, e)}
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: 14,
+                      marginBottom: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      width: '100%',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'border-color 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
+                    }}
+                  >
                     <div style={{
                       width: 40,
                       height: 40,
@@ -926,19 +1267,22 @@ export default function MarketplacePage() {
                     }}>
                       {selectedItem.creatorAvatar}
                     </div>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
                         {selectedItem.creator}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                        Marketplace Creator
+                        View creator profile
                       </span>
                     </div>
-                  </div>
+                    <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                  </button>
 
                   {/* License terms */}
                   <div style={{ marginBottom: 16 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>License terms</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <Shield size={12} style={{ color: 'var(--brand)' }} /> License terms
+                    </span>
                     <div style={{
                       background: 'var(--bg-elevated)',
                       border: '0.5px solid var(--border)',
@@ -1080,16 +1424,44 @@ export default function MarketplacePage() {
                 padding: '14px 24px',
                 background: 'var(--bg-elevated)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
+                flexDirection: 'column',
+                gap: 10,
               }}>
+                {!isFree && !isOwned && (selectedItem.price ?? 0) > userCredits && (
+                  <button
+                    type="button"
+                    onClick={() => toast.success('Opening credit purchase...')}
+                    style={{
+                      background: 'rgba(251,191,36,0.15)',
+                      color: '#fbbf24',
+                      border: '0.5px solid rgba(251,191,36,0.3)',
+                      padding: '8px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      width: '100%',
+                    }}
+                  >
+                    <DollarSign size={12} /> Insufficient balance — Buy more credits
+                  </button>
+                )}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{ fontSize: 16, fontWeight: 700, color: isFree ? '#22c55e' : 'var(--text-primary)' }}>
                     {isFree ? 'Free' : `${selectedItem.price} credits`}
                   </span>
                   <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                    Balance: {userBalance} credits
+                    Balance: {userCredits} credits
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1111,9 +1483,9 @@ export default function MarketplacePage() {
                     >
                       <Heart
                         size={16}
+                        fill={wishlistedIds.has(selectedItem.id) ? 'currentColor' : 'none'}
                         style={{
-                          color: wishlistIds.includes(selectedItem.id) ? '#f43f5e' : 'var(--text-secondary)',
-                          fill: wishlistIds.includes(selectedItem.id) ? '#f43f5e' : 'none',
+                          color: wishlistedIds.has(selectedItem.id) ? 'var(--brand)' : 'var(--text-secondary)',
                         }}
                       />
                     </button>
@@ -1179,6 +1551,7 @@ export default function MarketplacePage() {
                     </button>
                   )}
                 </div>
+                </div>
               </div>
             </motion.div>
           </>
@@ -1193,7 +1566,7 @@ export default function MarketplacePage() {
     const personalPrice = selectedItem.price ?? 0;
     const commercialPrice = selectedItem.commercialPrice ?? personalPrice;
     const finalPrice = purchaseLicense === 'commercial' ? commercialPrice : personalPrice;
-    const balanceAfter = userBalance - finalPrice;
+    const balanceAfter = userCredits - finalPrice;
 
     return (
       <AnimatePresence>
@@ -1285,7 +1658,7 @@ export default function MarketplacePage() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Current balance</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{userBalance} credits</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{userCredits} credits</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Item cost</span>
@@ -1372,23 +1745,40 @@ export default function MarketplacePage() {
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginLeft: 4 }}>4.7</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => toast.success('Featured item cloned!')}
-          style={{
-            background: 'var(--brand)',
-            color: '#ffffff',
-            border: 'none',
-            padding: '10px 22px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
-        >
-          Clone for free
-        </button>
+        {(() => {
+          const featuredId = 'featured-cyberpunk-neon';
+          const inLibrary = libraryItemIds.has(featuredId);
+          const isCloning = cloningIds.has(featuredId);
+          return (
+            <button
+              type="button"
+              disabled={inLibrary || isCloning}
+              onClick={() => handleClone({ id: featuredId, name: 'Cyberpunk Neon Pack' })}
+              style={{
+                background: inLibrary ? 'rgba(34,197,94,0.2)' : 'var(--brand)',
+                color: inLibrary ? '#4ade80' : '#ffffff',
+                border: inLibrary ? '0.5px solid rgba(74,222,128,0.4)' : 'none',
+                padding: '10px 22px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: inLibrary || isCloning ? 'default' : 'pointer',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              {inLibrary ? (
+                <><Check size={14} /> In your library</>
+              ) : isCloning ? (
+                <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Adding...</>
+              ) : (
+                <><Gift size={14} /> Clone for free</>
+              )}
+            </button>
+          );
+        })()}
       </div>
 
       {/* Search bar */}
@@ -1582,14 +1972,20 @@ export default function MarketplacePage() {
             ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {allLibrary.map((item) => renderItemCard(item, { showOwned: true, showUseInStudio: true }))}
-        </div>
-        {allLibrary.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)', fontSize: 13 }}>
-            <Package size={32} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
-            <div>Your library is empty. Browse the shop to find items.</div>
+        {allLibrary.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {allLibrary.map((item) => renderItemCard(item, { showOwned: true, showUseInStudio: true }))}
           </div>
+        ) : (
+          <EmptyState
+            icon={ShoppingBag}
+            title="Your library is empty"
+            description="Items you purchase or add from the marketplace will appear here, ready to use in any studio."
+            action={{
+              label: 'Browse shop',
+              onClick: () => setMainTab('shop'),
+            }}
+          />
         )}
       </>
     );
@@ -1825,7 +2221,7 @@ export default function MarketplacePage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <ShoppingCart size={12} /> {userBalance} credits
+              <ShoppingCart size={12} /> {userCredits} credits
             </span>
             <button
               type="button"
@@ -1884,7 +2280,7 @@ export default function MarketplacePage() {
               >
                 <Icon size={14} />
                 {tab.label}
-                {tab.value === 'wishlist' && wishlistIds.length > 0 && (
+                {tab.value === 'wishlist' && wishlistedIds.size > 0 && (
                   <span style={{
                     fontSize: 9,
                     fontWeight: 600,
@@ -1897,7 +2293,7 @@ export default function MarketplacePage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    {wishlistIds.length}
+                    {wishlistedIds.size}
                   </span>
                 )}
               </button>
