@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.13.0",
+    "@elastic/elasticsearch": "^9.5.0",
     "@prisma/client": "^5.14.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
