@@ -16,7 +16,8 @@ interface CharacterActions {
   createCharacter: (data: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateCharacter: (id: string, data: Partial<Character>) => void;
   deleteCharacter: (id: string) => void;
-  setActiveCharacter: (id: string) => void;
+  /** Pass null to clear the selection; the lookup below already handles it. */
+  setActiveCharacter: (id: string | null) => void;
   triggerTwinCreation: (id: string, photos: string[]) => void;
 }
 

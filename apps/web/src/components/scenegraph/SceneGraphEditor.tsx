@@ -39,7 +39,7 @@ function defaultProps(kind: NodeKind) {
   }
 }
 
-function createNode(kind: NodeKind, name?: string): NodeData & { children: SceneNode[] } {
+function createNode(kind: NodeKind, name?: string): FullNode {
   const id = uid();
   return {
     id,

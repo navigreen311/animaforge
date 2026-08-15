@@ -1541,7 +1541,7 @@ export default function MarketplacePage() {
                   ) : (
                     <button
                       type="button"
-                      onClick={openPurchaseModal}
+                      onClick={() => openPurchaseModal()}
                       style={{
                         background: 'var(--brand)',
                         color: '#fff',

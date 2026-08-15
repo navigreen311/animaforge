@@ -10,7 +10,6 @@ export async function PATCH(
   };
 
   const updatedMarker = {
-    id: params.id,
     projectId: 'proj_001',
     timecodeMs: 5000,
     type: 'note',

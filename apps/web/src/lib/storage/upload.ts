@@ -129,7 +129,10 @@ export async function generateThumbnail(
     const tmpInput = path.join(tmpdir(), `${assetId}-input.mp4`);
     const tmpOutput = path.join(tmpdir(), `${assetId}-thumb.webp`);
 
-    fs.writeFileSync(tmpInput, original);
+    // Buffer is no longer assignable to ArrayBufferView under current
+    // @types/node (Buffer<ArrayBufferLike> vs Uint8Array<ArrayBuffer>).
+    // The view shares the same memory, so this copies nothing.
+    fs.writeFileSync(tmpInput, new Uint8Array(original));
 
     execSync(
       `ffmpeg -y -i "${tmpInput}" -ss 00:00:01 -vframes 1 -vf scale=400:400:force_original_aspect_ratio=decrease "${tmpOutput}"`,
