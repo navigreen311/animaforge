@@ -2,6 +2,11 @@ import { Worker, Job, Queue } from "bullmq";
 import { v4 as uuidv4 } from "uuid";
 import { createHash } from "crypto";
 import { redisConnection } from "../queues/index.js";
+import { publishEvent } from "../utils/eventBus.js";
+import {
+  governanceStageSchema,
+  governanceStatusSchema,
+} from "@animaforge/events";
 import {
   StageDefinition,
   GenerationResult,
@@ -175,33 +180,6 @@ function getMaxDuration(tier?: string): number {
 }
 
 
-/* ---------- Dead Letter Queue ---------- */
-let dlq: Queue | null = null;
-function getDeadLetterQueue(): Queue { if (!dlq) dlq = new Queue("generation-dlq", { connection: redisConnection, defaultJobOptions: { removeOnComplete: false, removeOnFail: false } }); return dlq; }
-
-/* ---------- Resource Estimation ---------- */
-export interface GpuEstimate { gpu_class: "T4"|"A10G"|"A100"|"H100"; vram_required_gb: number; estimated_time_seconds: number; cost_credits: number; }
-export function estimateGPU(jobType: GenerationType, tier = "standard"): GpuEstimate {
-  const e: Record<GenerationType,Record<string,GpuEstimate>> = {
-    video:{preview:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:60,cost_credits:1},standard:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:120,cost_credits:3},pro:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:180,cost_credits:8},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:90,cost_credits:15}},
-    audio:{preview:{gpu_class:"T4",vram_required_gb:4,estimated_time_seconds:30,cost_credits:0.5},standard:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:45,cost_credits:1},pro:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:60,cost_credits:2},enterprise:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:30,cost_credits:3}},
-    avatar:{preview:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:90,cost_credits:2},standard:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:150,cost_credits:5},pro:{gpu_class:"A100",vram_required_gb:80,estimated_time_seconds:240,cost_credits:10},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:120,cost_credits:18}},
-    style_clone:{preview:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:45,cost_credits:1},standard:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:90,cost_credits:3},pro:{gpu_class:"A100",vram_required_gb:40,estimated_time_seconds:120,cost_credits:7},enterprise:{gpu_class:"H100",vram_required_gb:80,estimated_time_seconds:60,cost_credits:12}},
-    img_to_cartoon:{preview:{gpu_class:"T4",vram_required_gb:4,estimated_time_seconds:20,cost_credits:0.5},standard:{gpu_class:"T4",vram_required_gb:8,estimated_time_seconds:30,cost_credits:1},pro:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:45,cost_credits:2},enterprise:{gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:20,cost_credits:3}},
-  };
-  return e[jobType]?.[tier] ?? e[jobType]?.standard ?? {gpu_class:"A10G",vram_required_gb:16,estimated_time_seconds:120,cost_credits:3};
-}
-
-/* ---------- Job Deduplication ---------- */
-function computeInputHash(d: GenerationJobData): string { return createHash("sha256").update(JSON.stringify({type:d.type,project_id:d.project_id,params:d.params})).digest("hex"); }
-let usePrisma = true;
-async function findCachedResult(h: string): Promise<GenerationResult|null> {
-  if(!usePrisma) return null;
-  try { const r = await prisma.generationJob.findFirst({where:{inputHash:h,status:"complete"},orderBy:{completedAt:"desc"}}); if(r?.outputUrl&&r?.qualityScores){const s=r.qualityScores as Record<string,number>;return{output_url:r.outputUrl,quality_scores:{overall:s.overall??0,fidelity:s.fidelity??0,consistency:s.consistency??0}};} }
-  catch(e){console.warn("[generation] Dedup failed:",e instanceof Error?e.message:e);usePrisma=false;} return null;
-}
-function getMaxDuration(tier?: string): number { return (tier&&MAX_JOB_DURATION[tier])?MAX_JOB_DURATION[tier]:DEFAULT_MAX_DURATION; }
-
 /* ---------- WebSocket event emitter ---------- */
 
 async function emitRealtimeEvent(userId: string, event: string, payload: Record<string, unknown>): Promise<void> {
@@ -241,6 +219,7 @@ async function pollAiJobUntilDone(aiJobId: string, bullJob: Job, stageIndex: num
     const combinedProgress = Math.round(baseProgress + (stageWeight / totalWeight) * aiStatus.progress);
     await updateJobStatus(bullJob, "ai_processing", "running", Math.min(combinedProgress, 99));
     await emitRealtimeEvent(bullJob.data.user_id, "job:progress", { jobId: bullJob.id, stage: "ai_processing", progress: Math.min(combinedProgress, 99), aiStatus: aiStatus.status });
+    await publishEvent("generation.progress", { jobId: String(bullJob.id), userId: bullJob.data.user_id, stage: "ai_processing", progress: Math.min(combinedProgress, 99), aiStatus: aiStatus.status });
     if (aiStatus.status === "complete") return aiStatus;
     if (aiStatus.status === "failed") throw new Error("AI API job failed: " + (aiStatus.error ?? "unknown"));
     await new Promise((r) => setTimeout(r, AI_POLL_INTERVAL_MS));
@@ -264,12 +243,14 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
       console.log("[generation] Job " + jobId + " deduplicated");
       await updateJobStatus(job, "done", "complete", 100);
       await emitRealtimeEvent(user_id, "job:completed", { jobId, outputUrl: cachedResult.output_url, qualityScores: cachedResult.quality_scores, deduplicated: true });
+      await publishEvent("generation.completed", { jobId, userId: user_id, outputUrl: cachedResult.output_url, qualityScores: cachedResult.quality_scores, deduplicated: true });
       clearTimeout(timeoutHandle);
       return cachedResult;
     }
 
     await updateJobStatus(job, "validate_input", "running", 0);
     await emitRealtimeEvent(user_id, "job:started", { jobId, type, projectId: project_id, gpuEstimate: estimateGPU(type, tier) });
+    await publishEvent("generation.started", { jobId, userId: user_id, projectId: project_id, type, tier, gpuEstimate: estimateGPU(type, tier) });
 
     const stg1Progress = calculateProgress(GENERATION_STAGES, 1);
     await updateJobStatus(job, "create_job_record", "running", stg1Progress);
@@ -280,6 +261,7 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
     if (abortController.signal.aborted) throw new Error("Job cancelled: exceeded maximum duration for tier");
     const aiSubmission = await submitToAiApi(type, job.data);
     await emitRealtimeEvent(user_id, "job:ai_submitted", { jobId, aiJobId: aiSubmission.jobId, estimatedDuration: aiSubmission.estimatedDuration });
+    await publishEvent("generation.ai_submitted", { jobId, userId: user_id, aiJobId: String(aiSubmission.jobId), estimatedDuration: aiSubmission.estimatedDuration });
 
     const aiResult = await pollAiJobUntilDone(aiSubmission.jobId, job, 3, abortController.signal);
     const outputUrl = aiResult.outputUrl ?? "https://cdn.animaforge.io/outputs/" + project_id + "/" + type + "/" + uuidv4() + ".mp4";
@@ -298,10 +280,23 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
       const progress = calculateProgress(GENERATION_STAGES, idx);
       await updateJobStatus(job, "governance_" + stage, "running", progress);
       await emitRealtimeEvent(user_id, "job:governance", { jobId, stage, status, progress });
+      // Governance events go to their own longer-retained topic: they are the
+      // audit trail for what was moderated, consented, signed and watermarked.
+      // The pipeline's callback is typed (string, string), so narrow against
+      // the schemas here — an unrecognised stage should be loud, not published.
+      const parsedStage = governanceStageSchema.safeParse(stage);
+      const parsedStatus = governanceStatusSchema.safeParse(status);
+      if (parsedStage.success && parsedStatus.success) {
+        await publishEvent("governance.stage_changed", { jobId, stage: parsedStage.data, status: parsedStatus.data, progress });
+      } else {
+        console.warn("[events] unrecognised governance stage/status, not published:", stage, status);
+      }
     });
     if (!governanceResult.passed) {
       await markFailed(jobId, governanceResult.blockedReason ?? "Governance blocked");
       await emitRealtimeEvent(user_id, "job:failed", { jobId, reason: governanceResult.blockedReason });
+      await publishEvent("governance.completed", { jobId, passed: false, blockedReason: governanceResult.blockedReason });
+      await publishEvent("generation.failed", { jobId, userId: user_id, reason: governanceResult.blockedReason ?? "Governance blocked", stage: "governance" });
       throw new Error("Governance blocked: " + governanceResult.blockedReason);
     }
 
@@ -323,6 +318,8 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
     });
     await updateJobStatus(job, "done", "complete", 100);
     await emitRealtimeEvent(user_id, "job:completed", { jobId, outputUrl, qualityScores });
+    await publishEvent("governance.completed", { jobId, passed: true, manifest: governanceResult.manifest, watermarkId: governanceResult.watermarkId });
+    await publishEvent("generation.completed", { jobId, userId: user_id, outputUrl, qualityScores, deduplicated: false });
     clearTimeout(timeoutHandle);
     return result;
   } catch (err) {
