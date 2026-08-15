@@ -133,7 +133,10 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
       {activeTab === 'review' && (
         <ScrollView style={styles.content}>
           <Text style={styles.emptyText}>
-            Review panel coming soon. Submit shots for team review and approval.
+            Shot review is not available in the mobile app. Reviews are recorded
+            against the ShotReview model, and apps/mobile has no client for the
+            platform API that owns it — there is nothing here to submit to or
+            read approvals from. Use the web app to review shots.
           </Text>
         </ScrollView>
       )}

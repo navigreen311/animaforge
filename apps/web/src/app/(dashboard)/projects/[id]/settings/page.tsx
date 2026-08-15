@@ -60,8 +60,18 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'danger', label: 'Danger Zone' },
 ];
 
-const PROJECT_TYPES = ['short-film', 'feature', 'commercial', 'music-video', 'social', 'custom'];
-const ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '2.39:1', '21:9'];
+const PROJECT_TYPES = [
+  'short-film',
+  'feature',
+  'commercial',
+  'music-video',
+  'social',
+  'custom',
+] as const;
+const ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '2.39:1', '21:9'] as const;
+
+type ProjectType = (typeof PROJECT_TYPES)[number];
+type AspectRatio = (typeof ASPECT_RATIOS)[number];
 const ROLES: TeamMember['role'][] = ['owner', 'editor', 'reviewer', 'viewer'];
 
 /* ------------------------------------------------------------------ */
@@ -75,8 +85,13 @@ export default function SettingsPage() {
   // General
   const [name, setName] = useState(mockProject.name);
   const [description, setDescription] = useState(mockProject.description);
-  const [projectType, setProjectType] = useState(mockProject.type);
-  const [aspectRatio, setAspectRatio] = useState(mockProject.aspectRatio);
+  // Without the explicit parameter, useState infers the literal type of
+  // mockProject.type ("short-film"), so the setter rejects every other option
+  // the select can produce.
+  const [projectType, setProjectType] = useState<ProjectType>(mockProject.type as ProjectType);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(
+    mockProject.aspectRatio as AspectRatio,
+  );
   const [duration, setDuration] = useState(mockProject.duration);
 
   // World Bible
@@ -201,7 +216,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={label}>Project Type</label>
-                  <select value={projectType} onChange={(e) => setProjectType(e.target.value)} className={input}>
+                  <select value={projectType} onChange={(e) => setProjectType(e.target.value as ProjectType)} className={input}>
                     {PROJECT_TYPES.map((t) => (
                       <option key={t} value={t}>{t.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>
                     ))}
@@ -209,7 +224,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className={label}>Aspect Ratio</label>
-                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className={input}>
+                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value as AspectRatio)} className={input}>
                     {ASPECT_RATIOS.map((r) => (
                       <option key={r} value={r}>{r}</option>
                     ))}

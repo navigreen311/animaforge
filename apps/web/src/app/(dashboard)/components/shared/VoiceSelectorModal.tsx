@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { X, Volume2, VolumeX, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { UnavailableButton } from '../unavailable/UnavailableButton';
 /* ── Types ───────────────────────────────────────────────── */
 
 interface VoiceSelectorModalProps {
@@ -242,10 +243,8 @@ export default function VoiceSelectorModal({
             paddingTop: 12,
           }}
         >
-          <button
-            type="button"
-            onClick={() => toast.info('Coming soon')}
-            style={{
+          <UnavailableButton feature="voice.uploadSample" layout="inline"
+                        style={{
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -261,18 +260,10 @@ export default function VoiceSelectorModal({
               transition: 'background 150ms, color 150ms',
               fontFamily: 'inherit',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-hover)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--text-tertiary)';
-            }}
           >
             <Upload size={16} />
             + Upload voice sample
-          </button>
+          </UnavailableButton>
         </div>
       </div>
     </div>

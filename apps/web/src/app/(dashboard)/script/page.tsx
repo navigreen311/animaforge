@@ -38,6 +38,7 @@ import type {
   DetectedCharacter,
 } from '@/lib/types';
 
+import { UnavailableButton } from '../components/unavailable/UnavailableButton';
 /* ── Constants ──────────────────────────────────────────────── */
 
 const FORMATS = ['Short Film', 'Ad 30s', 'Explainer', 'Music Video', 'Documentary'] as const;
@@ -525,16 +526,15 @@ export default function ScriptPage() {
                 ))}
                 {/* Create new project */}
                 <div className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <button
-                    onClick={() => { setShowProjectDropdown(false); setProjectSearch(''); toast.info('Create new project (coming soon)'); }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
+                  <UnavailableButton feature="projects.createFromScript" hideNote
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
                     style={{ color: 'var(--brand-light)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={12} />
                     Create new project
-                  </button>
+                  </UnavailableButton>
                 </div>
               </div>
             )}

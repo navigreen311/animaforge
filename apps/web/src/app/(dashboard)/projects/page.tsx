@@ -17,6 +17,7 @@ import NewProjectModal from '../components/projects/NewProjectModal';
 import { useUIStore } from '@/store/useUIStore';
 import type { Project, RenderJob, ActivityItem, DashboardStats, ProjectFolder } from '@/lib/types';
 import { timeAgo } from '@/lib/utils/format';
+import { UnavailableButton } from '../components/unavailable/UnavailableButton';
 
 /* ------------------------------------------------------------------ */
 /*  Mock folders                                                       */
@@ -181,9 +182,9 @@ export default function ProjectsPage() {
   }, [projects]);
 
   // ── Handlers ──────────────────────────────────────────────
-  const handleImport = () => {
-    toast('Import coming soon');
-  };
+  // Import is rendered disabled — see featureStatus['projects.import'].
+  // /api/projects serves the hardcoded MOCK_PROJECTS list and stores nothing,
+  // so an imported project could be parsed but never saved.
 
   const handleCreateProject = () => {
     setNewProjectModalOpen(true);
@@ -231,10 +232,8 @@ export default function ProjectsPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onClick={handleImport}
-              style={{
+            <UnavailableButton feature="projects.import" hideNote layout="inline"
+                            style={{
                 background: 'transparent',
                 border: '0.5px solid var(--border)',
                 color: 'var(--text-secondary)',
@@ -246,16 +245,10 @@ export default function ProjectsPage() {
                 alignItems: 'center',
                 gap: 6,
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-              }}
             >
               <Upload size={13} />
               Import
-            </button>
+            </UnavailableButton>
             <button
               type="button"
               onClick={() => setNewProjectModalOpen(true)}
