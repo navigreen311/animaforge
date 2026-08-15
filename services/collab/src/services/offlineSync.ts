@@ -74,9 +74,45 @@ export class OfflineSyncService {
     let conflicts = 0;
     let failed = 0;
 
+    // Two queued edits touching the same field are concurrent by definition:
+    // both were made offline, neither saw the other. Only the last one can win,
+    // so every earlier edit to that field is a conflict that has to be resolved
+    // rather than quietly overwritten.
+    //
+    // Previously this loop applied every edit unconditionally and returned a
+    // `conflicts` count that was hardcoded to zero, so callers were told a
+    // clean sync had happened even when edits had silently clobbered each other.
+    const latestByField = new Map<string, OfflineEdit>();
+    for (const edit of unsynced) {
+      const current = latestByField.get(edit.action);
+      if (!current || edit.timestamp > current.timestamp) {
+        latestByField.set(edit.action, edit);
+      }
+    }
+
     for (const edit of unsynced) {
       try {
-        // Mark as synced; real implementation would apply to Yjs doc
+        const winner = latestByField.get(edit.action)!;
+
+        if (winner !== edit) {
+          // Superseded by a later offline edit to the same field. Run it
+          // through the same resolver used for online conflicts so the
+          // strategy and history are recorded in one place.
+          conflictResolver.resolveConflict(projectId, {
+            docId: projectId,
+            field: edit.action,
+            localValue: edit.payload,
+            remoteValue: winner.payload,
+            localTimestamp: edit.timestamp,
+            remoteTimestamp: winner.timestamp,
+            localClientId: hashUserId(edit.userId),
+            remoteClientId: hashUserId(winner.userId),
+          });
+          edit.synced = true;
+          conflicts++;
+          continue;
+        }
+
         edit.synced = true;
         applied++;
       } catch {
