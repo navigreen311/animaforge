@@ -6,8 +6,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from services.ai_api.src.routes.generate import router
-from services.ai_api.src.services.video_service import (
+from src.routes.generate import router
+from src.services.video_service import (
     calculate_credit_cost,
     create_video_job,
     estimate_generation_time,

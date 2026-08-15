@@ -13,6 +13,7 @@ from src.routes.cartoon_pro import router as cartoon_pro_router
 from src.routes.generate import router as generate_router
 from src.routes.health import router as health_router
 from src.routes.jobs import router as jobs_router
+from src.routes.memory import router as memory_router
 from src.routes.script import router as script_router
 from src.routes.style import router as style_router
 from src.routes.style_advanced import router as style_advanced_router
@@ -43,6 +44,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(jobs_router)
+app.include_router(memory_router)
 app.include_router(generate_router)
 app.include_router(audio_router)
 app.include_router(style_router)
