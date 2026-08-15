@@ -7,6 +7,8 @@ rather than a cosmetic omission.
 
 from __future__ import annotations
 
+import typing
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -35,7 +37,7 @@ class TestPathMapping:
 
 class TestMockLabelling:
     #: One reachable POST per mock cluster, with a body its handler accepts.
-    CASES = [
+    CASES: typing.ClassVar[list] = [
         ("music", "/ai/v1/music/detect-beats", {"audio_url": "http://x/a.wav"}),
         (
             "dubbing",

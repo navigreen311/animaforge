@@ -52,7 +52,7 @@ ROUTE_CLUSTERS: dict[str, str] = {
 def cluster_for_path(path: str) -> str | None:
     """Return the cluster owning *path*, or None if it is not a generation route."""
     best: str | None = None
-    for prefix, cluster in ROUTE_CLUSTERS.items():
+    for prefix in ROUTE_CLUSTERS:
         if path.startswith(prefix) and (best is None or len(prefix) > len(best)):
             best = prefix
     return ROUTE_CLUSTERS[best] if best else None
