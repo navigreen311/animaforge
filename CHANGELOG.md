@@ -90,9 +90,17 @@ not what it appeared to be.
   a database; 41 of 46 dashboard pages never fetch from an API at all, and 40
   declare hardcoded data arrays. `services/platform-api` is
   real and Prisma-backed, and the web app never calls it. (#58)
-- `lint`, `type-check`, `test-api`, `test-ai-api` and `test-e2e` run and show
-  red but do not block merge. Each has a tracking issue and the exclusion is
-  documented inline in `ci.yml`. (#18, #19, #21, #23)
+- `lint`, `test-api`, `test-ai-api` and `test-e2e` run and show red but do not
+  block merge. Each has a tracking issue and the exclusion is documented inline
+  in `ci.yml`. (#18, #21, #23)
+
+  `type-check` is now blocking: all 164 errors across `apps/web` and 15 service
+  packages are fixed. The first count was taken against an ungenerated Prisma
+  client, which hid another 59 — CI runs `prisma generate`, so it saw them.
+  Several were live bugs rather than annotations: `shotController` never
+  awaited its async services, `billing`'s portal route called a function that
+  does not exist, and three services queried Prisma models absent from the
+  schema behind guards that were permanently false. (#19, closed)
 - 561 files fail `prettier --check` — the repo has never been formatted. (#18)
 - Three of the five images the security workflow scans fail to build. (#20)
 
