@@ -1,6 +1,11 @@
 import { Router, type Request, type Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { humanReviewService } from "../services/humanReviewService.js";
+import {
+  humanReviewService,
+  type ReviewTaskType,
+  type TaskPriority,
+  type TaskStatus,
+} from "../services/humanReviewService.js";
 import * as apiResponse from "../utils/apiResponse.js";
 
 const router = Router();
@@ -82,10 +87,12 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     const { type, priority, status } = req.query;
+    // Query strings are untyped; the service takes narrow unions and filters
+    // out anything it does not recognise.
     const queue = humanReviewService.getQueue(
-      type as string | undefined,
-      priority as string | undefined,
-      status as string | undefined,
+      type as ReviewTaskType | undefined,
+      priority as TaskPriority | undefined,
+      status as TaskStatus | undefined,
     );
     apiResponse.success(res, queue);
   },

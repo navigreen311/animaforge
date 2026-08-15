@@ -1,3 +1,31 @@
+/* ------------------------------------------------------------------ */
+/*  Third-party payload shapes                                        */
+/*                                                                    */
+/*  fetch().json() resolves to `unknown` because the response is not  */
+/*  ours to trust. These describe only the fields this service reads; */
+/*  every one is optional because a provider can change its response  */
+/*  without telling us.                                               */
+/* ------------------------------------------------------------------ */
+
+interface OAuthTokenResponse {
+  access_token?: string;
+  token_type?: string;
+}
+
+interface OAuthProfileResponse {
+  id?: string | number;
+  email?: string | null;
+  name?: string | null;
+  login?: string | null;
+  picture?: string | null;
+  avatar_url?: string | null;
+}
+
+interface GitHubEmail {
+  email: string;
+  primary: boolean;
+}
+
 /**
  * AnimaForge — OAuth service (Google + GitHub)
  *
@@ -119,7 +147,7 @@ export async function exchangeCode(
       }).toString(),
     });
 
-    const data = await res.json();
+    const data = (await res.json()) as OAuthTokenResponse;
 
     const accessToken = data.access_token;
     if (!accessToken) return null;
@@ -144,12 +172,13 @@ export async function getUserInfo(
     const res = await fetch(cfg.userInfoUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const data = await res.json();
+    const data = (await res.json()) as OAuthProfileResponse;
 
     if (provider === 'google') {
+      if (!data.id || !data.email) return null;
       return {
         provider: 'google',
-        providerId: data.id,
+        providerId: String(data.id),
         email: data.email,
         displayName: data.name ?? data.email,
         avatarUrl: data.picture ?? null,
@@ -163,8 +192,7 @@ export async function getUserInfo(
         const emailRes = await fetch('https://api.github.com/user/emails', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        const emails: Array<{ email: string; primary: boolean }> =
-          await emailRes.json();
+        const emails = (await emailRes.json()) as GitHubEmail[];
         email = emails.find((e) => e.primary)?.email ?? emails[0]?.email ?? null;
       }
 

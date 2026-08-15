@@ -95,7 +95,18 @@ export async function getModerationLog(jobId: string): Promise<ModerationLogReco
   try {
     if (await isPrismaAvailable()) {
       const rows = await prisma.moderationLog.findMany({ where: { jobId }, orderBy: { createdAt: "asc" } });
-      return rows.map((r) => ({ id: r.id, job_id: r.jobId, timestamp: r.createdAt.toISOString(), result: r.result as ModerationLogRecord["result"], category: (r.category ?? "safe") as ModerationCategory, score: r.score ?? 0, details: typeof r.details === "object" && r.details !== null ? ((r.details as Record<string, unknown>).message as string) ?? JSON.stringify(r.details) : String(r.details) }));
+      // Typed from the fields read here rather than the generated Prisma
+      // model, so the check does not depend on `prisma generate` having run.
+      type ModerationLogRow = {
+        id: string;
+        jobId: string;
+        createdAt: Date;
+        result: string;
+        category: string | null;
+        score: number | null;
+        details: unknown;
+      };
+      return rows.map((r: ModerationLogRow) => ({ id: r.id, job_id: r.jobId, timestamp: r.createdAt.toISOString(), result: r.result as ModerationLogRecord["result"], category: (r.category ?? "safe") as ModerationCategory, score: r.score ?? 0, details: typeof r.details === "object" && r.details !== null ? ((r.details as Record<string, unknown>).message as string) ?? JSON.stringify(r.details) : String(r.details) }));
     }
   } catch { /* fall through to in-memory */ }
   return logStore.get(jobId) ?? [];

@@ -4,7 +4,10 @@ import {
   embedBatch,
   EMBEDDING_DIM,
 } from "./embeddingService";
-import { esClient } from "./elasticsearchClient";
+import {
+  indexDocument as esIndexDocument,
+  deleteDocument as esDeleteDocument,
+} from "./elasticsearchClient";
 import prisma from "../db";
 
 export type SearchableType = "shots" | "characters" | "assets" | "projects";
@@ -106,14 +109,12 @@ export function indexDocument(data: {
   }
 
   // Index to Elasticsearch
-  esClient
-    .indexDocument("animaforge_search", doc.id, {
-      type: doc.type,
-      content: doc.content,
-      metadata: doc.metadata,
-      indexedAt: doc.indexedAt,
-    })
-    .catch(() => {});
+  esIndexDocument("animaforge_search", doc.id, {
+    type: doc.type,
+    content: doc.content,
+    metadata: doc.metadata,
+    indexedAt: doc.indexedAt,
+  }).catch(() => {});
 
   return doc;
 }
@@ -146,7 +147,7 @@ export function removeDocument(id: string): boolean {
     if (prisma?.searchDocument) {
       prisma.searchDocument.delete({ where: { id } }).catch(() => {});
     }
-    esClient.deleteDocument("animaforge_search", id).catch(() => {});
+    esDeleteDocument("animaforge_search", id).catch(() => {});
   }
   return removed;
 }

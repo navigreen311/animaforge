@@ -99,7 +99,7 @@ describe("Export Engine", () => {
     expect(res.status).toBe(200);
     expect(res.body.formats).toBeInstanceOf(Array);
     expect(res.body.formats.length).toBeGreaterThanOrEqual(12);
-    const categories = res.body.formats.map((f) => f.category);
+    const categories = res.body.formats.map((f: { category: string }) => f.category);
     expect(categories).toContain("video");
     expect(categories).toContain("audio");
     expect(categories).toContain("3d");

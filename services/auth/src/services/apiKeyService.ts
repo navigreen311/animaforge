@@ -105,7 +105,19 @@ export async function listApiKeys(userId: string): Promise<ApiKeyRecord[]> {
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((row) => ({
+  // Typed from the fields this function reads rather than from the generated
+  // Prisma model: CI does not run `prisma generate`, so that type is not
+  // guaranteed to exist at type-check time.
+  type ApiKeyRow = {
+    id: string;
+    name: string;
+    scopes: string[];
+    keyHash: string;
+    createdAt: Date;
+    expiresAt: Date | null;
+  };
+
+  return rows.map((row: ApiKeyRow) => ({
     id: row.id,
     name: row.name,
     scopes: row.scopes,
