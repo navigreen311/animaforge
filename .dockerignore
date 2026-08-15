@@ -1,0 +1,55 @@
+# Build context exclusions for the repo root.
+#
+# Docker only reads `.dockerignore` from the root of the build context, so
+# docker/.dockerignore has never applied to any build — every image is built
+# with a context of `.` or `services/<name>`, never `docker/`.
+#
+# Without this file a root-context build uploads node_modules (~2.9k packages)
+# and every .next/dist directory to the daemon before the first instruction
+# runs.
+
+# Dependencies — reinstalled inside the image from package-lock.json
+**/node_modules
+
+# Build output — rebuilt inside the image
+**/dist
+**/build
+**/.next
+**/out
+**/*.tsbuildinfo
+
+# Python
+**/.venv
+**/venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+# VCS and CI
+.git
+.gitignore
+.github
+
+# Local environment — never bake secrets into an image
+.env
+.env.*
+!.env.example
+
+# Test, scan and coverage artifacts
+**/coverage
+**/test-results
+**/playwright-report
+**/coverage-report.json
+trivy-results*.sarif
+
+# Avatar Studio reconstruction artifacts (AVATAR_STORAGE_DIR)
+var/
+
+# Editor and OS noise
+.vscode
+.idea
+**/.DS_Store
+**/Thumbs.db
+**/*.log
