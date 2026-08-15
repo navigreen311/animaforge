@@ -71,12 +71,14 @@ plausible success. The reason for each is recorded in
 | WebRTC | signalling only — no SFU, no TURN configured, no auth on the socket |
 | `services/platform-api` | real and Prisma-backed; the web app never calls it |
 
-**CI**: `test-frontend`, `test-governance`, `terraform` and `security-scan`
-block merge. `lint`, `type-check`, `test-api`, `test-ai-api` and `test-e2e`
-still run and still show red, but do not block — each has a tracking issue and
-the exclusion is documented inline in `.github/workflows/ci.yml`. See
+**CI**: `type-check`, `test-frontend`, `test-governance`, `terraform` and
+`security-scan` block merge. `type-check` covers `apps/web` plus 15 service
+packages, against a generated Prisma client.
+
+`lint`, `test-api`, `test-ai-api` and `test-e2e` still run and still show red,
+but do not block — each has a tracking issue and the exclusion is documented
+inline in `.github/workflows/ci.yml`. See
 [#18](https://github.com/navigreen311/animaforge/issues/18),
-[#19](https://github.com/navigreen311/animaforge/issues/19),
 [#21](https://github.com/navigreen311/animaforge/issues/21),
 [#23](https://github.com/navigreen311/animaforge/issues/23).
 
