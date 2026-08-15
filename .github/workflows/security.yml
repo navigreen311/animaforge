@@ -15,42 +15,62 @@ jobs:
   semgrep:
     name: SAST - Semgrep
     runs-on: ubuntu-latest
+    # Same maintained Semgrep OSS image as ci.yml, with a wider ruleset. The old
+    # semgrep/semgrep-action@v1 is retired; no SEMGREP_APP_TOKEN is required.
+    container:
+      image: semgrep/semgrep:1.173.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Trust workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/javascript
-            p/typescript
-            p/python
-            p/docker
-            p/secrets
-            p/owasp-top-ten
-            p/sql-injection
-            p/xss
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: |
+          set +e
+          CUSTOM=""
+          if [ -d .semgrep ]; then CUSTOM="--config=.semgrep/"; fi
+          semgrep scan \
+            --config=p/javascript \
+            --config=p/typescript \
+            --config=p/python \
+            --config=p/docker \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --config=p/sql-injection \
+            --config=p/xss \
+            $CUSTOM \
+            --json --output=semgrep-report.json \
+            --metrics=off
+          status=$?
+          if [ "$status" -ge 2 ]; then
+            echo "::error::Semgrep failed to run (exit $status)"
+            exit "$status"
+          fi
 
-      - name: Semgrep with AnimaForge custom rules
-        if: hashFiles('.semgrep/') != ''
-        uses: semgrep/semgrep-action@v1
+      - name: Gate against accepted-risk register
+        run: python3 .github/semgrep/gate.py semgrep-report.json
+
+      - name: Upload Semgrep report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
         with:
-          config: .semgrep/
+          name: semgrep-report-full
+          path: semgrep-report.json
+          retention-days: 30
 
   dependency-audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
           cache: "npm"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
 
@@ -70,7 +90,7 @@ jobs:
           pip-audit || true
 
       - name: Upload audit reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: dependency-audit-reports
@@ -92,7 +112,7 @@ jobs:
           - { name: gateway, context: services/gateway }
           - { name: web, context: apps/web }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Build image for scanning
         run: |
@@ -100,7 +120,7 @@ jobs:
             ${{ matrix.service.context }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: animaforge/${{ matrix.service.name }}:scan
           format: "sarif"
@@ -109,14 +129,14 @@ jobs:
           exit-code: "0"
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3
         if: always()
         with:
           sarif_file: "trivy-${{ matrix.service.name }}.sarif"
           category: "trivy-${{ matrix.service.name }}"
 
       - name: Upload Trivy report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: trivy-report-${{ matrix.service.name }}
@@ -128,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: OWASP ZAP Baseline Scan (stub)
         run: |
@@ -153,7 +173,7 @@ jobs:
           echo '{"scan": "stub", "status": "not_configured"}' > zap-report.json
 
       - name: Upload ZAP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: owasp-zap-report
           path: zap-report.json

@@ -19,9 +19,9 @@ jobs:
     name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -34,7 +34,7 @@ jobs:
       - name: Prettier check
         run: npx prettier --check "apps/**/*.{ts,tsx}" "services/**/*.ts"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -47,9 +47,9 @@ jobs:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -73,9 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, type-check]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -88,7 +88,7 @@ jobs:
           CI: true
 
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: frontend-coverage
@@ -123,9 +123,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -140,7 +140,7 @@ jobs:
           NODE_ENV: test
 
       - name: Upload API coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: api-coverage
@@ -152,9 +152,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
@@ -172,7 +172,7 @@ jobs:
           pytest --cov=src --cov-report=json:coverage-report.json --cov-report=term-missing -v
 
       - name: Upload AI API coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: ai-api-coverage
@@ -207,9 +207,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -217,7 +217,7 @@ jobs:
       - run: npm ci
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -242,7 +242,7 @@ jobs:
           CI: true
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: playwright-report
@@ -252,21 +252,50 @@ jobs:
   security-scan:
     name: Security Scan (Semgrep)
     runs-on: ubuntu-latest
+    # Runs the maintained Semgrep OSS image directly. The old
+    # semgrep/semgrep-action@v1 is retired and ships a Semgrep build that
+    # semgrep.dev no longer supports. No SEMGREP_APP_TOKEN is required: the
+    # rulesets below are fetched anonymously from the public registry.
+    container:
+      image: semgrep/semgrep:1.173.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Trust workspace
+        # Semgrep enumerates targets via git; inside the container the checkout
+        # is owned by a different uid than the one running the scan.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
+        run: |
+          set +e
+          semgrep scan \
+            --config=p/javascript \
+            --config=p/typescript \
+            --config=p/python \
+            --config=p/docker \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --json --output=semgrep-report.json \
+            --metrics=off
+          status=$?
+          # 0 = clean, 1 = findings. Both mean the scan ran; the gate below
+          # decides pass/fail. >=2 is a real scanner failure.
+          if [ "$status" -ge 2 ]; then
+            echo "::error::Semgrep failed to run (exit $status)"
+            exit "$status"
+          fi
+
+      - name: Gate against accepted-risk register
+        run: python3 .github/semgrep/gate.py semgrep-report.json
+
+      - name: Upload Semgrep report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
         with:
-          config: >-
-            p/javascript
-            p/typescript
-            p/python
-            p/docker
-            p/secrets
-            p/owasp-top-ten
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+          name: semgrep-report
+          path: semgrep-report.json
+          retention-days: 14
 
   ci-passed:
     name: CI Passed

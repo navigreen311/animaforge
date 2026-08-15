@@ -1,0 +1,61 @@
+version: 2
+
+# Every action in .github/workflows is pinned to a commit SHA (required by the
+# Semgrep supply-chain rule). Pins do not update themselves, so Dependabot owns
+# bumping them — without this file the pins silently rot and stop receiving
+# upstream security fixes.
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    cooldown:
+      # Wait a week before proposing a freshly published version: compromised
+      # releases are typically caught and yanked within days.
+      default-days: 7
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
+      - github-actions
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    cooldown:
+      # Wait a week before proposing a freshly published version: compromised
+      # releases are typically caught and yanked within days.
+      default-days: 7
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+    groups:
+      # Patch/minor churn across the monorepo lands as one PR instead of dozens.
+      non-major:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: pip
+    directory: "/services/ai-api"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    cooldown:
+      # Wait a week before proposing a freshly published version: compromised
+      # releases are typically caught and yanked within days.
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
