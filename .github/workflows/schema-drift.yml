@@ -87,9 +87,12 @@ jobs:
           echo "--- generated SQL ---"
           cat /tmp/drift.sql
 
-      # --exit-code turns the same comparison into a pass/fail signal: 0 when
-      # the history already produces schema.prisma, 2 when it does not. Reported
-      # rather than enforced, so this run always produces its artifact.
+      # --exit-code would be the obvious signal here, but it cannot be trusted
+      # on its own: Prisma does not introspect extensions unless the
+      # postgresqlExtensions preview feature is on, so every --from-migrations
+      # diff re-emits `CREATE EXTENSION "uuid-ossp"` and returns 2 even when the
+      # history is exact. The verdict below is taken from what the diff emits
+      # once that artifact, comments and blank lines are removed.
       - name: Summarise
         if: always()
         working-directory: packages/db
@@ -103,13 +106,20 @@ jobs:
           code=$?
           set -e
 
+          grep -vE '^\s*(--|$)|^CREATE EXTENSION IF NOT EXISTS' /tmp/drift.sql \
+            > /tmp/drift.meaningful.sql || true
+          n_real=$(wc -l < /tmp/drift.meaningful.sql)
+
           {
             echo "## Schema drift"
             echo
-            if [ "$code" -eq 0 ]; then
+            if [ "$n_real" -eq 0 ]; then
               echo "No drift. \`migrate deploy\` reproduces \`schema.prisma\` exactly."
+              echo
+              echo "(\`--exit-code\` returned $code — 2 here means only the"
+              echo "\`CREATE EXTENSION\` line Prisma cannot introspect, not real drift.)"
             else
-              echo "**Drift present** (\`migrate diff --exit-code\` returned $code)."
+              echo "**Drift present** — $n_real statements (\`--exit-code\` returned $code)."
               echo
               echo "| statement | count |"
               echo "| --- | --- |"
