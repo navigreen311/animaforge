@@ -39,7 +39,10 @@ const VALID_SCENE_GRAPH = {
 const VALID_SHOT_BODY = {
   sceneGraph: VALID_SCENE_GRAPH,
   prompt: 'A hero walks toward the camera in a misty forest',
-  styleRef: 'cinematic-dark',
+  // shots.style_ref is @db.Uuid, so a slug could never have been stored --
+  // the same class of fixture defect as #69, just on a column the in-memory
+  // Map never type-checked.
+  styleRef: '33333333-3333-4333-8333-000000000001',
   characterRefs: ['22222222-2222-4222-8222-000000000001', '22222222-2222-4222-8222-000000000002'],
   durationMs: 3000,
   aspectRatio: '16:9',
