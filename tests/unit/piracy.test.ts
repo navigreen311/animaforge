@@ -30,15 +30,15 @@ describe('Piracy - Register Content', () => {
 // 2. Scan platform
 // ---------------------------------------------------------------------------
 describe('Piracy - Scan Platform', () => {
-  it('performs a scan and increments total scan count', () => {
-    scanPlatform('my animation', 'youtube');
-    scanPlatform('my animation', 'tiktok');
+  it('performs a scan and increments total scan count', async () => {
+    await scanPlatform('my animation', 'youtube');
+    await scanPlatform('my animation', 'tiktok');
     const stats = getDashboard();
     expect(stats.total_scans).toBe(2);
   });
 
-  it('returns matches as an array with required fields', () => {
-    const result = scanPlatform('test query', 'instagram');
+  it('returns matches as an array with required fields', async () => {
+    const result = await scanPlatform('test query', 'instagram');
     expect(Array.isArray(result.matches)).toBe(true);
     for (const match of result.matches) {
       expect(match.id).toBeDefined();
@@ -46,17 +46,28 @@ describe('Piracy - Scan Platform', () => {
       expect(typeof match.confidence).toBe('number');
     }
   });
+
+  it('reports degraded instead of fabricating matches when discovery is off', async () => {
+    const result = await scanPlatform('test query', 'youtube');
+    expect(result.matches).toHaveLength(0);
+    expect(result.candidates_examined).toBe(0);
+    expect(result.degraded).toBe(true);
+    expect(result.reasons.length).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
 // 3. Detect watermark
 // ---------------------------------------------------------------------------
 describe('Piracy - Detect Watermark', () => {
-  it('returns watermark detection result with expected shape', () => {
-    const result = detectWatermark('https://example.com/video.mp4');
+  it('reports "not checked" rather than a guess when no watermark service is configured', async () => {
+    const result = await detectWatermark('https://example.com/video.mp4');
     expect(result.url).toBe('https://example.com/video.mp4');
-    expect(typeof result.watermark_present).toBe('boolean');
+    // null means "we could not check", which is deliberately not `false`.
+    expect(result.watermark_present).toBeNull();
+    expect(result.method).toBe('not-configured');
     expect(typeof result.confidence).toBe('number');
+    expect(result.reason).toMatch(/WATERMARK_SERVICE_URL/);
   });
 });
 
@@ -64,21 +75,6 @@ describe('Piracy - Detect Watermark', () => {
 // 4. Generate DMCA
 // ---------------------------------------------------------------------------
 describe('Piracy - Generate DMCA', () => {
-  it('generates a DMCA notice for a valid match', () => {
-    // Scan until we get matches (random mock)
-    let matchId: string | null = null;
-    for (let i = 0; i < 30 && !matchId; i++) {
-      const result = scanPlatform('pirated content', 'youtube');
-      if (result.matches.length > 0) matchId = result.matches[0].id;
-    }
-
-    if (matchId) {
-      const notice = generateDMCA(matchId);
-      expect(notice).toContain('DMCA TAKEDOWN NOTICE');
-      expect(notice).toContain('AnimaForge Content Protection System');
-    }
-  });
-
   it('throws for a non-existent match', () => {
     expect(() => generateDMCA('fake-match-id')).toThrow();
   });
@@ -88,10 +84,10 @@ describe('Piracy - Generate DMCA', () => {
 // 5. Dashboard stats
 // ---------------------------------------------------------------------------
 describe('Piracy - Dashboard Stats', () => {
-  it('returns aggregate stats with correct shape', () => {
+  it('returns aggregate stats with correct shape', async () => {
     registerContent('o1', 'w1');
     registerContent('o2', 'w2');
-    scanPlatform('query', 'twitter');
+    await scanPlatform('query', 'twitter');
 
     const stats = getDashboard();
     expect(stats.total_registered).toBe(2);
@@ -105,9 +101,9 @@ describe('Piracy - Dashboard Stats', () => {
 // 6. Clear store
 // ---------------------------------------------------------------------------
 describe('Piracy - Store Reset', () => {
-  it('clears all data when store is reset', () => {
+  it('clears all data when store is reset', async () => {
     registerContent('o1', 'w1');
-    scanPlatform('q', 'yt');
+    await scanPlatform('q', 'yt');
     clearStore();
 
     const stats = getDashboard();

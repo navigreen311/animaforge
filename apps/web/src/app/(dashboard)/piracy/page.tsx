@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Shield,
   ShieldCheck,
   ShieldAlert,
+  ShieldQuestion,
   Search,
   AlertTriangle,
   FileText,
@@ -15,7 +16,10 @@ import {
   X,
   Plus,
   Settings,
+  Fingerprint,
 } from 'lucide-react';
+import { fetchPiracyCapabilities, isUnavailable } from '@/lib/governance/c2pa';
+import type { PiracyCapabilities } from '@/lib/governance/c2pa';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -34,7 +38,15 @@ interface PiracyMatch {
   matchUrl: string;
   matchStrength: number; // 0..100
   firstSeen: string;
-  watermarkDetected: boolean;
+  /**
+   * Tri-state on purpose. `null` means the watermark service was not consulted,
+   * which is a different claim from "no watermark is present".
+   */
+  watermarkDetected: boolean | null;
+  /** How the match was established: perceptual hash, or a recovered watermark. */
+  matchMethod: 'perceptual-hash' | 'watermark';
+  /** Hamming distance out of 64 bits; lower is a closer match. */
+  hammingDistance: number | null;
   status: MatchStatus;
   gradient: string;
 }
@@ -69,6 +81,8 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchStrength: 92,
     firstSeen: '2 hours ago',
     watermarkDetected: true,
+    matchMethod: 'watermark',
+    hammingDistance: 3,
     status: 'new',
     gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
   },
@@ -81,6 +95,8 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchStrength: 87,
     firstSeen: '5 hours ago',
     watermarkDetected: true,
+    matchMethod: 'watermark',
+    hammingDistance: 5,
     status: 'investigating',
     gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
   },
@@ -92,7 +108,9 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchUrl: 'reddit.com/r/animation/comments/1b3k7d2',
     matchStrength: 78,
     firstSeen: '8 hours ago',
-    watermarkDetected: false,
+    watermarkDetected: null,
+    matchMethod: 'perceptual-hash',
+    hammingDistance: 9,
     status: 'new',
     gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
   },
@@ -105,6 +123,8 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchStrength: 95,
     firstSeen: '1 day ago',
     watermarkDetected: true,
+    matchMethod: 'watermark',
+    hammingDistance: 2,
     status: 'filed',
     gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
   },
@@ -117,6 +137,8 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchStrength: 84,
     firstSeen: '1 day ago',
     watermarkDetected: true,
+    matchMethod: 'watermark',
+    hammingDistance: 5,
     status: 'investigating',
     gradient: 'linear-gradient(135deg, #f97316 0%, #eab308 100%)',
   },
@@ -129,6 +151,8 @@ const MOCK_MATCHES: PiracyMatch[] = [
     matchStrength: 81,
     firstSeen: '2 days ago',
     watermarkDetected: false,
+    matchMethod: 'perceptual-hash',
+    hammingDistance: 8,
     status: 'resolved',
     gradient: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
   },
@@ -141,14 +165,62 @@ const MOCK_SCANNERS: Scanner[] = [
 ];
 
 const MOCK_ACTIVITY: ActivityEntry[] = [
-  { id: 'a1', icon: AlertTriangle, iconColor: '#fbbf24', text: 'Match found on youtube.com/watch?v=xK8f2JqLm9n', time: '5m ago' },
-  { id: 'a2', icon: FileText, iconColor: '#f87171', text: 'DMCA filed for match #1247', time: '15m ago' },
-  { id: 'a3', icon: ShieldCheck, iconColor: '#34d399', text: 'Watermark verified for output af_001', time: '1h ago' },
-  { id: 'a4', icon: Search, iconColor: '#a78bfa', text: 'Scan completed for TikTok (0 new matches)', time: '2h ago' },
-  { id: 'a5', icon: AlertTriangle, iconColor: '#fbbf24', text: 'Match found on tiktok.com/@user123/video/7284920193842', time: '2h ago' },
-  { id: 'a6', icon: Check, iconColor: '#34d399', text: 'Match #1243 marked as authorized by creator', time: '3h ago' },
-  { id: 'a7', icon: ShieldAlert, iconColor: '#f87171', text: 'Reddit scanner rate limited — retrying in 8m', time: '4h ago' },
-  { id: 'a8', icon: FileText, iconColor: '#f87171', text: 'DMCA filed for match #1241 on Twitter', time: '6h ago' },
+  {
+    id: 'a1',
+    icon: AlertTriangle,
+    iconColor: '#fbbf24',
+    text: 'Match found on youtube.com/watch?v=xK8f2JqLm9n',
+    time: '5m ago',
+  },
+  {
+    id: 'a2',
+    icon: FileText,
+    iconColor: '#f87171',
+    text: 'DMCA filed for match #1247',
+    time: '15m ago',
+  },
+  {
+    id: 'a3',
+    icon: ShieldCheck,
+    iconColor: '#34d399',
+    text: 'Watermark verified for output af_001',
+    time: '1h ago',
+  },
+  {
+    id: 'a4',
+    icon: Search,
+    iconColor: '#a78bfa',
+    text: 'Scan completed for TikTok (0 new matches)',
+    time: '2h ago',
+  },
+  {
+    id: 'a5',
+    icon: AlertTriangle,
+    iconColor: '#fbbf24',
+    text: 'Match found on tiktok.com/@user123/video/7284920193842',
+    time: '2h ago',
+  },
+  {
+    id: 'a6',
+    icon: Check,
+    iconColor: '#34d399',
+    text: 'Match #1243 marked as authorized by creator',
+    time: '3h ago',
+  },
+  {
+    id: 'a7',
+    icon: ShieldAlert,
+    iconColor: '#f87171',
+    text: 'Reddit scanner rate limited — retrying in 8m',
+    time: '4h ago',
+  },
+  {
+    id: 'a8',
+    icon: FileText,
+    iconColor: '#f87171',
+    text: 'DMCA filed for match #1241 on Twitter',
+    time: '6h ago',
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -163,7 +235,163 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'settings', label: 'Settings' },
 ];
 
-const SCAN_FREQUENCIES = ['Every 5 minutes', 'Every 15 minutes', 'Every hour', 'Every 6 hours', 'Daily'];
+const SCAN_FREQUENCIES = [
+  'Every 5 minutes',
+  'Every 15 minutes',
+  'Every hour',
+  'Every 6 hours',
+  'Daily',
+];
+
+/* ------------------------------------------------------------------ */
+/*  Evidence badges                                                    */
+/* ------------------------------------------------------------------ */
+
+const badgeStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 3,
+};
+
+/**
+ * Watermark state, with "not checked" rendered distinctly from "absent".
+ * Collapsing the two would let an unconsulted service read as an exoneration.
+ */
+function WatermarkBadge({ state }: { state: boolean | null }) {
+  if (state === true) {
+    return (
+      <span
+        style={{ ...badgeStyle, color: '#34d399' }}
+        title="An invisible watermark was recovered from the media itself."
+      >
+        <ShieldCheck size={11} />
+        Watermark recovered
+      </span>
+    );
+  }
+  if (state === false) {
+    return (
+      <span
+        style={{ ...badgeStyle, color: 'var(--text-tertiary)' }}
+        title="The media was analysed and no AnimaForge watermark was recovered."
+      >
+        <ShieldAlert size={11} />
+        No watermark found
+      </span>
+    );
+  }
+  return (
+    <span
+      style={{ ...badgeStyle, color: '#fbbf24' }}
+      title="The watermark service was not reachable or not configured, so no check was performed. This is not evidence either way."
+    >
+      <ShieldQuestion size={11} />
+      Watermark not checked
+    </span>
+  );
+}
+
+/** How the match was reached, and how close it was. */
+function EvidenceBadge({
+  method,
+  distance,
+}: {
+  method: 'perceptual-hash' | 'watermark';
+  distance: number | null;
+}) {
+  const label = method === 'watermark' ? 'Watermark payload' : 'Perceptual hash';
+  return (
+    <span
+      style={{ ...badgeStyle, color: 'var(--text-tertiary)' }}
+      title={
+        method === 'watermark'
+          ? 'Matched by recovering the embedded watermark payload — the strongest evidence available.'
+          : 'Matched by perceptual hash distance. Robust to re-encoding and rescaling; not to heavy cropping or rotation.'
+      }
+    >
+      <Fingerprint size={11} />
+      {label}
+      {distance !== null ? ` · ${distance}/64 bits` : ''}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Live capability banner                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Shows what the protection pipeline can actually do right now. Without this
+ * the dashboard looks equally confident whether or not scanning is wired up.
+ */
+function CapabilityBanner() {
+  const [capabilities, setCapabilities] = useState<PiracyCapabilities | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPiracyCapabilities().then((result) => {
+      if (cancelled) return;
+      if (isUnavailable(result)) setError(result.reason);
+      else setCapabilities(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const reasons = error ? [error] : (capabilities?.degraded_reasons ?? []);
+  if (!error && capabilities && !capabilities.degraded) {
+    return (
+      <div
+        style={{
+          margin: '12px 24px 0',
+          padding: '10px 14px',
+          borderRadius: 8,
+          fontSize: 12,
+          color: '#34d399',
+          background: 'rgba(52, 211, 153, 0.08)',
+          border: '0.5px solid rgba(52, 211, 153, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <ShieldCheck size={13} />
+        Protection pipeline fully operational — discovery, fingerprinting and watermark detection
+        are all configured.
+      </div>
+    );
+  }
+  if (reasons.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        margin: '12px 24px 0',
+        padding: '12px 14px',
+        borderRadius: 8,
+        fontSize: 12,
+        color: '#fbbf24',
+        background: 'rgba(234, 179, 8, 0.08)',
+        border: '0.5px solid rgba(234, 179, 8, 0.25)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+        <AlertTriangle size={13} />
+        Protection pipeline is running in a reduced state
+      </div>
+      <ul style={{ margin: '8px 0 0', paddingLeft: 22, lineHeight: 1.7 }}>
+        {reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+      <p style={{ margin: '8px 0 0', color: 'var(--text-tertiary)' }}>
+        Matches listed below are sample data until live scanning is configured.
+      </p>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -176,7 +404,8 @@ export default function PiracyPage() {
 
   const filteredMatches = useMemo(() => {
     if (activeTab === 'all') return MOCK_MATCHES;
-    if (activeTab === 'investigating') return MOCK_MATCHES.filter((m) => m.status === 'investigating');
+    if (activeTab === 'investigating')
+      return MOCK_MATCHES.filter((m) => m.status === 'investigating');
     if (activeTab === 'filed') return MOCK_MATCHES.filter((m) => m.status === 'filed');
     if (activeTab === 'resolved') return MOCK_MATCHES.filter((m) => m.status === 'resolved');
     return [];
@@ -234,7 +463,7 @@ export default function PiracyPage() {
             </span>
           </h1>
           <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
-            Watermark verification, piracy detection, and DMCA management
+            Perceptual fingerprinting, invisible watermark recovery, and DMCA management
           </p>
         </div>
 
@@ -258,6 +487,9 @@ export default function PiracyPage() {
           Configure scanning
         </button>
       </div>
+
+      {/* What the pipeline can actually do right now */}
+      <CapabilityBanner />
 
       {/* Stats row */}
       <div
@@ -416,7 +648,9 @@ export default function PiracyPage() {
         </div>
 
         {/* Right sidebar — Active Scanners */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 0 }}>
+        <aside
+          style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 0 }}
+        >
           <div
             style={{
               border: '0.5px solid var(--border)',
@@ -657,7 +891,9 @@ function MatchCard({ match }: { match: PiracyMatch }) {
 
       {/* Details */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+        >
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
             {match.originalOutput}
           </div>
@@ -675,7 +911,10 @@ function MatchCard({ match }: { match: PiracyMatch }) {
           }}
         >
           <span>
-            Detected on <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{match.platform}</span>
+            Detected on{' '}
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+              {match.platform}
+            </span>
           </span>
           <span>•</span>
           <a
@@ -699,27 +938,17 @@ function MatchCard({ match }: { match: PiracyMatch }) {
           </a>
           <span>•</span>
           <span>First seen {match.firstSeen}</span>
-          {match.watermarkDetected && (
-            <>
-              <span>•</span>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  color: '#34d399',
-                }}
-              >
-                <ShieldCheck size={11} />
-                Watermark detected
-              </span>
-            </>
-          )}
+          <span>•</span>
+          <WatermarkBadge state={match.watermarkDetected} />
+          <span>•</span>
+          <EvidenceBadge method={match.matchMethod} distance={match.hammingDistance} />
         </div>
 
         {/* Match strength */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 78 }}>Match strength</div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 78 }}>
+            Match strength
+          </div>
           <div
             style={{
               flex: 1,
@@ -738,13 +967,15 @@ function MatchCard({ match }: { match: PiracyMatch }) {
                   match.matchStrength >= 90
                     ? '#f87171'
                     : match.matchStrength >= 80
-                    ? '#fbbf24'
-                    : '#60a5fa',
+                      ? '#fbbf24'
+                      : '#60a5fa',
                 transition: 'width 200ms',
               }}
             />
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', minWidth: 32 }}>
+          <div
+            style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', minWidth: 32 }}
+          >
             {match.matchStrength}%
           </div>
         </div>
@@ -771,9 +1002,21 @@ function ActionButton({
   variant: 'primary' | 'danger' | 'ghost';
 }) {
   const styles: Record<typeof variant, { bg: string; color: string; border: string }> = {
-    primary: { bg: 'var(--brand-dim)', color: 'var(--text-brand)', border: '0.5px solid var(--brand-border)' },
-    danger: { bg: 'rgba(248, 113, 113, 0.1)', color: '#f87171', border: '0.5px solid rgba(248, 113, 113, 0.3)' },
-    ghost: { bg: 'transparent', color: 'var(--text-secondary)', border: '0.5px solid var(--border)' },
+    primary: {
+      bg: 'var(--brand-dim)',
+      color: 'var(--text-brand)',
+      border: '0.5px solid var(--brand-border)',
+    },
+    danger: {
+      bg: 'rgba(248, 113, 113, 0.1)',
+      color: '#f87171',
+      border: '0.5px solid rgba(248, 113, 113, 0.3)',
+    },
+    ghost: {
+      bg: 'transparent',
+      color: 'var(--text-secondary)',
+      border: '0.5px solid var(--border)',
+    },
   };
   const s = styles[variant];
 
@@ -842,7 +1085,14 @@ function ScannerCard({ scanner }: { scanner: Scanner }) {
         padding: '10px 12px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 4,
+        }}
+      >
         <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
           {scanner.platform} Scanner
         </div>
@@ -870,7 +1120,9 @@ function ScannerCard({ scanner }: { scanner: Scanner }) {
         </span>
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-        {isRateLimited && scanner.retryIn ? `Retry in ${scanner.retryIn}` : `Last scan: ${scanner.lastScan}`}
+        {isRateLimited && scanner.retryIn
+          ? `Retry in ${scanner.retryIn}`
+          : `Last scan: ${scanner.lastScan}`}
       </div>
     </div>
   );
@@ -964,7 +1216,9 @@ function SettingRow({
     >
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</div>
-        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{description}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+          {description}
+        </div>
       </div>
       <div
         style={{

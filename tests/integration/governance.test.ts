@@ -195,14 +195,20 @@ describe('Governance — C2PA', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.manifest).toBeDefined();
-    expect(res.body.signature).toBeDefined();
     expect(res.body.output_id).toBeDefined();
-    expect(res.body.manifest['c2pa:claim']).toBeDefined();
-    expect(res.body.manifest['c2pa:claim'].claim_generator).toContain('AnimaForge');
+    expect(res.body.manifest.claim_generator).toContain('AnimaForge');
+    expect(res.body.manifest.assertions.map((a: { label: string }) => a.label)).toContain(
+      'c2pa.actions',
+    );
+    // No signing certificate is configured in this environment, so the service
+    // must record the claim as unsigned rather than inventing a signature.
+    expect(res.body.signed).toBe(false);
+    expect(res.body.signature).toBeNull();
+    expect(res.body.degraded).toBe(true);
   });
 
-  // 7. Verify C2PA -> manifest validated
-  it('should verify a previously signed C2PA manifest', async () => {
+  // 7. Verify C2PA -> reports the record without claiming it is validated
+  it('should report an unsigned C2PA record as unverified, never as valid', async () => {
     const app = await getC2paApp();
     const jobId = uuidv4();
 
@@ -226,16 +232,24 @@ describe('Governance — C2PA', () => {
     const res = await request(app).get(`/governance/c2pa/verify/${outputId}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.valid).toBe(true);
+    expect(res.body.record_found).toBe(true);
     expect(res.body.generator).toContain('AnimaForge');
     expect(res.body.model_id).toBe('animaforge-gen-v2');
     expect(res.body.created_at).toBeDefined();
+    // Without a signing certificate nothing was cryptographically signed, so
+    // the honest answer is "unverified" — not "valid".
+    expect(res.body.status).toBe('unverified');
+    expect(res.body.valid).toBe(false);
+    expect(res.body.cryptographically_verified).toBe(false);
   });
 });
 
 describe('Governance — Watermark', () => {
-  // 8. Watermark embed + detect -> roundtrip
-  it('should embed a watermark and detect it in a roundtrip', async () => {
+  // 8. A URL-only embed registers intent but marks no pixels, and detection
+  //    from a URL must not claim a match. Real pixel round-trips (embed →
+  //    re-encode → recover) live in
+  //    services/governance/watermark/src/__tests__/watermark.test.ts.
+  it('should register a URL-only embed without claiming pixels were marked', async () => {
     const app = await getWatermarkApp();
     const jobId = uuidv4();
     const outputUrl = 'https://cdn.example.com/output/scene-42.mp4';
@@ -252,19 +266,20 @@ describe('Governance — Watermark', () => {
     expect(embedRes.status).toBe(201);
     expect(embedRes.body.watermark_id).toBeDefined();
     expect(embedRes.body.watermarked_url).toBeDefined();
+    expect(embedRes.body.embedded).toBe(false);
+    expect(embedRes.body.mode).toBe('registered-only');
 
     const watermarkedUrl = embedRes.body.watermarked_url;
 
-    // Detect
+    // Detect — a URL is not evidence; the watermark lives in the pixels.
     const detectRes = await request(app)
       .post('/governance/watermark/detect')
       .send({ content_url: watermarkedUrl });
 
     expect(detectRes.status).toBe(200);
-    expect(detectRes.body.detected).toBe(true);
-    expect(detectRes.body.watermark_id).toBe(embedRes.body.watermark_id);
-    expect(detectRes.body.confidence).toBeGreaterThan(0.9);
-    expect(detectRes.body.metadata).toBeDefined();
-    expect(detectRes.body.metadata.job_id).toBe(jobId);
+    expect(detectRes.body.detected).toBe(false);
+    expect(detectRes.body.confidence).toBe(0);
+    expect(detectRes.body.metadata).toBeNull();
+    expect(detectRes.body.reason).toBeTruthy();
   });
 });

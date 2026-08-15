@@ -1,18 +1,32 @@
 import { Router, Request, Response } from 'express';
 import {
   registerContent,
+  registerContentWithAsset,
   scanPlatform,
+  matchSuppliedAsset,
   getAlerts,
-  getAlert,
   updateAlertAction,
   getDashboard,
+  getCapabilities,
   ActionType,
 } from '../services/piracyService';
 
 export const piracyRouter = Router();
 
-// POST /piracy/scan — scan URL/platform for unauthorized content
-piracyRouter.post('/piracy/scan', (req: Request, res: Response) => {
+function assetFrom(body: Record<string, unknown>): {
+  asset_base64?: string;
+  asset_path?: string;
+  mime_type?: string;
+} | null {
+  const asset_base64 = typeof body.asset_base64 === 'string' ? body.asset_base64 : undefined;
+  const asset_path = typeof body.asset_path === 'string' ? body.asset_path : undefined;
+  const mime_type = typeof body.mime_type === 'string' ? body.mime_type : undefined;
+  if (!asset_base64 && !asset_path) return null;
+  return { asset_base64, asset_path, mime_type };
+}
+
+// POST /piracy/scan — discover and fingerprint candidate copies
+piracyRouter.post('/piracy/scan', async (req: Request, res: Response) => {
   try {
     const { query, platforms } = req.body;
 
@@ -20,10 +34,17 @@ piracyRouter.post('/piracy/scan', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'query and platforms[] are required' });
     }
 
-    const allMatches: any[] = [];
+    const allMatches: unknown[] = [];
+    const reasons = new Set<string>();
+    let examined = 0;
+    let fingerprinted = 0;
+
     for (const platform of platforms) {
-      const result = scanPlatform(query, platform);
+      const result = await scanPlatform(query, platform);
       allMatches.push(...result.matches);
+      examined += result.candidates_examined;
+      fingerprinted += result.candidates_fingerprinted;
+      for (const reason of result.reasons) reasons.add(reason);
     }
 
     return res.json({
@@ -31,25 +52,65 @@ piracyRouter.post('/piracy/scan', (req: Request, res: Response) => {
       platforms,
       total_matches: allMatches.length,
       matches: allMatches,
+      candidates_examined: examined,
+      candidates_fingerprinted: fingerprinted,
+      degraded: reasons.size > 0,
+      reasons: [...reasons],
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// POST /piracy/register — register content for monitoring
-piracyRouter.post('/piracy/register', (req: Request, res: Response) => {
+// POST /piracy/match — fingerprint a supplied asset against registered content
+piracyRouter.post('/piracy/match', async (req: Request, res: Response) => {
+  const asset = assetFrom(req.body ?? {});
+  if (!asset) {
+    return res.status(400).json({
+      error: 'asset_base64 or asset_path is required to fingerprint an asset',
+    });
+  }
   try {
-    const { outputId, watermarkId, metadata } = req.body;
+    const threshold = typeof req.body.threshold === 'number' ? req.body.threshold : undefined;
+    return res.json(await matchSuppliedAsset(asset, threshold));
+  } catch (err: any) {
+    return res.status(422).json({ error: err.message });
+  }
+});
+
+// POST /piracy/register — register content for monitoring
+piracyRouter.post('/piracy/register', async (req: Request, res: Response) => {
+  try {
+    const { outputId, watermarkId, metadata, userId } = req.body;
 
     if (!outputId || !watermarkId) {
       return res.status(400).json({ error: 'outputId and watermarkId are required' });
     }
 
-    const content = registerContent(outputId, watermarkId, metadata || {});
-    return res.status(201).json(content);
+    const asset = assetFrom(req.body ?? {});
+    if (!asset) {
+      // Registering without media is allowed but useless for matching, so the
+      // response says so rather than implying the content is protected.
+      const content = registerContent(outputId, watermarkId, metadata || {}, userId);
+      return res.status(201).json({
+        ...content,
+        fingerprinted: false,
+        warning:
+          'No asset supplied, so no perceptual fingerprint was computed. This content ' +
+          'cannot be matched by a scan. Send asset_base64 or asset_path to fingerprint it.',
+      });
+    }
+
+    const content = await registerContentWithAsset(
+      outputId,
+      watermarkId,
+      asset,
+      metadata || {},
+      userId,
+    );
+    return res.status(201).json({ ...content, fingerprinted: true });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return res.status(422).json({ error: err.message });
   }
 });
 
@@ -69,7 +130,7 @@ piracyRouter.put('/piracy/alerts/:id/action', (req: Request, res: Response) => {
       return res.status(400).json({ error: `action must be one of: ${validActions.join(', ')}` });
     }
 
-    const alert = updateAlertAction(req.params.id, action);
+    const alert = updateAlertAction(String(req.params.id), action);
     return res.json(alert);
   } catch (err: any) {
     const status = err.message.includes('not found') ? 404 : 400;
@@ -81,4 +142,9 @@ piracyRouter.put('/piracy/alerts/:id/action', (req: Request, res: Response) => {
 piracyRouter.get('/piracy/dashboard', (_req: Request, res: Response) => {
   const stats = getDashboard();
   return res.json(stats);
+});
+
+// GET /piracy/capabilities — true state of every optional dependency
+piracyRouter.get('/piracy/capabilities', async (_req: Request, res: Response) => {
+  return res.json(await getCapabilities());
 });
