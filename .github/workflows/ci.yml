@@ -59,10 +59,19 @@ jobs:
 
       - run: npm ci
 
+      # apps/web has 26 pre-existing errors (#19) and used to abort this job
+      # before the service loop below ever ran — so adding services here would
+      # have changed nothing. Both steps now run and the gate at the end
+      # reproduces the old pass/fail semantics: red if either fails.
       - name: Type check apps/web
+        id: web
+        continue-on-error: true
         run: cd apps/web && npx tsc --noEmit
 
       - name: Type check services
+        id: services
+        if: always()
+        continue-on-error: true
         # Each service is checked in a subshell. The previous form was
         # `cd services/$svc && npx tsc && cd ../..`, which silently assumed every
         # service sits exactly one level under services/ — the governance
@@ -95,6 +104,22 @@ jobs:
             echo "::error::Type check failed for:$failed"
             exit 1
           fi
+
+      # Reproduces the job's original pass/fail semantics now that the two
+      # steps above no longer abort each other.
+      - name: Type check result
+        if: always()
+        run: |
+          fail=0
+          if [ "${{ steps.web.outcome }}" = "failure" ]; then
+            echo "::error::apps/web type check failed (pre-existing, see #19)"
+            fail=1
+          fi
+          if [ "${{ steps.services.outcome }}" = "failure" ]; then
+            echo "::error::service type check failed"
+            fail=1
+          fi
+          exit "$fail"
 
   test-frontend:
     name: Unit Tests (Vitest)
