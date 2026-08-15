@@ -1,0 +1,13 @@
+{
+  "name": "@animaforge/governance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AnimaForge governance pipeline — C2PA provenance, invisible watermarking, moderation, consent",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "c2pa-node": "0.5.26",
+    "jimp": "^1.6.0"
+  }
+}
