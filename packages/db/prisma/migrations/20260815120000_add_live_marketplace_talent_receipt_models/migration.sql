@@ -1,8 +1,3 @@
--- AlterTable
-ALTER TABLE "live_sessions" ADD COLUMN     "mode" TEXT,
-ADD COLUMN     "project_id" TEXT,
-ALTER COLUMN "user_id" DROP NOT NULL;
-
 -- CreateTable
 CREATE TABLE "live_recordings" (
     "id" TEXT NOT NULL,
@@ -114,7 +109,3 @@ CREATE INDEX "talent_bookings_project_id_idx" ON "talent_bookings"("project_id")
 
 -- CreateIndex
 CREATE INDEX "receipts_user_id_created_at_idx" ON "receipts"("user_id", "created_at");
-
--- CreateIndex
-CREATE INDEX "live_sessions_project_id_idx" ON "live_sessions"("project_id");
-
