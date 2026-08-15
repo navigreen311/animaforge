@@ -63,13 +63,38 @@ jobs:
         run: cd apps/web && npx tsc --noEmit
 
       - name: Type check services
+        # Each service is checked in a subshell. The previous form was
+        # `cd services/$svc && npx tsc && cd ../..`, which silently assumed every
+        # service sits exactly one level under services/ — the governance
+        # services are two levels down, so the fixed `cd ../..` would have left
+        # the loop in the wrong directory for every subsequent entry.
+        #
+        # governance/consent and governance/moderation are deliberately absent:
+        # both have pre-existing tsc errors (string|string[] param types in
+        # rights.ts, possibly-null prisma in moderationService.ts) that belong to
+        # their owners. Add them here once those are fixed.
         run: |
-          for svc in platform-api auth billing realtime workers gateway export notification search analytics; do
+          set -u
+          failed=""
+          for svc in platform-api auth billing realtime workers gateway export \
+                     notification search analytics \
+                     governance/c2pa governance/watermark piracy; do
             if [ -f "services/$svc/tsconfig.json" ]; then
-              echo "Type checking services/$svc..."
-              cd services/$svc && npx tsc --noEmit && cd ../..
+              echo "::group::Type checking services/$svc"
+              if ( cd "services/$svc" && npx tsc --noEmit ); then
+                echo "OK"
+              else
+                failed="$failed $svc"
+              fi
+              echo "::endgroup::"
+            else
+              echo "::warning::services/$svc has no tsconfig.json — skipped"
             fi
           done
+          if [ -n "$failed" ]; then
+            echo "::error::Type check failed for:$failed"
+            exit 1
+          fi
 
   test-frontend:
     name: Unit Tests (Vitest)
@@ -102,6 +127,91 @@ jobs:
         with:
           name: unit-coverage
           path: coverage-report.json
+          retention-days: 14
+
+  test-governance:
+    name: Governance & Piracy Tests (Vitest)
+    runs-on: ubuntu-latest
+    # The provenance suites (C2PA signing, invisible watermarking, perceptual
+    # fingerprinting) live under services/governance/** and services/piracy/**,
+    # which no existing job touched: test-frontend runs only tests/unit and
+    # test-api runs only services/platform-api. Until now these 95 tests ran on
+    # nobody's machine but their author's.
+    #
+    # Deliberately does not `need` lint/type-check, matching the other test jobs.
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # ffmpeg is NOT vendored by this repo. Without it the video watermarking
+      # and video fingerprinting blocks skip themselves (loudly, with the reason
+      # in the suite name) rather than fail — which would mean CI quietly stopped
+      # covering them. Installing it explicitly keeps those paths under test.
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+
+      # The real C2PA signing tests generate a throwaway CA and run a local
+      # RFC 3161 timestamp authority via `openssl ts -reply`. openssl ships on
+      # the runner image; assert it rather than discovering its absence as a
+      # silent skip.
+      - name: Verify openssl is present
+        run: |
+          openssl version
+          # `list -commands` rather than `ts -help`: the latter's exit code has
+          # varied across OpenSSL versions, and a false negative here would fail
+          # the job for no reason.
+          if ! openssl list -commands | tr ' ' '\n' | grep -qx ts; then
+            echo "::error::openssl lacks the 'ts' subcommand; the real C2PA signing path cannot be tested"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      # `npm ci` fetches the c2pa-node prebuilt native binding in a postinstall
+      # script. If that download is ever blocked, the real signing tests skip
+      # instead of failing, so check it loaded before trusting a green run.
+      - name: Verify the c2pa-node native binding loaded
+        run: |
+          node -e "require('c2pa-node'); console.log('c2pa-node binding OK')" || {
+            echo "::error::c2pa-node native binding is missing — the real signing path would silently skip"
+            exit 1
+          }
+
+      # No DATABASE_URL on purpose: these services fall back to in-memory stores
+      # and the suites assert that degraded behaviour. Their Prisma persistence
+      # paths are therefore NOT covered here — see issue for adding a Postgres
+      # service and a migrated schema to this job.
+      # tests/integration/governance.test.ts is included explicitly: it exercises
+      # all four governance services through their Express apps and, like the
+      # service suites, ran in no job before now. The rest of tests/integration
+      # is left out — those suites need Postgres and Elasticsearch and are
+      # currently red.
+      - name: Run governance and piracy tests
+        run: |
+          npx vitest run \
+            services/governance services/piracy tests/integration/governance.test.ts \
+            --reporter=verbose \
+            --coverage --coverage.reporter=text --coverage.reporter=lcov \
+            --coverage.include='services/governance/**/src/**/*.ts' \
+            --coverage.include='services/piracy/src/**/*.ts' \
+            --coverage.exclude='**/__tests__/**'
+        env:
+          CI: true
+
+      - name: Upload governance coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: governance-coverage
+          path: coverage/
           retention-days: 14
 
   test-api:
@@ -339,6 +449,7 @@ jobs:
       - lint
       - type-check
       - test-frontend
+      - test-governance
       - test-api
       - test-ai-api
       - test-e2e
@@ -375,6 +486,7 @@ jobs:
             fi
           }
           check test-frontend "${{ needs.test-frontend.result }}"
+          check test-governance "${{ needs.test-governance.result }}"
           check security-scan "${{ needs.security-scan.result }}"
 
           {
@@ -385,6 +497,7 @@ jobs:
             echo "| lint | ${{ needs.lint.result }} | no — #18 |"
             echo "| type-check | ${{ needs.type-check.result }} | no — #19 |"
             echo "| test-frontend | ${{ needs.test-frontend.result }} | **yes** |"
+            echo "| test-governance | ${{ needs.test-governance.result }} | **yes** |"
             echo "| test-api | ${{ needs.test-api.result }} | no — #21 |"
             echo "| test-ai-api | ${{ needs.test-ai-api.result }} | no — #23 |"
             echo "| test-e2e | ${{ needs.test-e2e.result }} | no — #21 |"
