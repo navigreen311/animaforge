@@ -1,17 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { logoUrl } = body as { logoUrl?: string };
+const handler = notImplemented(
+  '/api/brand-kits/extract-colors',
+  'it requires the AI inference service (services/ai-api), which this change does not touch',
+);
 
-  if (!logoUrl || logoUrl.trim().length === 0) {
-    return NextResponse.json({ error: 'logoUrl is required' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    logoUrl,
-    colors: ['#7c3aed', '#06b6d4', '#f59e0b', '#e2e8f0', '#0a0a0f'],
-    confidence: [0.95, 0.82, 0.71, 0.68, 0.55],
-    extractedAt: new Date().toISOString(),
-  });
-}
+export const POST = handler;

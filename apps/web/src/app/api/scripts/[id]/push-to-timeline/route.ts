@@ -1,25 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id: scriptId } = await params;
-  const body = await request.json().catch(() => null);
+const handler = notImplemented(
+  '/api/scripts/[id]/push-to-timeline',
+  'turning a script into scenes and shots has no endpoint yet',
+);
 
-  if (!body || typeof body.projectId !== 'string' || body.projectId.trim().length === 0) {
-    return NextResponse.json(
-      { error: "Validation failed: 'projectId' is required and must be a non-empty string." },
-      { status: 400 },
-    );
-  }
-
-  const shotsCreated = 9;
-
-  return NextResponse.json(
-    {
-      scriptId,
-      projectId: body.projectId,
-      shotsCreated,
-      message: `${shotsCreated} shots added to timeline`,
-    },
-    { status: 200 },
-  );
-}
+export const POST = handler;

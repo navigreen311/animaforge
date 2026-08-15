@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST() {
-  return NextResponse.json({
-    portalUrl: '/mock-stripe-portal',
-  });
-}
+const handler = notImplemented(
+  '/api/billing/portal',
+  'it requires Stripe credentials (STRIPE_SECRET_KEY), which are not configured',
+);
+
+export const POST = handler;

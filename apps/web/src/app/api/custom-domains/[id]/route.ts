@@ -1,13 +1,5 @@
-import { NextResponse } from 'next/server';
+import { proxy } from '@/lib/api/proxy';
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  return NextResponse.json({ id: params.id, status: 'verified', sslStatus: 'issued' });
-}
-
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  return NextResponse.json({ deleted: true, id: params.id });
-}
-
-export async function PATCH(_req: Request, { params }: { params: { id: string } }) {
-  return NextResponse.json({ id: params.id, verified: true, sslStatus: 'issued' });
-}
+export const GET = proxy('GET', '/api/v1/custom-domains/[id]');
+export const PATCH = proxy('PATCH', '/api/v1/custom-domains/[id]');
+export const DELETE = proxy('DELETE', '/api/v1/custom-domains/[id]');

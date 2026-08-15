@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST() {
-  return NextResponse.json({
-    message: 'Export requested. Email sent shortly.',
-    requestedAt: new Date().toISOString(),
-    estimatedDelivery: '~15 minutes',
-  });
-}
+const handler = notImplemented(
+  '/api/users/me/export-data',
+  'export rendering requires the export service and object storage, neither of which is configured',
+);
+
+export const POST = handler;

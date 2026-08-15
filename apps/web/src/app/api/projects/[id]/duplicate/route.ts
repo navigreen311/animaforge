@@ -1,23 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
-  const now = new Date().toISOString();
+const handler = notImplemented(
+  '/api/projects/[id]/duplicate',
+  'duplicating a project copies scenes, shots and assets and has no endpoint yet',
+);
 
-  const duplicatedProject = {
-    id: `proj_${Date.now()}`,
-    title: 'Copy of Project',
-    description: '',
-    status: 'draft',
-    projectType: 'animation',
-    isPinned: false,
-    totalShots: 0,
-    approvedShots: 0,
-    teamMembers: [],
-    creditsCost: 0,
-    sourceProjectId: params.id,
-    updatedAt: now,
-    createdAt: now,
-  };
-
-  return NextResponse.json({ project: duplicatedProject }, { status: 201 });
-}
+export const POST = handler;

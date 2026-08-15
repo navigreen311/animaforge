@@ -1,17 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const { searchParams } = request.nextUrl;
-  const format = searchParams.get('format') ?? 'mp3';
+const handler = notImplemented(
+  '/api/audio/tracks/[id]/download',
+  'it requires object storage, which is not configured (see STORAGE_* in .env.example)',
+);
 
-  if (format !== 'mp3' && format !== 'wav') {
-    return NextResponse.json({ error: 'format must be mp3 or wav' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    downloadUrl: `/mock-download.${format}`,
-    format,
-    trackId: id,
-  });
-}
+export const GET = handler;

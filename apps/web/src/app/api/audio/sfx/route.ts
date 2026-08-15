@@ -1,26 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { description, duration } = body as {
-    description?: string;
-    duration?: number;
-  };
+const handler = notImplemented(
+  '/api/audio/sfx',
+  'it requires the AI inference service (services/ai-api), which this change does not touch',
+);
 
-  if (!description) {
-    return NextResponse.json({ error: 'description is required' }, { status: 400 });
-  }
-
-  const track = {
-    trackId: `track_${Date.now()}`,
-    name: description,
-    audioUrl: '/mock-sfx.mp3',
-    duration: duration ?? 5,
-    waveformData: Array(60)
-      .fill(0)
-      .map(() => Math.random() * 90 + 10),
-    type: 'sfx' as const,
-  };
-
-  return NextResponse.json(track, { status: 201 });
-}
+export const POST = handler;

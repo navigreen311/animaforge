@@ -1,24 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { projectId, shotIds, settings } = body as {
-    projectId?: string;
-    shotIds?: string[];
-    settings?: Record<string, unknown>;
-  };
+const handler = notImplemented(
+  '/api/styles/cartoon-pro',
+  'it requires the AI inference service (services/ai-api), which this change does not touch',
+);
 
-  if (!projectId) {
-    return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
-  }
-
-  const appliedCount = shotIds?.length ?? 9;
-
-  return NextResponse.json({
-    projectId,
-    shotIds: shotIds ?? null,
-    settings: settings ?? {},
-    appliedCount,
-    message: 'Cartoon Pro applied',
-  });
-}
+export const POST = handler;

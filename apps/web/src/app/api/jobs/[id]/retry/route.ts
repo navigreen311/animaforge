@@ -1,12 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { proxy } from '@/lib/api/proxy';
 
-export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
-  return NextResponse.json({
-    success: true,
-    message: 'Job retry queued',
-    jobId: params.id,
-    newJobId: `job_${Math.random().toString(36).slice(2, 10)}`,
-    status: 'queued',
-    queuedAt: new Date().toISOString(),
-  });
-}
+export const POST = proxy('POST', '/api/v1/jobs/[id]/retry');

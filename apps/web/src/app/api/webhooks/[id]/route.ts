@@ -1,10 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { proxy } from '@/lib/api/proxy';
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
-
-  return NextResponse.json({
-    message: `Webhook ${id} deleted`,
-    deletedAt: new Date().toISOString(),
-  });
-}
+export const DELETE = proxy('DELETE', '/api/v1/webhook-endpoints/[id]');
