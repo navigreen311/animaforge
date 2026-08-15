@@ -12,10 +12,6 @@ name: Schema Drift
 # artifact, so it is safe to re-run; it is not on a schedule because the answer
 # only changes when the schema or the migrations do.
 on:
-  # TEMPORARY: workflow_dispatch only works from the default branch, so this
-  # cannot be exercised until it is merged. Removed before merge.
-  push:
-    branches: [ai-ci/schema-drift-migration]
   workflow_dispatch:
     inputs:
       apply_check:
