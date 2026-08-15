@@ -68,8 +68,8 @@ describe('Scenes CRUD', () => {
   });
 
   it('GET /api/v1/projects/:projectId/scenes — lists scenes sorted by order', async () => {
-    sceneService.create(PROJECT_ID, { title: 'Scene B', order: 2 });
-    sceneService.create(PROJECT_ID, { title: 'Scene A', order: 1 });
+    await sceneService.create(PROJECT_ID, { title: 'Scene B', order: 2 });
+    await sceneService.create(PROJECT_ID, { title: 'Scene A', order: 1 });
 
     const res = await request(app).get(`/api/v1/projects/${PROJECT_ID}/scenes`).set(AUTH);
 
@@ -142,7 +142,7 @@ describe('Shots CRUD', () => {
   });
 
   it('GET /api/v1/projects/:projectId/shots — lists all shots for a project', async () => {
-    shotService.create(sceneId, PROJECT_ID, {
+    await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -239,7 +239,7 @@ describe('Shot Approval & Lock Flow', () => {
   });
 
   it('rejects updates to locked shots', async () => {
-    shotService.lock(shotId);
+    await shotService.lock(shotId);
 
     const res = await request(app)
       .put(`/api/v1/shots/${shotId}`)
@@ -251,7 +251,7 @@ describe('Shot Approval & Lock Flow', () => {
   });
 
   it('rejects deletion of locked shots', async () => {
-    shotService.lock(shotId);
+    await shotService.lock(shotId);
 
     const res = await request(app).delete(`/api/v1/shots/${shotId}`).set(AUTH);
 

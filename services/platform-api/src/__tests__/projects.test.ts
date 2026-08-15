@@ -53,9 +53,9 @@ describe('Projects CRUD', () => {
   });
 
   it('GET /api/v1/projects — lists projects with pagination', async () => {
-    projectService.create({ title: 'Project A' });
-    projectService.create({ title: 'Project B' });
-    projectService.create({ title: 'Project C' });
+    await projectService.create({ title: 'Project A' });
+    await projectService.create({ title: 'Project B' });
+    await projectService.create({ title: 'Project C' });
 
     const res = await request(app).get('/api/v1/projects?page=1&limit=2').set(AUTH);
 
@@ -153,8 +153,8 @@ describe('Projects CRUD', () => {
 
   it('excludes soft-deleted projects from list', async () => {
     const project = await projectService.create({ title: 'Will Delete' });
-    projectService.create({ title: 'Will Keep' });
-    projectService.softDelete(project.id);
+    await projectService.create({ title: 'Will Keep' });
+    await projectService.softDelete(project.id);
 
     const res = await request(app).get('/api/v1/projects').set(AUTH);
 
