@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@animaforge/events": "*",
     "@prisma/client": "^5.14.0",
     "bullmq": "^5.20.0",
     "dotenv": "^16.4.7",
