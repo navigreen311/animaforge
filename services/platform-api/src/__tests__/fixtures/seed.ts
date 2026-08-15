@@ -110,25 +110,34 @@ async function insertFixtureRows(): Promise<boolean> {
 export async function clearFixtureChildren(): Promise<void> {
   if (!(await isDatabaseReachable()) || !prisma) return;
 
-  const projects = SEED_PROJECT_IDS.map((id) => `'${id}'::uuid`).join(',');
-  const owner = `'${STUB_OWNER_ID}'::uuid`;
+  // Every comparison casts the *column* to text rather than the literal to
+  // uuid, because the id columns are not consistently typed: characters,
+  // scenes, shots and projects use @db.Uuid, while receipts.user_id is plain
+  // TEXT. Casting the literal produced `operator does not exist: text = uuid`
+  // on receipts and took all twelve suites down. uuid::text is the canonical
+  // lowercase form, which is how these ids are written below.
+  const projects = SEED_PROJECT_IDS.map((id) => `'${id}'`).join(',');
+  const users = SEED_USER_IDS.map((id) => `'${id}'`).join(',');
+  const owner = `'${STUB_OWNER_ID}'`;
 
   await prisma.$executeRawUnsafe(
-    `DELETE FROM shots WHERE scene_id IN (
-       SELECT id FROM scenes WHERE project_id IN (${projects}))`,
+    `DELETE FROM shots WHERE scene_id::text IN (
+       SELECT id::text FROM scenes WHERE project_id::text IN (${projects}))`,
   );
   await prisma.$executeRawUnsafe(
-    `DELETE FROM scenes WHERE project_id IN (${projects})`,
+    `DELETE FROM scenes WHERE project_id::text IN (${projects})`,
   );
   await prisma.$executeRawUnsafe(
-    `DELETE FROM characters WHERE owner_id = ${owner} OR project_id IN (${projects})`,
+    `DELETE FROM characters
+      WHERE owner_id::text = ${owner} OR project_id::text IN (${projects})`,
   );
   await prisma.$executeRawUnsafe(
-    `DELETE FROM receipts WHERE user_id IN (${SEED_USER_IDS.map((id) => `'${id}'::uuid`).join(',')})`,
+    `DELETE FROM receipts WHERE user_id::text IN (${users})`,
   );
   // Projects created by a test, as distinct from the seeded ones.
   await prisma.$executeRawUnsafe(
-    `DELETE FROM projects WHERE owner_id = ${owner} AND id NOT IN (${projects})`,
+    `DELETE FROM projects
+      WHERE owner_id::text = ${owner} AND id::text NOT IN (${projects})`,
   );
 }
 
