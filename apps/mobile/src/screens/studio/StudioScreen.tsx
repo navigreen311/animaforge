@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
 } from 'react-native';
 
 interface QuickAction {
@@ -40,10 +38,20 @@ const quickActions: QuickAction[] = [
   },
 ];
 
+/**
+ * None of these actions is wired to anything. Each used to open an alert saying
+ * "coming soon" only after being tapped, which made a dead card look identical
+ * to a working one until you tried it.
+ *
+ * They stay listed because they describe the intended shape of the mobile
+ * studio, but they are rendered unavailable and say why up front.
+ */
+const UNAVAILABLE_REASON =
+  'The mobile app has no generation API to call: apps/mobile ships no client ' +
+  'for the platform API, and the web endpoints it would use return fixed ' +
+  'sample data rather than starting a job.';
+
 export default function StudioScreen() {
-  const handleAction = (action: QuickAction) => {
-    Alert.alert(action.title, `${action.subtitle}\n\nThis feature is coming soon.`);
-  };
 
   return (
     <View style={styles.container}>
@@ -54,11 +62,13 @@ export default function StudioScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         {quickActions.map((action) => (
-          <TouchableOpacity
+          <View
             key={action.id}
-            style={styles.actionCard}
-            onPress={() => handleAction(action)}
-            activeOpacity={0.7}
+            style={[styles.actionCard, styles.actionCardDisabled]}
+            accessible
+            accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            accessibilityHint={UNAVAILABLE_REASON}
           >
             <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
               <Text style={styles.actionIconText}>{action.icon}</Text>
@@ -67,9 +77,14 @@ export default function StudioScreen() {
               <Text style={styles.actionTitle}>{action.title}</Text>
               <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
             </View>
-            <Text style={styles.actionArrow}>{'>'}</Text>
-          </TouchableOpacity>
+            <Text style={styles.actionUnavailable}>Not available</Text>
+          </View>
         ))}
+
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeTitle}>Why these are greyed out</Text>
+          <Text style={styles.noticeBody}>{UNAVAILABLE_REASON}</Text>
+        </View>
 
         {/* Credits info */}
         <View style={styles.creditsCard}>
@@ -88,6 +103,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f23',
+  },
+  actionCardDisabled: {
+    opacity: 0.5,
+  },
+  actionUnavailable: {
+    fontSize: 11,
+    color: '#666680',
+  },
+  noticeCard: {
+    borderWidth: 1,
+    borderColor: '#2a2a44',
+    borderRadius: 10,
+    padding: 14,
+  },
+  noticeTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#a0a0c0',
+    marginBottom: 6,
+  },
+  noticeBody: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#666680',
   },
   header: {
     paddingTop: 60,

@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { UnavailableButton } from '../components/unavailable/UnavailableButton';
+import { explainFeature, getFeatureStatus } from '../components/unavailable/featureStatus';
 // ── Types ────────────────────────────────────────────────────────
 type Tab = 'profile' | 'workspace' | 'billing' | 'api-keys';
 type Theme = 'dark' | 'light';
@@ -1533,13 +1535,11 @@ export default function SettingsPage() {
                     Last changed: 3 months ago
                   </p>
                 </div>
-                <button
-                  type="button"
+                <UnavailableButton feature="auth.passwordChange"
                   style={btnSecondary}
-                  onClick={() => toast.info('Password change modal coming soon')}
-                >
+                                  >
                   Change password
-                </button>
+                </UnavailableButton>
               </div>
 
               {/* 2FA */}
@@ -1574,13 +1574,11 @@ export default function SettingsPage() {
                     Not enabled
                   </p>
                 </div>
-                <button
-                  type="button"
+                <UnavailableButton feature="auth.twoFactor"
                   style={btnSecondary}
-                  onClick={() => toast.info('2FA setup coming soon')}
-                >
+                                  >
                   Enable 2FA
-                </button>
+                </UnavailableButton>
               </div>
 
               {/* Active Sessions */}
@@ -1710,17 +1708,15 @@ export default function SettingsPage() {
                     >
                       {platform}
                     </span>
-                    <button
-                      type="button"
+                    <UnavailableButton feature="analytics.connectPlatform" hideNote layout="inline"
                       style={{
                         ...btnSecondary,
                         fontSize: 11,
                         padding: '4px 10px',
                       }}
-                      onClick={() => toast.info('Coming soon')}
-                    >
+                                          >
                       Connect
-                    </button>
+                    </UnavailableButton>
                   </div>
                 ))}
               </div>
@@ -1889,8 +1885,7 @@ export default function SettingsPage() {
                     Remove
                   </button>
                 </div>
-                <button
-                  type="button"
+                <UnavailableButton feature="settings.createWebhook"
                   style={{
                     ...btnSecondary,
                     display: 'flex',
@@ -1898,11 +1893,10 @@ export default function SettingsPage() {
                     gap: 6,
                     width: 'fit-content',
                   }}
-                  onClick={() => toast.info('Webhook creation coming soon')}
-                >
+                                  >
                   <Plus size={13} />
                   Add webhook
-                </button>
+                </UnavailableButton>
               </div>
             </div>
 
@@ -2003,13 +1997,11 @@ export default function SettingsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
+                <UnavailableButton feature="settings.memoryEditor"
                   style={btnSecondary}
-                  onClick={() => toast.info('Memory editor coming soon')}
-                >
+                                  >
                   Edit memory
-                </button>
+                </UnavailableButton>
                 <button
                   type="button"
                   style={{
@@ -2192,16 +2184,11 @@ export default function SettingsPage() {
                     borderRadius: 'var(--radius-md)',
                     padding: 24,
                     textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'border-color 150ms ease',
+                    cursor: 'not-allowed',
+                    opacity: 0.7,
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-brand)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)';
-                  }}
-                  onClick={() => toast.info('Logo upload coming soon')}
+                  aria-disabled
+                  title={explainFeature('settings.logoUpload')}
                 >
                   <Upload
                     size={20}
@@ -2217,7 +2204,17 @@ export default function SettingsPage() {
                       margin: 0,
                     }}
                   >
-                    Drop an image here or click to upload
+                    Logo upload is unavailable
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--text-tertiary)',
+                      margin: '6px 0 0',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {getFeatureStatus('settings.logoUpload').detail}
                   </p>
                 </div>
               </div>
@@ -2381,13 +2378,11 @@ export default function SettingsPage() {
                     Transfer this workspace to another team member
                   </p>
                 </div>
-                <button
-                  type="button"
+                <UnavailableButton feature="team.transferOwnership"
                   style={btnSecondary}
-                  onClick={() => toast.info('Transfer ownership coming soon')}
-                >
+                                  >
                   Transfer
-                </button>
+                </UnavailableButton>
               </div>
               <div
                 style={{
@@ -2504,20 +2499,16 @@ export default function SettingsPage() {
               </p>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
+                <UnavailableButton feature="billing.upgrade"
                   style={btnPrimary}
-                  onClick={() => toast.info('Upgrade flow coming soon')}
-                >
+                                  >
                   Upgrade to Studio
-                </button>
-                <button
-                  type="button"
+                </UnavailableButton>
+                <UnavailableButton feature="billing.comparePlans"
                   style={btnSecondary}
-                  onClick={() => toast.info('Plan comparison coming soon')}
-                >
+                                  >
                   View all plans
-                </button>
+                </UnavailableButton>
               </div>
             </div>
 
@@ -2650,13 +2641,11 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
+                <UnavailableButton feature="billing.updateCard"
                   style={btnSecondary}
-                  onClick={() => toast.info('Card update coming soon')}
-                >
+                                  >
                   Update card
-                </button>
+                </UnavailableButton>
               </div>
               <div>
                 <p style={labelStyle}>Billing Email</p>
@@ -3012,23 +3001,24 @@ export default function SettingsPage() {
                 ))}
               </div>
 
-              {/* Rate limit */}
+              {/* Rate limit
+                  This showed a bar at 84/100 requests per minute, with the
+                  amber threshold driven by the constant comparison `84 > 80`.
+                  Nothing measured it: the number was written into the markup.
+                  A fabricated usage figure is worse than none, because it is
+                  indistinguishable from a real one. */}
               <p style={labelStyle}>Rate Limit</p>
-              <div style={{ marginBottom: 4 }}>
-                <ProgressBar
-                  value={84}
-                  max={100}
-                  color={84 > 80 ? '#f59e0b' : 'var(--brand)'}
-                />
-              </div>
               <p
                 style={{
                   fontSize: 11,
                   color: 'var(--text-tertiary)',
                   margin: 0,
+                  lineHeight: 1.5,
                 }}
               >
-                84 / 100 requests per minute
+                Current usage is not shown. Rate-limit counters live in the
+                gateway and are not exposed to the web app, so any figure here
+                would be invented.
               </p>
             </div>
           </div>

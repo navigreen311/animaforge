@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UnavailableButton } from '../components/unavailable/UnavailableButton';
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -1257,14 +1258,12 @@ export default function StyleStudioPage() {
               </button>
 
               {/* Create Style Pack */}
-              <button
-                type="button"
-                onClick={() => toast.info('Create Style Pack dialog coming soon')}
-                style={{ ...btnPrimary, padding: '5px 12px', fontSize: 10 }}
+              <UnavailableButton feature="style.createPack"
+                                style={{ ...btnPrimary, padding: '5px 12px', fontSize: 10 }}
               >
                 <Plus size={10} />
                 Create Style Pack
-              </button>
+              </UnavailableButton>
             </div>
 
             {/* Cards Grid */}

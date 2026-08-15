@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
+import { explainFeature } from "../unavailable/featureStatus";
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -40,10 +40,12 @@ export default function NavItem({
 
   const borderLeft = active ? "2px solid var(--brand)" : "2px solid transparent";
 
+  // A disabled entry is announced as such and simply does not navigate. It used
+  // to swallow the click and raise a "coming soon" toast, which told the user
+  // nothing and looked identical to a broken link.
   const handleClick = (e: React.MouseEvent) => {
     if (disabled) {
       e.preventDefault();
-      toast(`${label} — coming soon`);
     }
   };
 
@@ -51,6 +53,8 @@ export default function NavItem({
     <Link
       href={disabled ? "#" : href}
       onClick={handleClick}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -69,7 +73,13 @@ export default function NavItem({
         position: "relative",
       }}
       aria-current={active ? "page" : undefined}
-      title={collapsed ? label : undefined}
+      title={
+        disabled
+          ? `${label} — ${explainFeature("nav.unbuiltRoute")}`
+          : collapsed
+            ? label
+            : undefined
+      }
     >
       <Icon
         size={16}

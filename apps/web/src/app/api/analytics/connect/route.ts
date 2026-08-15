@@ -18,10 +18,7 @@ export async function POST(request: NextRequest) {
   const { platform } = body;
 
   if (!platform || typeof platform !== 'string') {
-    return NextResponse.json(
-      { error: 'Missing required field "platform".' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Missing required field "platform".' }, { status: 400 });
   }
 
   const supported = ['YouTube', 'TikTok', 'Meta'];
@@ -34,8 +31,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    message: 'OAuth flow initiated — coming soon',
-    platform,
-  });
+  // No OAuth flow is started, and saying one was would be false. Connecting a
+  // platform needs a registered OAuth application and secret per provider;
+  // none is configured, so there is no authorisation URL to return.
+  //
+  // 501 rather than 200: the request was well formed and the route exists, but
+  // the capability is not implemented. A 200 here would let the client believe
+  // a connection was in progress and sit waiting for a callback that can never
+  // arrive.
+  const envVar = `${platform.toUpperCase()}_OAUTH_CLIENT_ID`;
+
+  return NextResponse.json(
+    {
+      error: 'not_configured',
+      message:
+        `Connecting ${platform} requires a registered OAuth application. ` +
+        `${envVar} and its client secret are not configured, so no ` +
+        'authorisation URL can be generated.',
+      platform,
+      missingConfiguration: [envVar, `${platform.toUpperCase()}_OAUTH_CLIENT_SECRET`],
+    },
+    { status: 501 },
+  );
 }

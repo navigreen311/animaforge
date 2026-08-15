@@ -88,7 +88,12 @@ export default function BillingScreen() {
         {
           text: 'Upgrade',
           onPress: () => {
-            Alert.alert('Coming Soon', 'In-app purchases will be available in a future update.');
+            Alert.alert(
+              'Plan changes are not available in the app',
+              'Plan changes on mobile must go through StoreKit on iOS and Google ' +
+                'Play Billing on Android. Neither is integrated, so nothing would ' +
+                'be charged or upgraded. Manage your plan on the web instead.',
+            );
           },
         },
       ],

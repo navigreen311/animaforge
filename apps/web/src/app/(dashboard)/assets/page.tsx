@@ -40,6 +40,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import WaveformVisualizer from '@/components/ui/WaveformVisualizer';
 import UploadModal from '@/components/assets/UploadModal';
 import { audioPlayer } from '@/lib/audioPlayer';
+import { UnavailableNotice } from '../components/unavailable/UnavailableButton';
+import { explainFeature } from '../components/unavailable/featureStatus';
 
 // ── Types ────────────────────────────────────────────────────────
 type AssetType = 'image' | 'video' | 'audio' | '3d' | 'style-pack' | 'preset';
@@ -500,7 +502,7 @@ function AssetThumbnail({ asset, height = 72 }: { asset: Asset; height?: number 
     return (
       <div style={{ width: '100%', height, background: bg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px' }}>
         <div style={{ width: '100%' }}>
-          <WaveformVisualizer trackId={asset.id} bars={bars} playing={false} height={40} barColor="rgba(255,255,255,0.9)" idleColor="rgba(255,255,255,0.6)" />
+          <WaveformVisualizer trackId={asset.id} staticData={bars} isPlaying={false} progress={0} height={40} color="rgba(255,255,255,0.9)" />
         </div>
         {asset.duration && (
           <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 'var(--radius-sm)', fontVariantNumeric: 'tabular-nums' }}>
@@ -1684,9 +1686,13 @@ export default function AssetsPage() {
               <EmptyState
                 icon={Package}
                 title="No assets found"
-                description="Try adjusting your filters or search query, or upload your first asset."
-                action={{ label: 'Upload Asset', onClick: () => toast('Upload coming soon') }}
+                description="Try adjusting your filters or search query."
               />
+            )}
+            {filtered.length === 0 && (
+              <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+                <UnavailableNotice feature="assets.upload" title="Uploading is not available" />
+              </div>
             )}
           </div>
         </div>
@@ -1842,13 +1848,12 @@ export default function AssetsPage() {
                     gap: 10,
                   }}
                 >
-                  <WaveformVisualizer
+                  <WaveformVisualizer progress={0}
                     trackId={detailAsset.id}
-                    bars={detailAsset.waveformBars ?? [0.3, 0.6, 1, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.3, 0.8, 0.5, 0.7, 0.4, 0.9, 0.6, 0.3, 0.8, 0.5, 0.7]}
-                    playing={playingAudioId === detailAsset.id}
+                    staticData={detailAsset.waveformBars ?? [0.3, 0.6, 1, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.3, 0.8, 0.5, 0.7, 0.4, 0.9, 0.6, 0.3, 0.8, 0.5, 0.7]}
+                    isPlaying={playingAudioId === detailAsset.id}
                     height={80}
-                    barColor="#fff"
-                    idleColor="rgba(255,255,255,0.85)"
+                    color="#fff"
                   />
                   <div
                     style={{
@@ -1919,8 +1924,9 @@ export default function AssetsPage() {
                       padding: '3px 8px',
                       borderRadius: 'var(--radius-sm)',
                     }}
+                    title={explainFeature('assets.preview3d')}
                   >
-                    3D preview coming soon
+                    No 3D viewer built
                   </span>
                 </div>
               ) : (

@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UnavailableButton, UnavailableNotice } from '../components/unavailable/UnavailableButton';
+import { explainFeature, type FeatureKey } from '../components/unavailable/featureStatus';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -591,13 +593,7 @@ function CreditLimitModal({
 // INVITE MEMBER MODAL
 // ══════════════════════════════════════════════════════════════
 
-function InviteMemberModal({
-  onClose,
-  onInvited,
-}: {
-  onClose: () => void;
-  onInvited: (email: string, role: Role) => void;
-}) {
+function InviteMemberModal({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<InviteEntry[]>([{ email: '', id: crypto.randomUUID() }]);
   const [role, setRole] = useState<Role>('Editor');
   const [projectAccess, setProjectAccess] = useState<'all' | 'specific'>('all');
@@ -605,7 +601,6 @@ function InviteMemberModal({
   const [creditMode, setCreditMode] = useState<'unlimited' | 'custom'>('unlimited');
   const [creditValue, setCreditValue] = useState('1000');
   const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
 
   const addEntry = () => {
     if (entries.length >= 5) return;
@@ -625,22 +620,10 @@ function InviteMemberModal({
     setSelectedProjects((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   };
 
-  const handleSend = async () => {
-    const validEmails = entries.filter((e) => e.email.includes('@'));
-    if (validEmails.length === 0) {
-      toast.error('Please enter at least one valid email');
-      return;
-    }
-    setSending(true);
-    // simulate API
-    await new Promise((r) => setTimeout(r, 1200));
-    setSending(false);
-    validEmails.forEach((e) => {
-      onInvited(e.email, role);
-      toast.success(`Invitation sent to ${e.email}`);
-    });
-    onClose();
-  };
+  // No handleSend. POST /api/team/invite records nothing and sends no mail, so
+  // there is no honest implementation available here. This used to wait 1.2s
+  // and report "Invitation sent to …" for an email that never left the browser.
+  // The form stays visible so the intended flow is still legible.
 
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
@@ -833,30 +816,16 @@ function InviteMemberModal({
           />
         </div>
 
+        <div style={{ marginBottom: 12 }}>
+          <UnavailableNotice feature="team.invite" />
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={sending}
-            style={{
-              ...primaryBtnStyle,
-              opacity: sending ? 0.7 : 1,
-              pointerEvents: sending ? 'none' : 'auto',
-            }}
-          >
-            {sending ? (
-              <>
-                <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Mail size={13} />
-                Send Invitation
-              </>
-            )}
-          </button>
+          <UnavailableButton feature="team.invite" hideNote layout="inline" style={primaryBtnStyle}>
+            <Mail size={13} />
+            Send Invitation
+          </UnavailableButton>
         </div>
       </motion.div>
     </div>
@@ -870,11 +839,9 @@ function InviteMemberModal({
 function ProjectAccessModal({
   member,
   onClose,
-  onSave,
 }: {
   member: TeamMember;
   onClose: () => void;
-  onSave: (entries: ProjectAccessEntry[]) => void;
 }) {
   const [entries, setEntries] = useState<ProjectAccessEntry[]>(() =>
     MOCK_PROJECT_ACCESS.map((p) => ({
@@ -1008,18 +975,14 @@ function ProjectAccessModal({
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
-          <button
-            type="button"
-            onClick={async () => {
-              await new Promise((r) => setTimeout(r, 300));
-              onSave(entries);
-              toast.success('Project access updated');
-              onClose();
-            }}
+          <UnavailableButton
+            feature="team.projectAccess"
+            hideNote
+            layout="inline"
             style={primaryBtnStyle}
           >
             Save access settings
-          </button>
+          </UnavailableButton>
         </div>
       </motion.div>
     </div>
@@ -1266,7 +1229,7 @@ function RowContextMenu({
     { key: 'changeRole', label: 'Change role', icon: <Shield size={12} />, hasSubmenu: true },
     { key: 'manageAccess', label: 'Manage project access', icon: <FolderOpen size={12} /> },
     { key: 'setCreditLimit', label: 'Set credit limit', icon: <CreditCard size={12} /> },
-    { key: 'viewActivity', label: 'View activity log', icon: <Activity size={12} /> },
+    { key: 'viewActivity', label: 'View activity log', icon: <Activity size={12} />, unavailable: 'team.activityLog' },
     { key: 'separator', separator: true } as const,
     { key: 'remove', label: 'Remove from workspace', icon: <UserMinus size={12} />, danger: true, disabledForSelf: true },
   ] as Array<{
@@ -1277,6 +1240,8 @@ function RowContextMenu({
     danger?: boolean;
     disabledForSelf?: boolean;
     separator?: boolean;
+    /** Set when the action cannot run; see components/unavailable/featureStatus. */
+    unavailable?: FeatureKey;
   }>;
 
   const top = anchorRect.bottom + 4;
@@ -1311,12 +1276,13 @@ function RowContextMenu({
             />
           );
         }
-        const itemDisabled = !!item.disabledForSelf && isOwnRow;
+        const itemDisabled = (!!item.disabledForSelf && isOwnRow) || !!item.unavailable;
         return (
         <div key={item.key} style={{ position: 'relative' }}>
           <button
             type="button"
             disabled={itemDisabled}
+            title={item.unavailable ? explainFeature(item.unavailable) : undefined}
             onClick={() => {
               if (item.key === 'changeRole') {
                 setRoleSubmenu(!roleSubmenu);
@@ -1475,9 +1441,8 @@ export default function TeamPage() {
       case 'setCreditLimit':
         setCreditLimitMember(member);
         break;
-      case 'viewActivity':
-        toast.info(`Activity log for ${member.name} (coming soon)`);
-        break;
+      // 'viewActivity' is rendered disabled — see featureStatus['team.activityLog'].
+      // The activity endpoint serves generated samples, not recorded events.
       case 'manageAccess':
         setProjectAccessMember(member);
         break;
@@ -1949,10 +1914,8 @@ export default function TeamPage() {
                 <Users size={13} style={{ color: 'var(--text-tertiary)' }} />
                 <span style={sectionTitleStyle}>Sub-Teams</span>
               </div>
-              <button
-                type="button"
-                onClick={() => toast.info('Create team (coming soon)')}
-                style={{
+              <UnavailableButton feature="team.create"
+                                style={{
                   ...smallBtnStyle,
                   display: 'flex',
                   alignItems: 'center',
@@ -1963,7 +1926,7 @@ export default function TeamPage() {
               >
                 <Plus size={11} />
                 Create team
-              </button>
+              </UnavailableButton>
             </div>
 
             {SUB_TEAMS.map((team) => (
@@ -1985,15 +1948,14 @@ export default function TeamPage() {
                   </p>
                 </div>
                 <AvatarStack memberIds={team.memberIds} />
-                <button
-                  type="button"
-                  onClick={() => toast.info(`Manage ${team.name} (coming soon)`)}
+                <UnavailableButton
+                  feature="team.manage"
+                  layout="inline"
+                  hideNote
                   style={{ ...smallBtnStyle, marginLeft: 12 }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                 >
                   Manage
-                </button>
+                </UnavailableButton>
               </div>
             ))}
           </div>
@@ -2116,6 +2078,10 @@ export default function TeamPage() {
             <MemberDetailPanel
               member={selectedMember}
               onClose={() => setSelectedMember(null)}
+              onManageAccess={(member) => {
+                setSelectedMember(null);
+                setProjectAccessMember(member);
+              }}
             />
           )}
         </AnimatePresence>
