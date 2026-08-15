@@ -23,18 +23,26 @@ jobs:
     strategy:
       matrix:
         service:
-          - { name: platform-api, context: services/platform-api }
-          - { name: auth, context: services/auth }
-          - { name: billing, context: services/billing }
-          - { name: realtime, context: services/realtime }
-          - { name: workers, context: services/workers }
-          - { name: gateway, context: services/gateway }
-          - { name: export, context: services/export }
-          - { name: notification, context: services/notification }
-          - { name: search, context: services/search }
-          - { name: analytics, context: services/analytics }
-          - { name: ai-api, context: services/ai-api }
-          - { name: web, context: apps/web }
+          # `context` is the docker build context and `file` the Dockerfile.
+          # platform-api, auth and web build from the repo root: they are npm
+          # workspaces whose lockfile lives there, and web also needs the
+          # @animaforge/db workspace package. See #20.
+          - { name: platform-api, context: ., file: services/platform-api/Dockerfile }
+          - { name: auth, context: ., file: services/auth/Dockerfile }
+          - { name: billing, context: services/billing, file: services/billing/Dockerfile }
+          - { name: realtime, context: services/realtime, file: services/realtime/Dockerfile }
+          - { name: workers, context: services/workers, file: services/workers/Dockerfile }
+          - { name: gateway, context: services/gateway, file: services/gateway/Dockerfile }
+          - { name: export, context: services/export, file: services/export/Dockerfile }
+          - {
+              name: notification,
+              context: services/notification,
+              file: services/notification/Dockerfile,
+            }
+          - { name: search, context: services/search, file: services/search/Dockerfile }
+          - { name: analytics, context: services/analytics, file: services/analytics/Dockerfile }
+          - { name: ai-api, context: services/ai-api, file: services/ai-api/Dockerfile }
+          - { name: web, context: ., file: apps/web/Dockerfile }
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -61,6 +69,7 @@ jobs:
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

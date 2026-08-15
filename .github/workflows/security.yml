@@ -105,18 +105,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # `context` is the docker build context and `file` the Dockerfile.
+        #
+        # platform-api, auth and web build from the repo root: all three are npm
+        # workspaces whose lockfile lives at the root, and web additionally
+        # depends on the @animaforge/db workspace package. With a per-service
+        # context `npm ci` failed outright (EUSAGE, no package-lock.json), which
+        # is why three of five images were never scanned (#20).
+        #
+        # gateway and ai-api keep their own context: both already build, and
+        # neither needs anything above its own directory.
         service:
-          - { name: platform-api, context: services/platform-api }
-          - { name: auth, context: services/auth }
-          - { name: ai-api, context: services/ai-api }
-          - { name: gateway, context: services/gateway }
-          - { name: web, context: apps/web }
+          - { name: platform-api, context: ., file: services/platform-api/Dockerfile }
+          - { name: auth, context: ., file: services/auth/Dockerfile }
+          - { name: ai-api, context: services/ai-api, file: services/ai-api/Dockerfile }
+          - { name: gateway, context: services/gateway, file: services/gateway/Dockerfile }
+          - { name: web, context: ., file: apps/web/Dockerfile }
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Build image for scanning
         run: |
           docker build -t animaforge/${{ matrix.service.name }}:scan \
+            -f ${{ matrix.service.file }} \
             ${{ matrix.service.context }}
 
       - name: Run Trivy vulnerability scanner
