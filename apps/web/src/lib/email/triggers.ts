@@ -3,6 +3,7 @@
 //  Checks conditions before sending transactional emails.
 // ---------------------------------------------------------------------------
 
+import { prisma } from '@animaforge/db';
 import { sendEmail } from './send';
 import {
   welcomeEmail,
@@ -42,31 +43,146 @@ interface WeeklyActivity {
 }
 
 // ---------------------------------------------------------------------------
-//  Stub DB helpers — replace with real queries
+//  Database access
 // ---------------------------------------------------------------------------
 
-async function getUser(_userId: string): Promise<UserRecord | null> {
-  // TODO: Replace with actual DB query
-  console.warn('[email/triggers] getUser is a stub — wire up your DB');
-  return null;
+/**
+ * These were five stubs that returned null or zero. The effect was that every
+ * trigger in this file silently did nothing: `getUser` returned null, so
+ * `triggerWelcomeEmail` returned before sending, and the milestone and digest
+ * triggers computed against empty data. Nothing threw, so nothing looked wrong.
+ *
+ * They are real queries now. `prisma` from @animaforge/db is null when the
+ * client has not been generated, so each helper throws a named error instead of
+ * degrading to the old silent no-op — a mail trigger that cannot reach the
+ * database should be a visible failure, not a quiet one.
+ */
+
+const CREDITS_LOW_NOTIFICATION_TYPE = 'credits_low';
+
+function db() {
+  if (!prisma) {
+    throw new Error(
+      '[email/triggers] No database connection. @animaforge/db returned a null ' +
+        'client, which means Prisma has not been generated (npm run db:generate ' +
+        'in packages/db) or DATABASE_URL is unset.',
+    );
+  }
+  return prisma;
 }
 
-async function markWelcomeEmailSent(_userId: string): Promise<void> {
-  // TODO: UPDATE users SET welcome_email_sent = true WHERE id = ?
+async function getUser(userId: string): Promise<UserRecord | null> {
+  const user = await db().user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      welcomeEmailSent: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user || !user.email) return null;
+
+  // The schema has no creditsLowNotifiedAt column. Rather than invent one — the
+  // Prisma schema is owned by another track — the last credits-low Notification
+  // serves as the record of when the user was told.
+  const lastCreditsLow = await db().notification.findFirst({
+    where: { userId, type: CREDITS_LOW_NOTIFICATION_TYPE },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  });
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.displayName ?? user.email.split('@')[0],
+    welcomeEmailSent: user.welcomeEmailSent,
+    creditsLowNotifiedAt: lastCreditsLow?.createdAt.toISOString() ?? null,
+    billingPeriodStart: user.createdAt.toISOString(),
+  };
 }
 
-async function markCreditsLowNotified(_userId: string): Promise<void> {
-  // TODO: UPDATE users SET credits_low_notified_at = NOW() WHERE id = ?
+async function markWelcomeEmailSent(userId: string): Promise<void> {
+  await db().user.update({
+    where: { id: userId },
+    data: { welcomeEmailSent: true },
+  });
 }
 
-async function getUserWeeklyActivity(_userId: string): Promise<WeeklyActivity | null> {
-  // TODO: Aggregate shots, approved, credits for the past 7 days
-  return null;
+async function markCreditsLowNotified(userId: string): Promise<void> {
+  // Doubles as the notification the user sees in-app and as the timestamp
+  // getUser reads back to avoid re-sending.
+  await db().notification.create({
+    data: {
+      userId,
+      type: CREDITS_LOW_NOTIFICATION_TYPE,
+      title: 'Credits running low',
+      body: 'You are close to your credit limit for this billing period.',
+      actionUrl: '/settings?tab=billing',
+    },
+  });
 }
 
-async function getUserJobCount(_userId: string): Promise<number> {
-  // TODO: SELECT COUNT(*) FROM jobs WHERE user_id = ?
-  return 0;
+async function getUserWeeklyActivity(userId: string): Promise<WeeklyActivity | null> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const client = db();
+
+  const [jobs, approved, creditsUsed] = await Promise.all([
+    // Shots rendered: completed generation jobs in the window.
+    client.generationJob.findMany({
+      where: { userId, status: 'complete', completedAt: { gte: since } },
+      select: { projectId: true },
+    }),
+    client.shot.count({
+      where: { approvedBy: userId, approvedAt: { gte: since } },
+    }),
+    client.generationJob.aggregate({
+      where: { userId, createdAt: { gte: since } },
+      _sum: { costCredits: true },
+    }),
+  ]);
+
+  // A digest with nothing in it is worse than no digest: it is an email that
+  // exists only to say you did not use the product.
+  if (jobs.length === 0 && approved === 0) return null;
+
+  const perProject = new Map<string, number>();
+  for (const job of jobs) {
+    perProject.set(job.projectId, (perProject.get(job.projectId) ?? 0) + 1);
+  }
+
+  let topProjectId: string | undefined;
+  let topCount = 0;
+  for (const [projectId, count] of perProject) {
+    if (count > topCount) {
+      topCount = count;
+      topProjectId = projectId;
+    }
+  }
+
+  const topProject = topProjectId
+    ? await client.project.findUnique({
+        where: { id: topProjectId },
+        select: { title: true },
+      })
+    : null;
+
+  return {
+    shots: jobs.length,
+    approved,
+    credits: Math.round(creditsUsed._sum.costCredits ?? 0),
+    topProject: topProject?.title,
+  };
+}
+
+async function getUserJobCount(userId: string): Promise<number> {
+  // Milestones count finished work, so queued and failed jobs do not advance
+  // someone toward "100 Shots".
+  return db().generationJob.count({
+    where: { userId, status: 'complete' },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -144,10 +260,7 @@ export async function triggerWelcomeEmail(userId: string): Promise<void> {
 //  Trigger: Render Complete (Final tier only)
 // ---------------------------------------------------------------------------
 
-export async function triggerRenderComplete(
-  userId: string,
-  jobData: JobData,
-): Promise<void> {
+export async function triggerRenderComplete(userId: string, jobData: JobData): Promise<void> {
   if (jobData.tier !== 'final') return;
 
   const user = await getUser(userId);
@@ -181,12 +294,7 @@ export async function triggerRenderFailed(
   await sendEmail({
     to: user.email,
     subject: `Render failed — Shot #${jobData.shotNumber} in ${jobData.projectName}`,
-    html: renderFailedEmail(
-      jobData.projectName,
-      jobData.shotNumber,
-      reason,
-      creditsRefunded,
-    ),
+    html: renderFailedEmail(jobData.projectName, jobData.shotNumber, reason, creditsRefunded),
   });
 }
 
@@ -244,10 +352,7 @@ export async function triggerWeeklyDigest(userId: string): Promise<void> {
 //  Trigger: Milestone Check
 // ---------------------------------------------------------------------------
 
-export async function checkMilestones(
-  userId: string,
-  jobCount?: number,
-): Promise<void> {
+export async function checkMilestones(userId: string, jobCount?: number): Promise<void> {
   const user = await getUser(userId);
   if (!user) return;
 
