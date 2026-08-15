@@ -158,7 +158,7 @@ describe('proxy — failure is never a fabricated success', () => {
         json: async () => {
           throw new Error('Unexpected token <');
         },
-      } as Response),
+      } as unknown as Response),
     );
 
     const res = await proxy('GET', '/api/v1/things')(makeRequest(), {});
