@@ -10,7 +10,7 @@
 import crypto from 'crypto';
 import { promises as fs } from 'node:fs';
 import { v4 as uuidv4 } from 'uuid';
-import { prisma, isPrismaAvailable } from '../db';
+import { prisma, isDatabaseReachable } from '../db';
 import {
   C2paUnavailableError,
   assetDigest,
@@ -127,7 +127,7 @@ function summariseSignature(info: ResolvedSignatureInfo | null): SignatureSummar
 
 async function persist(entry: StoredManifestEntry): Promise<void> {
   try {
-    if (!isPrismaAvailable()) {
+    if (!(await isDatabaseReachable())) {
       remember(entry);
       return;
     }
@@ -229,7 +229,7 @@ function rowToEntry(row: C2paManifestRow): StoredManifestEntry {
 
 async function findByOutputId(outputId: string): Promise<StoredManifestEntry | null> {
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const row = await prisma!.c2PAManifest.findUnique({
         where: { outputId },
       });
@@ -244,7 +244,7 @@ async function findByOutputId(outputId: string): Promise<StoredManifestEntry | n
 
 async function findByDigest(sha256: string): Promise<StoredManifestEntry | null> {
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const row = await prisma!.c2PAManifest.findFirst({
         where: { OR: [{ signedAssetSha256: sha256 }, { assetSha256: sha256 }] },
         orderBy: { createdAt: 'desc' },
@@ -260,7 +260,7 @@ async function findByDigest(sha256: string): Promise<StoredManifestEntry | null>
 
 export async function getManifestByJobId(jobId: string): Promise<StoredManifestEntry | null> {
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const row = await prisma!.c2PAManifest.findFirst({
         where: { jobId },
         orderBy: { createdAt: 'desc' },
@@ -565,7 +565,7 @@ export interface C2paCapabilities {
 export async function getCapabilities(): Promise<C2paCapabilities> {
   const status = await backendStatus();
   const reasons = [...status.degradedReasons];
-  if (!isPrismaAvailable()) {
+  if (!(await isDatabaseReachable())) {
     reasons.push('no database connection — provenance records are in-memory only');
   }
   return {
@@ -581,7 +581,7 @@ export async function getCapabilities(): Promise<C2paCapabilities> {
       timestamp_authority: status.tsaUrl,
     },
     verification: { available: status.canVerify },
-    database: { connected: isPrismaAvailable() },
+    database: { connected: (await isDatabaseReachable()) },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };

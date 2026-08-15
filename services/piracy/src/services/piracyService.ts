@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma, isPrismaAvailable } from '../db';
+import { prisma, isDatabaseReachable } from '../db';
 import {
   MATCH_THRESHOLD,
   clearFingerprints,
@@ -116,7 +116,7 @@ let totalMatches = 0;
 /* ──────────── Prisma helper — falls back to in-memory on DB error ──────────── */
 
 async function tryPrisma<T>(fn: () => Promise<T>): Promise<T | null> {
-  if (!isPrismaAvailable()) return null;
+  if (!(await isDatabaseReachable())) return null;
   try {
     return await fn();
   } catch {
@@ -824,7 +824,7 @@ export async function getCapabilities(): Promise<PiracyCapabilities> {
   if (!fingerprinting.video_fingerprinting.available) {
     reasons.push('ffmpeg not found — video fingerprinting is unavailable');
   }
-  if (!isPrismaAvailable()) {
+  if (!(await isDatabaseReachable())) {
     reasons.push('no database connection — matches are in-memory only');
   }
 
@@ -834,7 +834,7 @@ export async function getCapabilities(): Promise<PiracyCapabilities> {
     discovery,
     watermark_service: watermark,
     remote_fetch: { enabled: remoteFetchAllowed() },
-    database: { connected: isPrismaAvailable() },
+    database: { connected: (await isDatabaseReachable()) },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };

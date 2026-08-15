@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma, isPrismaAvailable, requirePrisma } from "../db";
+import { prisma, isDatabaseReachable, requirePrisma } from "../db";
 
 export interface ConsentRecord { consent_id: string; subject_id: string; granted_by: string; consent_type: string; scope: string[]; status: "active" | "revoked"; expires_at: string | null; created_at: string; revoked_at: string | null; }
 export interface ValidationResult { valid: boolean; missing_consents: Array<{ character_ref: string; consent_type: string }>; }
@@ -17,21 +17,21 @@ function dbRowToRecord(row: { id: string; subjectId: string; grantedBy: string; 
 }
 
 export async function grantConsent(subject_id: string, granted_by: string, consent_type: string, scope: string[], expires_at: string | null): Promise<{ consent_id: string; status: string }> {
-  try { if (await isPrismaAvailable()) { const row = await requirePrisma().consent.create({ data: { subjectId: subject_id, grantedBy: granted_by, consentType: consent_type, scope: scope.join(","), expiresAt: expires_at ? new Date(expires_at) : null } }); return { consent_id: row.id, status: "active" }; } } catch { /* fall through */ }
+  try { if ((await isDatabaseReachable())) { const row = await requirePrisma().consent.create({ data: { subjectId: subject_id, grantedBy: granted_by, consentType: consent_type, scope: scope.join(","), expiresAt: expires_at ? new Date(expires_at) : null } }); return { consent_id: row.id, status: "active" }; } } catch { /* fall through */ }
   const consent_id = uuidv4();
   consentStore.set(consent_id, { consent_id, subject_id, granted_by, consent_type, scope, status: "active", expires_at, created_at: new Date().toISOString(), revoked_at: null });
   return { consent_id, status: "active" };
 }
 
 export async function getConsentsBySubject(subject_id: string): Promise<ConsentRecord[]> {
-  try { if (await isPrismaAvailable()) { const rows = await requirePrisma().consent.findMany({ where: { subjectId: subject_id, revokedAt: null }, orderBy: { createdAt: "asc" } }); return rows.map(dbRowToRecord); } } catch { /* fall through */ }
+  try { if ((await isDatabaseReachable())) { const rows = await requirePrisma().consent.findMany({ where: { subjectId: subject_id, revokedAt: null }, orderBy: { createdAt: "asc" } }); return rows.map(dbRowToRecord); } } catch { /* fall through */ }
   const records: ConsentRecord[] = [];
   for (const record of consentStore.values()) { if (record.subject_id === subject_id) records.push(record); }
   return records;
 }
 
 export async function revokeConsent(consent_id: string): Promise<ConsentRecord | null> {
-  try { if (await isPrismaAvailable()) { const row = await requirePrisma().consent.update({ where: { id: consent_id }, data: { revokedAt: new Date() } }); return dbRowToRecord(row); } } catch { /* fall through */ }
+  try { if ((await isDatabaseReachable())) { const row = await requirePrisma().consent.update({ where: { id: consent_id }, data: { revokedAt: new Date() } }); return dbRowToRecord(row); } } catch { /* fall through */ }
   const record = consentStore.get(consent_id);
   if (!record) return null;
   record.status = "revoked"; record.revoked_at = new Date().toISOString();

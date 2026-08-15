@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import prisma from "../db";
-import { requirePrisma } from "../db";
+import { isDatabaseReachable, requirePrisma } from "../db";
 import type {
   Subscription,
   CreditBalance,
@@ -8,6 +7,22 @@ import type {
   SubscriptionTier,
   JobType,
 } from "../models/billingSchemas";
+
+
+/**
+ * The client, but only once the database has answered.
+ *
+ * Every Prisma call here already sits in a try/catch that falls back to the
+ * in-memory store, so failure was handled — but nothing cached it, so each call
+ * paid the full connection timeout again. `isDatabaseReachable()` probes once
+ * and remembers, and the throw below lands in the same catch as before.
+ */
+async function db() {
+  if (!(await isDatabaseReachable())) {
+    throw new Error("[billing] database unreachable");
+  }
+  return requirePrisma();
+}
 
 /** Credit cost per job type */
 const CREDIT_COSTS: Record<string, number> = {
@@ -60,7 +75,7 @@ export async function subscribeTier(
   tier: SubscriptionTier,
 ): Promise<Subscription> {
   try {
-    const existing = await requirePrisma().subscription.findFirst({
+    const existing = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -71,7 +86,7 @@ export async function subscribeTier(
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-    const sub = await requirePrisma().subscription.create({
+    const sub = await (await db()).subscription.create({
       data: {
         userId,
         stripeId: `local_${uuidv4()}`,
@@ -82,7 +97,7 @@ export async function subscribeTier(
     });
 
     // Initialize usage meter for current period
-    await requirePrisma().usageMeter.upsert({
+    await (await db()).usageMeter.upsert({
       where: { userId_period: { userId, period: currentPeriod() } },
       create: { userId, period: currentPeriod(), credits: 0 },
       update: {},
@@ -159,7 +174,7 @@ export async function getSubscription(
   userId: string,
 ): Promise<Subscription | undefined> {
   try {
-    const sub = await requirePrisma().subscription.findFirst({
+    const sub = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -183,7 +198,7 @@ export async function changeTier(
   newTier: SubscriptionTier,
 ): Promise<Subscription> {
   try {
-    const existing = await requirePrisma().subscription.findFirst({
+    const existing = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -191,7 +206,7 @@ export async function changeTier(
       throw new Error("No active subscription found for user");
     }
 
-    const updated = await requirePrisma().subscription.update({
+    const updated = await (await db()).subscription.update({
       where: { id: existing.id },
       data: { tier: newTier },
     });
@@ -238,7 +253,7 @@ export async function cancelSubscription(
   userId: string,
 ): Promise<Subscription> {
   try {
-    const existing = await requirePrisma().subscription.findFirst({
+    const existing = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -246,7 +261,7 @@ export async function cancelSubscription(
       throw new Error("No active subscription found for user");
     }
 
-    const updated = await requirePrisma().subscription.update({
+    const updated = await (await db()).subscription.update({
       where: { id: existing.id },
       data: { status: "cancelled" },
     });
@@ -290,7 +305,7 @@ export async function deductCredits(
   const tierCredits = TIER_CREDITS[tier] ?? 0;
 
   try {
-    const meter = await requirePrisma().usageMeter.upsert({
+    const meter = await (await db()).usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: 0 },
       update: {},
@@ -301,7 +316,7 @@ export async function deductCredits(
       throw new Error("Insufficient credits");
     }
 
-    const updated = await requirePrisma().usageMeter.update({
+    const updated = await (await db()).usageMeter.update({
       where: { id: meter.id },
       data: { credits: meter.credits + cost },
     });
@@ -356,13 +371,13 @@ export async function getBalance(userId: string): Promise<CreditBalance> {
   const period = currentPeriod();
 
   try {
-    const sub = await requirePrisma().subscription.findFirst({
+    const sub = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await requirePrisma().usageMeter.findUnique({
+    const meter = await (await db()).usageMeter.findUnique({
       where: { userId_period: { userId, period } },
     });
 
@@ -409,13 +424,13 @@ export async function topUp(
   const period = currentPeriod();
 
   try {
-    const sub = await requirePrisma().subscription.findFirst({
+    const sub = await (await db()).subscription.findFirst({
       where: { userId, status: "active" },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await requirePrisma().usageMeter.upsert({
+    const meter = await (await db()).usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: -credits },
       update: { credits: { decrement: credits } },

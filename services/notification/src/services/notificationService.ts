@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import prisma from "../db";
+import { isDatabaseReachable, requirePrisma } from "../db";
 
 export type NotificationType =
   | "email"
@@ -63,7 +63,7 @@ function defaultPreferences(): ChannelPreferences {
 }
 
 async function persistNotification(notification: Notification): Promise<void> {
-  if (!prisma?.notification) return;
+  if (!(await isDatabaseReachable())) return;
   try {
     // The schema stores read state as `isRead`; category, delivery status and
     // retry count have no columns, so they live in the Json `metadata` field
@@ -74,7 +74,7 @@ async function persistNotification(notification: Notification): Promise<void> {
       retryCount: notification.retryCount,
     };
 
-    await prisma.notification.upsert({
+    await requirePrisma().notification.upsert({
       where: { id: notification.id },
       update: {
         isRead: notification.read,
@@ -243,9 +243,15 @@ export function deleteNotification(notificationId: string): boolean {
     if (index !== -1) {
       userNotifications.splice(index, 1);
       notifications.set(userId, userNotifications);
-      if (prisma?.notification) {
-        prisma.notification.delete({ where: { id: notificationId } }).catch(() => {});
-      }
+      // Fire and forget: the in-memory copy is already updated, and a slow
+      // delete should not hold up the response.
+      void isDatabaseReachable().then((ok) => {
+        if (ok) {
+          requirePrisma()
+            .notification.delete({ where: { id: notificationId } })
+            .catch(() => {});
+        }
+      });
       return true;
     }
   }
