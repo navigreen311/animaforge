@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { isDatabaseReachable, requirePrisma } from "../db.js";
 
+import type { Prisma } from "@prisma/client";
 // ── Types ───────────────────────────────────────────────────────────
 export type ReceiptAction =
   | "generation_started"
@@ -60,21 +61,27 @@ export const receiptService = {
 
     if (await isDatabaseReachable()) {
       try {
-        // There is no Receipt model in packages/db/prisma/schema.prisma, so
-        // `.receipt` is undefined and the optional call yields undefined —
-        // this has always fallen through to the in-memory store below.
-        const row = await (requirePrisma() as any).receipt?.create({
-          data: { userId, action, details, status: "confirmed" },
+        const row = await requirePrisma().receipt.create({
+          data: {
+            receiptId: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+            userId,
+            action,
+            // `details` is a Json column; Prisma types its input as
+            // JsonNull | InputJsonValue, which Record<string, unknown> is not.
+            details: details as Prisma.InputJsonValue,
+            status: "confirmed",
+          },
         });
         if (row) {
           return {
-            receiptId: row.id,
+            receiptId: row.receiptId,
             userId: row.userId,
-            action: row.action,
-            timestamp: row.createdAt?.toISOString?.() ?? new Date().toISOString(),
-            details: row.details ?? {},
-            status: row.status,
-            projectId: row.projectId,
+            // The column is a plain string; the interface narrows it.
+            action: row.action as ReceiptAction,
+            timestamp: row.createdAt.toISOString(),
+            details: (row.details ?? {}) as Record<string, unknown>,
+            status: row.status as Receipt["status"],
+            projectId: row.projectId ?? undefined,
           };
         }
       } catch {

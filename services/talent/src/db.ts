@@ -18,3 +18,16 @@ try {
 export default prisma;
 export { prisma };
 export function isPrismaAvailable(): boolean { return prisma !== null; }
+
+/**
+ * The client, or a thrown error explaining why there isn't one.
+ */
+export function requirePrisma(): PrismaClient {
+  if (!prisma) {
+    throw new Error(
+      'Database unavailable: PrismaClient could not be constructed. Check ' +
+        'DATABASE_URL and that `prisma generate` has run.',
+    );
+  }
+  return prisma;
+}

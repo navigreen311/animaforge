@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import prisma from "../db";
+import { requirePrisma } from "../db";
 
 // -- Schemas --
 
@@ -116,7 +117,7 @@ let prismaAvailable: boolean | null = null;
 
 async function isPrismaAvailable(): Promise<boolean> {
   if (prismaAvailable !== null) return prismaAvailable;
-  try { await prisma.$queryRaw`SELECT 1`; prismaAvailable = true; }
+  try { await requirePrisma().$queryRaw`SELECT 1`; prismaAvailable = true; }
   catch { console.warn("[talent] Prisma unavailable -- falling back to in-memory store"); prismaAvailable = false; }
   return prismaAvailable;
 }
@@ -130,7 +131,7 @@ export async function createProfile(data: z.infer<typeof CreateProfileSchema>): 
   const now = new Date().toISOString();
   if (await isPrismaAvailable()) {
     try {
-      await prisma.talentProfile.create({
+      await requirePrisma().talentProfile.create({
         data: { id, name: data.name, skills: data.skills, portfolio: data.portfolio,
           rates: data.rates as any, availability: data.availability, averageRating: 0, reviewCount: 0 },
       });
@@ -152,7 +153,7 @@ export async function createProfile(data: z.infer<typeof CreateProfileSchema>): 
 export async function getProfile(id: string): Promise<TalentProfile | undefined> {
   if (await isPrismaAvailable()) {
     try {
-      const db = await prisma.talentProfile.findUnique({ where: { id } });
+      const db = await requirePrisma().talentProfile.findUnique({ where: { id } });
       if (db) {
         const rates = (db.rates as any) ?? {};
         return { id: db.id, name: db.name, skills: db.skills as string[], portfolio: db.portfolio as string[],
@@ -195,7 +196,7 @@ export async function createBooking(data: z.infer<typeof CreateBookingSchema>): 
   bookings.set(booking.id, booking);
   if (await isPrismaAvailable()) {
     try {
-      await prisma.talentBooking.create({
+      await requirePrisma().talentBooking.create({
         data: { id: booking.id, talentId: booking.talentId, projectId: booking.projectId,
           scope: booking.scope, dates: booking.dates as any, rate: booking.rate, status: booking.status },
       });
@@ -217,7 +218,7 @@ export async function updateBookingStatus(bookingId: string, status: "accepted" 
   if (status === "accepted") { const t = profiles.get(booking.talentId); if (t) t.availability = "busy"; }
   if (status === "completed" || status === "declined") { const t = profiles.get(booking.talentId); if (t) t.availability = "available"; }
   if (await isPrismaAvailable()) {
-    try { await prisma.talentBooking.update({ where: { id: bookingId }, data: { status } }); }
+    try { await requirePrisma().talentBooking.update({ where: { id: bookingId }, data: { status } }); }
     catch (err: unknown) { console.warn("[talent] Prisma updateBookingStatus failed:", (err instanceof Error ? err.message : String(err))); }
   }
   return booking;

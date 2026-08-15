@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import prisma from "../db";
+import { requirePrisma } from "../db";
 
 // -- Schemas --
 
@@ -142,7 +143,7 @@ let prismaAvailable: boolean | null = null;
 async function isPrismaAvailable(): Promise<boolean> {
   if (prismaAvailable !== null) return prismaAvailable;
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await requirePrisma().$queryRaw`SELECT 1`;
     prismaAvailable = true;
   } catch {
     console.warn("[marketplace] Prisma unavailable -- falling back to in-memory store");
@@ -179,7 +180,7 @@ export async function listItem(data: z.infer<typeof ListItemSchema>): Promise<Ma
 
   if (await isPrismaAvailable()) {
     try {
-      await prisma.marketplaceItem.create({
+      await requirePrisma().marketplaceItem.create({
         data: { id, name: data.name, type: data.type, price: data.price,
           description: data.description, previewUrl: data.previewUrl,
           creatorId: data.creatorId, status: "active", featured: false, category, purchaseCount: 0 },
@@ -203,7 +204,7 @@ export async function listItem(data: z.infer<typeof ListItemSchema>): Promise<Ma
 export async function getItem(id: string): Promise<MarketplaceItem | undefined> {
   if (await isPrismaAvailable()) {
     try {
-      const dbItem = await prisma.marketplaceItem.findUnique({ where: { id } });
+      const dbItem = await requirePrisma().marketplaceItem.findUnique({ where: { id } });
       if (dbItem) {
         return {
           id: dbItem.id, name: dbItem.name, type: dbItem.type,
@@ -274,7 +275,7 @@ export async function purchaseItem(
 
   if (await isPrismaAvailable()) {
     try {
-      await prisma.marketplaceItem.update({ where: { id: itemId }, data: { purchaseCount: { increment: 1 } } });
+      await requirePrisma().marketplaceItem.update({ where: { id: itemId }, data: { purchaseCount: { increment: 1 } } });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn("[marketplace] Prisma purchaseItem failed:", msg);
