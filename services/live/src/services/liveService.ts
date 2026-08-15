@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../db';
+import { prisma, requirePrisma } from "../db";
 
 export type SessionMode = 'interactive' | 'broadcast' | 'rehearsal';
 export type SessionStatus = 'created' | 'streaming' | 'stopped' | 'scheduled';
@@ -120,7 +120,7 @@ export function createSession(params: {
 
   // Persist asynchronously — fire and forget
   tryPrisma(() =>
-    prisma.liveSession.create({
+    requirePrisma().liveSession.create({
       data: {
         id: session.id,
         projectId: session.projectId,
@@ -162,7 +162,7 @@ export function startStream(sessionId: string): LiveSession {
   }, 33);
 
   tryPrisma(() =>
-    prisma.liveSession.update({
+    requirePrisma().liveSession.update({
       where: { id: sessionId },
       data: { status: 'streaming', startedAt: session.startedAt },
     }),
@@ -186,7 +186,7 @@ export function stopStream(sessionId: string): LiveSession {
   session.viewers = 0;
 
   tryPrisma(() =>
-    prisma.liveSession.update({
+    requirePrisma().liveSession.update({
       where: { id: sessionId },
       data: { status: 'stopped', stoppedAt: session.stoppedAt },
     }),
@@ -264,7 +264,7 @@ export async function saveRecording(sessionId: string): Promise<{
   const savedAt = new Date().toISOString();
 
   await tryPrisma(() =>
-    prisma.liveRecording.create({
+    requirePrisma().liveRecording.create({
       data: {
         id: uuidv4(),
         sessionId,
@@ -345,7 +345,7 @@ export function addChatMessage(
   sessionChat.set(sessionId, history);
 
   tryPrisma(() =>
-    prisma.liveChatMessage.create({
+    requirePrisma().liveChatMessage.create({
       data: {
         id: chatMsg.id,
         sessionId: chatMsg.sessionId,
@@ -444,7 +444,7 @@ export function scheduleSession(
   sessionViewerSnapshots.set(session.id, []);
 
   tryPrisma(() =>
-    prisma.liveSession.create({
+    requirePrisma().liveSession.create({
       data: {
         id: session.id,
         projectId: session.projectId,

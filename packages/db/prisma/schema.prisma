@@ -532,7 +532,14 @@ model WebhookDelivery {
 
 model LiveSession {
   id          String   @id @default(cuid())
-  userId      String   @map("user_id")
+  // services/live creates sessions from a project, not a user, and supplies no
+  // userId — so this is nullable and projectId/mode were added to match what
+  // the service actually writes. Without them liveSession.create fails, and the
+  // LiveRecording/LiveChatMessage rows below would reference sessions that can
+  // never exist.
+  userId      String?  @map("user_id")
+  projectId   String?  @map("project_id")
+  mode        String?  // interactive|broadcast|rehearsal
   avatarId    String?  @map("avatar_id")
   status      String   @default("offline")
   destinations String[] @default([])
@@ -541,6 +548,7 @@ model LiveSession {
   viewerPeak  Int      @default(0) @map("viewer_peak")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@index([userId])
+  @@index([projectId])
   @@map("live_sessions")
 }
 
@@ -727,4 +735,114 @@ model TaskDependency {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@unique([fromTaskId, toTaskId])
   @@map("task_dependencies")
+}
+
+// ============================================
+// LIVE RUNTIME (N3)
+// ============================================
+
+// Written fire-and-forget from services/live, so sessionId is a plain indexed
+// column rather than a relation: the recording insert must not fail because the
+// session row lost its own race.
+model LiveRecording {
+  id             String   @id @default(cuid())
+  sessionId      String   @map("session_id")
+  url            String
+  durationMs     Int?     @map("duration_ms")
+  framesRendered Int?     @map("frames_rendered")
+  savedAt        DateTime @map("saved_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([sessionId])
+  @@map("live_recordings")
+}
+
+model LiveChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  userId    String   @map("user_id")
+  message   String
+  timestamp DateTime @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([sessionId, timestamp])
+  @@map("live_chat_messages")
+}
+
+// ============================================
+// MARKETPLACE
+// ============================================
+
+model MarketplaceItem {
+  id            String   @id @default(cuid())
+  name          String
+  type          String
+  // Money, so Decimal rather than Float: the service already tolerates either
+  // by coercing with Number() on read.
+  price         Decimal  @db.Decimal(12, 2)
+  description   String
+  previewUrl    String   @map("preview_url")
+  creatorId     String   @map("creator_id")
+  status        String   @default("active") // active|sold|removed
+  featured      Boolean  @default(false)
+  category      String
+  purchaseCount Int      @default(0) @map("purchase_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@index([creatorId])
+  @@index([status, featured])
+  @@map("marketplace_items")
+}
+
+// ============================================
+// TALENT
+// ============================================
+
+model TalentProfile {
+  id            String   @id @default(cuid())
+  name          String
+  skills        String[] @default([])
+  portfolio     String[] @default([])
+  // { hourly?, daily?, project? } — sparse and rate-card shaped, so Json
+  // rather than three nullable columns.
+  rates         Json     @default("{}")
+  availability  String   @default("available") // available|busy|unavailable
+  averageRating Decimal  @default(0) @db.Decimal(3, 2) @map("average_rating")
+  reviewCount   Int      @default(0) @map("review_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@index([availability])
+  @@map("talent_profiles")
+}
+
+model TalentBooking {
+  id        String   @id @default(cuid())
+  talentId  String   @map("talent_id")
+  projectId String   @map("project_id")
+  scope     String
+  // { start, end } as ISO strings, matching the Booking interface.
+  dates     Json     @default("{}")
+  rate      Decimal  @db.Decimal(12, 2)
+  status    String   @default("pending") // pending|accepted|declined|completed
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@index([talentId])
+  @@index([projectId])
+  @@map("talent_bookings")
+}
+
+// ============================================
+// RECEIPTS
+// ============================================
+
+// The service's own id field is `receiptId`; it is the primary key here rather
+// than a second identifier alongside a generated `id`.
+model Receipt {
+  receiptId String   @id @map("receipt_id")
+  userId    String   @map("user_id")
+  action    String
+  details   Json     @default("{}")
+  status    String   @default("confirmed") // confirmed|pending|failed
+  projectId String?  @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([userId, createdAt])
+  @@map("receipts")
 }

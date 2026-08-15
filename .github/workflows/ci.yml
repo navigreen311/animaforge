@@ -99,7 +99,8 @@ jobs:
           for svc in platform-api auth billing realtime workers gateway export \
                      notification search analytics \
                      governance/c2pa governance/consent governance/moderation \
-                     governance/watermark piracy; do
+                     governance/watermark piracy \
+                     marketplace talent live collab storage; do
             if [ -f "services/$svc/tsconfig.json" ]; then
               echo "::group::Type checking services/$svc"
               if ( cd "services/$svc" && npx tsc --noEmit ); then
