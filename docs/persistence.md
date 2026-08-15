@@ -183,6 +183,45 @@ By rule.
 
 ---
 
+## 4a. What actually shipped
+
+The classification above is the target. This is the measured result.
+
+| | Count |
+| --- | --- |
+| Routes proxying to platform-api and persisting | **78** |
+| Routes returning `501` with a named missing dependency | **44** |
+| Static routes | **6** |
+| **Total** | **128** |
+| Routes containing a `MOCK_` constant | **0** (was 46) |
+| Routes importing Prisma | **0** |
+
+The 44 are not unfinished proxies — each names a dependency this change does
+not own:
+
+| Reason | Routes |
+| --- | --- |
+| Needs `services/ai-api` (generation, style transfer, script writing) | 13 |
+| Needs object storage (upload, download, export) | 14 |
+| Needs an endpoint that does not exist yet | 13 |
+| Needs Stripe credentials | 2 |
+| Has no backing model, and one was not invented | 2 |
+
+The two with no backing model are `assets/tags` and `api-keys/usage`: asset
+tagging and per-key usage counters are not modelled, and adding a table for
+them was out of scope for this change.
+
+### Dashboard pages
+
+**1 of the 42 hardcoded pages is wired** (`settings/domains`), plus the 4 that
+already fetched (`projects`, `characters`, `notifications`,
+`projects/[id]/brand`). The remaining 41 still render hardcoded arrays. They are
+300–3000 lines each with 8–18 hardcoded arrays apiece; the API surface they need
+now exists, and `useResource` + `ResourceView` are the pattern to use, but the
+UI work is not done. This is the largest known gap in this change.
+
+---
+
 ## 5. Schema additions
 
 Fourteen models the routes need and the schema does not have, in one migration.
