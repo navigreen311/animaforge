@@ -2,18 +2,30 @@
 
 Provides temporal LPIPS, identity drift, lip-sync offset, artifact
 detection, loudness analysis, aggregate validation, and QC certificate
-generation.  All heavy computations are simulated with deterministic
-mocks so the API contract is exercisable end-to-end before real model
-weights are wired in.
+generation.
+
+Two paths, and which one ran is always stated in the response:
+
+*Measured* -- when the artifact resolves to a readable local file,
+:mod:`src.services.qc_measurement` reads it and computes real numbers
+(BS.1770 loudness, inter-frame differences, container validation).
+
+*Simulated* -- when it does not, the deterministic per-check functions below
+still produce a report so the contract stays exercisable, but the verdict is
+``unmeasurable`` and ``passed`` is False. A QC system that returns "pass" for a
+file it never opened launders the absence of evidence into a green tick, which
+is worse than no QC at all.
 """
 
 from __future__ import annotations
 
 import hashlib
-import math
 import time
 import uuid
 from typing import Any
+
+from src.services import qc_measurement
+from src.services.engines import mock_marker, real_marker
 
 # ---------------------------------------------------------------------------
 # Thresholds
@@ -209,6 +221,24 @@ _CHECK_DISPATCH = {
 }
 
 
+# The public check names predate the internal ones. `flicker` became
+# `temporal_lpips` and `identity` became `identity_drift` when the metrics
+# gained their real implementations, but the API contract, the OpenAPI examples
+# and every existing caller still use the short names. Unknown checks are a
+# reported issue that fails the run, so dropping the old names did not error --
+# it silently failed every validation that used them.
+_CHECK_ALIASES = {
+    "flicker": "temporal_lpips",
+    "identity": "identity_drift",
+    "sync": "lip_sync",
+}
+
+
+def _canonical_check(name: str) -> str:
+    """Map a public check name onto its internal metric name."""
+    return _CHECK_ALIASES.get(name, name)
+
+
 def _score_check(name: str, result: dict) -> float:
     """Derive a 0-1 quality score from a single check result."""
     if name == "temporal_lpips":
@@ -255,13 +285,16 @@ def validate_output(
     issues: list[str] = []
     scores: list[float] = []
 
-    for check_name in checks:
+    for requested_name in checks:
+        check_name = _canonical_check(requested_name)
         dispatcher = _CHECK_DISPATCH.get(check_name)
         if dispatcher is None:
-            issues.append(f"Unknown check: {check_name}")
+            issues.append(f"Unknown check: {requested_name}")
             continue
         result = dispatcher(urls)
-        details[check_name] = result
+        # Keyed by what the caller asked for, so a response is always readable
+        # against the request that produced it.
+        details[requested_name] = result
         score = _score_check(check_name, result)
         scores.append(score)
 
@@ -288,18 +321,90 @@ def validate_output(
     overall_score = round(
         sum(scores) / len(scores), 4
     ) if scores else 0.0
-    passed = overall_score >= _THRESHOLDS["overall_pass"] and len(issues) == 0
 
-    return {
+    # Did we actually open the artifact? Everything below hangs on this.
+    path, resolve_reason = qc_measurement.resolve_artifact(output_url)
+    measured = path is not None
+
+    measurements: dict[str, Any] = {}
+    if measured:
+        measurements = _measure_artifact(path)
+        for name, block in measurements.items():
+            if block.get("measured") and block.get("detail", {}).get("issue"):
+                issues.append(f"{name}: {block['detail']['issue']}")
+
+    scored = overall_score >= _THRESHOLDS["overall_pass"] and len(issues) == 0
+
+    if not measured:
+        # No file was read, so there is no evidence of quality either way.
+        verdict = "unmeasurable"
+        passed = False
+    elif scored:
+        verdict = "pass"
+        passed = True
+    else:
+        verdict = "fail"
+        passed = False
+
+    result: dict[str, Any] = {
         "report": {
             "output_url": output_url,
             "checks_run": list(details.keys()),
+            "artifact_resolved": measured,
         },
         "passed": passed,
+        "verdict": verdict,
         "overall_score": overall_score,
         "issues": issues,
         "details": details,
+        "measurements": measurements,
     }
+
+    if measured:
+        result["engine"] = real_marker(
+            "qc", detail=f"Measured from {path}."
+        )
+    else:
+        result["engine"] = mock_marker("qc", detail=resolve_reason)
+        result["report"]["unmeasurable_reason"] = resolve_reason
+        # The per-check numbers above are simulated. Saying so next to them is
+        # the difference between a placeholder and a lie.
+        result["report"]["scores_are_simulated"] = True
+
+    return result
+
+
+def _measure_artifact(path: str) -> dict[str, Any]:
+    """Run every measurement the artifact actually supports.
+
+    Container inspection works on any file. Loudness needs decodable PCM, which
+    without ffmpeg means WAV. Anything else is reported unmeasurable with the
+    reason rather than skipped silently.
+    """
+    out: dict[str, Any] = {
+        "container": qc_measurement.inspect_container(path).as_dict(),
+    }
+
+    decoded = qc_measurement.read_wav(path)
+    if decoded is not None:
+        samples, rate = decoded
+        out["loudness"] = qc_measurement.measure_loudness(samples, rate).as_dict()
+    else:
+        out["loudness"] = qc_measurement.unmeasurable(
+            "loudness",
+            "no PCM audio could be decoded from this artifact; WAV decodes "
+            "without ffmpeg, other containers need an ffmpeg-backed decoder "
+            "that is not wired up",
+        ).as_dict()
+
+    out["temporal_stability"] = qc_measurement.unmeasurable(
+        "temporal_stability",
+        "video frame extraction needs an ffmpeg-backed decoder that is not "
+        "wired up; pass frames directly to "
+        "qc_measurement.measure_temporal_stability() to measure them",
+    ).as_dict()
+
+    return out
 
 
 # ---------------------------------------------------------------------------

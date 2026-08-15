@@ -40,3 +40,49 @@ pycolmap==0.6.1
 
 # Optional: S3 artifact storage (AVATAR_STORAGE_BACKEND=s3).
 boto3>=1.34.0
+
+
+# ---------------------------------------------------------------------------
+# Generation clusters beyond X5
+# ---------------------------------------------------------------------------
+#
+# Same rule as above: CI installs requirements.txt only, so nothing here is a
+# hard dependency. Each block names the cluster it unlocks and the env var that
+# selects it. `GET /ai/v1/capabilities` reports the true state of every one.
+#
+# IMPORTANT: installing these is necessary but not sufficient. Only the
+# clusters marked real-gated below have an engine adapter written. For the
+# rest, capabilities reports real_implemented=false and setting the env var to
+# `real` fails loudly rather than silently returning synthetic output -- the
+# adapter has to be written first. See docs/generation-pipeline.md.
+
+# E6 Continuity (CONTINUITY_ENGINE=real) -- semantic shot similarity.
+# The default descriptor is already computed from real pixels on CPU; CLIP adds
+# semantic matching the handcrafted descriptor cannot do, e.g. the same actor in
+# a different costume.
+#   open_clip_torch==2.24.0
+#
+# X6 Style (STYLE_ENGINE=real) -- style embedding and transfer.
+#   open_clip_torch==2.24.0
+#
+# D3/D6 Video (VIDEO_ENGINE=real) -- text-to-video and image-to-video.
+#   diffusers==0.27.2
+#   transformers==4.40.0
+#   accelerate==0.29.0
+#
+# D4 Audio (AUDIO_ENGINE=real) -- speech synthesis and forced alignment.
+#   torchaudio==2.3.1
+#
+# G2 Dubbing (DUBBING_ENGINE=real) -- multi-language dubbing, voice cloning.
+#   torchaudio==2.3.1
+#
+# D10 Training (TRAINING_ENGINE=real) -- LoRA / DreamBooth fine-tuning.
+#   peft==0.10.0
+#
+# F3 Music (MUSIC_ENGINE=real) -- music generation and adaptive scoring.
+#   audiocraft==1.3.0
+#
+# G6 Auto-QC needs nothing here: loudness, temporal stability, A/V sync and
+# container validation are numpy on CPU. ffmpeg on PATH widens what can be
+# decoded (currently WAV for audio, PNG for frames) but is not required -- what
+# cannot be decoded is reported unmeasurable rather than scored.

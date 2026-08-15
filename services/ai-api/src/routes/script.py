@@ -61,6 +61,15 @@ class QCValidateResponse(BaseModel):
     report: dict
     passed: bool
     issues: list[str]
+    # These four were computed by the service and then dropped by this model,
+    # so the endpoint returned a bare `passed` with no way for a caller to
+    # learn the artifact had never been opened. The indicator is only useful
+    # if it survives serialisation.
+    verdict: str
+    overall_score: float
+    details: dict
+    measurements: dict = {}
+    engine: dict = {}
 
 
 # -- Endpoints ----------------------------------------------------------------
