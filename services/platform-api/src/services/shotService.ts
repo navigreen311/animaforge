@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 import type { Shot, CreateShotInput, UpdateShotInput } from "../models/shotSchemas.js";
 
 import type { Prisma } from "@prisma/client";
@@ -8,8 +8,8 @@ const shots = new Map<string, Shot>();
 
 export const shotService = {
   async create(sceneId: string, projectId: string, input: CreateShotInput): Promise<Shot> {
-    if (prisma) {
-      return prisma.shot.create({
+    if (await isDatabaseReachable()) {
+      return requirePrisma().shot.create({
         data: {
           sceneId,
           projectId,
@@ -46,8 +46,8 @@ export const shotService = {
   },
 
   async listByProject(projectId: string): Promise<Shot[]> {
-    if (prisma) {
-      const results = await prisma.shot.findMany({
+    if (await isDatabaseReachable()) {
+      const results = await requirePrisma().shot.findMany({
         where: { projectId },
         orderBy: { createdAt: "desc" },
         include: {
@@ -62,8 +62,8 @@ export const shotService = {
   },
 
   async getById(id: string): Promise<Shot | undefined> {
-    if (prisma) {
-      const shot = await prisma.shot.findUnique({
+    if (await isDatabaseReachable()) {
+      const shot = await requirePrisma().shot.findUnique({
         where: { id },
         include: {
           scene: true,
@@ -77,8 +77,8 @@ export const shotService = {
   },
 
   async update(id: string, input: UpdateShotInput): Promise<Shot | undefined> {
-    if (prisma) {
-      const existing = await prisma.shot.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === "locked") return undefined;
 
@@ -90,7 +90,7 @@ export const shotService = {
         data.characterRefs = input.characterRefs as any;
       }
 
-      const updated = await prisma.shot.update({
+      const updated = await requirePrisma().shot.update({
         where: { id },
         data,
       });
@@ -112,12 +112,12 @@ export const shotService = {
   },
 
   async approve(id: string, userId: string): Promise<Shot | undefined> {
-    if (prisma) {
-      const existing = await prisma.shot.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === "locked") return undefined;
 
-      const updated = await prisma.shot.update({
+      const updated = await requirePrisma().shot.update({
         where: { id },
         data: {
           status: "approved",
@@ -145,12 +145,12 @@ export const shotService = {
   },
 
   async reject(id: string, rejectionReason?: string): Promise<Shot | undefined> {
-    if (prisma) {
-      const existing = await prisma.shot.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === "locked") return undefined;
 
-      const updated = await prisma.shot.update({
+      const updated = await requirePrisma().shot.update({
         where: { id },
         data: {
           status: "draft",
@@ -178,11 +178,11 @@ export const shotService = {
   },
 
   async lock(id: string): Promise<Shot | undefined> {
-    if (prisma) {
-      const existing = await prisma.shot.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
 
-      const updated = await prisma.shot.update({
+      const updated = await requirePrisma().shot.update({
         where: { id },
         data: { status: "locked" },
       });
@@ -203,12 +203,12 @@ export const shotService = {
   },
 
   async delete(id: string): Promise<boolean> {
-    if (prisma) {
-      const existing = await prisma.shot.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return false;
       if (existing.status === "locked") return false;
 
-      await prisma.shot.delete({ where: { id } });
+      await requirePrisma().shot.delete({ where: { id } });
       return true;
     }
 

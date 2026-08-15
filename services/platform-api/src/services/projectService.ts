@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 import type {
   Project,
   CreateProjectInput,
@@ -15,8 +15,8 @@ export const projectService = {
     // Project.ownerId is a required column. It was never passed here, so this
     // create could only ever have failed at runtime. With no owner there is
     // nothing valid to write, so fall through to the in-memory store.
-    if (prisma && ownerId) {
-      return prisma.project.create({
+    if ((await isDatabaseReachable()) && ownerId) {
+      return requirePrisma().project.create({
         data: {
           ownerId,
           title: input.title,
@@ -51,14 +51,14 @@ export const projectService = {
     limit: number,
     status?: string,
   ): Promise<{ items: Project[]; total: number; page: number; limit: number }> {
-    if (prisma) {
+    if (await isDatabaseReachable()) {
       const where: Record<string, unknown> = { deletedAt: null };
       if (status) {
         where.status = status;
       }
 
       const [items, total] = await Promise.all([
-        prisma.project.findMany({
+        requirePrisma().project.findMany({
           where,
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * limit,
@@ -69,7 +69,7 @@ export const projectService = {
             },
           },
         }),
-        prisma.project.count({ where }),
+        requirePrisma().project.count({ where }),
       ]);
 
       return { items: items as unknown as Project[], total, page, limit };
@@ -97,8 +97,8 @@ export const projectService = {
   },
 
   async getById(id: string): Promise<Project | undefined> {
-    if (prisma) {
-      const project = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const project = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
         include: {
           scenes: {
@@ -116,13 +116,13 @@ export const projectService = {
   },
 
   async update(id: string, input: UpdateProjectInput): Promise<Project | undefined> {
-    if (prisma) {
-      const existing = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
       if (!existing) return undefined;
 
-      const updated = await prisma.project.update({
+      const updated = await requirePrisma().project.update({
         where: { id },
         data: { ...input },
       });
@@ -143,13 +143,13 @@ export const projectService = {
   },
 
   async softDelete(id: string): Promise<boolean> {
-    if (prisma) {
-      const existing = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
       if (!existing) return false;
 
-      await prisma.project.update({
+      await requirePrisma().project.update({
         where: { id },
         data: {
           status: "deleted",
@@ -173,13 +173,13 @@ export const projectService = {
     id: string,
     worldBible: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (prisma) {
-      const existing = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
       if (!existing) return undefined;
 
-      const updated = await prisma.project.update({
+      const updated = await requirePrisma().project.update({
         where: { id },
         data: { worldBible: worldBible as any },
       });
@@ -200,13 +200,13 @@ export const projectService = {
     id: string,
     brandKit: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (prisma) {
-      const existing = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
       if (!existing) return undefined;
 
-      const updated = await prisma.project.update({
+      const updated = await requirePrisma().project.update({
         where: { id },
         data: { brandKit: brandKit as any },
       });
@@ -227,13 +227,13 @@ export const projectService = {
     id: string,
     styleLock: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (prisma) {
-      const existing = await prisma.project.findUnique({
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
       if (!existing) return undefined;
 
-      const updated = await prisma.project.update({
+      const updated = await requirePrisma().project.update({
         where: { id },
         data: { styleLock: styleLock as any },
       });

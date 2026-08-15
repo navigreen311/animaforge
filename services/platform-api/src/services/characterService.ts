@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 import type {
   AvatarArtifactsInput,
   Character,
@@ -21,8 +21,8 @@ export async function createCharacter(
   input: CreateCharacterInput,
   ownerId: string,
 ): Promise<Character> {
-  if (prisma) {
-    return prisma.character.create({
+  if (await isDatabaseReachable()) {
+    return requirePrisma().character.create({
       data: {
         ...input,
         ownerId,
@@ -61,19 +61,19 @@ export async function listCharacters(query: ListCharactersQuery) {
   const page = Math.max(query.page ?? 1, 1);
   const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
 
-  if (prisma) {
+  if (await isDatabaseReachable()) {
     const where: Record<string, unknown> = {};
     if (query.projectId) where.projectId = query.projectId;
     if (query.ownerId) where.ownerId = query.ownerId;
 
     const [items, total] = await Promise.all([
-      prisma.character.findMany({
+      requirePrisma().character.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.character.count({ where }),
+      requirePrisma().character.count({ where }),
     ]);
 
     return { items: items as unknown as Character[], total, page, limit };
@@ -97,8 +97,8 @@ export async function listCharacters(query: ListCharactersQuery) {
 }
 
 export async function getCharacterById(id: string): Promise<Character | undefined> {
-  if (prisma) {
-    const character = await prisma.character.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const character = await requirePrisma().character.findUnique({ where: { id } });
     return (character ?? undefined) as Character | undefined;
   }
 
@@ -110,11 +110,11 @@ export async function updateCharacter(
   id: string,
   input: UpdateCharacterInput,
 ): Promise<Character | undefined> {
-  if (prisma) {
-    const existing = await prisma.character.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const existing = await requirePrisma().character.findUnique({ where: { id } });
     if (!existing) return undefined;
 
-    const updated = await prisma.character.update({
+    const updated = await requirePrisma().character.update({
       where: { id },
       data: {
         ...input,
@@ -144,11 +144,11 @@ export async function updateCharacter(
 }
 
 export async function deleteCharacter(id: string): Promise<boolean> {
-  if (prisma) {
-    const existing = await prisma.character.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const existing = await requirePrisma().character.findUnique({ where: { id } });
     if (!existing) return false;
 
-    await prisma.character.delete({ where: { id } });
+    await requirePrisma().character.delete({ where: { id } });
     return true;
   }
 
@@ -203,11 +203,11 @@ export async function updateAvatarArtifacts(
 }
 
 export async function triggerDigitalTwin(id: string): Promise<{ jobId: string } | undefined> {
-  if (prisma) {
-    const character = await prisma.character.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const character = await requirePrisma().character.findUnique({ where: { id } });
     if (!character) return undefined;
 
-    await prisma.character.update({
+    await requirePrisma().character.update({
       where: { id },
       data: { isDigitalTwin: true },
     });

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 import type { Scene, CreateSceneInput, UpdateSceneInput } from "../models/sceneSchemas.js";
 
 // In-memory fallback store
@@ -7,8 +7,8 @@ const scenes = new Map<string, Scene>();
 
 export const sceneService = {
   async create(projectId: string, input: CreateSceneInput): Promise<Scene> {
-    if (prisma) {
-      return prisma.scene.create({
+    if (await isDatabaseReachable()) {
+      return requirePrisma().scene.create({
         data: {
           projectId,
           title: input.title,
@@ -35,8 +35,8 @@ export const sceneService = {
   },
 
   async listByProject(projectId: string): Promise<Scene[]> {
-    if (prisma) {
-      const results = await prisma.scene.findMany({
+    if (await isDatabaseReachable()) {
+      const results = await requirePrisma().scene.findMany({
         where: { projectId },
         orderBy: { order: "asc" },
         include: {
@@ -53,8 +53,8 @@ export const sceneService = {
   },
 
   async getById(id: string): Promise<Scene | undefined> {
-    if (prisma) {
-      const scene = await prisma.scene.findUnique({
+    if (await isDatabaseReachable()) {
+      const scene = await requirePrisma().scene.findUnique({
         where: { id },
         include: {
           shots: true,
@@ -69,11 +69,11 @@ export const sceneService = {
   },
 
   async update(id: string, input: UpdateSceneInput): Promise<Scene | undefined> {
-    if (prisma) {
-      const existing = await prisma.scene.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().scene.findUnique({ where: { id } });
       if (!existing) return undefined;
 
-      const updated = await prisma.scene.update({
+      const updated = await requirePrisma().scene.update({
         where: { id },
         data: { ...input },
         include: { shots: true },
@@ -95,11 +95,11 @@ export const sceneService = {
   },
 
   async delete(id: string): Promise<boolean> {
-    if (prisma) {
-      const existing = await prisma.scene.findUnique({ where: { id } });
+    if (await isDatabaseReachable()) {
+      const existing = await requirePrisma().scene.findUnique({ where: { id } });
       if (!existing) return false;
 
-      await prisma.scene.delete({ where: { id } });
+      await requirePrisma().scene.delete({ where: { id } });
       return true;
     }
 
