@@ -9,10 +9,17 @@ const shots = new Map<string, Shot>();
 export const shotService = {
   async create(sceneId: string, projectId: string, input: CreateShotInput): Promise<Shot> {
     if (await isDatabaseReachable()) {
+      // shotNumber is a required Int with no database default, and was never
+      // supplied — so shot creation against Postgres could not succeed at all.
+      // It numbers shots within their scene, which is the only ordering the
+      // column can mean, so it follows from what is already there.
+      const existing = await requirePrisma().shot.count({ where: { sceneId } });
+
       return requirePrisma().shot.create({
         data: {
           sceneId,
           projectId,
+          shotNumber: existing + 1,
           sceneGraph: input.sceneGraph as any,
           prompt: input.prompt,
           styleRef: input.styleRef,
