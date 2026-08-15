@@ -45,3 +45,4 @@ prisma/generated/
 
 # Local Semgrep scan output (CI uploads this as an artifact instead)
 semgrep-report.json
+coverage-report.json
