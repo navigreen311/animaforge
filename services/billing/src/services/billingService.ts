@@ -1,13 +1,12 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db';
 import type {
   Subscription,
   CreditBalance,
   CreditTransaction,
   SubscriptionTier,
   JobType,
-} from "../models/billingSchemas";
-
+} from '../models/billingSchemas';
 
 /**
  * The client, but only once the database has answered.
@@ -19,7 +18,7 @@ import type {
  */
 async function db() {
   if (!(await isDatabaseReachable())) {
-    throw new Error("[billing] database unreachable");
+    throw new Error('[billing] database unreachable');
   }
   return requirePrisma();
 }
@@ -60,7 +59,7 @@ function currentISO(): string {
 
 function currentPeriod(): string {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function periodStart(): string {
@@ -70,34 +69,37 @@ function periodStart(): string {
 
 // --------------- Subscriptions ---------------
 
-export async function subscribeTier(
-  userId: string,
-  tier: SubscriptionTier,
-): Promise<Subscription> {
+export async function subscribeTier(userId: string, tier: SubscriptionTier): Promise<Subscription> {
   try {
-    const existing = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const existing = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     if (existing) {
-      throw new Error("User already has an active subscription");
+      throw new Error('User already has an active subscription');
     }
 
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-    const sub = await (await db()).subscription.create({
+    const sub = await (
+      await db()
+    ).subscription.create({
       data: {
         userId,
         stripeId: `local_${uuidv4()}`,
         tier,
-        status: "active",
+        status: 'active',
         currentPeriodEnd: periodEnd,
       },
     });
 
     // Initialize usage meter for current period
-    await (await db()).usageMeter.upsert({
+    await (
+      await db()
+    ).usageMeter.upsert({
       where: { userId_period: { userId, period: currentPeriod() } },
       create: { userId, period: currentPeriod(), credits: 0 },
       update: {},
@@ -107,23 +109,23 @@ export async function subscribeTier(
       id: sub.id,
       userId: sub.userId,
       tier: sub.tier as SubscriptionTier,
-      status: sub.status as "active" | "cancelled",
+      status: sub.status as 'active' | 'cancelled',
       createdAt: sub.createdAt.toISOString(),
       updatedAt: sub.createdAt.toISOString(),
     };
   } catch (err) {
-    if (err instanceof Error && err.message.includes("already has")) throw err;
+    if (err instanceof Error && err.message.includes('already has')) throw err;
 
     // In-memory fallback
     if (memSubscriptions.has(userId)) {
-      throw new Error("User already has an active subscription");
+      throw new Error('User already has an active subscription');
     }
 
     const sub: Subscription = {
       id: uuidv4(),
       userId,
       tier,
-      status: "active",
+      status: 'active',
       createdAt: currentISO(),
       updatedAt: currentISO(),
     };
@@ -145,14 +147,14 @@ export async function subscribeTier(
 /** Backward-compatible sync alias for routes/tests */
 export function subscribe(userId: string, tier: SubscriptionTier): Subscription {
   if (memSubscriptions.has(userId)) {
-    throw new Error("User already has an active subscription");
+    throw new Error('User already has an active subscription');
   }
 
   const sub: Subscription = {
     id: uuidv4(),
     userId,
     tier,
-    status: "active",
+    status: 'active',
     createdAt: currentISO(),
     updatedAt: currentISO(),
   };
@@ -170,12 +172,12 @@ export function subscribe(userId: string, tier: SubscriptionTier): Subscription 
   return sub;
 }
 
-export async function getSubscription(
-  userId: string,
-): Promise<Subscription | undefined> {
+export async function getSubscription(userId: string): Promise<Subscription | undefined> {
   try {
-    const sub = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const sub = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     if (!sub) return memSubscriptions.get(userId);
@@ -184,7 +186,7 @@ export async function getSubscription(
       id: sub.id,
       userId: sub.userId,
       tier: sub.tier as SubscriptionTier,
-      status: sub.status as "active" | "cancelled",
+      status: sub.status as 'active' | 'cancelled',
       createdAt: sub.createdAt.toISOString(),
       updatedAt: sub.createdAt.toISOString(),
     };
@@ -193,20 +195,21 @@ export async function getSubscription(
   }
 }
 
-export async function changeTier(
-  userId: string,
-  newTier: SubscriptionTier,
-): Promise<Subscription> {
+export async function changeTier(userId: string, newTier: SubscriptionTier): Promise<Subscription> {
   try {
-    const existing = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const existing = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     if (!existing) {
-      throw new Error("No active subscription found for user");
+      throw new Error('No active subscription found for user');
     }
 
-    const updated = await (await db()).subscription.update({
+    const updated = await (
+      await db()
+    ).subscription.update({
       where: { id: existing.id },
       data: { tier: newTier },
     });
@@ -215,17 +218,17 @@ export async function changeTier(
       id: updated.id,
       userId: updated.userId,
       tier: updated.tier as SubscriptionTier,
-      status: updated.status as "active" | "cancelled",
+      status: updated.status as 'active' | 'cancelled',
       createdAt: updated.createdAt.toISOString(),
       updatedAt: updated.createdAt.toISOString(),
     };
   } catch (err) {
-    if (err instanceof Error && err.message.includes("No active")) throw err;
+    if (err instanceof Error && err.message.includes('No active')) throw err;
 
     // In-memory fallback
     const sub = memSubscriptions.get(userId);
-    if (!sub || sub.status === "cancelled") {
-      throw new Error("No active subscription found for user");
+    if (!sub || sub.status === 'cancelled') {
+      throw new Error('No active subscription found for user');
     }
     sub.tier = newTier;
     sub.updatedAt = currentISO();
@@ -235,13 +238,10 @@ export async function changeTier(
 }
 
 /** Backward-compatible sync alias for routes/tests */
-export function updateSubscription(
-  userId: string,
-  tier: SubscriptionTier,
-): Subscription {
+export function updateSubscription(userId: string, tier: SubscriptionTier): Subscription {
   const sub = memSubscriptions.get(userId);
-  if (!sub || sub.status === "cancelled") {
-    throw new Error("No active subscription found for user");
+  if (!sub || sub.status === 'cancelled') {
+    throw new Error('No active subscription found for user');
   }
   sub.tier = tier;
   sub.updatedAt = currentISO();
@@ -249,40 +249,42 @@ export function updateSubscription(
   return sub;
 }
 
-export async function cancelSubscription(
-  userId: string,
-): Promise<Subscription> {
+export async function cancelSubscription(userId: string): Promise<Subscription> {
   try {
-    const existing = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const existing = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     if (!existing) {
-      throw new Error("No active subscription found for user");
+      throw new Error('No active subscription found for user');
     }
 
-    const updated = await (await db()).subscription.update({
+    const updated = await (
+      await db()
+    ).subscription.update({
       where: { id: existing.id },
-      data: { status: "cancelled" },
+      data: { status: 'cancelled' },
     });
 
     return {
       id: updated.id,
       userId: updated.userId,
       tier: updated.tier as SubscriptionTier,
-      status: "cancelled",
+      status: 'cancelled',
       createdAt: updated.createdAt.toISOString(),
       updatedAt: updated.createdAt.toISOString(),
     };
   } catch (err) {
-    if (err instanceof Error && err.message.includes("No active")) throw err;
+    if (err instanceof Error && err.message.includes('No active')) throw err;
 
     // In-memory fallback
     const sub = memSubscriptions.get(userId);
-    if (!sub || sub.status === "cancelled") {
-      throw new Error("No active subscription found for user");
+    if (!sub || sub.status === 'cancelled') {
+      throw new Error('No active subscription found for user');
     }
-    sub.status = "cancelled";
+    sub.status = 'cancelled';
     sub.updatedAt = currentISO();
     memSubscriptions.set(userId, sub);
     return sub;
@@ -305,7 +307,9 @@ export async function deductCredits(
   const tierCredits = TIER_CREDITS[tier] ?? 0;
 
   try {
-    const meter = await (await db()).usageMeter.upsert({
+    const meter = await (
+      await db()
+    ).usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: 0 },
       update: {},
@@ -313,10 +317,12 @@ export async function deductCredits(
 
     const remaining = tierCredits - meter.credits;
     if (remaining < cost) {
-      throw new Error("Insufficient credits");
+      throw new Error('Insufficient credits');
     }
 
-    const updated = await (await db()).usageMeter.update({
+    const updated = await (
+      await db()
+    ).usageMeter.update({
       where: { id: meter.id },
       data: { credits: meter.credits + cost },
     });
@@ -330,8 +336,7 @@ export async function deductCredits(
   } catch (err) {
     if (
       err instanceof Error &&
-      (err.message.includes("Insufficient") ||
-        err.message.includes("Unknown job"))
+      (err.message.includes('Insufficient') || err.message.includes('Unknown job'))
     )
       throw err;
 
@@ -347,7 +352,7 @@ export async function deductCredits(
     }
 
     if (bal.balance < cost) {
-      throw new Error("Insufficient credits");
+      throw new Error('Insufficient credits');
     }
 
     bal.balance -= cost;
@@ -358,7 +363,7 @@ export async function deductCredits(
       id: uuidv4(),
       userId,
       amount: -cost,
-      type: "deduction",
+      type: 'deduction',
       jobType,
       createdAt: currentISO(),
     });
@@ -371,13 +376,17 @@ export async function getBalance(userId: string): Promise<CreditBalance> {
   const period = currentPeriod();
 
   try {
-    const sub = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const sub = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await (await db()).usageMeter.findUnique({
+    const meter = await (
+      await db()
+    ).usageMeter.findUnique({
       where: { userId_period: { userId, period } },
     });
 
@@ -417,20 +426,21 @@ export function getCredits(userId: string): CreditBalance {
   return bal;
 }
 
-export async function topUp(
-  userId: string,
-  credits: number,
-): Promise<CreditBalance> {
+export async function topUp(userId: string, credits: number): Promise<CreditBalance> {
   const period = currentPeriod();
 
   try {
-    const sub = await (await db()).subscription.findFirst({
-      where: { userId, status: "active" },
+    const sub = await (
+      await db()
+    ).subscription.findFirst({
+      where: { userId, status: 'active' },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await (await db()).usageMeter.upsert({
+    const meter = await (
+      await db()
+    ).usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: -credits },
       update: { credits: { decrement: credits } },
@@ -459,7 +469,7 @@ export async function topUp(
       id: uuidv4(),
       userId,
       amount: credits,
-      type: "topup",
+      type: 'topup',
       createdAt: currentISO(),
     });
 

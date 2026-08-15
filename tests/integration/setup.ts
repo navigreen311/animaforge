@@ -6,8 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import { beforeAll, afterEach, afterAll } from 'vitest';
 
 const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:postgres@localhost:5432/animaforge_test';
+  process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/animaforge_test';
 
 // Override for any service that reads process.env.DATABASE_URL
 process.env.DATABASE_URL = DATABASE_URL;
@@ -25,10 +24,7 @@ beforeAll(async () => {
   // Using prisma migrate deploy (non-interactive, safe for CI).
   const { execSync } = await import('child_process');
   execSync('npx prisma migrate deploy', {
-    cwd: new URL('../../packages/db', import.meta.url).pathname.replace(
-      /^\//,
-      '',
-    ),
+    cwd: new URL('../../packages/db', import.meta.url).pathname.replace(/^\//, ''),
     env: { ...process.env, DATABASE_URL },
     stdio: 'pipe',
   });

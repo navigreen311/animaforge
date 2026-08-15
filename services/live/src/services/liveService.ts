@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma, requirePrisma } from "../db";
+import { prisma, requirePrisma } from '../db';
 
 export type SessionMode = 'interactive' | 'broadcast' | 'rehearsal';
 export type SessionStatus = 'created' | 'streaming' | 'stopped' | 'scheduled';
@@ -324,11 +324,7 @@ export function getViewerCount(sessionId: string): number {
 
 /* ──────────── Chat / interaction ──────────── */
 
-export function addChatMessage(
-  sessionId: string,
-  userId: string,
-  message: string,
-): ChatMessage {
+export function addChatMessage(sessionId: string, userId: string, message: string): ChatMessage {
   const session = sessions.get(sessionId);
   if (!session) throw new Error(`Session ${sessionId} not found`);
 

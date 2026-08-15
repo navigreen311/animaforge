@@ -5,13 +5,7 @@
  * through the platform-api Express app.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  prisma,
-  createTestUser,
-  createTestProject,
-  getPlatformToken,
-  apiRequest,
-} from './helpers';
+import { prisma, createTestUser, createTestProject, getPlatformToken, apiRequest } from './helpers';
 import { projectService } from '../../services/platform-api/src/services/projectService.js';
 import { sceneService } from '../../services/platform-api/src/services/sceneService.js';
 
@@ -27,10 +21,15 @@ describe('Projects API', () => {
     const user = await createTestUser();
     const token = getPlatformToken(user.id, { email: user.email });
 
-    const res = await apiRequest('post', '/api/v1/projects', {
-      title: 'My New Film',
-      description: 'An epic story',
-    }, token);
+    const res = await apiRequest(
+      'post',
+      '/api/v1/projects',
+      {
+        title: 'My New Film',
+        description: 'An epic story',
+      },
+      token,
+    );
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -63,10 +62,15 @@ describe('Projects API', () => {
     const user = await createTestUser();
     const token = getPlatformToken(user.id, { email: user.email });
 
-    const createRes = await apiRequest('post', '/api/v1/projects', {
-      title: 'Detail Test',
-      description: 'Description here',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/projects',
+      {
+        title: 'Detail Test',
+        description: 'Description here',
+      },
+      token,
+    );
     const projectId = createRes.body.data.id;
 
     const res = await apiRequest('get', `/api/v1/projects/${projectId}`, undefined, token);
@@ -82,13 +86,23 @@ describe('Projects API', () => {
     const user = await createTestUser();
     const token = getPlatformToken(user.id, { email: user.email });
 
-    const createRes = await apiRequest('post', '/api/v1/projects', { title: 'Original Title' }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/projects',
+      { title: 'Original Title' },
+      token,
+    );
     const projectId = createRes.body.data.id;
 
-    const res = await apiRequest('put', `/api/v1/projects/${projectId}`, {
-      title: 'Updated Title',
-      description: 'New description',
-    }, token);
+    const res = await apiRequest(
+      'put',
+      `/api/v1/projects/${projectId}`,
+      {
+        title: 'Updated Title',
+        description: 'New description',
+      },
+      token,
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.data.title).toBe('Updated Title');
@@ -121,12 +135,26 @@ describe('Projects API', () => {
     const user = await createTestUser();
     const token = getPlatformToken(user.id, { email: user.email });
 
-    const createRes = await apiRequest('post', '/api/v1/projects', { title: 'World Bible Test' }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/projects',
+      { title: 'World Bible Test' },
+      token,
+    );
     const projectId = createRes.body.data.id;
 
-    const worldBible = { setting: 'cyberpunk city', era: '2077', rules: ['no magic', 'neon lighting'] };
+    const worldBible = {
+      setting: 'cyberpunk city',
+      era: '2077',
+      rules: ['no magic', 'neon lighting'],
+    };
 
-    const res = await apiRequest('put', `/api/v1/projects/${projectId}/world-bible`, worldBible, token);
+    const res = await apiRequest(
+      'put',
+      `/api/v1/projects/${projectId}/world-bible`,
+      worldBible,
+      token,
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.data.worldBible).toEqual(worldBible);
@@ -160,7 +188,12 @@ describe('Projects API', () => {
     const user = await createTestUser();
     const token = getPlatformToken(user.id, { email: user.email });
 
-    const res = await apiRequest('post', '/api/v1/projects', { description: 'No title provided' }, token);
+    const res = await apiRequest(
+      'post',
+      '/api/v1/projects',
+      { description: 'No title provided' },
+      token,
+    );
     expect(res.status).toBe(400);
   });
 

@@ -61,8 +61,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await api.delete(`/projects/${projectId}`);
       set((state) => ({
         projects: state.projects.filter((p) => p.id !== projectId),
-        activeProject:
-          state.activeProject?.id === projectId ? null : state.activeProject,
+        activeProject: state.activeProject?.id === projectId ? null : state.activeProject,
       }));
     } catch (error: any) {
       set({ error: error.message || 'Failed to delete project' });

@@ -64,7 +64,8 @@ export default function () {
       'refresh status 200': (r) => r.status === 200,
       'refresh has new token': (r) => {
         const body = r.json();
-        const newToken = body.token || body.accessToken || body.data?.token || body.data?.accessToken;
+        const newToken =
+          body.token || body.accessToken || body.data?.token || body.data?.accessToken;
         return !!newToken;
       },
     });

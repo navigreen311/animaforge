@@ -11,7 +11,10 @@ import { CorsOptions } from 'cors';
 export function buildCorsOptions(): CorsOptions {
   const raw = process.env.CORS_ALLOWED_ORIGINS;
   const allowedOrigins: string[] | '*' = raw
-    ? raw.split(',').map((o) => o.trim()).filter(Boolean)
+    ? raw
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean)
     : '*';
 
   const hasExplicitOrigins = Array.isArray(allowedOrigins) && allowedOrigins.length > 0;
@@ -28,12 +31,7 @@ export function buildCorsOptions(): CorsOptions {
       : '*',
     credentials: hasExplicitOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Request-Id',
-      'X-User-Id',
-    ],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-User-Id'],
     exposedHeaders: ['X-Request-Id'],
     maxAge: 86_400, // preflight cache — 24 hours
   };

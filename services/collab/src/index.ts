@@ -19,10 +19,19 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
   if (url.pathname === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', service: 'collab', activeDocs: docs.size, activeConnections: awarenessManager.totalConnections(), uptime: process.uptime() }));
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        service: 'collab',
+        activeDocs: docs.size,
+        activeConnections: awarenessManager.totalConnections(),
+        uptime: process.uptime(),
+      }),
+    );
     return;
   }
-  res.writeHead(404); res.end('Not found');
+  res.writeHead(404);
+  res.end('Not found');
 });
 
 const wss = new WebSocketServer({ noServer: true });
@@ -31,11 +40,20 @@ server.on('upgrade', async (request, socket, head) => {
   const url = new URL(request.url || '/', `http://${request.headers.host}`);
   const token = url.searchParams.get('token');
   const projectId = url.searchParams.get('projectId');
-  if (!projectId) { socket.write('HTTP/1.1 400 Bad Request\r\n\r\n'); socket.destroy(); return; }
+  if (!projectId) {
+    socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+    socket.destroy();
+    return;
+  }
   const user = verifyToken(token);
-  if (!user) { socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); socket.destroy(); return; }
+  if (!user) {
+    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+    socket.destroy();
+    return;
+  }
   wss.handleUpgrade(request, socket, head, (ws) => {
-    (ws as any).__user = user; (ws as any).__projectId = projectId;
+    (ws as any).__user = user;
+    (ws as any).__projectId = projectId;
     wss.emit('connection', ws, request);
   });
 });
@@ -44,7 +62,11 @@ wss.on('connection', (ws: WebSocket, request: http.IncomingMessage) => {
   const url = new URL(request.url || '/', `http://${request.headers.host}`);
   const projectId = url.searchParams.get('projectId')!;
   const user = (ws as any).__user as { userId: string; displayName: string };
-  if (!docs.has(projectId)) { const doc = new Y.Doc(); docs.set(projectId, doc); initPersistence(projectId, doc); }
+  if (!docs.has(projectId)) {
+    const doc = new Y.Doc();
+    docs.set(projectId, doc);
+    initPersistence(projectId, doc);
+  }
   setupWSConnection(ws as any, request, { docName: projectId, gc: true });
   awarenessManager.addConnection(projectId, user.userId, user.displayName, ws);
 
@@ -56,12 +78,20 @@ wss.on('connection', (ws: WebSocket, request: http.IncomingMessage) => {
         broadcastToRoom(projectId, { type: 'shot-lock-update', shotId: msg.shotId, ...result });
       } else if (msg.type === 'unlock-shot') {
         lockManager.unlockShot(user.userId, msg.shotId);
-        broadcastToRoom(projectId, { type: 'shot-lock-update', shotId: msg.shotId, locked: false, lockedBy: null, expiresAt: null });
+        broadcastToRoom(projectId, {
+          type: 'shot-lock-update',
+          shotId: msg.shotId,
+          locked: false,
+          lockedBy: null,
+          expiresAt: null,
+        });
       } else if (msg.type === 'query-lock') {
         const info = lockManager.isLocked(msg.shotId);
         ws.send(JSON.stringify({ type: 'shot-lock-update', shotId: msg.shotId, ...info }));
       }
-    } catch { /* Yjs binary protocol */ }
+    } catch {
+      /* Yjs binary protocol */
+    }
   });
 
   ws.on('close', () => {
@@ -77,8 +107,12 @@ function broadcastToRoom(projectId: string, message: Record<string, unknown>) {
   const room = awarenessManager.getRoom(projectId);
   if (!room) return;
   const data = JSON.stringify(message);
-  for (const conn of room.values()) { if (conn.ws.readyState === conn.ws.OPEN) conn.ws.send(data); }
+  for (const conn of room.values()) {
+    if (conn.ws.readyState === conn.ws.OPEN) conn.ws.send(data);
+  }
 }
 
-server.listen(PORT, HOST, () => { console.log(`[collab] Yjs server on ${HOST}:${PORT}`); });
+server.listen(PORT, HOST, () => {
+  console.log(`[collab] Yjs server on ${HOST}:${PORT}`);
+});
 export { server, wss, docs };

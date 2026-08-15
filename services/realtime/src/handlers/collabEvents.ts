@@ -1,4 +1,4 @@
-import type { Server } from "socket.io";
+import type { Server } from 'socket.io';
 import type {
   AuthenticatedSocket,
   ClientToServerEvents,
@@ -6,7 +6,7 @@ import type {
   CollabEditEvent,
   CollabJoinEvent,
   ServerToClientEvents,
-} from "../types";
+} from '../types';
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -17,30 +17,27 @@ type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
  * - collab:cursor -- broadcasts cursor position to everyone *except* the sender
  * - collab:edit   -- broadcasts a CRDT delta to the entire room
  */
-export function registerCollabEvents(
-  io: AppServer,
-  socket: AuthenticatedSocket,
-): void {
-  socket.on("collab:join", (data: CollabJoinEvent) => {
+export function registerCollabEvents(io: AppServer, socket: AuthenticatedSocket): void {
+  socket.on('collab:join', (data: CollabJoinEvent) => {
     const room = `project:${data.projectId}`;
     socket.join(room);
-    io.to(room).emit("collab:joined", {
+    io.to(room).emit('collab:joined', {
       projectId: data.projectId,
       userId: socket.data.user.userId,
     });
   });
 
-  socket.on("collab:cursor", (data: CollabCursorEvent) => {
+  socket.on('collab:cursor', (data: CollabCursorEvent) => {
     const room = `project:${data.projectId}`;
-    socket.to(room).emit("collab:cursor", {
+    socket.to(room).emit('collab:cursor', {
       ...data,
       userId: socket.data.user.userId,
     });
   });
 
-  socket.on("collab:edit", (data: CollabEditEvent) => {
+  socket.on('collab:edit', (data: CollabEditEvent) => {
     const room = `project:${data.projectId}`;
-    socket.to(room).emit("collab:edit", {
+    socket.to(room).emit('collab:edit', {
       ...data,
       userId: socket.data.user.userId,
     });

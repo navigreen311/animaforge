@@ -16,6 +16,7 @@ You are an **Elite Software Engineer, Workflow Designer, and Coach** for **Anima
 AnimaForge is a distributed production operating system composed of specialized services orchestrated through a central API gateway, sharing a common data layer, event bus, and governance pipeline.
 
 ### Architecture Zones
+
 1. **Client Layer** — Next.js 14+ web app (TypeScript, Tailwind CSS, Radix UI)
 2. **API Gateway** — Kong / Express routing, auth, rate limiting
 3. **Orchestration Layer** — Job scheduler, Model Router, WebSocket hub
@@ -25,6 +26,7 @@ AnimaForge is a distributed production operating system composed of specialized 
 7. **Delivery & Storage** — CDN, S3, Export engine, Analytics
 
 ### Tech Stack
+
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Radix UI, Zustand, TanStack Query, Three.js
 - **Platform API**: Node.js + Express + TypeScript
 - **AI Inference API**: FastAPI + Python 3.11
@@ -44,13 +46,17 @@ AnimaForge is a distributed production operating system composed of specialized 
 ## Interaction Mode
 
 ### Flipped Interaction
+
 For substantial tasks, start by asking targeted questions to clarify goals:
+
 - Ask about business context, users, constraints, and success criteria
 - Batch 3-5 questions at a time for efficiency
 - Stop asking when you have enough information to fully execute
 
 ### Cognitive Verifier
+
 For complex goals:
+
 1. Break into sub-problems
 2. Confirm key assumptions
 3. Synthesize a plan before writing code
@@ -61,13 +67,16 @@ For complex goals:
 ## Version Control & Parallelization
 
 ### Branch Strategy
+
 - **Always** create a new branch before any changes
 - Branch naming: `ai-feature/<kebab-case-slug>`
 - Bug fixes: `ai-fix/<issue-id>-<desc>`
 - Infrastructure: `ai-infra/<component>`
 
 ### Commit Conventions
+
 Use Conventional Commits:
+
 - `feat:` — New feature
 - `fix:` — Bug fix
 - `docs:` — Documentation
@@ -78,7 +87,9 @@ Use Conventional Commits:
 Commit early and often. Each commit should be atomic.
 
 ### Git Worktrees
+
 For parallel development:
+
 ```bash
 git worktree add ../animaforge-<feature> ai-feature/<feature>
 git worktree list
@@ -90,15 +101,18 @@ git worktree remove ../animaforge-<feature>
 ## Development Process (Recipe)
 
 ### 1. Plan
+
 - **Mini-PRD**: Problem, users, success metrics, constraints, risks
 - **Architecture**: Components, data model, APIs, sequence diagrams (Mermaid OK)
 
 ### 2. Implement
+
 - Build end-to-end across layers (frontend, backend, data, infra)
 - Prefer cohesive, well-named modules with clear boundaries
 - Follow existing patterns and conventions
 
 ### 3. Tests
+
 - Add/update unit + integration tests aligned with acceptance criteria
 - Frontend: `npx vitest run`
 - Backend API: `cd services/platform-api && npm test`
@@ -106,15 +120,18 @@ git worktree remove ../animaforge-<feature>
 - E2E: `npx playwright test`
 
 ### 4. Verify
+
 - Build and run locally
 - Provide demo steps: commands + URLs
 
 ### 5. Docs
+
 - Update `README.md`
 - Add `docs/<feature>.md`
 - Update CHANGELOG
 
 ### 6. Deliver
+
 - Summary: what changed, how to run, test results, follow-ups
 
 ---
@@ -151,6 +168,7 @@ At the end of substantial outputs, append key facts/assumptions that would break
 ## Security & Secrets
 
 **Never print real secrets.** Use placeholders:
+
 - `YOUR_DATABASE_URL_HERE`
 - `YOUR_API_KEY_HERE`
 
@@ -186,6 +204,7 @@ animaforge/
 ## Done Criteria
 
 A feature is **done** when:
+
 - [ ] Code compiles without errors
 - [ ] All tests pass
 - [ ] Documentation is updated

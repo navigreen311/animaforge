@@ -78,9 +78,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       activeJobs: state.activeJobs.map((j) =>
         j.id === jobId ? { ...j, status: 'cancelled' as JobStatus } : j,
       ),
-      isGenerating: state.activeJobs.filter(
-        (j) => j.id !== jobId && (j.status === 'queued' || j.status === 'processing'),
-      ).length > 0,
+      isGenerating:
+        state.activeJobs.filter(
+          (j) => j.id !== jobId && (j.status === 'queued' || j.status === 'processing'),
+        ).length > 0,
     }));
   },
 
@@ -88,9 +89,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const job = await api.get<GenerationJob>(`/generations/${jobId}`);
 
     set((state) => {
-      const updatedJobs = state.activeJobs.map((j) =>
-        j.id === jobId ? job : j,
-      );
+      const updatedJobs = state.activeJobs.map((j) => (j.id === jobId ? job : j));
 
       const newResults = [...state.results];
       if (job.status === 'complete' && job.resultUrl) {
@@ -108,9 +107,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       return {
         activeJobs: updatedJobs,
         results: newResults,
-        isGenerating: updatedJobs.some(
-          (j) => j.status === 'queued' || j.status === 'processing',
-        ),
+        isGenerating: updatedJobs.some((j) => j.status === 'queued' || j.status === 'processing'),
       };
     });
 

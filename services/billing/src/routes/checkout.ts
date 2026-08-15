@@ -1,46 +1,43 @@
-import { Router, Request, Response } from "express";
-import * as stripeService from "../services/stripeService";
-import { PRICING } from "../services/stripeService";
+import { Router, Request, Response } from 'express';
+import * as stripeService from '../services/stripeService';
+import { PRICING } from '../services/stripeService';
 
 const router = Router();
 
 // POST /billing/checkout — Create a Stripe Checkout session
-router.post("/checkout", (req: Request, res: Response) => {
+router.post('/checkout', (req: Request, res: Response) => {
   const { tier, successUrl, cancelUrl } = req.body;
 
-  if (!tier || typeof tier !== "string") {
-    res.status(400).json({ error: "tier is required" });
+  if (!tier || typeof tier !== 'string') {
+    res.status(400).json({ error: 'tier is required' });
     return;
   }
 
   if (!PRICING[tier]) {
-    res.status(400).json({ error: `Invalid tier: ${tier}. Valid tiers: ${Object.keys(PRICING).join(", ")}` });
+    res
+      .status(400)
+      .json({ error: `Invalid tier: ${tier}. Valid tiers: ${Object.keys(PRICING).join(', ')}` });
     return;
   }
 
   // In production, userId would come from auth middleware (req.user)
-  const userId = req.body.userId || "anonymous";
+  const userId = req.body.userId || 'anonymous';
 
   try {
-    const session = stripeService.createCheckoutSession(
-      userId,
-      tier,
-      successUrl,
-      cancelUrl,
-    );
+    const session = stripeService.createCheckoutSession(userId, tier, successUrl, cancelUrl);
     res.status(201).json(session);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : 'Unknown error';
     res.status(500).json({ error: message });
   }
 });
 
 // POST /billing/portal — Create a billing portal session
-router.post("/portal", (req: Request, res: Response) => {
+router.post('/portal', (req: Request, res: Response) => {
   const { userId } = req.body;
 
-  if (!userId || typeof userId !== "string") {
-    res.status(400).json({ error: "userId is required" });
+  if (!userId || typeof userId !== 'string') {
+    res.status(400).json({ error: 'userId is required' });
     return;
   }
 
@@ -52,18 +49,18 @@ router.post("/portal", (req: Request, res: Response) => {
   // which implies the lookup happened and came back empty. It cannot happen at
   // all. Returning the honest status keeps the caller from retrying.
   res.status(501).json({
-    error: "not_implemented",
+    error: 'not_implemented',
     message:
-      "Opening the billing portal needs a stored Stripe customer id for the " +
-      "user. This service does not persist that mapping, so no portal session " +
-      "can be created.",
+      'Opening the billing portal needs a stored Stripe customer id for the ' +
+      'user. This service does not persist that mapping, so no portal session ' +
+      'can be created.',
     userId,
-    missing: ["userId -> stripe customer mapping", "STRIPE_SECRET_KEY"],
+    missing: ['userId -> stripe customer mapping', 'STRIPE_SECRET_KEY'],
   });
 });
 
 // GET /billing/plans — List available plans with pricing
-router.get("/plans", (_req: Request, res: Response) => {
+router.get('/plans', (_req: Request, res: Response) => {
   const plans = Object.values(PRICING).map((plan) => ({
     tier: plan.tier,
     name: plan.name,

@@ -18,12 +18,7 @@ export class HttpClient {
   private readonly timeout: number;
   private readonly maxRetries: number;
 
-  constructor(config: {
-    apiKey: string;
-    baseUrl?: string;
-    timeout?: number;
-    maxRetries?: number;
-  }) {
+  constructor(config: { apiKey: string; baseUrl?: string; timeout?: number; maxRetries?: number }) {
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.timeout = config.timeout ?? DEFAULT_TIMEOUT;
@@ -72,7 +67,7 @@ export class HttpClient {
             response.status,
             errorMessage,
             requestId,
-            response.headers.get('retry-after')
+            response.headers.get('retry-after'),
           );
 
           if (RETRY_STATUS_CODES.has(response.status) && attempt < this.maxRetries) {
@@ -103,7 +98,10 @@ export class HttpClient {
     throw lastError ?? new AnimaForgeError('Request failed', 0, 'unknown_error');
   }
 
-  async get<T>(path: string, query?: Record<string, string | number | boolean | undefined>): Promise<T> {
+  async get<T>(
+    path: string,
+    query?: Record<string, string | number | boolean | undefined>,
+  ): Promise<T> {
     const response = await this.request<T>({ method: 'GET', path, query });
     return response.data;
   }
@@ -130,7 +128,7 @@ export class HttpClient {
 
   private buildUrl(
     path: string,
-    query?: Record<string, string | number | boolean | undefined>
+    query?: Record<string, string | number | boolean | undefined>,
   ): string {
     const url = new URL(`${this.baseUrl}${path}`);
 
@@ -149,7 +147,7 @@ export class HttpClient {
     status: number,
     message: string,
     requestId?: string,
-    retryAfterHeader?: string | null
+    retryAfterHeader?: string | null,
   ): AnimaForgeError {
     switch (status) {
       case 401:

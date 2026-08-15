@@ -1,6 +1,7 @@
 # AnimaForge API Reference
 
 > **Base URLs**
+>
 > - Platform API: `https://api.animaforge.ai/v1`
 > - AI Inference API: `https://ai.animaforge.ai/v1`
 > - WebSocket: `wss://ws.animaforge.ai`
@@ -14,6 +15,7 @@ All requests require a Bearer token in the `Authorization` header unless noted o
 ### Projects
 
 #### `GET /api/v1/projects`
+
 List all projects for the authenticated user.
 
 **Query Parameters**
@@ -25,6 +27,7 @@ List all projects for the authenticated user.
 | `sort` | string | Sort field: `created_at`, `updated_at`, `title` |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -44,9 +47,11 @@ List all projects for the authenticated user.
 ```
 
 #### `POST /api/v1/projects`
+
 Create a new animation project.
 
 **Request**
+
 ```json
 {
   "title": "My New Project",
@@ -56,6 +61,7 @@ Create a new animation project.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "proj_def456",
@@ -68,9 +74,11 @@ Create a new animation project.
 ```
 
 #### `GET /api/v1/projects/:id`
+
 Retrieve a single project by ID.
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "proj_abc123",
@@ -87,9 +95,11 @@ Retrieve a single project by ID.
 ```
 
 #### `PATCH /api/v1/projects/:id`
+
 Update project metadata.
 
 **Request**
+
 ```json
 {
   "title": "Updated Title",
@@ -98,6 +108,7 @@ Update project metadata.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "proj_abc123",
@@ -109,9 +120,11 @@ Update project metadata.
 ```
 
 #### `DELETE /api/v1/projects/:id`
+
 Soft-delete a project and all associated resources.
 
 **Response** `200 OK`
+
 ```json
 { "message": "Project deleted successfully." }
 ```
@@ -121,6 +134,7 @@ Soft-delete a project and all associated resources.
 ### Shots
 
 #### `GET /api/v1/projects/:id/shots`
+
 List all shots in a project.
 
 **Query Parameters**
@@ -130,6 +144,7 @@ List all shots in a project.
 | `sort` | string | Sort: `order`, `created_at`, `duration_ms` |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -151,9 +166,11 @@ List all shots in a project.
 ```
 
 #### `POST /api/v1/projects/:id/shots`
+
 Add a new shot to the project timeline.
 
 **Request**
+
 ```json
 {
   "prompt": "Close-up of samurai drawing sword",
@@ -166,6 +183,7 @@ Add a new shot to the project timeline.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "shot_002",
@@ -179,9 +197,11 @@ Add a new shot to the project timeline.
 ```
 
 #### `PUT /api/v1/projects/:id/shots/:shotId`
+
 Update shot parameters.
 
 **Request**
+
 ```json
 {
   "prompt": "Updated shot prompt",
@@ -191,6 +211,7 @@ Update shot parameters.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "shot_002",
@@ -202,17 +223,21 @@ Update shot parameters.
 ```
 
 #### `DELETE /api/v1/projects/:id/shots/:shotId`
+
 Remove a shot from the project.
 
 **Response** `200 OK`
+
 ```json
 { "message": "Shot deleted." }
 ```
 
 #### `POST /api/v1/projects/:id/shots/reorder`
+
 Reorder shots within a project timeline.
 
 **Request**
+
 ```json
 {
   "shot_order": ["shot_003", "shot_001", "shot_002"]
@@ -220,6 +245,7 @@ Reorder shots within a project timeline.
 ```
 
 **Response** `200 OK`
+
 ```json
 { "message": "Shots reordered successfully." }
 ```
@@ -229,9 +255,11 @@ Reorder shots within a project timeline.
 ### Characters
 
 #### `GET /api/v1/characters`
+
 List all characters in the user's library.
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -250,9 +278,11 @@ List all characters in the user's library.
 ```
 
 #### `POST /api/v1/characters`
+
 Create a new character entry.
 
 **Request**
+
 ```json
 {
   "name": "Ronin",
@@ -263,6 +293,7 @@ Create a new character entry.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "char_002",
@@ -276,9 +307,11 @@ Create a new character entry.
 ```
 
 #### `GET /api/v1/characters/:id`
+
 Retrieve a single character with full details.
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "char_001",
@@ -297,9 +330,11 @@ Retrieve a single character with full details.
 ```
 
 #### `PATCH /api/v1/characters/:id`
+
 Update character metadata or reference data.
 
 **Request**
+
 ```json
 {
   "name": "Kira v2",
@@ -308,6 +343,7 @@ Update character metadata or reference data.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "char_001",
@@ -317,14 +353,17 @@ Update character metadata or reference data.
 ```
 
 #### `DELETE /api/v1/characters/:id`
+
 Soft-delete a character.
 
 **Response** `200 OK`
+
 ```json
 { "message": "Character deleted." }
 ```
 
 #### `POST /api/v1/characters/:id/references`
+
 Upload reference images for a character.
 
 **Request** `multipart/form-data`
@@ -334,6 +373,7 @@ Upload reference images for a character.
 | `angles` | string[] | Corresponding angles: `front`, `side`, `back`, `three_quarter` |
 
 **Response** `200 OK`
+
 ```json
 {
   "character_id": "char_001",
@@ -347,9 +387,11 @@ Upload reference images for a character.
 ### Review & Approval
 
 #### `GET /api/v1/projects/:id/reviews`
+
 List all shots under review for a project.
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -365,14 +407,17 @@ List all shots under review for a project.
 ```
 
 #### `POST /api/v1/projects/:id/reviews/:shotId/approve`
+
 Approve a shot.
 
 **Request**
+
 ```json
 { "comment": "Looks great, approved!" }
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "shot_id": "shot_001",
@@ -383,9 +428,11 @@ Approve a shot.
 ```
 
 #### `POST /api/v1/projects/:id/reviews/:shotId/reject`
+
 Reject a shot with feedback.
 
 **Request**
+
 ```json
 {
   "comment": "Motion too jerky in frames 24-48",
@@ -394,6 +441,7 @@ Reject a shot with feedback.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "shot_id": "shot_001",
@@ -404,9 +452,11 @@ Reject a shot with feedback.
 ```
 
 #### `POST /api/v1/projects/:id/reviews/bulk`
+
 Bulk approve or reject multiple shots.
 
 **Request**
+
 ```json
 {
   "shot_ids": ["shot_001", "shot_002", "shot_003"],
@@ -416,6 +466,7 @@ Bulk approve or reject multiple shots.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "updated": 3,
@@ -432,6 +483,7 @@ Bulk approve or reject multiple shots.
 ### Assets
 
 #### `GET /api/v1/projects/:id/assets`
+
 List project assets with type filtering.
 
 **Query Parameters**
@@ -441,6 +493,7 @@ List project assets with type filtering.
 | `search` | string | Full-text search on asset name |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -459,6 +512,7 @@ List project assets with type filtering.
 ```
 
 #### `POST /api/v1/projects/:id/assets`
+
 Upload a new asset.
 
 **Request** `multipart/form-data`
@@ -469,6 +523,7 @@ Upload a new asset.
 | `type` | string | Override auto-detection: `image`, `video`, `audio`, `model` |
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "ast_013",
@@ -481,9 +536,11 @@ Upload a new asset.
 ```
 
 #### `DELETE /api/v1/projects/:id/assets/:assetId`
+
 Remove an asset from the project.
 
 **Response** `200 OK`
+
 ```json
 { "message": "Asset deleted." }
 ```
@@ -493,6 +550,7 @@ Remove an asset from the project.
 ### Marketplace
 
 #### `GET /api/v1/marketplace`
+
 Browse marketplace listings.
 
 **Query Parameters**
@@ -503,6 +561,7 @@ Browse marketplace listings.
 | `search` | string | Keyword search |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -522,9 +581,11 @@ Browse marketplace listings.
 ```
 
 #### `POST /api/v1/marketplace/publish`
+
 Submit a new item for marketplace review.
 
 **Request**
+
 ```json
 {
   "name": "Watercolor Dream Pack",
@@ -536,6 +597,7 @@ Submit a new item for marketplace review.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "mkt_042",
@@ -549,9 +611,11 @@ Submit a new item for marketplace review.
 ### Enterprise
 
 #### `GET /api/v1/enterprise/users`
+
 List organization users (admin only).
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -570,9 +634,11 @@ List organization users (admin only).
 ```
 
 #### `POST /api/v1/enterprise/users/invite`
+
 Invite a new user to the organization.
 
 **Request**
+
 ```json
 {
   "email": "new_user@acme.studio",
@@ -582,6 +648,7 @@ Invite a new user to the organization.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "usr_007",
@@ -593,6 +660,7 @@ Invite a new user to the organization.
 ```
 
 #### `GET /api/v1/enterprise/audit`
+
 Query audit log entries.
 
 **Query Parameters**
@@ -605,6 +673,7 @@ Query audit log entries.
 | `to` | string | End date (ISO 8601) |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -628,9 +697,11 @@ Query audit log entries.
 ### Plugins
 
 #### `GET /api/v1/plugins`
+
 List installed plugins for the current user/organization.
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -648,14 +719,17 @@ List installed plugins for the current user/organization.
 ```
 
 #### `POST /api/v1/plugins`
+
 Install a plugin by ID.
 
 **Request**
+
 ```json
 { "plugin_id": "com.animaforge-labs.auto-qc-pro" }
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "plg_001",
@@ -666,9 +740,11 @@ Install a plugin by ID.
 ```
 
 #### `DELETE /api/v1/plugins/:pluginId`
+
 Uninstall a plugin.
 
 **Response** `200 OK`
+
 ```json
 { "message": "Plugin uninstalled." }
 ```
@@ -678,9 +754,11 @@ Uninstall a plugin.
 ### CDN
 
 #### `POST /api/v1/cdn/signed-url`
+
 Generate a signed CDN URL for secure asset delivery.
 
 **Request**
+
 ```json
 {
   "asset_id": "ast_001",
@@ -689,6 +767,7 @@ Generate a signed CDN URL for secure asset delivery.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "url": "https://cdn.animaforge.ai/assets/ast_001.png?token=...",
@@ -697,14 +776,17 @@ Generate a signed CDN URL for secure asset delivery.
 ```
 
 #### `POST /api/v1/cdn/purge`
+
 Purge CDN cache for specific assets.
 
 **Request**
+
 ```json
 { "asset_ids": ["ast_001", "ast_002"] }
 ```
 
 **Response** `200 OK`
+
 ```json
 { "message": "Cache purged for 2 assets." }
 ```
@@ -714,9 +796,11 @@ Purge CDN cache for specific assets.
 ### Social Publishing
 
 #### `POST /api/v1/social/publish`
+
 Publish or schedule content to social media platforms.
 
 **Request**
+
 ```json
 {
   "platform": "youtube",
@@ -727,6 +811,7 @@ Publish or schedule content to social media platforms.
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "id": "social_001",
@@ -737,6 +822,7 @@ Publish or schedule content to social media platforms.
 ```
 
 #### `GET /api/v1/social/posts`
+
 List social media posts with status filtering.
 
 **Query Parameters**
@@ -746,6 +832,7 @@ List social media posts with status filtering.
 | `status` | string | Filter: `draft`, `scheduled`, `published`, `failed` |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -764,9 +851,11 @@ List social media posts with status filtering.
 ### Content Repurposing
 
 #### `POST /api/v1/repurpose`
+
 Repurpose a project's output for a different format or platform.
 
 **Request**
+
 ```json
 {
   "project_id": "proj_abc123",
@@ -775,6 +864,7 @@ Repurpose a project's output for a different format or platform.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "id": "repurpose_001",
@@ -785,9 +875,11 @@ Repurpose a project's output for a different format or platform.
 ```
 
 #### `GET /api/v1/repurpose/:jobId`
+
 Check repurpose job status.
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "repurpose_001",
@@ -801,6 +893,7 @@ Check repurpose job status.
 ### Human Review
 
 #### `GET /api/v1/human-review`
+
 List items flagged for human review (content moderation escalation).
 
 **Query Parameters**
@@ -809,6 +902,7 @@ List items flagged for human review (content moderation escalation).
 | `status` | string | Filter: `pending`, `approved`, `rejected` |
 
 **Response** `200 OK`
+
 ```json
 {
   "data": [
@@ -825,9 +919,11 @@ List items flagged for human review (content moderation escalation).
 ```
 
 #### `POST /api/v1/human-review/:itemId/decide`
+
 Approve or reject a flagged item.
 
 **Request**
+
 ```json
 {
   "decision": "approve",
@@ -836,6 +932,7 @@ Approve or reject a flagged item.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "id": "hr_001",
@@ -852,9 +949,11 @@ Approve or reject a flagged item.
 ### Generation
 
 #### `POST /ai/v1/generate/video`
+
 Submit a video generation job.
 
 **Request**
+
 ```json
 {
   "project_id": "proj_abc123",
@@ -869,6 +968,7 @@ Submit a video generation job.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -880,9 +980,11 @@ Submit a video generation job.
 ```
 
 #### `GET /ai/v1/generate/:jobId/status`
+
 Check generation job status.
 
 **Response** `200 OK`
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -895,9 +997,11 @@ Check generation job status.
 ```
 
 #### `GET /ai/v1/generate/:jobId/result`
+
 Retrieve completed generation outputs.
 
 **Response** `200 OK`
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -919,9 +1023,11 @@ Retrieve completed generation outputs.
 ```
 
 #### `POST /ai/v1/generate/:jobId/cancel`
+
 Cancel a queued or in-progress job.
 
 **Response** `200 OK`
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -935,9 +1041,11 @@ Cancel a queued or in-progress job.
 ### Avatar Studio
 
 #### `POST /ai/v1/avatar/reconstruct`
+
 Start a 3D avatar reconstruction from reference images.
 
 **Request**
+
 ```json
 {
   "character_id": "char_001",
@@ -952,6 +1060,7 @@ Start a 3D avatar reconstruction from reference images.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "job_id": "avatar_job_001",
@@ -962,9 +1071,11 @@ Start a 3D avatar reconstruction from reference images.
 ```
 
 #### `GET /ai/v1/avatar/:jobId/status`
+
 Check avatar reconstruction status.
 
 **Response** `200 OK`
+
 ```json
 {
   "job_id": "avatar_job_001",
@@ -981,9 +1092,11 @@ Check avatar reconstruction status.
 ### Style Intelligence
 
 #### `POST /ai/v1/style/analyze`
+
 Analyze a reference image or video to extract a style fingerprint.
 
 **Request**
+
 ```json
 {
   "source_url": "https://cdn.animaforge.ai/refs/style_ref.png",
@@ -994,6 +1107,7 @@ Analyze a reference image or video to extract a style fingerprint.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "fingerprint_id": "sf_abc123",
@@ -1007,9 +1121,11 @@ Analyze a reference image or video to extract a style fingerprint.
 ```
 
 #### `POST /ai/v1/style/transfer`
+
 Apply a style fingerprint to generated content.
 
 **Request**
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -1020,6 +1136,7 @@ Apply a style fingerprint to generated content.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "transfer_job_id": "st_job_001",
@@ -1033,14 +1150,17 @@ Apply a style fingerprint to generated content.
 ### Governance
 
 #### `POST /ai/v1/governance/verify`
+
 Verify provenance and authenticity of generated content.
 
 **Request**
+
 ```json
 { "output_id": "out_abc123" }
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "output_id": "out_abc123",
@@ -1059,9 +1179,11 @@ Verify provenance and authenticity of generated content.
 ```
 
 #### `GET /ai/v1/governance/consent/:characterId`
+
 Check likeness consent status for a character.
 
 **Response** `200 OK`
+
 ```json
 {
   "character_id": "char_001",
@@ -1078,9 +1200,11 @@ Check likeness consent status for a character.
 ```
 
 #### `POST /ai/v1/governance/moderate`
+
 Run content moderation on generated output.
 
 **Request**
+
 ```json
 {
   "output_id": "out_abc123",
@@ -1089,6 +1213,7 @@ Run content moderation on generated output.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "output_id": "out_abc123",
@@ -1108,9 +1233,11 @@ Run content moderation on generated output.
 ### Music Composition
 
 #### `POST /ai/v1/music/generate`
+
 Generate original music for a project.
 
 **Request**
+
 ```json
 {
   "project_id": "proj_abc123",
@@ -1122,6 +1249,7 @@ Generate original music for a project.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "job_id": "music_job_001",
@@ -1136,9 +1264,11 @@ Generate original music for a project.
 ### Dubbing
 
 #### `POST /ai/v1/dubbing/start`
+
 Start AI-powered multilingual dubbing for a project.
 
 **Request**
+
 ```json
 {
   "project_id": "proj_abc123",
@@ -1149,6 +1279,7 @@ Start AI-powered multilingual dubbing for a project.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "job_id": "dub_job_001",
@@ -1163,9 +1294,11 @@ Start AI-powered multilingual dubbing for a project.
 ### Physics Simulation
 
 #### `POST /ai/v1/physics/simulate`
+
 Run physics simulation (cloth, hair, rigid body, fluid, particles) on a shot.
 
 **Request**
+
 ```json
 {
   "shot_id": "shot_001",
@@ -1176,6 +1309,7 @@ Run physics simulation (cloth, hair, rigid body, fluid, particles) on a shot.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "job_id": "phys_job_001",
@@ -1189,9 +1323,11 @@ Run physics simulation (cloth, hair, rigid body, fluid, particles) on a shot.
 ### Custom Model Training
 
 #### `POST /ai/v1/training/jobs`
+
 Start a custom model fine-tuning job.
 
 **Request**
+
 ```json
 {
   "name": "My Studio Style v1",
@@ -1203,6 +1339,7 @@ Start a custom model fine-tuning job.
 ```
 
 **Response** `202 Accepted`
+
 ```json
 {
   "id": "train_001",
@@ -1213,12 +1350,15 @@ Start a custom model fine-tuning job.
 ```
 
 #### `GET /ai/v1/training/jobs`
+
 List training jobs.
 
 #### `GET /ai/v1/training/jobs/:jobId`
+
 Get training job details.
 
 #### `POST /ai/v1/training/jobs/:jobId/cancel`
+
 Cancel a running training job.
 
 ---
@@ -1226,9 +1366,11 @@ Cancel a running training job.
 ### Cartoon Pro
 
 #### `POST /ai/v1/cartoon/stylize`
+
 Apply Cartoon Pro stylization to a shot.
 
 **Request**
+
 ```json
 {
   "shot_id": "shot_001",
@@ -1245,9 +1387,11 @@ Supported styles: `classic_2d`, `anime`, `pixar`, `watercolor`, `comic_book`, `s
 ### Quality Control
 
 #### `POST /ai/v1/qc/run`
+
 Run automated quality checks on a completed generation job.
 
 **Request**
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -1256,6 +1400,7 @@ Run automated quality checks on a completed generation job.
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "job_id": "job_xyz789",
@@ -1269,9 +1414,11 @@ Run automated quality checks on a completed generation job.
 ### Job Management
 
 #### `GET /ai/v1/jobs`
+
 List all AI jobs for the authenticated user.
 
 #### `GET /ai/v1/jobs/:jobId`
+
 Get details for any AI job by ID.
 
 ---
@@ -1282,30 +1429,30 @@ Connect to `wss://ws.animaforge.ai` with a valid JWT token.
 
 ### Client to Server
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `subscribe:project` | `{ project_id: string }` | Subscribe to project updates |
-| `unsubscribe:project` | `{ project_id: string }` | Unsubscribe from project |
-| `subscribe:job` | `{ job_id: string }` | Subscribe to generation job updates |
-| `timeline:lock` | `{ project_id: string, shot_id: string }` | Lock a shot for editing |
-| `timeline:unlock` | `{ project_id: string, shot_id: string }` | Release shot lock |
-| `timeline:move` | `{ project_id: string, shot_id: string, new_order: number }` | Move shot in timeline |
-| `comment:send` | `{ shot_id: string, text: string, timestamp_ms?: number }` | Post a comment on a shot |
+| Event                 | Payload                                                      | Description                         |
+| --------------------- | ------------------------------------------------------------ | ----------------------------------- |
+| `subscribe:project`   | `{ project_id: string }`                                     | Subscribe to project updates        |
+| `unsubscribe:project` | `{ project_id: string }`                                     | Unsubscribe from project            |
+| `subscribe:job`       | `{ job_id: string }`                                         | Subscribe to generation job updates |
+| `timeline:lock`       | `{ project_id: string, shot_id: string }`                    | Lock a shot for editing             |
+| `timeline:unlock`     | `{ project_id: string, shot_id: string }`                    | Release shot lock                   |
+| `timeline:move`       | `{ project_id: string, shot_id: string, new_order: number }` | Move shot in timeline               |
+| `comment:send`        | `{ shot_id: string, text: string, timestamp_ms?: number }`   | Post a comment on a shot            |
 
 ### Server to Client
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `job:progress` | `{ job_id, progress, stage, shot_id }` | Generation progress update |
-| `job:completed` | `{ job_id, outputs[], credits_used }` | Generation complete |
-| `job:failed` | `{ job_id, error, shot_id? }` | Generation failure |
-| `shot:updated` | `{ project_id, shot_id, changes }` | Shot metadata changed |
-| `shot:locked` | `{ project_id, shot_id, locked_by }` | Shot locked by another user |
-| `shot:unlocked` | `{ project_id, shot_id }` | Shot lock released |
-| `review:status` | `{ project_id, shot_id, status, reviewer }` | Review status changed |
-| `comment:new` | `{ shot_id, comment_id, author, text, timestamp_ms }` | New comment posted |
-| `asset:uploaded` | `{ project_id, asset }` | New asset available |
-| `user:presence` | `{ project_id, users[] }` | Active users in project |
+| Event            | Payload                                               | Description                 |
+| ---------------- | ----------------------------------------------------- | --------------------------- |
+| `job:progress`   | `{ job_id, progress, stage, shot_id }`                | Generation progress update  |
+| `job:completed`  | `{ job_id, outputs[], credits_used }`                 | Generation complete         |
+| `job:failed`     | `{ job_id, error, shot_id? }`                         | Generation failure          |
+| `shot:updated`   | `{ project_id, shot_id, changes }`                    | Shot metadata changed       |
+| `shot:locked`    | `{ project_id, shot_id, locked_by }`                  | Shot locked by another user |
+| `shot:unlocked`  | `{ project_id, shot_id }`                             | Shot lock released          |
+| `review:status`  | `{ project_id, shot_id, status, reviewer }`           | Review status changed       |
+| `comment:new`    | `{ shot_id, comment_id, author, text, timestamp_ms }` | New comment posted          |
+| `asset:uploaded` | `{ project_id, asset }`                               | New asset available         |
+| `user:presence`  | `{ project_id, users[] }`                             | Active users in project     |
 
 ### Connection Example
 
@@ -1346,13 +1493,13 @@ All errors follow a consistent format:
 
 ### Common Error Codes
 
-| Code | Status | Description |
-|------|--------|-------------|
-| `UNAUTHORIZED` | 401 | Missing or invalid authentication token |
-| `FORBIDDEN` | 403 | Insufficient permissions for this action |
-| `RESOURCE_NOT_FOUND` | 404 | Requested resource does not exist |
-| `VALIDATION_ERROR` | 422 | Request body failed validation |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
-| `INSUFFICIENT_CREDITS` | 402 | Not enough credits for this operation |
-| `JOB_ALREADY_RUNNING` | 409 | A generation job is already in progress |
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
+| Code                   | Status | Description                              |
+| ---------------------- | ------ | ---------------------------------------- |
+| `UNAUTHORIZED`         | 401    | Missing or invalid authentication token  |
+| `FORBIDDEN`            | 403    | Insufficient permissions for this action |
+| `RESOURCE_NOT_FOUND`   | 404    | Requested resource does not exist        |
+| `VALIDATION_ERROR`     | 422    | Request body failed validation           |
+| `RATE_LIMIT_EXCEEDED`  | 429    | Too many requests                        |
+| `INSUFFICIENT_CREDITS` | 402    | Not enough credits for this operation    |
+| `JOB_ALREADY_RUNNING`  | 409    | A generation job is already in progress  |
+| `INTERNAL_ERROR`       | 500    | Unexpected server error                  |

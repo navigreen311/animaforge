@@ -1,0 +1,34 @@
+# Files Prettier must not rewrite, so that `prettier --write .` and
+# `prettier --check .` agree and stay reproducible across machines.
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+out/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Python virtualenvs (services/ai-api/.venv and friends)
+.venv/
+venv/
+__pycache__/
+
+# Owned by their tool, not by us — reformatting fights the generator
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Prisma migrations are SQL emitted by `prisma migrate`
+packages/db/prisma/migrations/
+
+# Test and scan artifacts
+test-results/
+playwright-report/
+coverage-report.json
+trivy-results*.sarif
+
+# Avatar Studio writes reconstruction artifacts here by default
+# (AVATAR_STORAGE_DIR)
+var/

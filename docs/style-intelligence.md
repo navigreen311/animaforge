@@ -87,10 +87,10 @@ A style fingerprint is a structured representation of visual style extracted fro
 
 ### Vector Embeddings
 
-| Field | Dimensions | Model | Purpose |
-|-------|-----------|-------|---------|
-| `mood_vector` | 128 | Custom mood encoder | Semantic style similarity search |
-| `texture_vector` | 256 | Custom texture encoder | Texture pattern matching |
+| Field            | Dimensions | Model                  | Purpose                          |
+| ---------------- | ---------- | ---------------------- | -------------------------------- |
+| `mood_vector`    | 128        | Custom mood encoder    | Semantic style similarity search |
+| `texture_vector` | 256        | Custom texture encoder | Texture pattern matching         |
 
 Both vectors are stored in pgvector for fast nearest-neighbor retrieval.
 
@@ -115,6 +115,7 @@ flowchart TB
 **Purpose**: Extract clean linework from the generated content to form the cartoon outline layer.
 
 **Process**:
+
 - Apply Canny edge detection with adaptive thresholds based on style fingerprint `edge_detection_threshold`
 - Run a learned line art extraction model trained on professional animation production
 - Clean up artifacts: remove short segments, connect broken lines, smooth jagged edges
@@ -129,6 +130,7 @@ flowchart TB
 **Purpose**: Divide the image into semantically meaningful regions for flat color assignment.
 
 **Process**:
+
 - Run SAM (Segment Anything Model) for initial segmentation
 - Merge over-segmented regions based on color similarity and spatial proximity
 - Classify regions by semantic type: skin, hair, clothing, background, props, sky
@@ -142,6 +144,7 @@ flowchart TB
 **Purpose**: Apply the style fingerprint's color palette to each region.
 
 **Process**:
+
 - Map each semantic region to the appropriate palette category:
   - Skin tones mapped from `palette.primary`
   - Hair/clothing from `palette.secondary`
@@ -158,6 +161,7 @@ flowchart TB
 **Purpose**: Add depth and dimension through stylized shading.
 
 **Process**:
+
 - Compute light direction from fingerprint `lighting.key_light_angle`
 - Generate shadow regions using depth estimation + normal mapping
 - Apply cel-shading quantization (2-4 discrete shadow levels based on style)
@@ -173,6 +177,7 @@ flowchart TB
 **Purpose**: Apply surface texture patterns matching the style fingerprint.
 
 **Process**:
+
 - Select texture patterns based on fingerprint `texture.class`:
   - `cel_shade`: Clean, minimal texture
   - `watercolor`: Paper grain with color bleeding edges
@@ -191,6 +196,7 @@ flowchart TB
 **Purpose**: Add style-specific effects that enhance the overall aesthetic.
 
 **Process**:
+
 - **Glow/Bloom**: For neon/cyberpunk styles, add bloom on bright regions
 - **Speed Lines**: For action sequences, generate radial or parallel motion lines
 - **Screen Tones**: For manga styles, apply halftone dot patterns
@@ -208,6 +214,7 @@ All effects are parameterized by the style fingerprint and can be individually t
 **Purpose**: Assemble all layers into the final stylized output.
 
 **Layer Stack** (bottom to top):
+
 1. Background color/gradient
 2. Flat color fill
 3. Shadow layer (multiply blend)
@@ -217,6 +224,7 @@ All effects are parameterized by the style fingerprint and can be individually t
 7. Special effects (additive/screen blend)
 
 **Process**:
+
 - Composite all layers with appropriate blend modes
 - Apply final color grading to match fingerprint mood
 - Temporal smoothing for video (prevent flickering between frames)
@@ -297,17 +305,17 @@ Returns the 5 most similar style fingerprints using cosine similarity on `mood_v
 
 AnimaForge includes built-in style presets that users can apply without creating their own fingerprint:
 
-| Preset | Description | Cartoon Pipeline |
-|--------|-------------|:---:|
-| `cinematic` | Photorealistic, dramatic lighting, shallow DoF | No |
-| `anime` | Clean lines, flat colors, expressive eyes | Yes |
-| `cartoon` | Bold outlines, bright palette, exaggerated features | Yes |
-| `cel_shade` | Classic animation cel look, 2-tone shading | Yes |
-| `watercolor` | Soft edges, color bleeding, paper texture | Yes |
-| `oil_paint` | Thick brush strokes, rich colors, impasto texture | Yes |
-| `pixel_retro` | Low-resolution pixel art with limited palette | Yes |
-| `noir` | High contrast, black and white, dramatic shadows | Partial |
-| `pastel_dream` | Soft pastels, low contrast, dreamy atmosphere | Yes |
-| `comic_book` | Bold lines, halftone dots, vibrant primaries | Yes |
+| Preset         | Description                                         | Cartoon Pipeline |
+| -------------- | --------------------------------------------------- | :--------------: |
+| `cinematic`    | Photorealistic, dramatic lighting, shallow DoF      |        No        |
+| `anime`        | Clean lines, flat colors, expressive eyes           |       Yes        |
+| `cartoon`      | Bold outlines, bright palette, exaggerated features |       Yes        |
+| `cel_shade`    | Classic animation cel look, 2-tone shading          |       Yes        |
+| `watercolor`   | Soft edges, color bleeding, paper texture           |       Yes        |
+| `oil_paint`    | Thick brush strokes, rich colors, impasto texture   |       Yes        |
+| `pixel_retro`  | Low-resolution pixel art with limited palette       |       Yes        |
+| `noir`         | High contrast, black and white, dramatic shadows    |     Partial      |
+| `pastel_dream` | Soft pastels, low contrast, dreamy atmosphere       |       Yes        |
+| `comic_book`   | Bold lines, halftone dots, vibrant primaries        |       Yes        |
 
 Users can also create custom presets from analyzed fingerprints and share them on the marketplace.

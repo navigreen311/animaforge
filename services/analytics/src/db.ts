@@ -1,4 +1,4 @@
-import { createClient, ClickHouseClient } from "@clickhouse/client";
+import { createClient, ClickHouseClient } from '@clickhouse/client';
 
 let client: ClickHouseClient | null = null;
 let connected = false;
@@ -11,9 +11,9 @@ export function getClickHouseClient(): ClickHouseClient | null {
   if (!client) {
     client = createClient({
       url: process.env.CLICKHOUSE_URL,
-      database: process.env.CLICKHOUSE_DATABASE || "animaforge",
-      username: process.env.CLICKHOUSE_USER || "default",
-      password: process.env.CLICKHOUSE_PASSWORD || "",
+      database: process.env.CLICKHOUSE_DATABASE || 'animaforge',
+      username: process.env.CLICKHOUSE_USER || 'default',
+      password: process.env.CLICKHOUSE_PASSWORD || '',
       request_timeout: 30000,
       clickhouse_settings: {
         async_insert: 1,
@@ -28,7 +28,7 @@ export function getClickHouseClient(): ClickHouseClient | null {
 export async function initClickHouse(): Promise<boolean> {
   const ch = getClickHouseClient();
   if (!ch) {
-    console.warn("[analytics] CLICKHOUSE_URL not set — using in-memory fallback");
+    console.warn('[analytics] CLICKHOUSE_URL not set — using in-memory fallback');
     return false;
   }
 
@@ -50,10 +50,13 @@ export async function initClickHouse(): Promise<boolean> {
     });
 
     connected = true;
-    console.log("[analytics] ClickHouse connected and schema ready");
+    console.log('[analytics] ClickHouse connected and schema ready');
     return true;
   } catch (err) {
-    console.warn("[analytics] ClickHouse unavailable — using in-memory fallback:", (err as Error).message);
+    console.warn(
+      '[analytics] ClickHouse unavailable — using in-memory fallback:',
+      (err as Error).message,
+    );
     connected = false;
     return false;
   }

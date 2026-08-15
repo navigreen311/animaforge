@@ -68,9 +68,7 @@ describe('Gateway — Auth Header Forwarding', () => {
     ).toString('base64url');
     const token = `${header}.${payload}.fakesig`;
 
-    const res = await request(app)
-      .get('/health')
-      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app).get('/health').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
 
@@ -80,9 +78,7 @@ describe('Gateway — Auth Header Forwarding', () => {
   });
 
   it('handles malformed JWT without crashing', async () => {
-    const res = await request(app)
-      .get('/health')
-      .set('Authorization', 'Bearer not-a-real-jwt');
+    const res = await request(app).get('/health').set('Authorization', 'Bearer not-a-real-jwt');
     expect(res.status).toBe(200);
   });
 });
@@ -102,9 +98,7 @@ describe('Gateway — Request ID Injection', () => {
 
   it('preserves client-supplied x-request-id', async () => {
     const customId = 'custom-request-id-12345';
-    const res = await request(app)
-      .get('/health')
-      .set('x-request-id', customId);
+    const res = await request(app).get('/health').set('x-request-id', customId);
     expect(res.headers['x-request-id']).toBe(customId);
   });
 });

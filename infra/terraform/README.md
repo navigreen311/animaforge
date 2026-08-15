@@ -59,7 +59,7 @@ works with no credentials at all — that is how CI validates.
 ## Design notes
 
 **Three subnet tiers.** Public for load balancers, private for EKS nodes,
-isolated for RDS and ElastiCache. The isolated tier has *no* NAT route: the
+isolated for RDS and ElastiCache. The isolated tier has _no_ NAT route: the
 database cannot reach the internet even if something on it is compromised.
 
 **One NAT gateway per AZ.** A single shared NAT is cheaper but makes that one AZ

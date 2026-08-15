@@ -11,11 +11,17 @@ export class AssetsResource {
   constructor(private readonly http: HttpClient) {}
 
   async list(params?: ListAssetsParams): Promise<PaginatedResponse<Asset>> {
-    return this.http.get('/assets', params as Record<string, string | number | boolean | undefined>);
+    return this.http.get(
+      '/assets',
+      params as Record<string, string | number | boolean | undefined>,
+    );
   }
 
   async search(params: SearchAssetsParams): Promise<PaginatedResponse<Asset>> {
-    return this.http.get('/assets/search', params as unknown as Record<string, string | number | boolean | undefined>);
+    return this.http.get(
+      '/assets/search',
+      params as unknown as Record<string, string | number | boolean | undefined>,
+    );
   }
 
   async upload(data: UploadAssetData): Promise<Asset> {
@@ -27,7 +33,7 @@ export class AssetsResource {
         projectId: data.projectId,
         mimeType: data.mimeType,
         metadata: data.metadata,
-      }
+      },
     );
 
     // Upload file to presigned URL

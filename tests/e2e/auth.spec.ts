@@ -21,9 +21,7 @@ test.describe('Auth flows', () => {
     await expect(page.getByText('My Projects')).toBeVisible();
   });
 
-  test('login with invalid credentials shows error message', async ({
-    page,
-  }) => {
+  test('login with invalid credentials shows error message', async ({ page }) => {
     await page.goto('/login');
 
     await page.getByLabel('Email').fill('wrong@example.com');
@@ -34,8 +32,14 @@ test.describe('Auth flows', () => {
     await expect(page).toHaveURL(/\/login/);
     // The app should show some form of error feedback
     const errorVisible =
-      (await page.getByText(/invalid|error|incorrect/i).isVisible().catch(() => false)) ||
-      (await page.locator('[role="alert"]').isVisible().catch(() => false));
+      (await page
+        .getByText(/invalid|error|incorrect/i)
+        .isVisible()
+        .catch(() => false)) ||
+      (await page
+        .locator('[role="alert"]')
+        .isVisible()
+        .catch(() => false));
     // At minimum, user should still be on the login page
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
@@ -58,9 +62,7 @@ test.describe('Auth flows', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('unauthenticated user redirected from dashboard to login', async ({
-    page,
-  }) => {
+  test('unauthenticated user redirected from dashboard to login', async ({ page }) => {
     // Attempt to visit a protected route directly
     await page.goto('/projects');
 

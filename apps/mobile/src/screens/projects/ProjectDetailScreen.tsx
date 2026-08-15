@@ -79,9 +79,7 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
             style={[styles.tab, activeTab === tab.key && styles.tabActive]}
             onPress={() => setActiveTab(tab.key)}
           >
-            <Text
-              style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}
-            >
+            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
               {tab.label}
             </Text>
           </TouchableOpacity>
@@ -119,9 +117,7 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
             project.characters.map((char) => (
               <View key={char.id} style={styles.characterRow}>
                 <View style={styles.characterAvatar}>
-                  <Text style={styles.characterInitial}>
-                    {char.name.charAt(0).toUpperCase()}
-                  </Text>
+                  <Text style={styles.characterInitial}>{char.name.charAt(0).toUpperCase()}</Text>
                 </View>
                 <Text style={styles.characterName}>{char.name}</Text>
               </View>
@@ -133,10 +129,10 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
       {activeTab === 'review' && (
         <ScrollView style={styles.content}>
           <Text style={styles.emptyText}>
-            Shot review is not available in the mobile app. Reviews are recorded
-            against the ShotReview model, and apps/mobile has no client for the
-            platform API that owns it — there is nothing here to submit to or
-            read approvals from. Use the web app to review shots.
+            Shot review is not available in the mobile app. Reviews are recorded against the
+            ShotReview model, and apps/mobile has no client for the platform API that owns it —
+            there is nothing here to submit to or read approvals from. Use the web app to review
+            shots.
           </Text>
         </ScrollView>
       )}

@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import analyticsRoutes from "./routes/analytics";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import analyticsRoutes from './routes/analytics';
 
 dotenv.config();
 
@@ -13,13 +13,13 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/analytics", analyticsRoutes);
+app.use('/analytics', analyticsRoutes);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "analytics" });
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'analytics' });
 });
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Analytics service running on port ${PORT}`);
   });

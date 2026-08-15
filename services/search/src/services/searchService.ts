@@ -1,16 +1,12 @@
-import { v4 as uuidv4 } from "uuid";
-import {
-  embedText,
-  embedBatch,
-  EMBEDDING_DIM,
-} from "./embeddingService";
+import { v4 as uuidv4 } from 'uuid';
+import { embedText, embedBatch, EMBEDDING_DIM } from './embeddingService';
 import {
   indexDocument as esIndexDocument,
   deleteDocument as esDeleteDocument,
-} from "./elasticsearchClient";
-import prisma from "../db";
+} from './elasticsearchClient';
+import prisma from '../db';
 
-export type SearchableType = "shots" | "characters" | "assets" | "projects";
+export type SearchableType = 'shots' | 'characters' | 'assets' | 'projects';
 
 export interface SearchDocument {
   id: string;
@@ -57,7 +53,7 @@ const searchLogs: SearchAnalyticsEntry[] = [];
 // ---------------------------------------------------------------------------
 export function cosineSimilarity(vecA: number[], vecB: number[]): number {
   if (vecA.length !== vecB.length) {
-    throw new Error("Vector length mismatch: " + vecA.length + " vs " + vecB.length);
+    throw new Error('Vector length mismatch: ' + vecA.length + ' vs ' + vecB.length);
   }
   let dot = 0;
   let magA = 0;
@@ -105,7 +101,7 @@ export function indexDocument(data: {
   // Restoring durable persistence needs a SearchDocument model and a migration.
 
   // Index to Elasticsearch
-  esIndexDocument("animaforge_search", doc.id, {
+  esIndexDocument('animaforge_search', doc.id, {
     type: doc.type,
     content: doc.content,
     metadata: doc.metadata,
@@ -116,7 +112,13 @@ export function indexDocument(data: {
 }
 
 export function bulkIndex(
-  items: { id?: string; type: SearchableType; content: string; metadata?: Record<string, unknown>; embedding?: number[] }[]
+  items: {
+    id?: string;
+    type: SearchableType;
+    content: string;
+    metadata?: Record<string, unknown>;
+    embedding?: number[];
+  }[],
 ): SearchDocument[] {
   const textsToEmbed: string[] = [];
   const needsEmbedding: number[] = [];
@@ -141,7 +143,7 @@ export function removeDocument(id: string): boolean {
   const removed = documents.delete(id);
   if (removed) {
     // No SearchDocument model exists to delete from — see indexDocument above.
-    esDeleteDocument("animaforge_search", id).catch(() => {});
+    esDeleteDocument('animaforge_search', id).catch(() => {});
   }
   return removed;
 }
@@ -151,7 +153,7 @@ export function removeDocument(id: string): boolean {
 // ---------------------------------------------------------------------------
 export function search(
   query: string,
-  options: { type?: SearchableType; page?: number; limit?: number } = {}
+  options: { type?: SearchableType; page?: number; limit?: number } = {},
 ): { results: SearchResult[]; total: number; page: number; limit: number } {
   const page = options.page ?? 1;
   const limit = options.limit ?? 20;
@@ -163,7 +165,13 @@ export function search(
   for (const doc of documents.values()) {
     if (options.type && doc.type !== options.type) continue;
     const score = cosineSimilarity(queryEmbedding, doc.embedding);
-    scored.push({ id: doc.id, type: doc.type, content: doc.content, score, metadata: doc.metadata });
+    scored.push({
+      id: doc.id,
+      type: doc.type,
+      content: doc.content,
+      score,
+      metadata: doc.metadata,
+    });
   }
   scored.sort((a, b) => b.score - a.score);
   const total = scored.length;
@@ -174,14 +182,20 @@ export function search(
 
 export function searchByVector(
   embedding: number[],
-  options: { type?: SearchableType; limit?: number } = {}
+  options: { type?: SearchableType; limit?: number } = {},
 ): SearchResult[] {
   const limit = options.limit ?? 20;
   const scored: SearchResult[] = [];
   for (const doc of documents.values()) {
     if (options.type && doc.type !== options.type) continue;
     const score = cosineSimilarity(embedding, doc.embedding);
-    scored.push({ id: doc.id, type: doc.type, content: doc.content, score, metadata: doc.metadata });
+    scored.push({
+      id: doc.id,
+      type: doc.type,
+      content: doc.content,
+      score,
+      metadata: doc.metadata,
+    });
   }
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit);
@@ -193,7 +207,7 @@ export function searchByVector(
 export function searchWithFacets(
   query: string,
   facets: string[],
-  options: { type?: SearchableType; page?: number; limit?: number } = {}
+  options: { type?: SearchableType; page?: number; limit?: number } = {},
 ): FacetedSearchResult {
   const page = options.page ?? 1;
   const limit = options.limit ?? 20;
@@ -214,12 +228,18 @@ export function searchWithFacets(
   for (const doc of documents.values()) {
     if (options.type && doc.type !== options.type) continue;
     const score = cosineSimilarity(queryEmbedding, doc.embedding);
-    scored.push({ id: doc.id, type: doc.type, content: doc.content, score, metadata: doc.metadata });
+    scored.push({
+      id: doc.id,
+      type: doc.type,
+      content: doc.content,
+      score,
+      metadata: doc.metadata,
+    });
 
     // Count facets
     for (const facet of facets) {
       let value: string | undefined;
-      if (facet === "type") {
+      if (facet === 'type') {
         value = doc.type;
       } else if (doc.metadata[facet] !== undefined) {
         value = String(doc.metadata[facet]);
@@ -254,7 +274,7 @@ export function searchWithFacets(
 export function suggest(
   prefix: string,
   type?: SearchableType,
-  limit: number = 5
+  limit: number = 5,
 ): { text: string; type: SearchableType; id: string }[] {
   if (!prefix || prefix.trim().length === 0) return [];
 
@@ -282,7 +302,7 @@ export function suggest(
 export function logSearch(
   query: string,
   resultsCount: number,
-  clickedId?: string
+  clickedId?: string,
 ): SearchAnalyticsEntry {
   const entry: SearchAnalyticsEntry = {
     query,
@@ -294,9 +314,7 @@ export function logSearch(
   return entry;
 }
 
-export function getPopularSearches(
-  limit: number = 10
-): { query: string; count: number }[] {
+export function getPopularSearches(limit: number = 10): { query: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const entry of searchLogs) {
     const q = entry.query.toLowerCase().trim();
@@ -317,7 +335,12 @@ export function getIndexStats(): {
   by_type: Record<SearchableType, number>;
   avg_embedding_dim: number;
 } {
-  const byType: Record<SearchableType, number> = { shots: 0, characters: 0, assets: 0, projects: 0 };
+  const byType: Record<SearchableType, number> = {
+    shots: 0,
+    characters: 0,
+    assets: 0,
+    projects: 0,
+  };
   let dimSum = 0;
   for (const doc of documents.values()) {
     byType[doc.type] = (byType[doc.type] || 0) + 1;

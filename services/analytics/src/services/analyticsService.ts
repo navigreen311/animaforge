@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
-import { getClickHouseClient, isClickHouseConnected } from "../db";
+import { v4 as uuidv4 } from 'uuid';
+import { getClickHouseClient, isClickHouseConnected } from '../db';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -94,14 +94,14 @@ function buildDateClause(range?: DateRange): { clause: string; params: Record<st
   const parts: string[] = [];
   const params: Record<string, string> = {};
   if (range?.from) {
-    parts.push("timestamp >= {from:DateTime64(3)}");
+    parts.push('timestamp >= {from:DateTime64(3)}');
     params.from = range.from;
   }
   if (range?.to) {
-    parts.push("timestamp <= {to:DateTime64(3)}");
+    parts.push('timestamp <= {to:DateTime64(3)}');
     params.to = range.to;
   }
-  return { clause: parts.length ? ` AND ${parts.join(" AND ")}` : "", params };
+  return { clause: parts.length ? ` AND ${parts.join(' AND ')}` : '', params };
 }
 
 // SQL single-quote helper for ClickHouse literals inside template strings
@@ -130,18 +130,18 @@ export async function ingestEvent(data: {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     await ch.insert({
-      table: "events",
+      table: 'events',
       values: [
         {
           id: event.id,
           type: event.type,
           user_id: event.userId,
-          project_id: event.projectId || "",
+          project_id: event.projectId || '',
           metadata: JSON.stringify(event.metadata),
           timestamp: event.timestamp,
         },
       ],
-      format: "JSONEachRow",
+      format: 'JSONEachRow',
     });
   } else {
     memoryStore.push(event);
@@ -161,7 +161,7 @@ export async function batchIngest(
     projectId?: string;
     metadata?: Record<string, unknown>;
     timestamp?: string;
-  }[]
+  }[],
 ): Promise<AnalyticsEvent[]> {
   const events: AnalyticsEvent[] = items.map((d) => ({
     id: uuidv4(),
@@ -175,16 +175,16 @@ export async function batchIngest(
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     await ch.insert({
-      table: "events",
+      table: 'events',
       values: events.map((e) => ({
         id: e.id,
         type: e.type,
         user_id: e.userId,
-        project_id: e.projectId || "",
+        project_id: e.projectId || '',
         metadata: JSON.stringify(e.metadata),
         timestamp: e.timestamp,
       })),
-      format: "JSONEachRow",
+      format: 'JSONEachRow',
     });
   } else {
     memoryStore.push(...events);
@@ -199,24 +199,52 @@ export async function batchIngest(
 
 export async function getProjectAnalytics(
   projectId: string,
-  range?: DateRange
+  range?: DateRange,
 ): Promise<ProjectAnalytics> {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     const { clause, params } = buildDateClause(range);
     const baseParams = { ...params, projectId };
 
-    const genTypes = `(${Q("generation")},${Q("job_complete")})`;
+    const genTypes = `(${Q('generation')},${Q('job_complete')})`;
 
     const [countRes, qualityRes, creditsRes, typeRes, styleRes, dailyRes, renderRes] =
       await Promise.all([
-        ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT avg(JSONExtractFloat(metadata, ${Q("quality")})) as avg_q FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q("quality")})${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT sum(JSONExtractFloat(metadata, ${Q("credits")})) as total FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q("credits")})${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT JSONExtractString(metadata, ${Q("generationType")}) as gtype, count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause} GROUP BY gtype`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT JSONExtractString(metadata, ${Q("style")}) as style, count() as cnt FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q("style")})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 10`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT toDate(timestamp) as day, count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause} GROUP BY day ORDER BY day`, query_params: baseParams, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT avg(JSONExtractFloat(metadata, ${Q("renderTime")})) as avg_rt FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q("renderTime")})${clause}`, query_params: baseParams, format: "JSONEachRow" }),
+        ch.query({
+          query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause}`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT avg(JSONExtractFloat(metadata, ${Q('quality')})) as avg_q FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q('quality')})${clause}`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT sum(JSONExtractFloat(metadata, ${Q('credits')})) as total FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q('credits')})${clause}`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT JSONExtractString(metadata, ${Q('generationType')}) as gtype, count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause} GROUP BY gtype`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT JSONExtractString(metadata, ${Q('style')}) as style, count() as cnt FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q('style')})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 10`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT toDate(timestamp) as day, count() as cnt FROM events WHERE project_id = {projectId:String} AND type IN ${genTypes}${clause} GROUP BY day ORDER BY day`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT avg(JSONExtractFloat(metadata, ${Q('renderTime')})) as avg_rt FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q('renderTime')})${clause}`,
+          query_params: baseParams,
+          format: 'JSONEachRow',
+        }),
       ]);
 
     const count = await countRes.json<{ cnt: string }>();
@@ -247,26 +275,24 @@ export async function getProjectAnalytics(
   // --- In-memory fallback ---
   const projectEvents = dateFilter(
     memoryStore.filter((e) => e.projectId === projectId),
-    range
+    range,
   );
 
   const genEvents = projectEvents.filter(
-    (e) => e.type === "generation" || e.type === "job_complete"
+    (e) => e.type === 'generation' || e.type === 'job_complete',
   );
 
   const qualityScores = projectEvents
-    .filter((e) => typeof e.metadata.quality === "number")
+    .filter((e) => typeof e.metadata.quality === 'number')
     .map((e) => e.metadata.quality as number);
 
   const avgQualityScore =
     qualityScores.length > 0
-      ? Math.round(
-          (qualityScores.reduce((s, q) => s + q, 0) / qualityScores.length) * 100
-        ) / 100
+      ? Math.round((qualityScores.reduce((s, q) => s + q, 0) / qualityScores.length) * 100) / 100
       : 0;
 
   const totalCreditsUsed = projectEvents
-    .filter((e) => typeof e.metadata.credits === "number")
+    .filter((e) => typeof e.metadata.credits === 'number')
     .reduce((s, e) => s + (e.metadata.credits as number), 0);
 
   const byType = { video: 0, audio: 0, avatar: 0, style: 0 };
@@ -277,7 +303,7 @@ export async function getProjectAnalytics(
 
   const styleCounts: Record<string, number> = {};
   for (const e of projectEvents) {
-    if (typeof e.metadata.style === "string") {
+    if (typeof e.metadata.style === 'string') {
       styleCounts[e.metadata.style] = (styleCounts[e.metadata.style] || 0) + 1;
     }
   }
@@ -296,13 +322,11 @@ export async function getProjectAnalytics(
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const renderTimes = projectEvents
-    .filter((e) => typeof e.metadata.renderTime === "number")
+    .filter((e) => typeof e.metadata.renderTime === 'number')
     .map((e) => e.metadata.renderTime as number);
   const avgRenderTime =
     renderTimes.length > 0
-      ? Math.round(
-          (renderTimes.reduce((s, t) => s + t, 0) / renderTimes.length) * 100
-        ) / 100
+      ? Math.round((renderTimes.reduce((s, t) => s + t, 0) / renderTimes.length) * 100) / 100
       : 0;
 
   return {
@@ -321,22 +345,39 @@ export async function getProjectAnalytics(
 // getUserAnalytics
 // ---------------------------------------------------------------------------
 
-export async function getUserAnalytics(
-  userId: string,
-  range?: DateRange
-): Promise<UserAnalytics> {
+export async function getUserAnalytics(userId: string, range?: DateRange): Promise<UserAnalytics> {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     const { clause, params } = buildDateClause(range);
     const baseParams = { ...params, userId };
-    const genTypes = `(${Q("generation")},${Q("job_complete")})`;
+    const genTypes = `(${Q('generation')},${Q('job_complete')})`;
 
     const [projRes, genRes, credRes, styleRes, histRes] = await Promise.all([
-      ch.query({ query: `SELECT uniq(project_id) as cnt FROM events WHERE user_id = {userId:String} AND project_id != ${Q("")}${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT count() as cnt FROM events WHERE user_id = {userId:String} AND type IN ${genTypes}${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT sum(JSONExtractFloat(metadata, ${Q("credits")})) as total FROM events WHERE user_id = {userId:String} AND JSONHas(metadata, ${Q("credits")})${clause}`, query_params: baseParams, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT JSONExtractString(metadata, ${Q("style")}) as style, count() as cnt FROM events WHERE user_id = {userId:String} AND JSONHas(metadata, ${Q("style")})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 1`, query_params: baseParams, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT toDate(timestamp) as date, type, project_id FROM events WHERE user_id = {userId:String} AND type IN ${genTypes}${clause} ORDER BY timestamp DESC LIMIT 50`, query_params: baseParams, format: "JSONEachRow" }),
+      ch.query({
+        query: `SELECT uniq(project_id) as cnt FROM events WHERE user_id = {userId:String} AND project_id != ${Q('')}${clause}`,
+        query_params: baseParams,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT count() as cnt FROM events WHERE user_id = {userId:String} AND type IN ${genTypes}${clause}`,
+        query_params: baseParams,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT sum(JSONExtractFloat(metadata, ${Q('credits')})) as total FROM events WHERE user_id = {userId:String} AND JSONHas(metadata, ${Q('credits')})${clause}`,
+        query_params: baseParams,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT JSONExtractString(metadata, ${Q('style')}) as style, count() as cnt FROM events WHERE user_id = {userId:String} AND JSONHas(metadata, ${Q('style')})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 1`,
+        query_params: baseParams,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT toDate(timestamp) as date, type, project_id FROM events WHERE user_id = {userId:String} AND type IN ${genTypes}${clause} ORDER BY timestamp DESC LIMIT 50`,
+        query_params: baseParams,
+        format: 'JSONEachRow',
+      }),
     ]);
 
     const proj = await projRes.json<{ cnt: string }>();
@@ -353,7 +394,7 @@ export async function getUserAnalytics(
       totalGenerations: Number(gen[0]?.cnt || 0),
       creditsUsed,
       creditsRemaining: Math.max(0, 1000 - creditsUsed),
-      mostUsedStyle: styleRows[0]?.style || "none",
+      mostUsedStyle: styleRows[0]?.style || 'none',
       generationHistory: hist.map((h) => ({
         date: h.date,
         type: h.type,
@@ -365,40 +406,32 @@ export async function getUserAnalytics(
   // --- In-memory fallback ---
   const userEvents = dateFilter(
     memoryStore.filter((e) => e.userId === userId),
-    range
+    range,
   );
 
-  const projectIds = new Set(
-    userEvents.filter((e) => e.projectId).map((e) => e.projectId!)
-  );
+  const projectIds = new Set(userEvents.filter((e) => e.projectId).map((e) => e.projectId!));
 
-  const genEvents = userEvents.filter(
-    (e) => e.type === "generation" || e.type === "job_complete"
-  );
+  const genEvents = userEvents.filter((e) => e.type === 'generation' || e.type === 'job_complete');
 
   const creditsUsed = userEvents
-    .filter((e) => typeof e.metadata.credits === "number")
+    .filter((e) => typeof e.metadata.credits === 'number')
     .reduce((s, e) => s + (e.metadata.credits as number), 0);
 
   const styleCounts: Record<string, number> = {};
   for (const e of userEvents) {
-    if (typeof e.metadata.style === "string") {
+    if (typeof e.metadata.style === 'string') {
       styleCounts[e.metadata.style] = (styleCounts[e.metadata.style] || 0) + 1;
     }
   }
-  const mostUsedStyle =
-    Object.entries(styleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "none";
+  const mostUsedStyle = Object.entries(styleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
 
   const generationHistory = genEvents
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 50)
     .map((e) => ({
       date: e.timestamp.slice(0, 10),
       type: e.type,
-      projectId: e.projectId || "",
+      projectId: e.projectId || '',
     }));
 
   return {
@@ -416,26 +449,56 @@ export async function getUserAnalytics(
 // getPlatformAnalytics
 // ---------------------------------------------------------------------------
 
-export async function getPlatformAnalytics(
-  range?: DateRange
-): Promise<PlatformAnalytics> {
+export async function getPlatformAnalytics(range?: DateRange): Promise<PlatformAnalytics> {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     const { clause, params } = buildDateClause(range);
-    const genTypes = `(${Q("generation")},${Q("job_complete")})`;
-    const allJobTypes = `(${Q("generation")},${Q("job_complete")},${Q("job_failed")})`;
-    const allStatusTypes = `(${Q("generation")},${Q("job_complete")},${Q("job_failed")},${Q("job_pending")})`;
+    const genTypes = `(${Q('generation')},${Q('job_complete')})`;
+    const allJobTypes = `(${Q('generation')},${Q('job_complete')},${Q('job_failed')})`;
+    const allStatusTypes = `(${Q('generation')},${Q('job_complete')},${Q('job_failed')},${Q('job_pending')})`;
 
     const [totalUsersRes, activeRes, jobsRes, statusRes, revRes, creatorsRes, stylesRes, hoursRes] =
       await Promise.all([
-        ch.query({ query: `SELECT uniq(user_id) as cnt FROM events WHERE 1=1${clause}`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT uniq(user_id) as cnt FROM events WHERE timestamp >= now() - INTERVAL 30 DAY${clause}`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT count() as cnt FROM events WHERE type IN ${allJobTypes}${clause}`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT type, count() as cnt FROM events WHERE type IN ${allStatusTypes}${clause} GROUP BY type`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT sum(JSONExtractFloat(metadata, ${Q("credits")})) as total FROM events WHERE JSONHas(metadata, ${Q("credits")})${clause}`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT user_id, count() as cnt FROM events WHERE type IN ${genTypes}${clause} GROUP BY user_id ORDER BY cnt DESC LIMIT 10`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT JSONExtractString(metadata, ${Q("style")}) as style, count() as cnt FROM events WHERE JSONHas(metadata, ${Q("style")})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 10`, query_params: params, format: "JSONEachRow" }),
-        ch.query({ query: `SELECT toHour(timestamp) as hr, count() as cnt FROM events WHERE 1=1${clause} GROUP BY hr ORDER BY hr`, query_params: params, format: "JSONEachRow" }),
+        ch.query({
+          query: `SELECT uniq(user_id) as cnt FROM events WHERE 1=1${clause}`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT uniq(user_id) as cnt FROM events WHERE timestamp >= now() - INTERVAL 30 DAY${clause}`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT count() as cnt FROM events WHERE type IN ${allJobTypes}${clause}`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT type, count() as cnt FROM events WHERE type IN ${allStatusTypes}${clause} GROUP BY type`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT sum(JSONExtractFloat(metadata, ${Q('credits')})) as total FROM events WHERE JSONHas(metadata, ${Q('credits')})${clause}`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT user_id, count() as cnt FROM events WHERE type IN ${genTypes}${clause} GROUP BY user_id ORDER BY cnt DESC LIMIT 10`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT JSONExtractString(metadata, ${Q('style')}) as style, count() as cnt FROM events WHERE JSONHas(metadata, ${Q('style')})${clause} GROUP BY style ORDER BY cnt DESC LIMIT 10`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
+        ch.query({
+          query: `SELECT toHour(timestamp) as hr, count() as cnt FROM events WHERE 1=1${clause} GROUP BY hr ORDER BY hr`,
+          query_params: params,
+          format: 'JSONEachRow',
+        }),
       ]);
 
     const totalUsers = await totalUsersRes.json<{ cnt: string }>();
@@ -469,30 +532,27 @@ export async function getPlatformAnalytics(
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const activeUsers = new Set(
-    filtered.filter((e) => new Date(e.timestamp).getTime() >= thirtyDaysAgo).map((e) => e.userId)
+    filtered.filter((e) => new Date(e.timestamp).getTime() >= thirtyDaysAgo).map((e) => e.userId),
   );
 
   const jobEvents = filtered.filter(
-    (e) =>
-      e.type === "generation" ||
-      e.type === "job_complete" ||
-      e.type === "job_failed"
+    (e) => e.type === 'generation' || e.type === 'job_complete' || e.type === 'job_failed',
   );
 
   const jobsByStatus: Record<string, number> = {};
   for (const e of filtered) {
-    if (["generation", "job_complete", "job_failed", "job_pending"].includes(e.type)) {
+    if (['generation', 'job_complete', 'job_failed', 'job_pending'].includes(e.type)) {
       jobsByStatus[e.type] = (jobsByStatus[e.type] || 0) + 1;
     }
   }
 
   const totalCredits = filtered
-    .filter((e) => typeof e.metadata.credits === "number")
+    .filter((e) => typeof e.metadata.credits === 'number')
     .reduce((s, e) => s + (e.metadata.credits as number), 0);
 
   const creatorCounts: Record<string, number> = {};
   for (const e of filtered) {
-    if (e.type === "generation" || e.type === "job_complete") {
+    if (e.type === 'generation' || e.type === 'job_complete') {
       creatorCounts[e.userId] = (creatorCounts[e.userId] || 0) + 1;
     }
   }
@@ -503,7 +563,7 @@ export async function getPlatformAnalytics(
 
   const styleCounts: Record<string, number> = {};
   for (const e of filtered) {
-    if (typeof e.metadata.style === "string") {
+    if (typeof e.metadata.style === 'string') {
       styleCounts[e.metadata.style] = (styleCounts[e.metadata.style] || 0) + 1;
     }
   }
@@ -537,19 +597,37 @@ export async function getPlatformAnalytics(
 // getContentAnalytics
 // ---------------------------------------------------------------------------
 
-export async function getContentAnalytics(
-  projectId: string
-): Promise<ContentAnalytics> {
+export async function getContentAnalytics(projectId: string): Promise<ContentAnalytics> {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
     const p = { projectId };
 
     const [viewRes, shareRes, exportRes, watchRes, totalRes] = await Promise.all([
-      ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q("view")}`, query_params: p, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q("share")}`, query_params: p, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q("export")}`, query_params: p, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT avg(JSONExtractFloat(metadata, ${Q("watchTime")})) as avg_wt FROM events WHERE project_id = {projectId:String} AND type = ${Q("view")} AND JSONHas(metadata, ${Q("watchTime")})`, query_params: p, format: "JSONEachRow" }),
-      ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String}`, query_params: p, format: "JSONEachRow" }),
+      ch.query({
+        query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q('view')}`,
+        query_params: p,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q('share')}`,
+        query_params: p,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String} AND type = ${Q('export')}`,
+        query_params: p,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT avg(JSONExtractFloat(metadata, ${Q('watchTime')})) as avg_wt FROM events WHERE project_id = {projectId:String} AND type = ${Q('view')} AND JSONHas(metadata, ${Q('watchTime')})`,
+        query_params: p,
+        format: 'JSONEachRow',
+      }),
+      ch.query({
+        query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String}`,
+        query_params: p,
+        format: 'JSONEachRow',
+      }),
     ]);
 
     const views = Number((await viewRes.json<{ cnt: string }>())[0]?.cnt || 0);
@@ -561,31 +639,35 @@ export async function getContentAnalytics(
     const interactions = views + shares + exports;
     const engagementRate = total > 0 ? Math.round((interactions / total) * 10000) / 10000 : 0;
 
-    return { projectId, viewCount: views, shareCount: shares, exportCount: exports, avgWatchTime: Math.round(avgWt * 100) / 100, engagementRate };
+    return {
+      projectId,
+      viewCount: views,
+      shareCount: shares,
+      exportCount: exports,
+      avgWatchTime: Math.round(avgWt * 100) / 100,
+      engagementRate,
+    };
   }
 
   // --- In-memory fallback ---
   const projectEvents = memoryStore.filter((e) => e.projectId === projectId);
 
-  const viewCount = projectEvents.filter((e) => e.type === "view").length;
-  const shareCount = projectEvents.filter((e) => e.type === "share").length;
-  const exportCount = projectEvents.filter((e) => e.type === "export").length;
+  const viewCount = projectEvents.filter((e) => e.type === 'view').length;
+  const shareCount = projectEvents.filter((e) => e.type === 'share').length;
+  const exportCount = projectEvents.filter((e) => e.type === 'export').length;
 
   const watchTimes = projectEvents
-    .filter((e) => e.type === "view" && typeof e.metadata.watchTime === "number")
+    .filter((e) => e.type === 'view' && typeof e.metadata.watchTime === 'number')
     .map((e) => e.metadata.watchTime as number);
 
   const avgWatchTime =
     watchTimes.length > 0
-      ? Math.round(
-          (watchTimes.reduce((s, t) => s + t, 0) / watchTimes.length) * 100
-        ) / 100
+      ? Math.round((watchTimes.reduce((s, t) => s + t, 0) / watchTimes.length) * 100) / 100
       : 0;
 
   const interactions = viewCount + shareCount + exportCount;
   const total = projectEvents.length;
-  const engagementRate =
-    total > 0 ? Math.round((interactions / total) * 10000) / 10000 : 0;
+  const engagementRate = total > 0 ? Math.round((interactions / total) * 10000) / 10000 : 0;
 
   return { projectId, viewCount, shareCount, exportCount, avgWatchTime, engagementRate };
 }
@@ -595,26 +677,26 @@ export async function getContentAnalytics(
 // ---------------------------------------------------------------------------
 
 export async function getRetentionCohorts(
-  period: "weekly" | "monthly" = "monthly"
+  period: 'weekly' | 'monthly' = 'monthly',
 ): Promise<{ cohorts: RetentionCohort[] }> {
   if (isClickHouseConnected()) {
     const ch = getClickHouseClient()!;
-    const trunc = period === "weekly" ? "toMonday" : "toStartOfMonth";
+    const trunc = period === 'weekly' ? 'toMonday' : 'toStartOfMonth';
 
     const res = await ch.query({
       query: [
-        "WITH first_seen AS (",
+        'WITH first_seen AS (',
         `  SELECT user_id, ${trunc}(min(timestamp)) as cohort FROM events GROUP BY user_id`,
-        "),",
-        "activity AS (",
+        '),',
+        'activity AS (',
         `  SELECT user_id, ${trunc}(timestamp) as active_period FROM events GROUP BY user_id, active_period`,
-        ")",
-        "SELECT toString(fs.cohort) as period, count(DISTINCT fs.user_id) as users, count(DISTINCT a.user_id) as retained",
-        "FROM first_seen fs",
-        "LEFT JOIN activity a ON fs.user_id = a.user_id AND a.active_period > fs.cohort",
-        "GROUP BY fs.cohort ORDER BY fs.cohort",
-      ].join("\n"),
-      format: "JSONEachRow",
+        ')',
+        'SELECT toString(fs.cohort) as period, count(DISTINCT fs.user_id) as users, count(DISTINCT a.user_id) as retained',
+        'FROM first_seen fs',
+        'LEFT JOIN activity a ON fs.user_id = a.user_id AND a.active_period > fs.cohort',
+        'GROUP BY fs.cohort ORDER BY fs.cohort',
+      ].join('\n'),
+      format: 'JSONEachRow',
     });
 
     const rows = await res.json<{ period: string; users: string; retained: string }>();
@@ -639,7 +721,7 @@ export async function getRetentionCohorts(
 
   const truncDate = (ts: string): string => {
     const d = new Date(ts);
-    if (period === "weekly") {
+    if (period === 'weekly') {
       const day = d.getUTCDay();
       const diff = day === 0 ? 6 : day - 1;
       d.setUTCDate(d.getUTCDate() - diff);

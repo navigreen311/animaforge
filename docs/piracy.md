@@ -10,10 +10,10 @@ document covers detection.
 
 ## The two signals
 
-| Signal | Answers | Survives | Owner |
-| --- | --- | --- | --- |
-| **Perceptual fingerprint** | "Does this look like our content?" | Re-encode, rescale, brightness shifts | `services/piracy` |
-| **Invisible watermark** | "Is this *our specific copy*, and whose?" | Re-encode, recompression | `services/governance/watermark` |
+| Signal                     | Answers                                   | Survives                              | Owner                           |
+| -------------------------- | ----------------------------------------- | ------------------------------------- | ------------------------------- |
+| **Perceptual fingerprint** | "Does this look like our content?"        | Re-encode, rescale, brightness shifts | `services/piracy`               |
+| **Invisible watermark**    | "Is this _our specific copy_, and whose?" | Re-encode, recompression              | `services/governance/watermark` |
 
 They answer different questions, and a match reports which one produced it.
 A fingerprint hit says the content is ours; a recovered watermark payload also
@@ -141,14 +141,14 @@ Set `WATERMARK_SERVICE_URL` to enable the check.
 
 A confirmed match writes a **`PiracyMatch`** row:
 
-| Column | Meaning |
-| --- | --- |
-| `match_method` | `perceptual-hash` or `watermark` |
-| `hamming_distance` | Distance the match was made at |
-| `fingerprint_id` | FK to the registered `Fingerprint` |
-| `watermark_id` | Recovered watermark, when there was one |
-| `match_strength` | Similarity in 0..1 |
-| `evidence` | JSON: algorithm, all three hash distances, threshold, confidence band |
+| Column             | Meaning                                                               |
+| ------------------ | --------------------------------------------------------------------- |
+| `match_method`     | `perceptual-hash` or `watermark`                                      |
+| `hamming_distance` | Distance the match was made at                                        |
+| `fingerprint_id`   | FK to the registered `Fingerprint`                                    |
+| `watermark_id`     | Recovered watermark, when there was one                               |
+| `match_strength`   | Similarity in 0..1                                                    |
+| `evidence`         | JSON: algorithm, all three hash distances, threshold, confidence band |
 
 Filing a takedown writes a **`DMCANotice`** row carrying the rendered `body`,
 `platform` and `match_id`, and moves the match to `dmca_sent`.

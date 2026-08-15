@@ -20,24 +20,24 @@ Connect to `ws://<live-host>/ws/live`, then:
 
 ### Client to server
 
-| Message | Fields |
-|---|---|
-| `join` | `sessionId`, `role` (`broadcaster` \| `viewer`), `displayName?` |
-| `leave` | — |
-| `offer` | `to`, `description` (RTCSessionDescriptionInit) |
-| `answer` | `to`, `description` |
-| `ice-candidate` | `to`, `candidate` (RTCIceCandidateInit) |
+| Message         | Fields                                                          |
+| --------------- | --------------------------------------------------------------- |
+| `join`          | `sessionId`, `role` (`broadcaster` \| `viewer`), `displayName?` |
+| `leave`         | —                                                               |
+| `offer`         | `to`, `description` (RTCSessionDescriptionInit)                 |
+| `answer`        | `to`, `description`                                             |
+| `ice-candidate` | `to`, `candidate` (RTCIceCandidateInit)                         |
 
 ### Server to client
 
-| Message | Fields |
-|---|---|
-| `joined` | `peerId`, `sessionId`, `peers[]`, `iceServers[]`, `turnConfigured`, `warnings[]` |
-| `peer-joined` | `peer` |
-| `peer-left` | `peerId` |
-| `offer` / `answer` | `from`, `description` |
-| `ice-candidate` | `from`, `candidate` |
-| `error` | `code`, `message` |
+| Message            | Fields                                                                           |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `joined`           | `peerId`, `sessionId`, `peers[]`, `iceServers[]`, `turnConfigured`, `warnings[]` |
+| `peer-joined`      | `peer`                                                                           |
+| `peer-left`        | `peerId`                                                                         |
+| `offer` / `answer` | `from`, `description`                                                            |
+| `ice-candidate`    | `from`, `candidate`                                                              |
+| `error`            | `code`, `message`                                                                |
 
 Error codes: `invalid_message`, `not_joined`, `already_joined`, `unknown_peer`,
 `session_full`, `peer_not_in_session`.
@@ -57,8 +57,7 @@ const ws = new WebSocket('wss://live.animaforge.com/ws/live');
 const connections = new Map<string, RTCPeerConnection>();
 let iceServers: RTCIceServer[] = [];
 
-ws.onopen = () =>
-  ws.send(JSON.stringify({ type: 'join', sessionId, role: 'viewer' }));
+ws.onopen = () => ws.send(JSON.stringify({ type: 'join', sessionId, role: 'viewer' }));
 
 ws.onmessage = async (event) => {
   const msg = JSON.parse(event.data);
@@ -105,9 +104,7 @@ function getConnection(peerId: string): RTCPeerConnection {
     pc = new RTCPeerConnection({ iceServers });
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        ws.send(
-          JSON.stringify({ type: 'ice-candidate', to: peerId, candidate: e.candidate }),
-        );
+        ws.send(JSON.stringify({ type: 'ice-candidate', to: peerId, candidate: e.candidate }));
       }
     };
     connections.set(peerId, pc);
@@ -120,7 +117,7 @@ function getConnection(peerId: string): RTCPeerConnection {
 
 STUN lets peers discover their public address and connect directly. Behind
 **symmetric NAT** — corporate networks, some mobile carriers — that is
-impossible, and the only route is a TURN relay both peers connect *out* to.
+impossible, and the only route is a TURN relay both peers connect _out_ to.
 Industry measurements put the share of connections needing TURN at roughly
 10-20%.
 
@@ -146,7 +143,7 @@ against fails the same way as no relay, only harder to diagnose.
 
 `maxPeersPerSession` defaults to **16**. This is a mesh: every peer connects to
 every other, so N peers means N×(N−1) connections. Past a handful of
-*publishers* the upload bandwidth at each broadcaster becomes the bottleneck and
+_publishers_ the upload bandwidth at each broadcaster becomes the bottleneck and
 an SFU is required. Exceeding the cap returns `session_full` and closes the
 socket, rather than letting a session degrade into unexplained stalls.
 

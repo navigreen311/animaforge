@@ -8,13 +8,13 @@ The AnimaForge desktop app provides a full-featured production environment with 
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Electron 30+ |
-| Renderer | Same Next.js codebase as the web app |
-| IPC | Electron IPC with typed channels (electron-trpc) |
-| Build | electron-builder with auto-update |
-| Native Modules | Native Node.js addons for GPU and file system |
+| Layer          | Technology                                       |
+| -------------- | ------------------------------------------------ |
+| Framework      | Electron 30+                                     |
+| Renderer       | Same Next.js codebase as the web app             |
+| IPC            | Electron IPC with typed channels (electron-trpc) |
+| Build          | electron-builder with auto-update                |
+| Native Modules | Native Node.js addons for GPU and file system    |
 
 ### Process Model
 
@@ -99,11 +99,11 @@ The desktop app uses Electron's built-in auto-update mechanism.
 
 ### Update Channels
 
-| Channel | Audience | Cadence |
-|---------|----------|---------|
-| `stable` | All users | Every 2-4 weeks |
-| `beta` | Opt-in testers | Weekly |
-| `alpha` | Internal team | On every merge to develop |
+| Channel  | Audience       | Cadence                   |
+| -------- | -------------- | ------------------------- |
+| `stable` | All users      | Every 2-4 weeks           |
+| `beta`   | Opt-in testers | Weekly                    |
+| `alpha`  | Internal team  | On every merge to develop |
 
 ### Configuration
 
@@ -137,21 +137,21 @@ The desktop app has extended offline capabilities compared to the mobile and web
 
 ## Supported Platforms
 
-| Platform | Minimum Version | Architecture |
-|----------|----------------|-------------|
-| Windows | Windows 10 (1903+) | x64, arm64 |
-| macOS | macOS 12 (Monterey) | x64 (Intel), arm64 (Apple Silicon) |
-| Linux | Ubuntu 20.04+ / Fedora 36+ | x64, arm64 |
+| Platform | Minimum Version            | Architecture                       |
+| -------- | -------------------------- | ---------------------------------- |
+| Windows  | Windows 10 (1903+)         | x64, arm64                         |
+| macOS    | macOS 12 (Monterey)        | x64 (Intel), arm64 (Apple Silicon) |
+| Linux    | Ubuntu 20.04+ / Fedora 36+ | x64, arm64                         |
 
 ### System Requirements
 
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| RAM | 8 GB | 16 GB |
-| Storage | 500 MB (app) + 2 GB (cache) | 500 MB (app) + 10 GB (cache) |
-| GPU | Integrated graphics | NVIDIA RTX 3060+ / Apple M1+ |
-| Display | 1280x720 | 1920x1080+ |
-| Internet | Required for generation and sync | Broadband recommended |
+| Requirement | Minimum                          | Recommended                  |
+| ----------- | -------------------------------- | ---------------------------- |
+| RAM         | 8 GB                             | 16 GB                        |
+| Storage     | 500 MB (app) + 2 GB (cache)      | 500 MB (app) + 10 GB (cache) |
+| GPU         | Integrated graphics              | NVIDIA RTX 3060+ / Apple M1+ |
+| Display     | 1280x720                         | 1920x1080+                   |
+| Internet    | Required for generation and sync | Broadband recommended        |
 
 ### Installation
 

@@ -18,8 +18,11 @@ beforeEach(() => {
 describe('Notification - Send', () => {
   it('creates a notification with an id and read=false', () => {
     const n = sendNotification({
-      userId: 'user-1', type: 'in_app', title: 'Job complete',
-      body: 'Your render is ready.', category: 'job_complete',
+      userId: 'user-1',
+      type: 'in_app',
+      title: 'Job complete',
+      body: 'Your render is ready.',
+      category: 'job_complete',
     });
     expect(n.id).toBeDefined();
     expect(n.userId).toBe('user-1');
@@ -96,11 +99,17 @@ describe('Notification - Weekly Digest', () => {
 describe('Notification - Retry Failed', () => {
   it('deletes a failed notification and re-sends', () => {
     const original = sendNotification({
-      userId: 'u5', type: 'webhook', title: 'Webhook Failed', body: 'Delivery failed',
+      userId: 'u5',
+      type: 'webhook',
+      title: 'Webhook Failed',
+      body: 'Delivery failed',
     });
     expect(deleteNotification(original.id)).toBe(true);
     const retried = sendNotification({
-      userId: 'u5', type: 'webhook', title: 'Webhook Failed', body: 'Delivery failed',
+      userId: 'u5',
+      type: 'webhook',
+      title: 'Webhook Failed',
+      body: 'Delivery failed',
     });
     expect(retried.id).not.toBe(original.id);
     const { total } = getUserNotifications('u5', {});

@@ -115,17 +115,12 @@ A calm denouement with a slow pull-back, leaving the audience with a lasting vis
             value={prompt}
             onChangeText={setPrompt}
           />
-          <Text style={styles.charCount}>
-            {prompt.length} / 2000 characters
-          </Text>
+          <Text style={styles.charCount}>{prompt.length} / 2000 characters</Text>
         </View>
 
         {/* Generate button */}
         <TouchableOpacity
-          style={[
-            styles.generateButton,
-            (!prompt.trim() || isGenerating) && styles.buttonDisabled,
-          ]}
+          style={[styles.generateButton, (!prompt.trim() || isGenerating) && styles.buttonDisabled]}
           onPress={handleGenerate}
           disabled={!prompt.trim() || isGenerating}
           activeOpacity={0.7}

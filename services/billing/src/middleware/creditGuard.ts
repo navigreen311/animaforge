@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import * as billingService from "../services/billingService";
-import type { JobType, SubscriptionTier } from "../models/billingSchemas";
+import { Request, Response, NextFunction } from 'express';
+import * as billingService from '../services/billingService';
+import type { JobType, SubscriptionTier } from '../models/billingSchemas';
 
 /**
  * Middleware factory that checks whether the user has enough credits
@@ -18,17 +18,17 @@ export function checkCredits(jobType?: JobType, tier?: SubscriptionTier) {
     const userId = req.body.userId as string;
 
     if (!userId) {
-      res.status(400).json({ error: "userId is required" });
+      res.status(400).json({ error: 'userId is required' });
       return;
     }
 
     if (!resolvedJobType) {
-      res.status(400).json({ error: "jobType is required" });
+      res.status(400).json({ error: 'jobType is required' });
       return;
     }
 
     if (!resolvedTier) {
-      res.status(400).json({ error: "tier is required" });
+      res.status(400).json({ error: 'tier is required' });
       return;
     }
 
@@ -43,7 +43,7 @@ export function checkCredits(jobType?: JobType, tier?: SubscriptionTier) {
 
       if (balance.balance < cost) {
         res.status(402).json({
-          error: "Insufficient credits",
+          error: 'Insufficient credits',
           required: cost,
           available: balance.balance,
           jobType: resolvedJobType,
@@ -54,7 +54,7 @@ export function checkCredits(jobType?: JobType, tier?: SubscriptionTier) {
 
       next();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Credit check failed";
+      const message = err instanceof Error ? err.message : 'Credit check failed';
       res.status(500).json({ error: message });
     }
   };

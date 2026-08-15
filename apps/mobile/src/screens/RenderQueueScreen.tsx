@@ -25,14 +25,78 @@ interface Job {
 }
 
 const MOCK_JOBS: Job[] = [
-  { id: 'j1', projectName: 'Neon Samurai', shotName: 'SH-014', tier: 'hero', progress: 0.65, eta: '4m', status: 'running' },
-  { id: 'j2', projectName: 'Neon Samurai', shotName: 'SH-015', tier: 'standard', progress: 0.32, eta: '8m', status: 'running' },
-  { id: 'j3', projectName: 'Forest Spirits', shotName: 'SH-007', tier: 'draft', progress: 0, eta: '12m', status: 'queued' },
-  { id: 'j4', projectName: 'Forest Spirits', shotName: 'SH-008', tier: 'standard', progress: 0, eta: '15m', status: 'queued' },
-  { id: 'j5', projectName: 'Mecha Pilot', shotName: 'SH-003', tier: 'hero', progress: 1, eta: '-', status: 'complete' },
-  { id: 'j6', projectName: 'Mecha Pilot', shotName: 'SH-004', tier: 'hero', progress: 1, eta: '-', status: 'complete' },
-  { id: 'j7', projectName: 'Ocean Depths', shotName: 'SH-001', tier: 'draft', progress: 0.4, eta: '-', status: 'failed' },
-  { id: 'j8', projectName: 'Cyberpunk City', shotName: 'SH-012', tier: 'standard', progress: 1, eta: '-', status: 'complete' },
+  {
+    id: 'j1',
+    projectName: 'Neon Samurai',
+    shotName: 'SH-014',
+    tier: 'hero',
+    progress: 0.65,
+    eta: '4m',
+    status: 'running',
+  },
+  {
+    id: 'j2',
+    projectName: 'Neon Samurai',
+    shotName: 'SH-015',
+    tier: 'standard',
+    progress: 0.32,
+    eta: '8m',
+    status: 'running',
+  },
+  {
+    id: 'j3',
+    projectName: 'Forest Spirits',
+    shotName: 'SH-007',
+    tier: 'draft',
+    progress: 0,
+    eta: '12m',
+    status: 'queued',
+  },
+  {
+    id: 'j4',
+    projectName: 'Forest Spirits',
+    shotName: 'SH-008',
+    tier: 'standard',
+    progress: 0,
+    eta: '15m',
+    status: 'queued',
+  },
+  {
+    id: 'j5',
+    projectName: 'Mecha Pilot',
+    shotName: 'SH-003',
+    tier: 'hero',
+    progress: 1,
+    eta: '-',
+    status: 'complete',
+  },
+  {
+    id: 'j6',
+    projectName: 'Mecha Pilot',
+    shotName: 'SH-004',
+    tier: 'hero',
+    progress: 1,
+    eta: '-',
+    status: 'complete',
+  },
+  {
+    id: 'j7',
+    projectName: 'Ocean Depths',
+    shotName: 'SH-001',
+    tier: 'draft',
+    progress: 0.4,
+    eta: '-',
+    status: 'failed',
+  },
+  {
+    id: 'j8',
+    projectName: 'Cyberpunk City',
+    shotName: 'SH-012',
+    tier: 'standard',
+    progress: 1,
+    eta: '-',
+    status: 'complete',
+  },
 ];
 
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -70,7 +134,7 @@ export default function RenderQueueScreen({ navigation }: Props) {
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: false }),
         Animated.timing(pulseAnim, { toValue: 0, duration: 900, useNativeDriver: false }),
-      ])
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -99,7 +163,9 @@ export default function RenderQueueScreen({ navigation }: Props) {
       >
         <View style={styles.jobHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.jobProject} numberOfLines={1}>{item.projectName}</Text>
+            <Text style={styles.jobProject} numberOfLines={1}>
+              {item.projectName}
+            </Text>
             <Text style={styles.jobShot}>{item.shotName}</Text>
           </View>
           <View style={[styles.tierBadge, { borderColor: tierMeta.color }]}>
@@ -120,8 +186,8 @@ export default function RenderQueueScreen({ navigation }: Props) {
                   item.status === 'failed'
                     ? '#f87171'
                     : item.status === 'complete'
-                    ? '#4ade80'
-                    : '#7c3aed',
+                      ? '#4ade80'
+                      : '#7c3aed',
               },
             ]}
           />

@@ -1,22 +1,13 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { v4 as uuidv4 } from "uuid";
-import type {
-  User,
-  JwtPayload,
-  UserRole,
-  UserTier,
-} from "../models/authSchemas";
-import prisma from "../db";
-import { requirePrisma } from "../db";
-import {
-  createSession,
-  invalidateSession,
-  isBlacklisted,
-} from "./sessionService";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import type { User, JwtPayload, UserRole, UserTier } from '../models/authSchemas';
+import prisma from '../db';
+import { requirePrisma } from '../db';
+import { createSession, invalidateSession, isBlacklisted } from './sessionService';
 
-const JWT_SECRET = process.env.JWT_SECRET || "animaforge-dev-secret";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+const JWT_SECRET = process.env.JWT_SECRET || 'animaforge-dev-secret';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const SALT_ROUNDS = 10;
 
 // ---------------------------------------------------------------------------
@@ -35,7 +26,7 @@ async function isPrismaAvailable(): Promise<boolean> {
     await requirePrisma().$queryRaw`SELECT 1`;
     prismaAvailable = true;
   } catch {
-    console.warn("Prisma unavailable — falling back to in-memory store");
+    console.warn('Prisma unavailable — falling back to in-memory store');
     prismaAvailable = false;
   }
   return prismaAvailable;
@@ -64,10 +55,7 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-export async function comparePassword(
-  password: string,
-  hash: string,
-): Promise<boolean> {
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
@@ -83,18 +71,18 @@ export function signToken(payload: JwtPayload): string {
 
 export function verifyToken(token: string): JwtPayload {
   if (tokenBlacklist.has(token)) {
-    throw new Error("Token has been revoked");
+    throw new Error('Token has been revoked');
   }
   return jwt.verify(token, JWT_SECRET) as JwtPayload;
 }
 
 export async function verifyTokenAsync(token: string): Promise<JwtPayload> {
   if (tokenBlacklist.has(token)) {
-    throw new Error("Token has been revoked");
+    throw new Error('Token has been revoked');
   }
   const blacklisted = await isBlacklisted(token);
   if (blacklisted) {
-    throw new Error("Token has been revoked");
+    throw new Error('Token has been revoked');
   }
   return jwt.verify(token, JWT_SECRET) as JwtPayload;
 }
@@ -125,8 +113,8 @@ export async function createUser(
   email: string,
   password: string,
   displayName: string,
-  role: UserRole = "user",
-  tier: UserTier = "free",
+  role: UserRole = 'user',
+  tier: UserTier = 'free',
 ): Promise<User> {
   const passwordHash = await hashPassword(password);
 
@@ -134,7 +122,7 @@ export async function createUser(
     try {
       // Check for existing user in Prisma
       const existing = await requirePrisma().user.findUnique({ where: { email } });
-      if (existing) throw new Error("Email already registered");
+      if (existing) throw new Error('Email already registered');
 
       const dbUser = await requirePrisma().user.create({
         data: {
@@ -162,16 +150,16 @@ export async function createUser(
 
       return user;
     } catch (err: any) {
-      if (err.message === "Email already registered") throw err;
+      if (err.message === 'Email already registered') throw err;
       // Unique constraint from Prisma
-      if (err.code === "P2002") throw new Error("Email already registered");
-      console.warn("Prisma createUser failed, falling back to in-memory:", err.message);
+      if (err.code === 'P2002') throw new Error('Email already registered');
+      console.warn('Prisma createUser failed, falling back to in-memory:', err.message);
     }
   }
 
   // In-memory fallback
   if (emailIndex.has(email)) {
-    throw new Error("Email already registered");
+    throw new Error('Email already registered');
   }
 
   const id = uuidv4();
@@ -191,9 +179,7 @@ export async function createUser(
   return user;
 }
 
-export async function findUserByEmail(
-  email: string,
-): Promise<User | undefined> {
+export async function findUserByEmail(email: string): Promise<User | undefined> {
   if (await isPrismaAvailable()) {
     try {
       const dbUser = await requirePrisma().user.findUnique({ where: { email } });
@@ -203,14 +189,14 @@ export async function findUserByEmail(
       return {
         id: dbUser.id,
         email: dbUser.email,
-        passwordHash: genMemory.passwordHash ?? "",
-        displayName: dbUser.displayName ?? "",
+        passwordHash: genMemory.passwordHash ?? '',
+        displayName: dbUser.displayName ?? '',
         role: dbUser.role as UserRole,
         tier: dbUser.tier as UserTier,
         createdAt: dbUser.createdAt,
       };
     } catch (err: any) {
-      console.warn("Prisma findUserByEmail failed, falling back:", err.message);
+      console.warn('Prisma findUserByEmail failed, falling back:', err.message);
     }
   }
 
@@ -230,14 +216,14 @@ export async function findUserById(id: string): Promise<User | undefined> {
       return {
         id: dbUser.id,
         email: dbUser.email,
-        passwordHash: genMemory.passwordHash ?? "",
-        displayName: dbUser.displayName ?? "",
+        passwordHash: genMemory.passwordHash ?? '',
+        displayName: dbUser.displayName ?? '',
         role: dbUser.role as UserRole,
         tier: dbUser.tier as UserTier,
         createdAt: dbUser.createdAt,
       };
     } catch (err: any) {
-      console.warn("Prisma findUserById failed, falling back:", err.message);
+      console.warn('Prisma findUserById failed, falling back:', err.message);
     }
   }
 
@@ -246,7 +232,7 @@ export async function findUserById(id: string): Promise<User | undefined> {
 
 export async function updateUser(
   id: string,
-  data: Partial<Pick<User, "displayName" | "role" | "tier">>,
+  data: Partial<Pick<User, 'displayName' | 'role' | 'tier'>>,
 ): Promise<User | undefined> {
   if (await isPrismaAvailable()) {
     try {
@@ -265,8 +251,8 @@ export async function updateUser(
       const user: User = {
         id: dbUser.id,
         email: dbUser.email,
-        passwordHash: genMemory.passwordHash ?? "",
-        displayName: dbUser.displayName ?? "",
+        passwordHash: genMemory.passwordHash ?? '',
+        displayName: dbUser.displayName ?? '',
         role: dbUser.role as UserRole,
         tier: dbUser.tier as UserTier,
         createdAt: dbUser.createdAt,
@@ -276,7 +262,7 @@ export async function updateUser(
       users.set(user.id, user);
       return user;
     } catch (err: any) {
-      console.warn("Prisma updateUser failed, falling back:", err.message);
+      console.warn('Prisma updateUser failed, falling back:', err.message);
     }
   }
 
@@ -324,10 +310,7 @@ export async function logout(token: string): Promise<void> {
   await invalidateSession(token);
 }
 
-export async function refresh(
-  oldToken: string,
-  userId: string,
-): Promise<{ token: string } | null> {
+export async function refresh(oldToken: string, userId: string): Promise<{ token: string } | null> {
   const user = await findUserById(userId);
   if (!user) return null;
 

@@ -34,17 +34,17 @@ spec:
               name: http
           env:
             - name: PORT
-              value: "8011"
+              value: '8011'
             - name: C2PA_MANIFEST_VERSION
-              value: "2.0"
+              value: '2.0'
             - name: SIGNING_ALGORITHM
-              value: "ES256"
+              value: 'ES256'
           resources:
             requests:
               cpu: 250m
               memory: 256Mi
             limits:
-              cpu: "1"
+              cpu: '1'
               memory: 512Mi
           readinessProbe:
             httpGet:

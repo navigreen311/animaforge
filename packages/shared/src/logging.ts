@@ -20,7 +20,10 @@ export function createLogger(serviceName: string) {
       message,
       ...meta,
     };
-    const output = process.env.NODE_ENV === 'production' ? JSON.stringify(entry) : `[${entry.timestamp}] ${level.toUpperCase()} [${serviceName}] ${message} ${meta ? JSON.stringify(meta) : ''}`;
+    const output =
+      process.env.NODE_ENV === 'production'
+        ? JSON.stringify(entry)
+        : `[${entry.timestamp}] ${level.toUpperCase()} [${serviceName}] ${message} ${meta ? JSON.stringify(meta) : ''}`;
     if (level === 'error') console.error(output);
     else if (level === 'warn') console.warn(output);
     else console.log(output);

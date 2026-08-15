@@ -10,7 +10,10 @@ describe('File Dialog Filters', () => {
     const FILE_FILTERS = {
       images: { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'bmp'] },
       video: { name: 'Video', extensions: ['mp4', 'mov', 'avi', 'webm', 'mkv'] },
-      models3d: { name: '3D Models', extensions: ['glb', 'gltf', 'fbx', 'obj', 'usd', 'usdc', 'usdz'] },
+      models3d: {
+        name: '3D Models',
+        extensions: ['glb', 'gltf', 'fbx', 'obj', 'usd', 'usdc', 'usdz'],
+      },
       bvh: { name: 'Motion Capture', extensions: ['bvh'] },
       all: { name: 'All AnimaForge Files', extensions: expect.any(Array) },
     };
@@ -77,7 +80,11 @@ describe('Model Cache Path', () => {
     expect(path.basename(expected)).toBe(modelId);
 
     // Cached model response
-    const cachedResult = { cached: true, path: '/cache/sdxl', files: ['weights.bin', 'config.json'] };
+    const cachedResult = {
+      cached: true,
+      path: '/cache/sdxl',
+      files: ['weights.bin', 'config.json'],
+    };
     expect(cachedResult.cached).toBe(true);
     expect(cachedResult.files).toHaveLength(2);
 

@@ -31,9 +31,7 @@ export default function GenerationProgress({ progress, stage }: Props) {
       </View>
 
       <View style={styles.track}>
-        <Animated.View
-          style={[styles.fill, { width: widthInterpolation }]}
-        />
+        <Animated.View style={[styles.fill, { width: widthInterpolation }]} />
       </View>
 
       <Text style={styles.hint}>

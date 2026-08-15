@@ -51,11 +51,7 @@ export class CircuitBreaker {
     const entry = this.getOrCreate(service);
 
     // If open and past the retry window, transition to half-open
-    if (
-      entry.state === 'open' &&
-      entry.nextRetryAt &&
-      new Date() >= entry.nextRetryAt
-    ) {
+    if (entry.state === 'open' && entry.nextRetryAt && new Date() >= entry.nextRetryAt) {
       entry.state = 'half-open';
     }
 
@@ -80,10 +76,7 @@ export class CircuitBreaker {
     const now = new Date();
 
     // Reset counter if last failure was outside the rolling window
-    if (
-      entry.lastFailure &&
-      now.getTime() - entry.lastFailure.getTime() > FAILURE_WINDOW_MS
-    ) {
+    if (entry.lastFailure && now.getTime() - entry.lastFailure.getTime() > FAILURE_WINDOW_MS) {
       entry.failures = 0;
     }
 

@@ -1,10 +1,5 @@
 import type { HttpClient } from '../http';
-import type {
-  Shot,
-  CreateShotData,
-  UpdateShotData,
-  PaginatedResponse,
-} from '../types';
+import type { Shot, CreateShotData, UpdateShotData, PaginatedResponse } from '../types';
 
 export class ShotsResource {
   constructor(private readonly http: HttpClient) {}

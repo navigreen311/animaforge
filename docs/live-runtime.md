@@ -27,22 +27,22 @@ CREATED  -->  WARMUP  -->  LIVE  -->  ENDED
                           PAUSED
 ```
 
-| State | Description |
-|-------|-------------|
-| `CREATED` | Session initialized, resources being allocated |
-| `WARMUP` | Host can preview and configure before going live |
-| `LIVE` | Broadcasting to viewers, inputs accepted |
-| `PAUSED` | Temporarily paused, viewers see a holding screen |
-| `ENDED` | Session terminated, recording finalized |
+| State     | Description                                      |
+| --------- | ------------------------------------------------ |
+| `CREATED` | Session initialized, resources being allocated   |
+| `WARMUP`  | Host can preview and configure before going live |
+| `LIVE`    | Broadcasting to viewers, inputs accepted         |
+| `PAUSED`  | Temporarily paused, viewers see a holding screen |
+| `ENDED`   | Session terminated, recording finalized          |
 
 ### Session Controls
 
-| Action | Endpoint | Description |
-|--------|----------|-------------|
-| Start | `POST /api/v1/live/sessions/:id/start` | Transition from WARMUP to LIVE |
-| Pause | `POST /api/v1/live/sessions/:id/pause` | Pause the live session |
-| Resume | `POST /api/v1/live/sessions/:id/resume` | Resume from PAUSED |
-| End | `POST /api/v1/live/sessions/:id/end` | End the session |
+| Action | Endpoint                                | Description                    |
+| ------ | --------------------------------------- | ------------------------------ |
+| Start  | `POST /api/v1/live/sessions/:id/start`  | Transition from WARMUP to LIVE |
+| Pause  | `POST /api/v1/live/sessions/:id/pause`  | Pause the live session         |
+| Resume | `POST /api/v1/live/sessions/:id/resume` | Resume from PAUSED             |
+| End    | `POST /api/v1/live/sessions/:id/end`    | End the session                |
 
 ---
 
@@ -52,24 +52,24 @@ During a live session, the host and authorized participants can send creative in
 
 ### Supported Inputs
 
-| Input Type | Description | Latency Target |
-|------------|-------------|---------------|
-| **Text prompt** | Natural language description of the next scene | < 3s to start |
-| **Style change** | Apply a different style fingerprint | < 2s |
-| **Character swap** | Switch active characters in the scene | < 2s |
-| **Camera control** | Pan, zoom, rotate, or change camera angle | < 500ms |
-| **Audio trigger** | Play a sound effect or music cue | < 200ms |
-| **Audience poll** | Let viewers vote on the next action | N/A (async) |
-| **Sketch overlay** | Draw on screen to guide composition | Real-time |
+| Input Type         | Description                                    | Latency Target |
+| ------------------ | ---------------------------------------------- | -------------- |
+| **Text prompt**    | Natural language description of the next scene | < 3s to start  |
+| **Style change**   | Apply a different style fingerprint            | < 2s           |
+| **Character swap** | Switch active characters in the scene          | < 2s           |
+| **Camera control** | Pan, zoom, rotate, or change camera angle      | < 500ms        |
+| **Audio trigger**  | Play a sound effect or music cue               | < 200ms        |
+| **Audience poll**  | Let viewers vote on the next action            | N/A (async)    |
+| **Sketch overlay** | Draw on screen to guide composition            | Real-time      |
 
 ### Input Permissions
 
-| Role | Allowed Inputs |
-|------|---------------|
-| Host | All inputs |
-| Co-host | All inputs except session controls |
-| Participant | Text prompts, audience polls |
-| Viewer | Audience polls only |
+| Role        | Allowed Inputs                     |
+| ----------- | ---------------------------------- |
+| Host        | All inputs                         |
+| Co-host     | All inputs except session controls |
+| Participant | Text prompts, audience polls       |
+| Viewer      | Audience polls only                |
 
 ---
 
@@ -88,11 +88,11 @@ When `recording_enabled` is set to `true`, the session is recorded continuously.
 
 For long sessions, recordings are automatically split into segments:
 
-| Duration | Segment Size |
-|----------|-------------|
-| < 30 min | Single file |
+| Duration      | Segment Size       |
+| ------------- | ------------------ |
+| < 30 min      | Single file        |
 | 30 min - 2 hr | 30-minute segments |
-| > 2 hr | 1-hour segments |
+| > 2 hr        | 1-hour segments    |
 
 ### Post-Session
 
@@ -110,11 +110,11 @@ After a session ends:
 
 ### Viewer Limits
 
-| Tier | Max Viewers | Max Co-hosts |
-|------|-------------|-------------|
-| Starter | 50 | 1 |
-| Pro | 500 | 5 |
-| Enterprise | 10,000 | 25 |
+| Tier       | Max Viewers | Max Co-hosts |
+| ---------- | ----------- | ------------ |
+| Starter    | 50          | 1            |
+| Pro        | 500         | 5            |
+| Enterprise | 10,000      | 25           |
 
 ### Viewer Features
 
@@ -150,28 +150,28 @@ socket.emit('live:join', { session_id: 'live_abc123' });
 
 ### Client-to-Server Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `live:join` | `{ session_id }` | Join a live session as a viewer |
-| `live:leave` | `{ session_id }` | Leave the session |
-| `live:input` | `{ session_id, type, data }` | Send a creative input (host/co-host) |
-| `live:chat` | `{ session_id, message }` | Send a chat message |
-| `live:react` | `{ session_id, emoji }` | Send an emoji reaction |
-| `live:poll:vote` | `{ session_id, poll_id, option }` | Vote in an audience poll |
-| `live:control` | `{ session_id, action }` | Session control (host only) |
+| Event            | Payload                           | Description                          |
+| ---------------- | --------------------------------- | ------------------------------------ |
+| `live:join`      | `{ session_id }`                  | Join a live session as a viewer      |
+| `live:leave`     | `{ session_id }`                  | Leave the session                    |
+| `live:input`     | `{ session_id, type, data }`      | Send a creative input (host/co-host) |
+| `live:chat`      | `{ session_id, message }`         | Send a chat message                  |
+| `live:react`     | `{ session_id, emoji }`           | Send an emoji reaction               |
+| `live:poll:vote` | `{ session_id, poll_id, option }` | Vote in an audience poll             |
+| `live:control`   | `{ session_id, action }`          | Session control (host only)          |
 
 ### Server-to-Client Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `live:frame` | `{ session_id, frame_url, timestamp }` | New frame rendered |
-| `live:audio` | `{ session_id, audio_chunk, timestamp }` | Audio chunk for playback |
-| `live:state` | `{ session_id, state, metadata }` | Session state change |
-| `live:chat:new` | `{ session_id, user, message, timestamp }` | New chat message |
-| `live:react:burst` | `{ session_id, reactions[] }` | Batched emoji reactions |
-| `live:poll:update` | `{ session_id, poll_id, results }` | Poll results update |
-| `live:viewer:count` | `{ session_id, count }` | Viewer count update |
-| `live:error` | `{ session_id, code, message }` | Error notification |
+| Event               | Payload                                    | Description              |
+| ------------------- | ------------------------------------------ | ------------------------ |
+| `live:frame`        | `{ session_id, frame_url, timestamp }`     | New frame rendered       |
+| `live:audio`        | `{ session_id, audio_chunk, timestamp }`   | Audio chunk for playback |
+| `live:state`        | `{ session_id, state, metadata }`          | Session state change     |
+| `live:chat:new`     | `{ session_id, user, message, timestamp }` | New chat message         |
+| `live:react:burst`  | `{ session_id, reactions[] }`              | Batched emoji reactions  |
+| `live:poll:update`  | `{ session_id, poll_id, results }`         | Poll results update      |
+| `live:viewer:count` | `{ session_id, count }`                    | Viewer count update      |
+| `live:error`        | `{ session_id, code, message }`            | Error notification       |
 
 ### Frame Delivery
 

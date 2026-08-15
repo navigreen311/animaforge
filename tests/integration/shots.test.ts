@@ -6,12 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  prisma,
-  createTestUser,
-  getPlatformToken,
-  apiRequest,
-} from './helpers';
+import { prisma, createTestUser, getPlatformToken, apiRequest } from './helpers';
 import { projectService } from '../../services/platform-api/src/services/projectService.js';
 import { sceneService } from '../../services/platform-api/src/services/sceneService.js';
 import { shotService } from '../../services/platform-api/src/services/shotService.js';
@@ -43,12 +38,17 @@ describe('Shots API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const { project, scene } = seedProjectAndScene();
 
-    const res = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: validSceneGraph,
-      prompt: 'Hero runs through the rain at night',
-      durationMs: 3000,
-      aspectRatio: '16:9',
-    }, token);
+    const res = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: validSceneGraph,
+        prompt: 'Hero runs through the rain at night',
+        durationMs: 3000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -63,12 +63,17 @@ describe('Shots API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const { scene } = seedProjectAndScene();
 
-    const res = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: { subject: '' },
-      prompt: 'Test prompt',
-      durationMs: 3000,
-      aspectRatio: '16:9',
-    }, token);
+    const res = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: { subject: '' },
+        prompt: 'Test prompt',
+        durationMs: 3000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
 
     expect(res.status).toBe(400);
   });
@@ -79,9 +84,17 @@ describe('Shots API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const { scene } = seedProjectAndScene();
 
-    const createRes = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: validSceneGraph, prompt: 'Approval test', durationMs: 5000, aspectRatio: '16:9',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: validSceneGraph,
+        prompt: 'Approval test',
+        durationMs: 5000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
     const shotId = createRes.body.data.id;
 
     const approveRes = await apiRequest('put', `/api/v1/shots/${shotId}/approve`, {}, token);
@@ -98,16 +111,29 @@ describe('Shots API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const { scene } = seedProjectAndScene();
 
-    const createRes = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: validSceneGraph, prompt: 'Lock test', durationMs: 5000, aspectRatio: '16:9',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: validSceneGraph,
+        prompt: 'Lock test',
+        durationMs: 5000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
     const shotId = createRes.body.data.id;
 
     const lockRes = await apiRequest('put', `/api/v1/shots/${shotId}/lock`, {}, token);
     expect(lockRes.status).toBe(200);
     expect(lockRes.body.data.status).toBe('locked');
 
-    const updateRes = await apiRequest('put', `/api/v1/shots/${shotId}`, { prompt: 'Trying to change' }, token);
+    const updateRes = await apiRequest(
+      'put',
+      `/api/v1/shots/${shotId}`,
+      { prompt: 'Trying to change' },
+      token,
+    );
     expect(updateRes.status).toBe(409);
     expect(updateRes.body.error.code).toBe('LOCKED');
   });
@@ -119,9 +145,17 @@ describe('Shots API', () => {
     const { project, scene } = seedProjectAndScene();
 
     for (let i = 0; i < 3; i++) {
-      await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-        sceneGraph: validSceneGraph, prompt: `Shot ${i}`, durationMs: 3000, aspectRatio: '16:9',
-      }, token);
+      await apiRequest(
+        'post',
+        `/api/v1/scenes/${scene.id}/shots`,
+        {
+          sceneGraph: validSceneGraph,
+          prompt: `Shot ${i}`,
+          durationMs: 3000,
+          aspectRatio: '16:9',
+        },
+        token,
+      );
     }
 
     const res = await apiRequest('get', `/api/v1/projects/${project.id}/shots`, undefined, token);
@@ -140,10 +174,18 @@ describe('Shots API', () => {
     const charRef1 = uuidv4();
     const charRef2 = uuidv4();
 
-    const res = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: validSceneGraph, prompt: 'Character ref test',
-      characterRefs: [charRef1, charRef2], durationMs: 3000, aspectRatio: '16:9',
-    }, token);
+    const res = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: validSceneGraph,
+        prompt: 'Character ref test',
+        characterRefs: [charRef1, charRef2],
+        durationMs: 3000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
 
     expect(res.status).toBe(201);
     expect(res.body.data.characterRefs).toEqual([charRef1, charRef2]);
@@ -155,16 +197,29 @@ describe('Shots API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const { project, scene } = seedProjectAndScene();
 
-    const createRes = await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-      sceneGraph: validSceneGraph, prompt: 'To be deleted', durationMs: 3000, aspectRatio: '16:9',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      `/api/v1/scenes/${scene.id}/shots`,
+      {
+        sceneGraph: validSceneGraph,
+        prompt: 'To be deleted',
+        durationMs: 3000,
+        aspectRatio: '16:9',
+      },
+      token,
+    );
     const shotId = createRes.body.data.id;
 
     const deleteRes = await apiRequest('delete', `/api/v1/shots/${shotId}`, undefined, token);
     expect(deleteRes.status).toBe(200);
     expect(deleteRes.body.data.deleted).toBe(true);
 
-    const listRes = await apiRequest('get', `/api/v1/projects/${project.id}/shots`, undefined, token);
+    const listRes = await apiRequest(
+      'get',
+      `/api/v1/projects/${project.id}/shots`,
+      undefined,
+      token,
+    );
     const ids = listRes.body.data.map((s: any) => s.id);
     expect(ids).not.toContain(shotId);
   });
@@ -177,9 +232,17 @@ describe('Shots API', () => {
 
     const prompts = ['First shot', 'Second shot', 'Third shot'];
     for (const prompt of prompts) {
-      await apiRequest('post', `/api/v1/scenes/${scene.id}/shots`, {
-        sceneGraph: validSceneGraph, prompt, durationMs: 3000, aspectRatio: '16:9',
-      }, token);
+      await apiRequest(
+        'post',
+        `/api/v1/scenes/${scene.id}/shots`,
+        {
+          sceneGraph: validSceneGraph,
+          prompt,
+          durationMs: 3000,
+          aspectRatio: '16:9',
+        },
+        token,
+      );
     }
 
     const res = await apiRequest('get', `/api/v1/projects/${project.id}/shots`, undefined, token);

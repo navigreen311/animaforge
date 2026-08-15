@@ -79,16 +79,16 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: "High API latency detected"
-            description: "95th percentile latency is above 1s for {{ $labels.service }}"
+            summary: 'High API latency detected'
+            description: '95th percentile latency is above 1s for {{ $labels.service }}'
         - alert: HighErrorRate
           expr: rate(http_requests_total{status=~"5..", namespace=~"animaforge-.*"}[5m]) / rate(http_requests_total{namespace=~"animaforge-.*"}[5m]) > 0.05
           for: 5m
           labels:
             severity: critical
           annotations:
-            summary: "High error rate detected"
-            description: "Error rate is above 5% for {{ $labels.service }}"
+            summary: 'High error rate detected'
+            description: 'Error rate is above 5% for {{ $labels.service }}'
     - name: animaforge.ai
       rules:
         - alert: GPUUtilizationLow
@@ -97,13 +97,13 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: "Low GPU utilization"
-            description: "Average GPU utilization is below 20% - consider scaling down"
+            summary: 'Low GPU utilization'
+            description: 'Average GPU utilization is below 20% - consider scaling down'
         - alert: QueueBacklog
           expr: queue_depth{namespace="animaforge-ai"} > 100
           for: 5m
           labels:
             severity: warning
           annotations:
-            summary: "Job queue backlog growing"
-            description: "Queue depth exceeds 100 for {{ $labels.queue }}"
+            summary: 'Job queue backlog growing'
+            description: 'Queue depth exceeds 100 for {{ $labels.queue }}'

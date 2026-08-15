@@ -1,20 +1,14 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // ---------- Enums / Literals ----------
 
-export const ContentType = z.enum(["image", "video", "audio", "text"]);
+export const ContentType = z.enum(['image', 'video', 'audio', 'text']);
 export type ContentType = z.infer<typeof ContentType>;
 
-export const ModerationResult = z.enum(["pass", "flag", "block"]);
+export const ModerationResult = z.enum(['pass', 'flag', 'block']);
 export type ModerationResult = z.infer<typeof ModerationResult>;
 
-export const ModerationCategory = z.enum([
-  "violence",
-  "sexual",
-  "impersonation",
-  "minors",
-  "safe",
-]);
+export const ModerationCategory = z.enum(['violence', 'sexual', 'impersonation', 'minors', 'safe']);
 export type ModerationCategory = z.infer<typeof ModerationCategory>;
 
 // ---------- Request Schemas ----------

@@ -1,6 +1,6 @@
-import crypto from "crypto";
-import prisma from "../db";
-import { requirePrisma } from "../db";
+import crypto from 'crypto';
+import prisma from '../db';
+import { requirePrisma } from '../db';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -8,17 +8,17 @@ import { requirePrisma } from "../db";
 
 /** Generate a random API key prefixed with `af_` for easy identification. */
 function generateRawKey(): string {
-  return `af_${crypto.randomBytes(32).toString("hex")}`;
+  return `af_${crypto.randomBytes(32).toString('hex')}`;
 }
 
 /** Deterministic SHA-256 hash used for storage & lookup. */
 function hashKey(raw: string): string {
-  return crypto.createHash("sha256").update(raw).digest("hex");
+  return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
 /** Mask a key for display: show prefix + first 8 hex chars, then asterisks. */
 function maskKey(keyHash: string): string {
-  return `af_${keyHash.slice(0, 8)}${"*".repeat(24)}`;
+  return `af_${keyHash.slice(0, 8)}${'*'.repeat(24)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,9 +73,7 @@ export async function createApiKey(
  * Hashes it and looks up the corresponding record.
  * Returns the API key row (with userId) or null.
  */
-export async function validateApiKey(
-  raw: string,
-): Promise<{
+export async function validateApiKey(raw: string): Promise<{
   id: string;
   userId: string;
   name: string;
@@ -103,7 +101,7 @@ export async function validateApiKey(
 export async function listApiKeys(userId: string): Promise<ApiKeyRecord[]> {
   const rows = await requirePrisma().apiKey.findMany({
     where: { userId },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
   // Typed from the fields this function reads rather than from the generated
@@ -132,10 +130,7 @@ export async function listApiKeys(userId: string): Promise<ApiKeyRecord[]> {
  * Revoke (delete) an API key by ID.
  * Returns true if deleted, false if not found.
  */
-export async function revokeApiKey(
-  id: string,
-  userId: string,
-): Promise<boolean> {
+export async function revokeApiKey(id: string, userId: string): Promise<boolean> {
   try {
     await requirePrisma().apiKey.deleteMany({
       where: { id, userId },

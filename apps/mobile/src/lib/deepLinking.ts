@@ -117,9 +117,7 @@ export function handleDeepLink(url: string): void {
  * Register the animaforge:// custom URL scheme and universal link handler.
  * Call once at app startup, passing the React Navigation ref.
  */
-export function configureDeepLinks(
-  navRef: NavigationContainerRef<any>,
-): void {
+export function configureDeepLinks(navRef: NavigationContainerRef<any>): void {
   navigationRef = navRef;
 
   // Handle links that open the app from a cold start.

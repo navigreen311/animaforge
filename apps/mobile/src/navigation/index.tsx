@@ -55,11 +55,7 @@ function AuthStack() {
         cardStyle: { backgroundColor: '#0f0f23' },
       }}
     >
-      <AuthStackNav.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{ headerShown: false }}
-      />
+      <AuthStackNav.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <AuthStackNav.Screen
         name="Register"
         component={RegisterScreen}

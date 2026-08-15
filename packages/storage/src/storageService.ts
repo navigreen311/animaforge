@@ -4,10 +4,10 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
   HeadObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3Client } from "./s3Client.js";
-import type { Readable } from "node:stream";
+} from '@aws-sdk/client-s3';
+import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { s3Client } from './s3Client.js';
+import type { Readable } from 'node:stream';
 
 export interface UploadResult {
   url: string;
@@ -45,7 +45,7 @@ export async function uploadFile(
   await s3Client.send(command);
 
   const endpoint = process.env.S3_ENDPOINT;
-  const region = process.env.AWS_REGION ?? "us-east-1";
+  const region = process.env.AWS_REGION ?? 'us-east-1';
   const url = endpoint
     ? `${endpoint}/${bucket}/${key}`
     : `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
@@ -56,10 +56,7 @@ export async function uploadFile(
 /**
  * Download a file from S3 and return its body as a readable stream.
  */
-export async function downloadFile(
-  bucket: string,
-  key: string,
-): Promise<Readable> {
+export async function downloadFile(bucket: string, key: string): Promise<Readable> {
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -88,10 +85,7 @@ export async function getSignedUrl(
 /**
  * Delete a file from S3.
  */
-export async function deleteFile(
-  bucket: string,
-  key: string,
-): Promise<void> {
+export async function deleteFile(bucket: string, key: string): Promise<void> {
   const command = new DeleteObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -131,10 +125,7 @@ export async function listFiles(
 /**
  * Check whether a file exists in S3.
  */
-export async function fileExists(
-  bucket: string,
-  key: string,
-): Promise<boolean> {
+export async function fileExists(bucket: string, key: string): Promise<boolean> {
   try {
     const command = new HeadObjectCommand({
       Bucket: bucket,
@@ -151,10 +142,7 @@ export async function fileExists(
 /**
  * Retrieve metadata (size, content type, last modified) for an S3 object.
  */
-export async function getFileMetadata(
-  bucket: string,
-  key: string,
-): Promise<FileMetadata> {
+export async function getFileMetadata(bucket: string, key: string): Promise<FileMetadata> {
   const command = new HeadObjectCommand({
     Bucket: bucket,
     Key: key,

@@ -91,8 +91,7 @@ function getProviderConfig(provider: string): ProviderConfig | null {
   }
 }
 
-const REDIRECT_BASE =
-  process.env.OAUTH_REDIRECT_BASE || 'http://localhost:3003';
+const REDIRECT_BASE = process.env.OAUTH_REDIRECT_BASE || 'http://localhost:3003';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -102,10 +101,7 @@ const REDIRECT_BASE =
  * Build the authorization redirect URL for the given provider.
  * Returns null when the provider is not configured.
  */
-export function getAuthorizationUrl(
-  provider: string,
-  state: string,
-): string | null {
+export function getAuthorizationUrl(provider: string, state: string): string | null {
   const cfg = getProviderConfig(provider);
   if (!cfg) return null;
 

@@ -1,17 +1,12 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 // --------------- Types ---------------
 
-export type GpuClass = "CPU" | "T4" | "A10G" | "A100" | "H100";
+export type GpuClass = 'CPU' | 'T4' | 'A10G' | 'A100' | 'H100';
 
-export type EconJobType =
-  | "video_preview"
-  | "video_final"
-  | "audio"
-  | "avatar"
-  | "style";
+export type EconJobType = 'video_preview' | 'video_final' | 'audio' | 'avatar' | 'style';
 
-export type EconTier = "free" | "starter" | "creator" | "pro" | "studio" | "enterprise";
+export type EconTier = 'free' | 'starter' | 'creator' | 'pro' | 'studio' | 'enterprise';
 
 export interface CostBreakdown {
   compute: number;
@@ -66,7 +61,7 @@ export interface UsageReport {
 
 export interface CostSuggestion {
   id: string;
-  type: "tier_downgrade" | "batch_render" | "preview_iteration" | "unused_features";
+  type: 'tier_downgrade' | 'batch_render' | 'preview_iteration' | 'unused_features';
   message: string;
   estimatedSavingsPercent: number;
 }
@@ -87,7 +82,7 @@ export interface Sale {
 export interface PayoutResult {
   payoutId: string;
   amount: number;
-  status: "processing";
+  status: 'processing';
   estimatedArrival: string;
 }
 
@@ -95,7 +90,7 @@ export interface PayoutRecord {
   payoutId: string;
   creatorId: string;
   amount: number;
-  status: "processing" | "completed" | "failed";
+  status: 'processing' | 'completed' | 'failed';
   createdAt: string;
   estimatedArrival: string;
 }
@@ -112,19 +107,19 @@ export interface PlatformRevenueReport {
 
 export const COST_MATRIX: Record<EconJobType, Partial<Record<GpuClass, number>>> = {
   video_preview: { T4: 0.01, A10G: 0.03 },
-  video_final: { A100: 0.10, H100: 0.15 },
+  video_final: { A100: 0.1, H100: 0.15 },
   audio: { CPU: 0.005 },
-  avatar: { A100: 0.20 },
+  avatar: { A100: 0.2 },
   style: { A10G: 0.02 },
 };
 
 /** Default GPU class per job type */
 const DEFAULT_GPU: Record<EconJobType, GpuClass> = {
-  video_preview: "T4",
-  video_final: "A100",
-  audio: "CPU",
-  avatar: "A100",
-  style: "A10G",
+  video_preview: 'T4',
+  video_final: 'A100',
+  audio: 'CPU',
+  avatar: 'A100',
+  style: 'A10G',
 };
 
 /** Credits-per-dollar conversion rate */
@@ -140,19 +135,19 @@ const STORAGE_COST_PER_GB_HOUR = 0.0001;
 const BANDWIDTH_COST_PER_GB = 0.01;
 
 /** Platform fee percentage for marketplace rev-share */
-const PLATFORM_FEE_RATE = 0.30;
+const PLATFORM_FEE_RATE = 0.3;
 
 /** Creator share percentage */
-const CREATOR_SHARE_RATE = 0.70;
+const CREATOR_SHARE_RATE = 0.7;
 
 /** Tier discount multipliers (lower = cheaper) */
 const TIER_DISCOUNT: Record<EconTier, number> = {
   free: 1.0,
   starter: 0.95,
-  creator: 0.90,
+  creator: 0.9,
   pro: 0.85,
   studio: 0.75,
-  enterprise: 0.60,
+  enterprise: 0.6,
 };
 
 // --------------- In-memory stores ---------------
@@ -192,9 +187,7 @@ export function calculateJobCost(
   const baseRate = gpuRates[gpuClass];
 
   if (baseRate === undefined) {
-    throw new Error(
-      `GPU class '${gpuClass}' not available for job type '${jobType}'`,
-    );
+    throw new Error(`GPU class '${gpuClass}' not available for job type '${jobType}'`);
   }
 
   const duration = params.durationSec ?? 10;
@@ -240,10 +233,7 @@ export function calculateJobCost(
 /**
  * Estimate total cost for a project composed of multiple shots.
  */
-export function estimateProjectCost(
-  projectId: string,
-  shots: ShotEstimate[],
-): ProjectCostEstimate {
+export function estimateProjectCost(projectId: string, shots: ShotEstimate[]): ProjectCostEstimate {
   const shotCosts: ShotCost[] = shots.map((shot) => {
     const cost = calculateJobCost(shot.jobType, shot.tier, shot.params);
     return { shotId: shot.shotId, ...cost };
@@ -263,13 +253,8 @@ export function estimateProjectCost(
 /**
  * Get usage report for a user over a given period.
  */
-export function getUsageReport(
-  userId: string,
-  period: string,
-): UsageReport {
-  const entries = usageLog.filter(
-    (e) => e.userId === userId && e.date.startsWith(period),
-  );
+export function getUsageReport(userId: string, period: string): UsageReport {
+  const entries = usageLog.filter((e) => e.userId === userId && e.date.startsWith(period));
 
   const totalCredits = entries.reduce((sum, e) => sum + e.credits, 0);
 
@@ -310,15 +295,15 @@ export function optimizeCostSuggestions(userId: string): CostSuggestion[] {
   const suggestions: CostSuggestion[] = [];
 
   // Check if user uses final renders heavily — suggest preview for iteration
-  const finalRenders = entries.filter((e) => e.jobType === "video_final");
-  const previewRenders = entries.filter((e) => e.jobType === "video_preview");
+  const finalRenders = entries.filter((e) => e.jobType === 'video_final');
+  const previewRenders = entries.filter((e) => e.jobType === 'video_preview');
 
   if (finalRenders.length > 3 && previewRenders.length < finalRenders.length) {
     suggestions.push({
       id: uuidv4(),
-      type: "preview_iteration",
+      type: 'preview_iteration',
       message:
-        "Use preview tier for iteration — switch to final only for approved shots. Preview renders cost up to 85% less.",
+        'Use preview tier for iteration — switch to final only for approved shots. Preview renders cost up to 85% less.',
       estimatedSavingsPercent: 40,
     });
   }
@@ -327,25 +312,23 @@ export function optimizeCostSuggestions(userId: string): CostSuggestion[] {
   if (entries.length > 5) {
     suggestions.push({
       id: uuidv4(),
-      type: "batch_render",
+      type: 'batch_render',
       message:
-        "Batch renders save up to 30%. Group similar shots into batch jobs to reduce per-job overhead.",
+        'Batch renders save up to 30%. Group similar shots into batch jobs to reduce per-job overhead.',
       estimatedSavingsPercent: 30,
     });
   }
 
   // Check tier usage — suggest downgrade if on expensive tier with low usage
   const totalCredits = entries.reduce((sum, e) => sum + e.credits, 0);
-  const highTierEntries = entries.filter(
-    (e) => e.tier === "studio" || e.tier === "enterprise",
-  );
+  const highTierEntries = entries.filter((e) => e.tier === 'studio' || e.tier === 'enterprise');
 
   if (highTierEntries.length > 0 && totalCredits < 50) {
     suggestions.push({
       id: uuidv4(),
-      type: "tier_downgrade",
+      type: 'tier_downgrade',
       message:
-        "Your usage is low for your current tier. Consider downgrading to save on subscription costs.",
+        'Your usage is low for your current tier. Consider downgrading to save on subscription costs.',
       estimatedSavingsPercent: 25,
     });
   }
@@ -354,9 +337,8 @@ export function optimizeCostSuggestions(userId: string): CostSuggestion[] {
   if (suggestions.length === 0) {
     suggestions.push({
       id: uuidv4(),
-      type: "unused_features",
-      message:
-        "Review your active features — disabling unused add-ons can reduce monthly costs.",
+      type: 'unused_features',
+      message: 'Review your active features — disabling unused add-ons can reduce monthly costs.',
       estimatedSavingsPercent: 10,
     });
   }
@@ -367,10 +349,7 @@ export function optimizeCostSuggestions(userId: string): CostSuggestion[] {
 /**
  * Calculate revenue share for a creator based on their sales.
  */
-export function calculateRevShare(
-  _creatorId: string,
-  sales: Sale[],
-): RevShareResult {
+export function calculateRevShare(_creatorId: string, sales: Sale[]): RevShareResult {
   const grossRevenue = sales.reduce((sum, s) => sum + s.amount, 0);
   const platformFee = Math.round(grossRevenue * PLATFORM_FEE_RATE * 100) / 100;
   const creatorShare = Math.round(grossRevenue * CREATOR_SHARE_RATE * 100) / 100;
@@ -389,12 +368,9 @@ export function calculateRevShare(
 /**
  * Process a payout to a creator.
  */
-export function processCreatorPayout(
-  creatorId: string,
-  amount: number,
-): PayoutResult {
+export function processCreatorPayout(creatorId: string, amount: number): PayoutResult {
   if (amount <= 0) {
-    throw new Error("Payout amount must be positive");
+    throw new Error('Payout amount must be positive');
   }
 
   const payoutId = uuidv4();
@@ -406,7 +382,7 @@ export function processCreatorPayout(
     payoutId,
     creatorId,
     amount,
-    status: "processing",
+    status: 'processing',
     createdAt: now.toISOString(),
     estimatedArrival: arrival.toISOString(),
   };
@@ -416,7 +392,7 @@ export function processCreatorPayout(
   return {
     payoutId,
     amount,
-    status: "processing",
+    status: 'processing',
     estimatedArrival: arrival.toISOString(),
   };
 }

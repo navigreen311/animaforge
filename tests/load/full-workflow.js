@@ -30,16 +30,17 @@ export default function () {
     const res = http.post(`${BASE_URL}/api/v1/auth/login`, payload, { headers: jsonHeaders });
     check(res, { 'login ok': (r) => r.status === 200 });
     const body = res.json();
-    accessToken = body.token || body.accessToken || body.data?.token || body.data?.accessToken || 'test-token';
+    accessToken =
+      body.token || body.accessToken || body.data?.token || body.data?.accessToken || 'test-token';
     authHeaders = {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
     sleep(1);
   });
 
   if (!authHeaders) {
-    authHeaders = { ...jsonHeaders, 'Authorization': 'Bearer test-token' };
+    authHeaders = { ...jsonHeaders, Authorization: 'Bearer test-token' };
   }
 
   // Step 2: Create Project
@@ -66,7 +67,9 @@ export default function () {
       description: 'Opening scene for workflow test',
       order: 1,
     });
-    const res = http.post(`${BASE_URL}/api/v1/projects/${projectId}/scenes`, payload, { headers: authHeaders });
+    const res = http.post(`${BASE_URL}/api/v1/projects/${projectId}/scenes`, payload, {
+      headers: authHeaders,
+    });
     check(res, {
       'scene created': (r) => r.status === 201 || r.status === 200,
     });
@@ -88,7 +91,7 @@ export default function () {
     const res = http.post(
       `${BASE_URL}/api/v1/projects/${projectId}/scenes/${sceneId}/shots`,
       payload,
-      { headers: authHeaders }
+      { headers: authHeaders },
     );
     check(res, {
       'shot created': (r) => r.status === 201 || r.status === 200,
@@ -113,7 +116,9 @@ export default function () {
         style: 'cinematic',
       },
     });
-    const res = http.post(`${BASE_URL}/api/v1/generation/submit`, payload, { headers: authHeaders });
+    const res = http.post(`${BASE_URL}/api/v1/generation/submit`, payload, {
+      headers: authHeaders,
+    });
     check(res, {
       'generation submitted': (r) => r.status === 201 || r.status === 202,
     });
@@ -127,7 +132,9 @@ export default function () {
     if (!jobId) return;
     const maxPolls = 10;
     for (let i = 0; i < maxPolls; i++) {
-      const res = http.get(`${BASE_URL}/api/v1/generation/status/${jobId}`, { headers: authHeaders });
+      const res = http.get(`${BASE_URL}/api/v1/generation/status/${jobId}`, {
+        headers: authHeaders,
+      });
       check(res, {
         'poll ok': (r) => r.status === 200,
       });
@@ -144,7 +151,7 @@ export default function () {
     const res = http.post(
       `${BASE_URL}/api/v1/projects/${projectId}/export`,
       JSON.stringify({ format: 'mp4' }),
-      { headers: authHeaders }
+      { headers: authHeaders },
     );
     check(res, {
       'export accepted': (r) => r.status === 200 || r.status === 202,

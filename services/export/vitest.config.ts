@@ -1,2 +1,5 @@
-import { defineConfig } from "vitest/config";
-export default defineConfig({ test: { globals: false, environment: "node" }, resolve: { extensions: [".ts", ".js"] } });
+import { defineConfig } from 'vitest/config';
+export default defineConfig({
+  test: { globals: false, environment: 'node' },
+  resolve: { extensions: ['.ts', '.js'] },
+});

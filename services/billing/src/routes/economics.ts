@@ -1,29 +1,16 @@
-import { Router, Request, Response } from "express";
-import { z } from "zod";
-import * as economics from "../services/economicsEngine";
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import * as economics from '../services/economicsEngine';
 
 const router = Router();
 
 // --------------- Validation Schemas ---------------
 
-const EconJobTypeSchema = z.enum([
-  "video_preview",
-  "video_final",
-  "audio",
-  "avatar",
-  "style",
-]);
+const EconJobTypeSchema = z.enum(['video_preview', 'video_final', 'audio', 'avatar', 'style']);
 
-const EconTierSchema = z.enum([
-  "free",
-  "starter",
-  "creator",
-  "pro",
-  "studio",
-  "enterprise",
-]);
+const EconTierSchema = z.enum(['free', 'starter', 'creator', 'pro', 'studio', 'enterprise']);
 
-const GpuClassSchema = z.enum(["CPU", "T4", "A10G", "A100", "H100"]);
+const GpuClassSchema = z.enum(['CPU', 'T4', 'A10G', 'A100', 'H100']);
 
 const JobParamsSchema = z.object({
   gpuClass: GpuClassSchema.optional(),
@@ -69,7 +56,7 @@ const RevShareSchema = z.object({
 // --------------- Routes ---------------
 
 // POST /billing/economics/estimate — estimate job cost
-router.post("/estimate", (req: Request, res: Response) => {
+router.post('/estimate', (req: Request, res: Response) => {
   const parsed = EstimateJobSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -83,13 +70,13 @@ router.post("/estimate", (req: Request, res: Response) => {
     );
     res.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : 'Unknown error';
     res.status(400).json({ error: message });
   }
 });
 
 // POST /billing/economics/project-estimate — estimate project cost
-router.post("/project-estimate", (req: Request, res: Response) => {
+router.post('/project-estimate', (req: Request, res: Response) => {
   const parsed = ProjectEstimateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -103,13 +90,13 @@ router.post("/project-estimate", (req: Request, res: Response) => {
     const result = economics.estimateProjectCost(parsed.data.projectId, shots);
     res.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : 'Unknown error';
     res.status(400).json({ error: message });
   }
 });
 
 // GET /billing/economics/usage/:userId — usage report
-router.get("/usage/:userId", (req: Request, res: Response) => {
+router.get('/usage/:userId', (req: Request, res: Response) => {
   const userId = req.params.userId as string;
   const period = (req.query.period as string) || new Date().toISOString().slice(0, 7);
   const report = economics.getUsageReport(userId, period);
@@ -117,14 +104,14 @@ router.get("/usage/:userId", (req: Request, res: Response) => {
 });
 
 // GET /billing/economics/optimize/:userId — cost optimization suggestions
-router.get("/optimize/:userId", (req: Request, res: Response) => {
+router.get('/optimize/:userId', (req: Request, res: Response) => {
   const userId = req.params.userId as string;
   const suggestions = economics.optimizeCostSuggestions(userId);
   res.json({ suggestions });
 });
 
 // GET /billing/economics/rev-share/:creatorId — calculate revenue share
-router.get("/rev-share/:creatorId", (req: Request, res: Response) => {
+router.get('/rev-share/:creatorId', (req: Request, res: Response) => {
   const parsed = RevShareSchema.safeParse(req.body);
   if (!parsed.success) {
     // If no body provided, return empty rev-share
@@ -136,41 +123,35 @@ router.get("/rev-share/:creatorId", (req: Request, res: Response) => {
     });
     return;
   }
-  const result = economics.calculateRevShare(
-    parsed.data.creatorId,
-    parsed.data.sales,
-  );
+  const result = economics.calculateRevShare(parsed.data.creatorId, parsed.data.sales);
   res.json(result);
 });
 
 // POST /billing/economics/payout — process creator payout
-router.post("/payout", (req: Request, res: Response) => {
+router.post('/payout', (req: Request, res: Response) => {
   const parsed = PayoutSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
   try {
-    const result = economics.processCreatorPayout(
-      parsed.data.creatorId,
-      parsed.data.amount,
-    );
+    const result = economics.processCreatorPayout(parsed.data.creatorId, parsed.data.amount);
     res.status(201).json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : 'Unknown error';
     res.status(400).json({ error: message });
   }
 });
 
 // GET /billing/economics/payouts/:creatorId — payout history
-router.get("/payouts/:creatorId", (req: Request, res: Response) => {
+router.get('/payouts/:creatorId', (req: Request, res: Response) => {
   const creatorId = req.params.creatorId as string;
   const history = economics.getPayoutHistory(creatorId);
   res.json({ payouts: history });
 });
 
 // GET /billing/economics/platform-revenue — platform revenue (admin)
-router.get("/platform-revenue", (req: Request, res: Response) => {
+router.get('/platform-revenue', (req: Request, res: Response) => {
   const period = (req.query.period as string) || new Date().toISOString().slice(0, 7);
   const report = economics.getPlatformRevenue(period);
   res.json(report);

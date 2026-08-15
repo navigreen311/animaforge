@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
-import { signToken, buildJwtPayload } from "./authService";
-import type { User, UserRole, UserTier } from "../models/authSchemas";
+import { v4 as uuidv4 } from 'uuid';
+import { signToken, buildJwtPayload } from './authService';
+import type { User, UserRole, UserTier } from '../models/authSchemas';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,7 +40,7 @@ export interface OIDCUserInfo {
 
 export interface SSOUser extends User {
   orgId: string;
-  ssoProvider: "saml" | "oidc";
+  ssoProvider: 'saml' | 'oidc';
   externalId?: string;
 }
 
@@ -58,12 +58,12 @@ const ssoUsersById = new Map<string, SSOUser>(); // id -> SSOUser
 // ---------------------------------------------------------------------------
 
 const GROUP_ROLE_MAP: Record<string, UserRole> = {
-  admins: "admin",
-  administrators: "admin",
-  moderators: "moderator",
-  mods: "moderator",
-  users: "user",
-  members: "user",
+  admins: 'admin',
+  administrators: 'admin',
+  moderators: 'moderator',
+  mods: 'moderator',
+  users: 'user',
+  members: 'user',
 };
 
 // ---------------------------------------------------------------------------
@@ -119,18 +119,18 @@ export function handleSAMLResponse(samlResponse: string): SAMLAssertion {
 
   try {
     // Attempt to parse as base64-encoded JSON mock payload
-    const decoded = Buffer.from(samlResponse, "base64").toString("utf-8");
+    const decoded = Buffer.from(samlResponse, 'base64').toString('utf-8');
     const parsed = JSON.parse(decoded);
 
     return {
-      email: parsed.email || "",
-      name: parsed.name || "",
+      email: parsed.email || '',
+      name: parsed.name || '',
       groups: Array.isArray(parsed.groups) ? parsed.groups : [],
-      nameId: parsed.nameId || parsed.email || "",
+      nameId: parsed.nameId || parsed.email || '',
       sessionIndex: parsed.sessionIndex || uuidv4(),
     };
   } catch {
-    throw new Error("Invalid SAML response: unable to parse assertion");
+    throw new Error('Invalid SAML response: unable to parse assertion');
   }
 }
 
@@ -167,10 +167,7 @@ export function getOIDCConfig(orgId: string): OIDCConfig | undefined {
 // OIDC Callback Handling (mock token exchange)
 // ---------------------------------------------------------------------------
 
-export async function handleOIDCCallback(
-  code: string,
-  orgId: string,
-): Promise<OIDCUserInfo> {
+export async function handleOIDCCallback(code: string, orgId: string): Promise<OIDCUserInfo> {
   const config = oidcConfigs.get(orgId);
   if (!config) {
     throw new Error(`No OIDC configuration found for org ${orgId}`);
@@ -183,17 +180,17 @@ export async function handleOIDCCallback(
   // Here we mock by decoding the code as a base64 JSON payload.
 
   try {
-    const decoded = Buffer.from(code, "base64").toString("utf-8");
+    const decoded = Buffer.from(code, 'base64').toString('utf-8');
     const parsed = JSON.parse(decoded);
 
     return {
-      email: parsed.email || "",
-      name: parsed.name || "",
+      email: parsed.email || '',
+      name: parsed.name || '',
       sub: parsed.sub || uuidv4(),
       groups: Array.isArray(parsed.groups) ? parsed.groups : [],
     };
   } catch {
-    throw new Error("Invalid OIDC authorization code");
+    throw new Error('Invalid OIDC authorization code');
   }
 }
 
@@ -207,7 +204,7 @@ export function findOrCreateSSOUser(
   attributes: {
     name: string;
     groups?: string[];
-    provider: "saml" | "oidc";
+    provider: 'saml' | 'oidc';
     externalId?: string;
   },
 ): { user: SSOUser; created: boolean } {
@@ -222,17 +219,15 @@ export function findOrCreateSSOUser(
     return { user: existing, created: false };
   }
 
-  const role = attributes.groups
-    ? mapGroupsToRoles(attributes.groups)
-    : "user" as UserRole;
+  const role = attributes.groups ? mapGroupsToRoles(attributes.groups) : ('user' as UserRole);
 
   const user: SSOUser = {
     id: uuidv4(),
     email,
-    passwordHash: "", // SSO users don't have passwords
+    passwordHash: '', // SSO users don't have passwords
     displayName: attributes.name || email,
     role,
-    tier: "enterprise" as UserTier,
+    tier: 'enterprise' as UserTier,
     createdAt: new Date(),
     orgId,
     ssoProvider: attributes.provider,
@@ -254,13 +249,13 @@ export function mapGroupsToRoles(groups: string[]): UserRole {
   const normalizedGroups = groups.map((g) => g.toLowerCase().trim());
 
   for (const group of normalizedGroups) {
-    if (GROUP_ROLE_MAP[group] === "admin") return "admin";
+    if (GROUP_ROLE_MAP[group] === 'admin') return 'admin';
   }
   for (const group of normalizedGroups) {
-    if (GROUP_ROLE_MAP[group] === "moderator") return "moderator";
+    if (GROUP_ROLE_MAP[group] === 'moderator') return 'moderator';
   }
 
-  return "user";
+  return 'user';
 }
 
 // ---------------------------------------------------------------------------

@@ -18,12 +18,12 @@ AnimaForge uses JSON Web Tokens (JWT) for stateless authentication across all se
 
 ### Role-Based Access Control (RBAC)
 
-| Role | Permissions |
-|------|------------|
-| `admin` | Full access: user management, billing, audit, all CRUD |
+| Role      | Permissions                                                           |
+| --------- | --------------------------------------------------------------------- |
+| `admin`   | Full access: user management, billing, audit, all CRUD                |
 | `creator` | Create/edit/delete own projects, characters, assets; generate content |
-| `editor` | Edit assigned projects, review/approve shots, post comments |
-| `viewer` | Read-only access to assigned projects |
+| `editor`  | Edit assigned projects, review/approve shots, post comments           |
+| `viewer`  | Read-only access to assigned projects                                 |
 
 Roles are enforced at the API Gateway (Kong/Express middleware) and verified again at the service level. Permission checks use a deny-by-default policy.
 
@@ -63,13 +63,14 @@ Enterprise tier organizations can configure SAML 2.0 or OIDC-based SSO:
 
 Redis-backed sliding window rate limiting applied at the Gateway:
 
-| Tier | Limit | Burst |
-|------|-------|-------|
-| Starter | 60 req/min | 10 |
-| Pro | 300 req/min | 50 |
-| Enterprise | 1000 req/min | 200 |
+| Tier       | Limit        | Burst |
+| ---------- | ------------ | ----- |
+| Starter    | 60 req/min   | 10    |
+| Pro        | 300 req/min  | 50    |
+| Enterprise | 1000 req/min | 200   |
 
 Rate limit headers are included in every response:
+
 ```
 X-RateLimit-Limit: 300
 X-RateLimit-Remaining: 287
@@ -140,12 +141,12 @@ AnimaForge implements a comprehensive consent framework for AI-generated content
 
 ### Consent Types
 
-| Type | Description |
-|------|-------------|
-| `perpetual` | Unlimited use with no expiry |
-| `time_limited` | Valid for a specified date range |
-| `project_scoped` | Limited to a specific project |
-| `revocable` | Can be withdrawn at any time |
+| Type             | Description                      |
+| ---------------- | -------------------------------- |
+| `perpetual`      | Unlimited use with no expiry     |
+| `time_limited`   | Valid for a specified date range |
+| `project_scoped` | Limited to a specific project    |
+| `revocable`      | Can be withdrawn at any time     |
 
 ### Consent Flow
 
@@ -160,6 +161,7 @@ AnimaForge implements a comprehensive consent framework for AI-generated content
 ### Consent Chain
 
 Every consent action is recorded in an append-only log:
+
 ```json
 [
   { "action": "requested", "timestamp": "2026-02-15T10:00:00Z", "actor": "creator" },
@@ -184,17 +186,17 @@ All significant actions are recorded in an immutable audit log:
 
 ### Audit Entry Structure
 
-| Field | Description |
-|-------|-------------|
-| `id` | Unique audit entry ID |
-| `timestamp` | ISO 8601 timestamp |
-| `user` | Acting user email or system actor |
-| `action` | Action type (create, update, delete, login, etc.) |
-| `resource` | Resource type (project, character, shot, etc.) |
-| `resource_id` | Resource identifier |
-| `ip` | Source IP address |
-| `user_agent` | Client user agent |
-| `details` | JSON payload with action-specific data |
+| Field         | Description                                       |
+| ------------- | ------------------------------------------------- |
+| `id`          | Unique audit entry ID                             |
+| `timestamp`   | ISO 8601 timestamp                                |
+| `user`        | Acting user email or system actor                 |
+| `action`      | Action type (create, update, delete, login, etc.) |
+| `resource`    | Resource type (project, character, shot, etc.)    |
+| `resource_id` | Resource identifier                               |
+| `ip`          | Source IP address                                 |
+| `user_agent`  | Client user agent                                 |
+| `details`     | JSON payload with action-specific data            |
 
 ### Retention
 
@@ -210,14 +212,14 @@ All significant actions are recorded in an immutable audit log:
 
 ### Data Subject Rights
 
-| Right | Implementation |
-|-------|---------------|
-| **Right to access** | Users can export all their data via Settings > Privacy > Download My Data |
-| **Right to erasure** | Account deletion removes all personal data within 30 days; generation outputs are anonymized |
-| **Right to rectification** | Users can update all profile and character data at any time |
-| **Right to portability** | Data export in standard JSON format |
-| **Right to restriction** | Users can disable their account without deletion |
-| **Right to object** | Users can opt out of analytics and marketing communications |
+| Right                      | Implementation                                                                               |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| **Right to access**        | Users can export all their data via Settings > Privacy > Download My Data                    |
+| **Right to erasure**       | Account deletion removes all personal data within 30 days; generation outputs are anonymized |
+| **Right to rectification** | Users can update all profile and character data at any time                                  |
+| **Right to portability**   | Data export in standard JSON format                                                          |
+| **Right to restriction**   | Users can disable their account without deletion                                             |
+| **Right to object**        | Users can opt out of analytics and marketing communications                                  |
 
 ### Data Processing
 
@@ -243,16 +245,16 @@ All significant actions are recorded in an immutable audit log:
 
 ## Penetration Testing Schedule
 
-| Activity | Frequency | Provider |
-|----------|-----------|----------|
-| Automated vulnerability scanning | Weekly | Dependabot + Snyk |
-| SAST (Static Application Security Testing) | Every PR | GitHub CodeQL |
-| DAST (Dynamic Application Security Testing) | Monthly | OWASP ZAP |
-| Third-party penetration test | Annually | Independent security firm |
-| Bug bounty program | Ongoing | Coordinated via security@animaforge.com |
-| Dependency audit | Weekly | `npm audit` + `pip-audit` |
-| Container image scanning | Every build | Trivy |
-| Infrastructure security review | Quarterly | Internal + external |
+| Activity                                    | Frequency   | Provider                                |
+| ------------------------------------------- | ----------- | --------------------------------------- |
+| Automated vulnerability scanning            | Weekly      | Dependabot + Snyk                       |
+| SAST (Static Application Security Testing)  | Every PR    | GitHub CodeQL                           |
+| DAST (Dynamic Application Security Testing) | Monthly     | OWASP ZAP                               |
+| Third-party penetration test                | Annually    | Independent security firm               |
+| Bug bounty program                          | Ongoing     | Coordinated via security@animaforge.com |
+| Dependency audit                            | Weekly      | `npm audit` + `pip-audit`               |
+| Container image scanning                    | Every build | Trivy                                   |
+| Infrastructure security review              | Quarterly   | Internal + external                     |
 
 ### Vulnerability Disclosure
 

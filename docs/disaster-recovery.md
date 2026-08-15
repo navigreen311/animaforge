@@ -15,16 +15,19 @@ This document outlines the procedures for recovering AnimaForge services in the 
 ## Database Restoration
 
 1. **Identify the latest backup**
+
    ```bash
    aws s3 ls s3://animaforge-backups/postgres/ --recursive | sort | tail -5
    ```
 
 2. **Download the backup**
+
    ```bash
    aws s3 cp s3://animaforge-backups/postgres/animaforge-db-YYYYMMDD_HHMMSS.sql.gz /tmp/restore.sql.gz
    ```
 
 3. **Restore to the target database**
+
    ```bash
    gunzip -c /tmp/restore.sql.gz | psql "$DATABASE_URL"
    ```

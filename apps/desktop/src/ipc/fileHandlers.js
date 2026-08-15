@@ -7,7 +7,30 @@ const FILE_FILTERS = {
   video: { name: 'Video', extensions: ['mp4', 'mov', 'avi', 'webm', 'mkv'] },
   models3d: { name: '3D Models', extensions: ['glb', 'gltf', 'fbx', 'obj', 'usd', 'usdc', 'usdz'] },
   bvh: { name: 'Motion Capture', extensions: ['bvh'] },
-  all: { name: 'All AnimaForge Files', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'bmp', 'mp4', 'mov', 'avi', 'webm', 'mkv', 'glb', 'gltf', 'fbx', 'obj', 'usd', 'usdc', 'usdz', 'bvh'] },
+  all: {
+    name: 'All AnimaForge Files',
+    extensions: [
+      'png',
+      'jpg',
+      'jpeg',
+      'webp',
+      'tiff',
+      'bmp',
+      'mp4',
+      'mov',
+      'avi',
+      'webm',
+      'mkv',
+      'glb',
+      'gltf',
+      'fbx',
+      'obj',
+      'usd',
+      'usdc',
+      'usdz',
+      'bvh',
+    ],
+  },
 };
 
 /**

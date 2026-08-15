@@ -1,21 +1,17 @@
-import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../services/authService";
-import type { JwtPayload } from "../models/authSchemas";
+import type { Request, Response, NextFunction } from 'express';
+import { verifyToken } from '../services/authService';
+import type { JwtPayload } from '../models/authSchemas';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
   token?: string;
 }
 
-export function authenticate(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): void {
+export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Missing or invalid authorization header" });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Missing or invalid authorization header' });
     return;
   }
 
@@ -27,7 +23,7 @@ export function authenticate(
     req.token = token;
     next();
   } catch (err) {
-    res.status(401).json({ error: "Invalid or expired token" });
+    res.status(401).json({ error: 'Invalid or expired token' });
     return;
   }
 }

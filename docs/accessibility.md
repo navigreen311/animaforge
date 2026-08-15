@@ -16,11 +16,11 @@ and automated axe-core regression tests.
 
 The primary brand palette passes WCAG AA against the dark neutral background:
 
-| Foreground | Background | Ratio | Result |
-| --- | --- | --- | --- |
-| Brand purple `#7c3aed` | App dark `#0a0a0b` | ~7.1 : 1 | passes AA & AAA normal text |
-| Brand light `#a78bfa` | App dark `#0a0a0b` | ~9.5 : 1 | passes AA & AAA normal text |
-| Text primary on surface | `var(--bg-surface)` | > 7 : 1 | passes AA & AAA normal text |
+| Foreground              | Background          | Ratio    | Result                      |
+| ----------------------- | ------------------- | -------- | --------------------------- |
+| Brand purple `#7c3aed`  | App dark `#0a0a0b`  | ~7.1 : 1 | passes AA & AAA normal text |
+| Brand light `#a78bfa`   | App dark `#0a0a0b`  | ~9.5 : 1 | passes AA & AAA normal text |
+| Text primary on surface | `var(--bg-surface)` | > 7 : 1  | passes AA & AAA normal text |
 
 Use `checkContrast(fg, bg)` from `apps/web/src/lib/a11y.ts` to verify any new
 color pair before merging.
@@ -30,15 +30,15 @@ color pair before merging.
 All utilities live under `apps/web/src/lib/a11y/` and
 `apps/web/src/components/ui/`.
 
-| Utility | Location | Purpose |
-| --- | --- | --- |
-| `useFocusTrap(active)` | `lib/a11y/useFocusTrap.ts` | Ref-based focus trap hook for modals and popovers. |
-| `useEscapeKey(active, onEscape)` | `lib/a11y/useEscapeKey.ts` | Closes an overlay when Escape is pressed. |
-| `<AccessibleModal>` | `components/ui/AccessibleModal.tsx` | Ready-to-use modal with focus trap, escape close, backdrop click, and `aria-modal`. |
-| `announce(message, priority?)` | `lib/a11y/announcer.ts` | Pushes a status message to a shared `aria-live` region. Use for non-toast updates. |
-| `<VisuallyHidden>` | `components/ui/VisuallyHidden.tsx` | Wraps text that should be read by screen readers but not shown visually. |
-| `trapFocus`, `announceToScreenReader`, `prefersReducedMotion`, `checkContrast` | `lib/a11y.ts` | Lower-level helpers for advanced cases. |
-| `<SkipLink>` | `components/ui/SkipLink.tsx` | "Skip to content" link rendered at the top of the dashboard layout. |
+| Utility                                                                        | Location                            | Purpose                                                                             |
+| ------------------------------------------------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------- |
+| `useFocusTrap(active)`                                                         | `lib/a11y/useFocusTrap.ts`          | Ref-based focus trap hook for modals and popovers.                                  |
+| `useEscapeKey(active, onEscape)`                                               | `lib/a11y/useEscapeKey.ts`          | Closes an overlay when Escape is pressed.                                           |
+| `<AccessibleModal>`                                                            | `components/ui/AccessibleModal.tsx` | Ready-to-use modal with focus trap, escape close, backdrop click, and `aria-modal`. |
+| `announce(message, priority?)`                                                 | `lib/a11y/announcer.ts`             | Pushes a status message to a shared `aria-live` region. Use for non-toast updates.  |
+| `<VisuallyHidden>`                                                             | `components/ui/VisuallyHidden.tsx`  | Wraps text that should be read by screen readers but not shown visually.            |
+| `trapFocus`, `announceToScreenReader`, `prefersReducedMotion`, `checkContrast` | `lib/a11y.ts`                       | Lower-level helpers for advanced cases.                                             |
+| `<SkipLink>`                                                                   | `components/ui/SkipLink.tsx`        | "Skip to content" link rendered at the top of the dashboard layout.                 |
 
 Sonner toasts already include their own `aria-live` region; prefer `toast.*`
 for transient feedback and `announce()` for silent UI state updates (filter

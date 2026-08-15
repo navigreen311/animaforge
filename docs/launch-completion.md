@@ -3,6 +3,7 @@
 ## Audit Items: Final Status
 
 ### Launch Blockers ✅
+
 - Legal pages (Terms, Privacy, AI Policy) — built (DRAFT, needs lawyer review)
 - GDPR/CCPA cookie consent — built
 - Public landing page — built
@@ -11,6 +12,7 @@
 - Email sequences — 9 templates built (needs RESEND_API_KEY for production)
 
 ### Pre-Launch Essentials ✅
+
 - Sentry monitoring — stub built (needs @sentry/nextjs install + DSN)
 - Feedback widget — built
 - Help center — built
@@ -20,6 +22,7 @@
 - API rate limit headers — built
 
 ### Growth Features ✅
+
 - Referral program — built
 - Feature flags — built
 - Milestone emails — built
@@ -28,16 +31,18 @@
 - Localization (en/es/fr) — built
 
 ### Platform Infrastructure ✅
+
 - Mobile app (React Native + Expo) — initialized this sprint
 - Desktop app (Electron) — initialized this sprint
 - Multi-region — region lib + UI built this sprint (real GPU clusters require AWS work)
 - Backup & DR — script + runbook built
 - Status page — built
-- API versioning (/api/v1/* rewrites) — built this sprint
+- API versioning (/api/v1/\* rewrites) — built this sprint
 
 ## Production Deployment Checklist
 
 ### Environment Variables
+
 - `DATABASE_URL` — PostgreSQL connection string
 - `REDIS_URL` — Redis for queues + sessions
 - `JWT_SECRET` — auth token signing
@@ -53,6 +58,7 @@
 - `C2PA_SIGNING_KEY` — content provenance
 
 ### DNS Records
+
 - A record: `animaforge.com` → load balancer
 - CNAME: `app.animaforge.com` → main app
 - CNAME: `api.animaforge.com` → API gateway
@@ -61,10 +67,12 @@
 - MX records for `@animaforge.com` email
 
 ### SSL Certificates
+
 - Wildcard cert for `*.animaforge.com` (Let's Encrypt or AWS ACM)
 - Per-tenant SSL provisioning for custom domains (Cloudflare for SaaS recommended)
 
 ### Third-Party Services
+
 - Stripe webhooks: `invoice.payment_succeeded`, `customer.subscription.updated`
 - Resend: verify sending domain, configure SPF/DKIM
 - Sentry: create project, install integration
@@ -73,6 +81,7 @@
 - Replicate / Fal.ai: provision GPU inference endpoints in 2+ regions
 
 ## Multi-Region Setup Guide
+
 1. Provision regional clusters in: us-east-1, us-west-2, eu-west-1, eu-central-1, ap-southeast-1, ap-northeast-1
 2. Set up GeoDNS routing via Cloudflare or AWS Route 53
 3. Replicate PostgreSQL via logical replication or Aurora Global Database
@@ -81,6 +90,7 @@
 6. Configure latency-aware routing
 
 ## Custom Domain Setup
+
 1. Customer adds domain via /settings/domains
 2. App generates CNAME target + verification token
 3. Customer adds CNAME record at their DNS provider
@@ -89,17 +99,20 @@
 6. Subdomain mapped to /review/[projectId] route via host header
 
 ## Mobile App Submission
+
 - iOS App Store: requires Apple Developer account ($99/yr), TestFlight beta, App Store review (1-3 days)
 - Google Play: requires Google Play Console ($25 one-time), internal testing, production review (1-2 days)
 - Privacy nutrition labels required for both stores
 - Push notification certificates (APNs for iOS, FCM for Android)
 
 ## Desktop App Code Signing
+
 - macOS: Apple Developer ID certificate ($99/yr), notarization required
 - Windows: EV code signing certificate ($300-500/yr) for SmartScreen reputation
 - Linux: optional GPG signing for AppImage/deb
 
 ## Rollback Procedure
+
 1. Revert deployment via blue/green or canary
 2. Roll back database migrations if schema changed
 3. Invalidate CDN cache
@@ -107,6 +120,7 @@
 5. Post-mortem within 48 hours
 
 ## First 24h Monitoring
+
 - Error rate < 0.5% (Sentry)
 - p95 API latency < 500ms (PostHog/Datadog)
 - Successful generation rate > 95%

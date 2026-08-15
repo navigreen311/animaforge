@@ -67,23 +67,27 @@ graph TB
 ```
 
 ### Zone 1: Client Layer
+
 - **Next.js 14+ Web App** — App Router, TypeScript, Tailwind CSS, Radix UI
 - **State Management** — Zustand stores + TanStack Query for server state
 - **3D Rendering** — Three.js for avatar preview and timeline visualization
 - **Client SDK** — TypeScript SDK for third-party integrations
 
 ### Zone 2: API Gateway
+
 - **Kong / Express** — Unified routing, request transformation, CORS
 - **Auth0 / Clerk** — JWT-based authentication with RBAC (admin, creator, editor)
 - **Rate Limiting** — Redis-backed sliding window (60/300/1000 req/min by tier)
 - **Request Validation** — Zod schemas for all inbound payloads
 
 ### Zone 3: Orchestration Layer
+
 - **Job Scheduler** — BullMQ (Node.js) + Celery (Python) for job queuing and priority
 - **Model Router** — Selects optimal GPU instance based on model, quality, and queue depth
 - **WebSocket Hub** — Socket.IO for real-time collaboration, presence, and progress streaming
 
 ### Zone 4: Generation Services
+
 - **Video Diffusion** — Custom video diffusion model (AnimaForge-V2) on GPU clusters
 - **Audio Synthesis** — Music, SFX, and dialogue generation
 - **Avatar Studio (X5)** — 7-step 3D reconstruction pipeline
@@ -91,18 +95,21 @@ graph TB
 - **Script AI** — Script parsing, shot decomposition, and prompt generation
 
 ### Zone 5: Post-Processing
+
 - **Stabilizer** — Frame-level motion stabilization
 - **Upscaler** — AI super-resolution (up to 4K)
 - **Interpolator** — Frame interpolation for smooth motion (24/30/60fps)
 - **Compositor** — Layer compositing, transitions, and effects
 
 ### Zone 6: Governance Pipeline
+
 - **Content Moderator** — NSFW, violence, bias, and copyright detection
 - **C2PA Signer** — Content Credentials manifest creation and signing
 - **Watermark Engine** — Invisible spectral watermarking
 - **Consent Validator** — Likeness rights verification
 
 ### Zone 7: Delivery & Storage
+
 - **CDN** — CloudFront / Cloudflare for global edge delivery
 - **S3 / R2** — Object storage for assets, outputs, and manifests
 - **Export Engine** — MP4, WebM, ProRes, and image sequence export
@@ -129,19 +136,19 @@ flowchart LR
   style S10 fill:#059669,stroke:#047857,color:#fff
 ```
 
-| Stage | Service | Description |
-|-------|---------|-------------|
-| 1. Script Input | Web Client | User enters script text, creative brief, or uploads screenplay |
-| 2. Script Parsing | Script AI | NLP extracts scenes, dialogue, actions, and emotions |
-| 3. Shot Decomposition | Script AI | Breaks scenes into individual shots with camera directions |
-| 4. Character Binding | Orchestrator | Maps characters to shots, loads identity embeddings |
-| 5. Style Application | Style Intelligence | Applies style fingerprint (palette, textures, lighting) |
-| 6. Video Diffusion | Video Diffusion | Generates raw video frames via AnimaForge-V2 model |
-| 7. Audio Synthesis | Audio Engine | Generates music, SFX, and dialogue synchronized to video |
-| 8. Post-Processing | Post-Processing | Stabilization, upscaling, frame interpolation |
-| 9. Compositing | Compositor | Layers, transitions, text overlays, final assembly |
-| 10. Quality Assessment | Orchestrator | Automated quality scoring (motion, consistency, fidelity) |
-| 11. Output Packaging | Export Engine | Encode final formats, generate thumbnails, metadata |
+| Stage                  | Service            | Description                                                    |
+| ---------------------- | ------------------ | -------------------------------------------------------------- |
+| 1. Script Input        | Web Client         | User enters script text, creative brief, or uploads screenplay |
+| 2. Script Parsing      | Script AI          | NLP extracts scenes, dialogue, actions, and emotions           |
+| 3. Shot Decomposition  | Script AI          | Breaks scenes into individual shots with camera directions     |
+| 4. Character Binding   | Orchestrator       | Maps characters to shots, loads identity embeddings            |
+| 5. Style Application   | Style Intelligence | Applies style fingerprint (palette, textures, lighting)        |
+| 6. Video Diffusion     | Video Diffusion    | Generates raw video frames via AnimaForge-V2 model             |
+| 7. Audio Synthesis     | Audio Engine       | Generates music, SFX, and dialogue synchronized to video       |
+| 8. Post-Processing     | Post-Processing    | Stabilization, upscaling, frame interpolation                  |
+| 9. Compositing         | Compositor         | Layers, transitions, text overlays, final assembly             |
+| 10. Quality Assessment | Orchestrator       | Automated quality scoring (motion, consistency, fidelity)      |
+| 11. Output Packaging   | Export Engine      | Encode final formats, generate thumbnails, metadata            |
 
 ---
 

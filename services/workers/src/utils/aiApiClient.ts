@@ -1,7 +1,6 @@
 /* ---------- AI API HTTP Client ---------- */
 
-const AI_API_BASE =
-  process.env.AI_API_BASE_URL ?? "http://localhost:8001/ai/v1";
+const AI_API_BASE = process.env.AI_API_BASE_URL ?? 'http://localhost:8001/ai/v1';
 
 const TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 2;
@@ -24,7 +23,7 @@ export interface AudioGenerationParams {
   projectId: string;
   userId: string;
   prompt: string;
-  type?: "voice" | "sfx" | "music";
+  type?: 'voice' | 'sfx' | 'music';
   duration?: number;
   [key: string]: unknown;
 }
@@ -62,7 +61,7 @@ export interface AiJobSubmissionResult {
 
 export interface AiJobStatusResult {
   jobId: string;
-  status: "queued" | "running" | "complete" | "failed";
+  status: 'queued' | 'running' | 'complete' | 'failed';
   progress: number;
   outputUrl?: string;
   error?: string;
@@ -102,9 +101,9 @@ async function fetchWithRetry<T>(
       const response = await fetchWithTimeout(url, options);
 
       if (!response.ok) {
-        const body = await response.text().catch(() => "");
+        const body = await response.text().catch(() => '');
         throw new Error(
-          "AI API HTTP " + response.status + ": " + response.statusText + " -- " + body,
+          'AI API HTTP ' + response.status + ': ' + response.statusText + ' -- ' + body,
         );
       }
 
@@ -112,8 +111,8 @@ async function fetchWithRetry<T>(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      if (lastError.name === "AbortError") {
-        throw new Error("AI API request timed out after " + TIMEOUT_MS + "ms");
+      if (lastError.name === 'AbortError') {
+        throw new Error('AI API request timed out after ' + TIMEOUT_MS + 'ms');
       }
 
       if (attempt < retries) {
@@ -123,7 +122,7 @@ async function fetchWithRetry<T>(
   }
 
   throw new Error(
-    "AI API failed after " + retries + " attempts: " + (lastError?.message ?? "unknown"),
+    'AI API failed after ' + retries + ' attempts: ' + (lastError?.message ?? 'unknown'),
   );
 }
 
@@ -131,16 +130,16 @@ async function fetchWithRetry<T>(
 
 function postJSON<T>(endpoint: string, body: unknown): Promise<T> {
   return fetchWithRetry<T>(AI_API_BASE + endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
 }
 
 function getJSON<T>(endpoint: string): Promise<T> {
   return fetchWithRetry<T>(AI_API_BASE + endpoint, {
-    method: "GET",
-    headers: { Accept: "application/json" },
+    method: 'GET',
+    headers: { Accept: 'application/json' },
   });
 }
 
@@ -149,33 +148,31 @@ function getJSON<T>(endpoint: string): Promise<T> {
 export function submitVideoGeneration(
   params: VideoGenerationParams,
 ): Promise<AiJobSubmissionResult> {
-  return postJSON<AiJobSubmissionResult>("/generate/video", params);
+  return postJSON<AiJobSubmissionResult>('/generate/video', params);
 }
 
 export function submitAudioGeneration(
   params: AudioGenerationParams,
 ): Promise<AiJobSubmissionResult> {
-  return postJSON<AiJobSubmissionResult>("/generate/audio", params);
+  return postJSON<AiJobSubmissionResult>('/generate/audio', params);
 }
 
 export function submitAvatarReconstruction(
   params: AvatarReconstructionParams,
 ): Promise<AiJobSubmissionResult> {
-  return postJSON<AiJobSubmissionResult>("/generate/avatar", params);
+  return postJSON<AiJobSubmissionResult>('/generate/avatar', params);
 }
 
-export function submitStyleClone(
-  params: StyleCloneParams,
-): Promise<AiJobSubmissionResult> {
-  return postJSON<AiJobSubmissionResult>("/style/clone", params);
+export function submitStyleClone(params: StyleCloneParams): Promise<AiJobSubmissionResult> {
+  return postJSON<AiJobSubmissionResult>('/style/clone', params);
 }
 
 export function submitCartoonConversion(
   params: CartoonConversionParams,
 ): Promise<AiJobSubmissionResult> {
-  return postJSON<AiJobSubmissionResult>("/convert/img-to-cartoon", params);
+  return postJSON<AiJobSubmissionResult>('/convert/img-to-cartoon', params);
 }
 
 export function getJobStatus(jobId: string): Promise<AiJobStatusResult> {
-  return getJSON<AiJobStatusResult>("/jobs/" + jobId);
+  return getJSON<AiJobStatusResult>('/jobs/' + jobId);
 }

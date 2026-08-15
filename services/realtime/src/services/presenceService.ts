@@ -5,7 +5,7 @@
  * auto-away timers, and exposes session history for diagnostics.
  */
 
-export type PresenceStatus = "online" | "away" | "busy" | "offline";
+export type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
 
 export interface PresenceEntry {
   userId: string;
@@ -46,7 +46,7 @@ class PresenceService {
     };
 
     // If transitioning to offline, archive the session
-    if (status === "offline" && existing && existing.status !== "offline") {
+    if (status === 'offline' && existing && existing.status !== 'offline') {
       this.archiveSession(existing);
     }
 
@@ -61,9 +61,7 @@ class PresenceService {
   }
 
   getOnlineUsers(projectId?: string): PresenceEntry[] {
-    const all = [...this.presence.values()].filter(
-      (e) => e.status !== "offline",
-    );
+    const all = [...this.presence.values()].filter((e) => e.status !== 'offline');
     if (projectId) {
       return all.filter((e) => e.projectId === projectId);
     }
@@ -76,8 +74,8 @@ class PresenceService {
 
     const timer = setTimeout(() => {
       const entry = this.presence.get(userId);
-      if (entry && entry.status === "online") {
-        entry.status = "away";
+      if (entry && entry.status === 'online') {
+        entry.status = 'away';
         entry.lastSeen = new Date();
       }
       this.awayTimers.delete(userId);

@@ -3,9 +3,9 @@
  * Provides intelligent asset discovery using embeddings, usage tracking, and co-occurrence analysis.
  */
 
-import { v4 as uuidv4 } from "uuid";
-import { embedText, EMBEDDING_DIM } from "./embeddingService";
-import { indexDocument as esIndexDocument } from "./elasticsearchClient";
+import { v4 as uuidv4 } from 'uuid';
+import { embedText, EMBEDDING_DIM } from './embeddingService';
+import { indexDocument as esIndexDocument } from './elasticsearchClient';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,7 +54,7 @@ const usageRecords: UsageRecord[] = [];
 // ---------------------------------------------------------------------------
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
-    throw new Error("Vector length mismatch: " + a.length + " vs " + b.length);
+    throw new Error('Vector length mismatch: ' + a.length + ' vs ' + b.length);
   }
   let dot = 0;
   let magA = 0;
@@ -72,11 +72,11 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export function generateAssetEmbedding(
   name: string,
   type: string,
-  metadata: Record<string, unknown>
+  metadata: Record<string, unknown>,
 ): number[] {
   const metaStr = Object.entries(metadata)
     .map(([k, v]) => `${k}:${String(v)}`)
-    .join(" ");
+    .join(' ');
   const text = `${name} ${type} ${metaStr}`.trim();
   return embedText(text);
 }
@@ -97,8 +97,7 @@ export function indexAssetWithEmbedding(asset: {
   embedding?: number[];
 }): AssetEntry {
   const metadata = asset.metadata ?? {};
-  const embedding =
-    asset.embedding ?? generateAssetEmbedding(asset.name, asset.type, metadata);
+  const embedding = asset.embedding ?? generateAssetEmbedding(asset.name, asset.type, metadata);
 
   const entry: AssetEntry = {
     id: asset.id ?? uuidv4(),
@@ -113,7 +112,7 @@ export function indexAssetWithEmbedding(asset: {
   assetIndex.set(entry.id, entry);
 
   // Fire-and-forget ES index
-  esIndexDocument("animaforge_assets", entry.id, {
+  esIndexDocument('animaforge_assets', entry.id, {
     name: entry.name,
     type: entry.type,
     projectId: entry.projectId,
@@ -127,10 +126,7 @@ export function indexAssetWithEmbedding(asset: {
 /**
  * Find assets similar to the given asset using cosine similarity.
  */
-export function findSimilarAssets(
-  assetId: string,
-  limit: number = 10
-): SimilarAssetResult[] {
+export function findSimilarAssets(assetId: string, limit: number = 10): SimilarAssetResult[] {
   const source = assetIndex.get(assetId);
   if (!source) return [];
 
@@ -157,7 +153,7 @@ export function findSimilarAssets(
 export function findByDescription(
   description: string,
   type?: string,
-  limit: number = 20
+  limit: number = 20,
 ): SimilarAssetResult[] {
   if (!description || description.trim().length === 0) return [];
 
@@ -186,16 +182,16 @@ export function findByDescription(
  */
 export function getAssetRecommendations(
   projectId: string,
-  context: { style?: string; character?: string; scene?: string }
+  context: { style?: string; character?: string; scene?: string },
 ): AssetRecommendation[] {
   // Build a context query embedding
   const contextParts: string[] = [];
   if (context.style) contextParts.push(`style:${context.style}`);
   if (context.character) contextParts.push(`character:${context.character}`);
   if (context.scene) contextParts.push(`scene:${context.scene}`);
-  if (contextParts.length === 0) contextParts.push("general");
+  if (contextParts.length === 0) contextParts.push('general');
 
-  const contextEmbedding = embedText(contextParts.join(" "));
+  const contextEmbedding = embedText(contextParts.join(' '));
 
   // Get project usage counts for popularity boost
   const projectUsage = new Map<string, number>();
@@ -212,11 +208,12 @@ export function getAssetRecommendations(
     const usageCount = projectUsage.get(entry.id) || 0;
     // Blend similarity with a small popularity boost (log scale)
     const popularityBoost = usageCount > 0 ? Math.log2(usageCount + 1) * 0.05 : 0;
-    const combinedScore = similarityScore * 0.85 + popularityBoost + (entry.projectId === projectId ? 0.1 : 0);
+    const combinedScore =
+      similarityScore * 0.85 + popularityBoost + (entry.projectId === projectId ? 0.1 : 0);
 
-    let reason = "context similarity";
-    if (usageCount > 0) reason = "frequently used + context match";
-    if (entry.projectId === projectId) reason = "same project + " + reason;
+    let reason = 'context similarity';
+    if (usageCount > 0) reason = 'frequently used + context match';
+    if (entry.projectId === projectId) reason = 'same project + ' + reason;
 
     recommendations.push({
       id: entry.id,
@@ -234,11 +231,7 @@ export function getAssetRecommendations(
 /**
  * Record asset usage for learning.
  */
-export function trackAssetUsage(
-  assetId: string,
-  projectId: string,
-  shotId: string
-): UsageRecord {
+export function trackAssetUsage(assetId: string, projectId: string, shotId: string): UsageRecord {
   const record: UsageRecord = {
     assetId,
     projectId,
@@ -254,7 +247,7 @@ export function trackAssetUsage(
  */
 export function getMostUsedAssets(
   projectId: string,
-  limit: number = 10
+  limit: number = 10,
 ): { asset: AssetEntry; usageCount: number }[] {
   const counts = new Map<string, number>();
   for (const rec of usageRecords) {
@@ -278,7 +271,7 @@ export function getMostUsedAssets(
  * Get related assets using collaborative filtering — assets frequently used together.
  */
 export function getRelatedAssets(
-  assetId: string
+  assetId: string,
 ): { id: string; name: string; type: string; coOccurrences: number }[] {
   // Find all shots where the target asset was used
   const shotIds = new Set<string>();
@@ -292,10 +285,7 @@ export function getRelatedAssets(
   const coOccurrences = new Map<string, number>();
   for (const rec of usageRecords) {
     if (rec.assetId !== assetId && shotIds.has(rec.shotId)) {
-      coOccurrences.set(
-        rec.assetId,
-        (coOccurrences.get(rec.assetId) || 0) + 1
-      );
+      coOccurrences.set(rec.assetId, (coOccurrences.get(rec.assetId) || 0) + 1);
     }
   }
 
@@ -307,8 +297,7 @@ export function getRelatedAssets(
         : null;
     })
     .filter(
-      (e): e is { id: string; name: string; type: string; coOccurrences: number } =>
-        e !== null
+      (e): e is { id: string; name: string; type: string; coOccurrences: number } => e !== null,
     );
 
   results.sort((a, b) => b.coOccurrences - a.coOccurrences);
@@ -322,11 +311,7 @@ export function reindexProject(projectId: string): number {
   let count = 0;
   for (const entry of assetIndex.values()) {
     if (entry.projectId === projectId) {
-      entry.embedding = generateAssetEmbedding(
-        entry.name,
-        entry.type,
-        entry.metadata
-      );
+      entry.embedding = generateAssetEmbedding(entry.name, entry.type, entry.metadata);
       entry.indexedAt = new Date().toISOString();
       count++;
     }

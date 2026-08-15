@@ -1,12 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, Pressable, FlatList, StyleSheet, SafeAreaView } from 'react-native';
 import { statusColor, ShotStatus } from '../components/StatusBadge';
 
 interface Shot {
@@ -39,7 +32,7 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
     const total = MOCK_SHOTS.length;
     const approved = MOCK_SHOTS.filter((s) => s.status === 'approved').length;
     const inProgress = MOCK_SHOTS.filter(
-      (s) => s.status === 'in_progress' || s.status === 'queued' || s.status === 'running'
+      (s) => s.status === 'in_progress' || s.status === 'queued' || s.status === 'running',
     ).length;
     return { total, approved, inProgress };
   }, []);
@@ -64,7 +57,9 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
         <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
           <Text style={styles.headerBtn}>{'‹ Back'}</Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>Project {projectId}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Project {projectId}
+        </Text>
         <Pressable hitSlop={12}>
           <Text style={styles.headerBtn}>⋯</Text>
         </Pressable>
@@ -95,7 +90,15 @@ export default function ProjectDetailScreen({ navigation, route }: Props) {
   );
 }
 
-function Stat({ label, value, color = '#e2e8f0' }: { label: string; value: number; color?: string }) {
+function Stat({
+  label,
+  value,
+  color = '#e2e8f0',
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) {
   return (
     <View style={styles.stat}>
       <Text style={[styles.statValue, { color }]}>{value}</Text>

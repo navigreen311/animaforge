@@ -23,10 +23,12 @@ export default function () {
 
   const res = ws.connect(url, {}, function (socket) {
     socket.on('open', () => {
-      socket.send(JSON.stringify({
-        type: 'join',
-        room: projectRoom,
-      }));
+      socket.send(
+        JSON.stringify({
+          type: 'join',
+          room: projectRoom,
+        }),
+      );
     });
 
     socket.on('message', (data) => {
@@ -48,16 +50,20 @@ export default function () {
 
     // Keep connection alive for a portion of the test
     socket.setTimeout(() => {
-      socket.send(JSON.stringify({
-        type: 'ping',
-      }));
+      socket.send(
+        JSON.stringify({
+          type: 'ping',
+        }),
+      );
     }, 5000);
 
     socket.setTimeout(() => {
-      socket.send(JSON.stringify({
-        type: 'leave',
-        room: projectRoom,
-      }));
+      socket.send(
+        JSON.stringify({
+          type: 'leave',
+          room: projectRoom,
+        }),
+      );
       socket.close();
     }, 10000);
   });

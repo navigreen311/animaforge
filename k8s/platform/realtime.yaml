@@ -34,19 +34,19 @@ spec:
               name: ws
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
             - name: PORT
-              value: "3001"
+              value: '3001'
             - name: WS_HEARTBEAT_INTERVAL
-              value: "30000"
+              value: '30000'
             - name: WS_MAX_CONNECTIONS_PER_POD
-              value: "5000"
+              value: '5000'
           resources:
             requests:
               cpu: 250m
               memory: 512Mi
             limits:
-              cpu: "1"
+              cpu: '1'
               memory: 1Gi
           readinessProbe:
             httpGet:
@@ -117,4 +117,4 @@ spec:
           name: websocket_active_connections
         target:
           type: AverageValue
-          averageValue: "4000"
+          averageValue: '4000'

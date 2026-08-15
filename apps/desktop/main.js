@@ -21,9 +21,7 @@ function createWindow() {
     icon: path.join(__dirname, 'assets/icon.png'),
   });
 
-  const url = isDev
-    ? 'http://localhost:3000'
-    : 'https://app.animaforge.com';
+  const url = isDev ? 'http://localhost:3000' : 'https://app.animaforge.com';
 
   mainWindow.loadURL(url);
 

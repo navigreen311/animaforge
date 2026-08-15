@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import TierBadge from '../../components/TierBadge';
 import CreditBadge from '../../components/CreditBadge';
@@ -152,10 +145,7 @@ export default function BillingScreen() {
           return (
             <View
               key={plan.tier}
-              style={[
-                styles.planCard,
-                isCurrent && { borderColor: plan.color, borderWidth: 2 },
-              ]}
+              style={[styles.planCard, isCurrent && { borderColor: plan.color, borderWidth: 2 }]}
             >
               <View style={styles.planHeader}>
                 <View>

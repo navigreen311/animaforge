@@ -11,7 +11,10 @@ export class CharactersResource {
   constructor(private readonly http: HttpClient) {}
 
   async list(params?: ListCharactersParams): Promise<PaginatedResponse<Character>> {
-    return this.http.get('/characters', params as Record<string, string | number | boolean | undefined>);
+    return this.http.get(
+      '/characters',
+      params as Record<string, string | number | boolean | undefined>,
+    );
   }
 
   async get(id: string): Promise<Character> {

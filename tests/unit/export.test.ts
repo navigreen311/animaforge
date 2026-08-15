@@ -7,8 +7,17 @@ import {
   processAvatarExport,
   getExportFormats,
 } from '../../services/export/src/services/exportService';
-import { getBitrate, getDurationLimit, getEncodingPreset } from '../../services/export/src/services/formatSpecs';
-import type { VideoExportInput, AudioExportInput, ProjectExportInput, AvatarExportInput } from '../../services/export/src/models/exportSchemas';
+import {
+  getBitrate,
+  getDurationLimit,
+  getEncodingPreset,
+} from '../../services/export/src/services/formatSpecs';
+import type {
+  VideoExportInput,
+  AudioExportInput,
+  ProjectExportInput,
+  AvatarExportInput,
+} from '../../services/export/src/models/exportSchemas';
 
 const UUID = '00000000-0000-4000-8000-000000000001';
 
@@ -18,7 +27,12 @@ const UUID = '00000000-0000-4000-8000-000000000001';
 describe('Export - Video (mp4)', () => {
   it('completes an mp4/h264 export with correct output URL', () => {
     const params: VideoExportInput = {
-      projectId: UUID, shotIds: [UUID], format: 'mp4', codec: 'h264', resolution: '1080p', fps: 30,
+      projectId: UUID,
+      shotIds: [UUID],
+      format: 'mp4',
+      codec: 'h264',
+      resolution: '1080p',
+      fps: 30,
     };
     const job = createExportJob('video', params);
     const result = processVideoExport(job);
@@ -36,7 +50,12 @@ describe('Export - Video (mp4)', () => {
 describe('Export - Video (webm)', () => {
   it('completes a webm/vp9 export', () => {
     const params: VideoExportInput = {
-      projectId: UUID, shotIds: [UUID], format: 'webm', codec: 'vp9', resolution: '720p', fps: 24,
+      projectId: UUID,
+      shotIds: [UUID],
+      format: 'webm',
+      codec: 'vp9',
+      resolution: '720p',
+      fps: 24,
     };
     const job = createExportJob('video', params);
     const result = processVideoExport(job);
@@ -46,7 +65,12 @@ describe('Export - Video (webm)', () => {
 
   it('fails when codec is incompatible with format', () => {
     const params: VideoExportInput = {
-      projectId: UUID, shotIds: [UUID], format: 'webm', codec: 'h264', resolution: '1080p', fps: 30,
+      projectId: UUID,
+      shotIds: [UUID],
+      format: 'webm',
+      codec: 'h264',
+      resolution: '1080p',
+      fps: 30,
     };
     const job = createExportJob('video', params);
     const result = processVideoExport(job);

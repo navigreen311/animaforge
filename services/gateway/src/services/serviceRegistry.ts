@@ -23,11 +23,7 @@ class ServiceRegistry {
   private readonly POLL_MS = 30_000;
 
   // ── Registration ─────────────────────────────────────────────────
-  registerService(
-    name: string,
-    url: string,
-    healthPath: string = '/health',
-  ): RegisteredService {
+  registerService(name: string, url: string, healthPath: string = '/health'): RegisteredService {
     const entry: RegisteredService = {
       name,
       url: url.replace(/\/+$/, ''), // strip trailing slashes
@@ -84,9 +80,7 @@ class ServiceRegistry {
   }
 
   async healthCheckAll(): Promise<void> {
-    const checks = [...this.services.keys()].map((name) =>
-      this.healthCheck(name),
-    );
+    const checks = [...this.services.keys()].map((name) => this.healthCheck(name));
     await Promise.allSettled(checks);
   }
 

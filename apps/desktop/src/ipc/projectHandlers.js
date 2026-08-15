@@ -50,7 +50,11 @@ function registerProjectHandlers(ipcMain, mainWindow, store) {
 
       // Notify the renderer to kick off the export via the web API
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('trigger-export', { projectId, format, outputDir: resolvedDir });
+        mainWindow.webContents.send('trigger-export', {
+          projectId,
+          format,
+          outputDir: resolvedDir,
+        });
       }
 
       return { success: true, projectId, format, outputDir: resolvedDir };

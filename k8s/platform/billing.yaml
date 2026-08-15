@@ -34,11 +34,11 @@ spec:
               name: http
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
             - name: PORT
-              value: "3003"
+              value: '3003'
             - name: STRIPE_WEBHOOK_PATH
-              value: "/webhooks/stripe"
+              value: '/webhooks/stripe'
           resources:
             requests:
               cpu: 200m

@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import talentRouter from "./routes/talent";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import talentRouter from './routes/talent';
 
 dotenv.config();
 
@@ -13,10 +13,10 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/talent", talentRouter);
+app.use('/talent', talentRouter);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "talent", timestamp: new Date().toISOString() });
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'talent', timestamp: new Date().toISOString() });
 });
 
 if (require.main === module) {

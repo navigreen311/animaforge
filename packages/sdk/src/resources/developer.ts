@@ -18,7 +18,10 @@ export interface RateLimitStatus {
 export interface ChangelogEntry {
   version: string;
   date: string;
-  changes: { type: 'added' | 'changed' | 'deprecated' | 'removed' | 'fixed'; description: string }[];
+  changes: {
+    type: 'added' | 'changed' | 'deprecated' | 'removed' | 'fixed';
+    description: string;
+  }[];
 }
 
 export interface SandboxCredentials {

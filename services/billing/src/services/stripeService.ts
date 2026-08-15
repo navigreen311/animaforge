@@ -107,11 +107,19 @@ export async function cancelSubscription(subscriptionId: string) {
 
 export async function getSubscription(subscriptionId: string) {
   const s = getStripe();
-  if (!s) return { id: subscriptionId, status: 'active', current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400 };
+  if (!s)
+    return {
+      id: subscriptionId,
+      status: 'active',
+      current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400,
+    };
   return s.subscriptions.retrieve(subscriptionId);
 }
 
-export async function updateSubscription(subscriptionId: string, params: Stripe.SubscriptionUpdateParams) {
+export async function updateSubscription(
+  subscriptionId: string,
+  params: Stripe.SubscriptionUpdateParams,
+) {
   const s = getStripe();
   if (!s) return { id: subscriptionId, status: 'active', ...params };
   return s.subscriptions.update(subscriptionId, params);

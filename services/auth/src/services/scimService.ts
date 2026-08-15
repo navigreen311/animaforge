@@ -1,17 +1,17 @@
-import { v4 as uuidv4 } from "uuid";
-import type { UserRole, UserTier } from "../models/authSchemas";
+import { v4 as uuidv4 } from 'uuid';
+import type { UserRole, UserTier } from '../models/authSchemas';
 
 // ---------------------------------------------------------------------------
 // SCIM 2.0 Schema URIs
 // ---------------------------------------------------------------------------
 
 export const SCIM_SCHEMAS = {
-  User: "urn:ietf:params:scim:schemas:core:2.0:User",
-  EnterpriseUser: "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
-  Group: "urn:ietf:params:scim:schemas:core:2.0:Group",
-  ListResponse: "urn:ietf:params:scim:api:messages:2.0:ListResponse",
-  PatchOp: "urn:ietf:params:scim:api:messages:2.0:PatchOp",
-  Error: "urn:ietf:params:scim:api:messages:2.0:Error",
+  User: 'urn:ietf:params:scim:schemas:core:2.0:User',
+  EnterpriseUser: 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User',
+  Group: 'urn:ietf:params:scim:schemas:core:2.0:Group',
+  ListResponse: 'urn:ietf:params:scim:api:messages:2.0:ListResponse',
+  PatchOp: 'urn:ietf:params:scim:api:messages:2.0:PatchOp',
+  Error: 'urn:ietf:params:scim:api:messages:2.0:Error',
 };
 
 // ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ export interface SCIMUser {
     lastModified: string;
     location?: string;
   };
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"?: {
+  'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User'?: {
     organization?: string;
     department?: string;
   };
@@ -69,7 +69,7 @@ export interface SCIMError {
 export interface SCIMPatchOp {
   schemas: string[];
   Operations: Array<{
-    op: "add" | "replace" | "remove";
+    op: 'add' | 'replace' | 'remove';
     path?: string;
     value?: any;
   }>;
@@ -134,18 +134,18 @@ function toSCIMUser(user: InternalSCIMUser, baseUrl?: string): SCIMUser {
     emails: [
       {
         value: user.email,
-        type: "work",
+        type: 'work',
         primary: true,
       },
     ],
     active: user.active,
     meta: {
-      resourceType: "User",
+      resourceType: 'User',
       created: user.createdAt.toISOString(),
       lastModified: user.updatedAt.toISOString(),
       location: baseUrl ? `${baseUrl}/scim/v2/Users/${user.id}` : undefined,
     },
-    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': {
       organization: user.orgId,
       department: user.department,
     },
@@ -154,30 +154,25 @@ function toSCIMUser(user: InternalSCIMUser, baseUrl?: string): SCIMUser {
   return scimUser;
 }
 
-function applyFilter(
-  users: InternalSCIMUser[],
-  filter?: string,
-): InternalSCIMUser[] {
+function applyFilter(users: InternalSCIMUser[], filter?: string): InternalSCIMUser[] {
   if (!filter) return users;
 
   // Basic SCIM filter support: userName eq "value" or emails.value eq "value"
-  const eqMatch = filter.match(
-    /^(\w+(?:\.\w+)?)\s+eq\s+"([^"]+)"$/i,
-  );
+  const eqMatch = filter.match(/^(\w+(?:\.\w+)?)\s+eq\s+"([^"]+)"$/i);
   if (!eqMatch) return users;
 
   const [, field, value] = eqMatch;
 
   return users.filter((u) => {
     switch (field.toLowerCase()) {
-      case "username":
+      case 'username':
         return u.userName === value;
-      case "emails.value":
-      case "email":
+      case 'emails.value':
+      case 'email':
         return u.email === value;
-      case "displayname":
+      case 'displayname':
         return u.displayName === value;
-      case "externalid":
+      case 'externalid':
         return u.externalId === value;
       default:
         return true;
@@ -222,25 +217,17 @@ export function listUsers(
   };
 }
 
-export function getUser(
-  orgId: string,
-  userId: string,
-  baseUrl?: string,
-): SCIMUser | null {
+export function getUser(orgId: string, userId: string, baseUrl?: string): SCIMUser | null {
   const store = getOrgStore(orgId);
   const user = store.get(userId);
   if (!user) return null;
   return toSCIMUser(user, baseUrl);
 }
 
-export function createUser(
-  orgId: string,
-  scimPayload: Partial<SCIMUser>,
-): SCIMUser {
+export function createUser(orgId: string, scimPayload: Partial<SCIMUser>): SCIMUser {
   const store = getOrgStore(orgId);
 
-  const email =
-    scimPayload.emails?.[0]?.value || scimPayload.userName || "";
+  const email = scimPayload.emails?.[0]?.value || scimPayload.userName || '';
   const userName = scimPayload.userName || email;
 
   // Check for duplicate userName within org
@@ -258,14 +245,11 @@ export function createUser(
     userName,
     givenName: scimPayload.name?.givenName,
     familyName: scimPayload.name?.familyName,
-    displayName:
-      scimPayload.displayName ||
-      scimPayload.name?.formatted ||
-      userName,
+    displayName: scimPayload.displayName || scimPayload.name?.formatted || userName,
     email,
     active: scimPayload.active !== false,
-    role: "user",
-    tier: "enterprise",
+    role: 'user',
+    tier: 'enterprise',
     createdAt: now,
     updatedAt: now,
   };
@@ -287,12 +271,10 @@ export function updateUser(
   if (scimPayload.userName) existing.userName = scimPayload.userName;
   if (scimPayload.displayName) existing.displayName = scimPayload.displayName;
   if (scimPayload.name) {
-    if (scimPayload.name.givenName !== undefined)
-      existing.givenName = scimPayload.name.givenName;
+    if (scimPayload.name.givenName !== undefined) existing.givenName = scimPayload.name.givenName;
     if (scimPayload.name.familyName !== undefined)
       existing.familyName = scimPayload.name.familyName;
-    if (scimPayload.name.formatted)
-      existing.displayName = scimPayload.name.formatted;
+    if (scimPayload.name.formatted) existing.displayName = scimPayload.name.formatted;
   }
   if (scimPayload.emails?.[0]?.value) {
     existing.email = scimPayload.emails[0].value;
@@ -310,42 +292,36 @@ export function updateUser(
   return toSCIMUser(existing);
 }
 
-export function patchUser(
-  orgId: string,
-  userId: string,
-  patchOp: SCIMPatchOp,
-): SCIMUser | null {
+export function patchUser(orgId: string, userId: string, patchOp: SCIMPatchOp): SCIMUser | null {
   const store = getOrgStore(orgId);
   const existing = store.get(userId);
   if (!existing) return null;
 
   for (const op of patchOp.Operations) {
     switch (op.op) {
-      case "replace":
-        if (op.path === "active" || op.path === "active") {
+      case 'replace':
+        if (op.path === 'active' || op.path === 'active') {
           existing.active = Boolean(op.value);
-        } else if (op.path === "displayName") {
+        } else if (op.path === 'displayName') {
           existing.displayName = String(op.value);
-        } else if (op.path === "userName") {
+        } else if (op.path === 'userName') {
           existing.userName = String(op.value);
-        } else if (op.path === "name.givenName") {
+        } else if (op.path === 'name.givenName') {
           existing.givenName = String(op.value);
-        } else if (op.path === "name.familyName") {
+        } else if (op.path === 'name.familyName') {
           existing.familyName = String(op.value);
-        } else if (!op.path && typeof op.value === "object") {
+        } else if (!op.path && typeof op.value === 'object') {
           // Bulk replace without path
-          if (op.value.active !== undefined)
-            existing.active = Boolean(op.value.active);
-          if (op.value.displayName)
-            existing.displayName = String(op.value.displayName);
+          if (op.value.active !== undefined) existing.active = Boolean(op.value.active);
+          if (op.value.displayName) existing.displayName = String(op.value.displayName);
         }
         break;
-      case "add":
-        if (op.path === "emails" && Array.isArray(op.value)) {
+      case 'add':
+        if (op.path === 'emails' && Array.isArray(op.value)) {
           existing.email = op.value[0]?.value || existing.email;
         }
         break;
-      case "remove":
+      case 'remove':
         // SCIM remove operations — typically used for multi-valued attrs
         break;
     }

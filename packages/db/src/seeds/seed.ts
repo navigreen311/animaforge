@@ -105,7 +105,8 @@ export async function main() {
       ownerId: alice.id,
       orgId: animaForgeOrg.id,
       title: 'Project Nova',
-      description: 'A 12-episode sci-fi series exploring first contact with an alien intelligence orbiting Europa.',
+      description:
+        'A 12-episode sci-fi series exploring first contact with an alien intelligence orbiting Europa.',
       worldBible: {
         setting: 'Near-future solar system, 2087',
         tone: 'Hard sci-fi with emotional undertones',
@@ -129,12 +130,13 @@ export async function main() {
       ownerId: bob.id,
       orgId: indieOrg.id,
       title: 'Fable Engine',
-      description: 'An interactive storybook series for children aged 5-8, featuring procedurally generated fairy tales.',
+      description:
+        'An interactive storybook series for children aged 5-8, featuring procedurally generated fairy tales.',
       worldBible: {
         setting: 'Enchanted forest kingdom',
         tone: 'Whimsical and warm',
         visualStyle: 'Watercolor illustration with soft edges',
-        keyLocations: ['The Whispering Woods', 'Castle Luminara', 'Tinkerer\'s Workshop'],
+        keyLocations: ['The Whispering Woods', 'Castle Luminara', "Tinkerer's Workshop"],
       },
       brandKit: {
         primaryColor: '#4A2D6B',
@@ -152,7 +154,8 @@ export async function main() {
       ownerId: carol.id,
       orgId: animaForgeOrg.id,
       title: 'Void Runners',
-      description: 'A cyberpunk music-video project blending anime aesthetics with synthwave audio-reactive visuals.',
+      description:
+        'A cyberpunk music-video project blending anime aesthetics with synthwave audio-reactive visuals.',
       worldBible: {
         setting: 'Neo-Tokyo 2199',
         tone: 'Stylized, high energy',
@@ -195,81 +198,191 @@ export async function main() {
   const shotData = [
     // Nova Scene 1
     {
-      sceneId: novaScene1.id, projectId: projectNova.id, shotNumber: 1,
-      sceneGraph: { camera: { position: [0, 1.8, -5], fov: 35 }, actors: ['commander_shaw'], lighting: 'volumetric_blue', bg: 'europa_surface' },
-      prompt: 'Commander Shaw steps onto the ice plain of Europa, helmet visor reflecting distant Jupiter.',
-      durationMs: 6000, status: 'approved', approvedBy: alice.id, approvedAt: new Date('2026-03-20'),
+      sceneId: novaScene1.id,
+      projectId: projectNova.id,
+      shotNumber: 1,
+      sceneGraph: {
+        camera: { position: [0, 1.8, -5], fov: 35 },
+        actors: ['commander_shaw'],
+        lighting: 'volumetric_blue',
+        bg: 'europa_surface',
+      },
+      prompt:
+        'Commander Shaw steps onto the ice plain of Europa, helmet visor reflecting distant Jupiter.',
+      durationMs: 6000,
+      status: 'approved',
+      approvedBy: alice.id,
+      approvedAt: new Date('2026-03-20'),
     },
     {
-      sceneId: novaScene1.id, projectId: projectNova.id, shotNumber: 2,
-      sceneGraph: { camera: { position: [2, 1.2, -3], fov: 50 }, actors: ['commander_shaw', 'dr_lin'], lighting: 'interior_warm', bg: 'station_corridor' },
+      sceneId: novaScene1.id,
+      projectId: projectNova.id,
+      shotNumber: 2,
+      sceneGraph: {
+        camera: { position: [2, 1.2, -3], fov: 50 },
+        actors: ['commander_shaw', 'dr_lin'],
+        lighting: 'interior_warm',
+        bg: 'station_corridor',
+      },
       prompt: 'Shaw and Dr. Lin discuss the anomalous signal in the station corridor.',
-      durationMs: 8000, status: 'approved', approvedBy: alice.id, approvedAt: new Date('2026-03-21'),
+      durationMs: 8000,
+      status: 'approved',
+      approvedBy: alice.id,
+      approvedAt: new Date('2026-03-21'),
     },
     // Nova Scene 2
     {
-      sceneId: novaScene2.id, projectId: projectNova.id, shotNumber: 3,
-      sceneGraph: { camera: { position: [0, 0.5, -8], fov: 24 }, actors: [], lighting: 'bioluminescent', bg: 'artifact_chamber' },
+      sceneId: novaScene2.id,
+      projectId: projectNova.id,
+      shotNumber: 3,
+      sceneGraph: {
+        camera: { position: [0, 0.5, -8], fov: 24 },
+        actors: [],
+        lighting: 'bioluminescent',
+        bg: 'artifact_chamber',
+      },
       prompt: 'Wide shot of the alien artifact pulsing with bioluminescent light beneath the ice.',
-      durationMs: 5000, status: 'locked',
+      durationMs: 5000,
+      status: 'locked',
     },
     {
-      sceneId: novaScene2.id, projectId: projectNova.id, shotNumber: 4,
-      sceneGraph: { camera: { position: [0, 1.6, -2], fov: 70 }, actors: ['dr_lin'], lighting: 'artifact_glow', bg: 'artifact_chamber' },
+      sceneId: novaScene2.id,
+      projectId: projectNova.id,
+      shotNumber: 4,
+      sceneGraph: {
+        camera: { position: [0, 1.6, -2], fov: 70 },
+        actors: ['dr_lin'],
+        lighting: 'artifact_glow',
+        bg: 'artifact_chamber',
+      },
       prompt: 'Close-up of Dr. Lin reaching toward the artifact, hand trembling.',
-      durationMs: 4000, status: 'draft',
+      durationMs: 4000,
+      status: 'draft',
     },
     // Fable Scene 1
     {
-      sceneId: fableScene1.id, projectId: projectFable.id, shotNumber: 1,
-      sceneGraph: { camera: { position: [0, 2, -6], fov: 40 }, actors: ['rosie_fox'], lighting: 'golden_hour', bg: 'whispering_woods_entrance' },
+      sceneId: fableScene1.id,
+      projectId: projectFable.id,
+      shotNumber: 1,
+      sceneGraph: {
+        camera: { position: [0, 2, -6], fov: 40 },
+        actors: ['rosie_fox'],
+        lighting: 'golden_hour',
+        bg: 'whispering_woods_entrance',
+      },
       prompt: 'Rosie the Fox peers through the mossy archway into the Whispering Woods.',
-      durationMs: 5000, status: 'approved', approvedBy: bob.id, approvedAt: new Date('2026-03-18'),
+      durationMs: 5000,
+      status: 'approved',
+      approvedBy: bob.id,
+      approvedAt: new Date('2026-03-18'),
     },
     {
-      sceneId: fableScene1.id, projectId: projectFable.id, shotNumber: 2,
-      sceneGraph: { camera: { position: [1, 1, -4], fov: 45 }, actors: ['rosie_fox', 'oak_guardian'], lighting: 'dappled_sunlight', bg: 'ancient_oak' },
+      sceneId: fableScene1.id,
+      projectId: projectFable.id,
+      shotNumber: 2,
+      sceneGraph: {
+        camera: { position: [1, 1, -4], fov: 45 },
+        actors: ['rosie_fox', 'oak_guardian'],
+        lighting: 'dappled_sunlight',
+        bg: 'ancient_oak',
+      },
       prompt: 'Rosie meets the Oak Guardian, who blocks the forest path with tangled roots.',
-      durationMs: 7000, status: 'draft',
+      durationMs: 7000,
+      status: 'draft',
     },
     // Fable Scene 2
     {
-      sceneId: fableScene2.id, projectId: projectFable.id, shotNumber: 3,
-      sceneGraph: { camera: { position: [0, 1.5, -5], fov: 35 }, actors: ['rosie_fox'], lighting: 'mystical_fog', bg: 'riddle_gate' },
-      prompt: 'The Riddle Gate materializes from swirling fog — ancient runes glow on its stone face.',
-      durationMs: 6000, status: 'draft',
+      sceneId: fableScene2.id,
+      projectId: projectFable.id,
+      shotNumber: 3,
+      sceneGraph: {
+        camera: { position: [0, 1.5, -5], fov: 35 },
+        actors: ['rosie_fox'],
+        lighting: 'mystical_fog',
+        bg: 'riddle_gate',
+      },
+      prompt:
+        'The Riddle Gate materializes from swirling fog — ancient runes glow on its stone face.',
+      durationMs: 6000,
+      status: 'draft',
     },
     {
-      sceneId: fableScene2.id, projectId: projectFable.id, shotNumber: 4,
-      sceneGraph: { camera: { position: [0.5, 1, -2], fov: 60 }, actors: ['rosie_fox'], lighting: 'rune_glow', bg: 'riddle_gate' },
+      sceneId: fableScene2.id,
+      projectId: projectFable.id,
+      shotNumber: 4,
+      sceneGraph: {
+        camera: { position: [0.5, 1, -2], fov: 60 },
+        actors: ['rosie_fox'],
+        lighting: 'rune_glow',
+        bg: 'riddle_gate',
+      },
       prompt: 'Close-up: Rosie solves the riddle, runes rearranging into a doorway.',
-      durationMs: 4500, status: 'locked',
+      durationMs: 4500,
+      status: 'locked',
     },
     // Void Scene 1
     {
-      sceneId: voidScene1.id, projectId: projectVoid.id, shotNumber: 1,
-      sceneGraph: { camera: { position: [0, 3, -10], fov: 28 }, actors: ['kira'], lighting: 'neon_pink_blue', bg: 'neon_district_aerial' },
-      prompt: 'Aerial shot descending into the Neon District, holographic ads flickering in the rain.',
-      durationMs: 5000, status: 'approved', approvedBy: carol.id, approvedAt: new Date('2026-03-22'),
+      sceneId: voidScene1.id,
+      projectId: projectVoid.id,
+      shotNumber: 1,
+      sceneGraph: {
+        camera: { position: [0, 3, -10], fov: 28 },
+        actors: ['kira'],
+        lighting: 'neon_pink_blue',
+        bg: 'neon_district_aerial',
+      },
+      prompt:
+        'Aerial shot descending into the Neon District, holographic ads flickering in the rain.',
+      durationMs: 5000,
+      status: 'approved',
+      approvedBy: carol.id,
+      approvedAt: new Date('2026-03-22'),
     },
     {
-      sceneId: voidScene1.id, projectId: projectVoid.id, shotNumber: 2,
-      sceneGraph: { camera: { position: [1, 1.5, -3], fov: 50 }, actors: ['kira'], lighting: 'strobe_sync', bg: 'underground_arena' },
+      sceneId: voidScene1.id,
+      projectId: projectVoid.id,
+      shotNumber: 2,
+      sceneGraph: {
+        camera: { position: [1, 1.5, -3], fov: 50 },
+        actors: ['kira'],
+        lighting: 'strobe_sync',
+        bg: 'underground_arena',
+      },
       prompt: 'Kira drops into the underground arena, synth beat synced to her movement.',
-      durationMs: 4000, status: 'draft',
+      durationMs: 4000,
+      status: 'draft',
     },
     // Void Scene 2
     {
-      sceneId: voidScene2.id, projectId: projectVoid.id, shotNumber: 3,
-      sceneGraph: { camera: { position: [-2, 2, -6], fov: 35 }, actors: ['kira', 'ghost_rival'], lighting: 'laser_grid', bg: 'sky_rail_chase' },
-      prompt: 'Sky Rail chase sequence — Kira grinds along a rail above the city, rival in pursuit.',
-      durationMs: 7000, status: 'approved', approvedBy: alice.id, approvedAt: new Date('2026-03-23'),
+      sceneId: voidScene2.id,
+      projectId: projectVoid.id,
+      shotNumber: 3,
+      sceneGraph: {
+        camera: { position: [-2, 2, -6], fov: 35 },
+        actors: ['kira', 'ghost_rival'],
+        lighting: 'laser_grid',
+        bg: 'sky_rail_chase',
+      },
+      prompt:
+        'Sky Rail chase sequence — Kira grinds along a rail above the city, rival in pursuit.',
+      durationMs: 7000,
+      status: 'approved',
+      approvedBy: alice.id,
+      approvedAt: new Date('2026-03-23'),
     },
     {
-      sceneId: voidScene2.id, projectId: projectVoid.id, shotNumber: 4,
-      sceneGraph: { camera: { position: [0, 1.8, -1.5], fov: 85 }, actors: ['kira'], lighting: 'sunrise_neon_fade', bg: 'rooftop_vista' },
+      sceneId: voidScene2.id,
+      projectId: projectVoid.id,
+      shotNumber: 4,
+      sceneGraph: {
+        camera: { position: [0, 1.8, -1.5], fov: 85 },
+        actors: ['kira'],
+        lighting: 'sunrise_neon_fade',
+        bg: 'rooftop_vista',
+      },
       prompt: 'Final frame: Kira stands on a rooftop as sunrise bleaches the neon skyline.',
-      durationMs: 6000, status: 'locked',
+      durationMs: 6000,
+      status: 'locked',
     },
   ];
 
@@ -280,7 +393,8 @@ export async function main() {
   // ── Characters (5 total: 2 digital twins, 3 regular) ──────────────
   await prisma.character.create({
     data: {
-      ownerId: alice.id, projectId: projectNova.id,
+      ownerId: alice.id,
+      projectId: projectNova.id,
       name: 'Commander Shaw',
       isDigitalTwin: true,
       faceModelUrl: 'https://cdn.animaforge.io/models/faces/shaw-v3.glb',
@@ -297,7 +411,8 @@ export async function main() {
 
   await prisma.character.create({
     data: {
-      ownerId: alice.id, projectId: projectNova.id,
+      ownerId: alice.id,
+      projectId: projectNova.id,
       name: 'Dr. Lin',
       isDigitalTwin: true,
       faceModelUrl: 'https://cdn.animaforge.io/models/faces/lin-v2.glb',
@@ -314,7 +429,8 @@ export async function main() {
 
   await prisma.character.create({
     data: {
-      ownerId: bob.id, projectId: projectFable.id,
+      ownerId: bob.id,
+      projectId: projectFable.id,
       name: 'Rosie the Fox',
       isDigitalTwin: false,
       bodyParams: { height: 0.6, build: 'small_quadruped', furColor: '#D4652F' },
@@ -327,7 +443,8 @@ export async function main() {
 
   await prisma.character.create({
     data: {
-      ownerId: bob.id, projectId: projectFable.id,
+      ownerId: bob.id,
+      projectId: projectFable.id,
       name: 'Oak Guardian',
       isDigitalTwin: false,
       bodyParams: { height: 3.5, build: 'massive_tree_form', barkTexture: 'ancient_oak' },
@@ -340,7 +457,8 @@ export async function main() {
 
   await prisma.character.create({
     data: {
-      ownerId: carol.id, projectId: projectVoid.id,
+      ownerId: carol.id,
+      projectId: projectVoid.id,
       name: 'Kira',
       isDigitalTwin: false,
       bodyParams: { height: 1.7, build: 'lean', skinTone: '#E8C39E' },

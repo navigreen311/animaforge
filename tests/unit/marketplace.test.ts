@@ -20,8 +20,12 @@ beforeEach(() => {
 
 async function createTestItem(price = 9.99) {
   return listItem({
-    name: 'Cool Rig', type: 'rig', price, description: 'A reusable character rig',
-    previewUrl: 'https://cdn.example.com/preview.png', creatorId: CREATOR_ID,
+    name: 'Cool Rig',
+    type: 'rig',
+    price,
+    description: 'A reusable character rig',
+    previewUrl: 'https://cdn.example.com/preview.png',
+    creatorId: CREATOR_ID,
   });
 }
 

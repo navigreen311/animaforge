@@ -21,11 +21,51 @@ interface Project {
 }
 
 const MOCK_PROJECTS: Project[] = [
-  { id: 'p1', title: 'Neon Samurai Trailer', status: 'in_progress', shotCount: 42, progress: 0.68, updatedAgo: '2h ago', gradient: ['#7c3aed', '#2563eb'] },
-  { id: 'p2', title: 'Forest Spirits Short', status: 'review', shotCount: 18, progress: 0.92, updatedAgo: '5h ago', gradient: ['#059669', '#0ea5e9'] },
-  { id: 'p3', title: 'Cyberpunk City Loop', status: 'approved', shotCount: 8, progress: 1.0, updatedAgo: '1d ago', gradient: ['#db2777', '#7c3aed'] },
-  { id: 'p4', title: 'Mecha Pilot Intro', status: 'queued', shotCount: 24, progress: 0.15, updatedAgo: '3d ago', gradient: ['#d97706', '#dc2626'] },
-  { id: 'p5', title: 'Ocean Depths Scene', status: 'draft', shotCount: 12, progress: 0.0, updatedAgo: '1w ago', gradient: ['#0ea5e9', '#1e40af'] },
+  {
+    id: 'p1',
+    title: 'Neon Samurai Trailer',
+    status: 'in_progress',
+    shotCount: 42,
+    progress: 0.68,
+    updatedAgo: '2h ago',
+    gradient: ['#7c3aed', '#2563eb'],
+  },
+  {
+    id: 'p2',
+    title: 'Forest Spirits Short',
+    status: 'review',
+    shotCount: 18,
+    progress: 0.92,
+    updatedAgo: '5h ago',
+    gradient: ['#059669', '#0ea5e9'],
+  },
+  {
+    id: 'p3',
+    title: 'Cyberpunk City Loop',
+    status: 'approved',
+    shotCount: 8,
+    progress: 1.0,
+    updatedAgo: '1d ago',
+    gradient: ['#db2777', '#7c3aed'],
+  },
+  {
+    id: 'p4',
+    title: 'Mecha Pilot Intro',
+    status: 'queued',
+    shotCount: 24,
+    progress: 0.15,
+    updatedAgo: '3d ago',
+    gradient: ['#d97706', '#dc2626'],
+  },
+  {
+    id: 'p5',
+    title: 'Ocean Depths Scene',
+    status: 'draft',
+    shotCount: 12,
+    progress: 0.0,
+    updatedAgo: '1w ago',
+    gradient: ['#0ea5e9', '#1e40af'],
+  },
 ];
 
 interface Props {
@@ -54,10 +94,14 @@ export default function DashboardScreen({ navigation }: Props) {
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
           <StatusBadge status={item.status} size="sm" />
         </View>
-        <Text style={styles.cardMeta}>{item.shotCount} shots  ·  Updated {item.updatedAgo}</Text>
+        <Text style={styles.cardMeta}>
+          {item.shotCount} shots · Updated {item.updatedAgo}
+        </Text>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${item.progress * 100}%` }]} />
         </View>

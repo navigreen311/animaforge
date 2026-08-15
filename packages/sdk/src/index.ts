@@ -22,7 +22,12 @@ export { DeveloperResource } from './resources/developer';
 
 // Webhook & Developer types
 export type { Webhook, WebhookLogEntry } from './resources/webhooks';
-export type { ApiUsage, RateLimitStatus, ChangelogEntry, SandboxCredentials } from './resources/developer';
+export type {
+  ApiUsage,
+  RateLimitStatus,
+  ChangelogEntry,
+  SandboxCredentials,
+} from './resources/developer';
 
 // Types
 export type {

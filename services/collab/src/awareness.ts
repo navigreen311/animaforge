@@ -10,8 +10,14 @@ export interface AwarenessState {
 }
 
 const USER_COLORS = [
-  '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444',
-  '#10b981', '#ec4899', '#3b82f6', '#f97316',
+  '#8b5cf6',
+  '#06b6d4',
+  '#f59e0b',
+  '#ef4444',
+  '#10b981',
+  '#ec4899',
+  '#3b82f6',
+  '#f97316',
 ];
 
 let colorIndex = 0;
@@ -29,12 +35,7 @@ function nextColor(): string {
 export class AwarenessManager {
   private rooms = new Map<string, Map<string, AwarenessState>>();
 
-  addConnection(
-    projectId: string,
-    userId: string,
-    displayName: string,
-    ws: WebSocket,
-  ): void {
+  addConnection(projectId: string, userId: string, displayName: string, ws: WebSocket): void {
     if (!this.rooms.has(projectId)) {
       this.rooms.set(projectId, new Map());
     }
@@ -65,22 +66,14 @@ export class AwarenessManager {
     }
   }
 
-  updateCursor(
-    projectId: string,
-    userId: string,
-    cursor: { x: number; y: number } | null,
-  ): void {
+  updateCursor(projectId: string, userId: string, cursor: { x: number; y: number } | null): void {
     const state = this.rooms.get(projectId)?.get(userId);
     if (!state) return;
     state.cursor = cursor;
     this.broadcastAwareness(projectId);
   }
 
-  updateSelectedShot(
-    projectId: string,
-    userId: string,
-    shotId: string | null,
-  ): void {
+  updateSelectedShot(projectId: string, userId: string, shotId: string | null): void {
     const state = this.rooms.get(projectId)?.get(userId);
     if (!state) return;
     state.selectedShot = shotId;

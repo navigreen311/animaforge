@@ -1,11 +1,11 @@
-import type { Server } from "socket.io";
+import type { Server } from 'socket.io';
 import type {
   AuthenticatedSocket,
   ClientToServerEvents,
   ServerToClientEvents,
   ShotUpdatedEvent,
   ShotStatusChangedEvent,
-} from "../types";
+} from '../types';
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -15,17 +15,14 @@ type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
  * - shot:updated        -- a shot was updated (e.g. approved), broadcast to project room
  * - shot:status_changed -- a shot's status changed, broadcast to project room
  */
-export function registerShotEvents(
-  io: AppServer,
-  socket: AuthenticatedSocket,
-): void {
-  socket.on("shot:updated", (data: ShotUpdatedEvent) => {
+export function registerShotEvents(io: AppServer, socket: AuthenticatedSocket): void {
+  socket.on('shot:updated', (data: ShotUpdatedEvent) => {
     const room = `project:${data.projectId}`;
-    io.to(room).emit("shot:updated", data);
+    io.to(room).emit('shot:updated', data);
   });
 
-  socket.on("shot:status_changed", (data: ShotStatusChangedEvent) => {
+  socket.on('shot:status_changed', (data: ShotStatusChangedEvent) => {
     const room = `project:${data.projectId}`;
-    io.to(room).emit("shot:status_changed", data);
+    io.to(room).emit('shot:status_changed', data);
   });
 }
