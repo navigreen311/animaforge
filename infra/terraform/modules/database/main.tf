@@ -152,9 +152,10 @@ resource "aws_db_instance" "replica" {
   parameter_group_name   = aws_db_parameter_group.this.name
   publicly_accessible    = false
 
-  performance_insights_enabled = true
-  monitoring_interval          = 60
-  monitoring_role_arn          = aws_iam_role.monitoring.arn
+  performance_insights_enabled    = true
+  monitoring_interval             = 60
+  monitoring_role_arn             = aws_iam_role.monitoring.arn
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   # Replicas are rebuildable from the primary, so a final snapshot is pure cost.
   skip_final_snapshot = true

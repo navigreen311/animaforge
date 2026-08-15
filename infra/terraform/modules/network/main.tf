@@ -44,10 +44,14 @@ resource "aws_internet_gateway" "this" {
 resource "aws_subnet" "public" {
   count = length(local.azs)
 
-  vpc_id                  = aws_vpc.this.id
-  cidr_block              = local.public_subnets[count.index]
-  availability_zone       = local.azs[count.index]
-  map_public_ip_on_launch = true
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = local.public_subnets[count.index]
+  availability_zone = local.azs[count.index]
+
+  # Deliberately false. Nothing is launched into these subnets: EKS nodes sit
+  # in the private tier and the NAT gateways take an explicit EIP. Leaving it
+  # on would silently give a public address to anything placed here later.
+  map_public_ip_on_launch = false
 
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-public-${local.azs[count.index]}"
