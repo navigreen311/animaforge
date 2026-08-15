@@ -19,6 +19,12 @@
 FROM node:20-alpine AS build
 WORKDIR /repo
 
+# Prisma's engines are linked against OpenSSL. Without it on Alpine, generate
+# warns "failed to detect the libssl/openssl version to use, and may not work
+# as expected. Defaulting to openssl-1.1.x" and can pick an engine that does
+# not match the runtime image.
+RUN apk add --no-cache openssl
+
 # The whole repo, minus everything in .dockerignore. npm ci needs the root
 # lockfile and every workspace manifest it references, so a partial copy would
 # fail lockfile validation.
@@ -43,6 +49,9 @@ RUN npm prune --omit=dev
 # ── Runtime ──────────────────────────────────────────────────────────────────
 FROM node:20-alpine
 WORKDIR /app
+
+# Prisma's query engine loads OpenSSL at run time.
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 

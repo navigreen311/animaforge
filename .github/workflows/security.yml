@@ -11,6 +11,23 @@ concurrency:
   group: security-${{ github.ref }}
   cancel-in-progress: true
 
+# The workflow had no permissions block, so it ran with whatever the repository
+# default grants — which is not enough to publish scan results. Every
+# `upload-sarif` step failed with:
+#
+#   Resource not accessible by integration
+#   This run of the CodeQL Action does not have permission to access the CodeQL
+#   Action API endpoints ... ensure the workflow has at least the
+#   'security-events: read' permission
+#
+# So even the two images that did build (gateway, ai-api) never got their
+# findings into the Security tab. Least privilege: read the code, write the
+# scan results.
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   semgrep:
     name: SAST - Semgrep

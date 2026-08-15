@@ -25,6 +25,12 @@
 FROM node:20-alpine AS build
 WORKDIR /repo
 
+# Prisma's engines are linked against OpenSSL. Without it on Alpine, generate
+# warns "failed to detect the libssl/openssl version to use, and may not work
+# as expected. Defaulting to openssl-1.1.x" and can pick an engine that does
+# not match the runtime image.
+RUN apk add --no-cache openssl
+
 COPY . .
 
 RUN npm ci
@@ -44,6 +50,9 @@ RUN npm prune --omit=dev
 FROM node:20-alpine AS runner
 WORKDIR /repo
 
+# Prisma's query engine loads OpenSSL at run time.
+RUN apk add --no-cache openssl
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -54,7 +63,9 @@ COPY --from=build --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/package.json ./package.json
 COPY --from=build --chown=node:node /repo/packages ./packages
 COPY --from=build --chown=node:node /repo/apps/web/.next ./apps/web/.next
-COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
+# No `public/` copy: apps/web has no public directory. The previous Dockerfile
+# copied one anyway, which fails the build outright —
+#   ERROR: failed to compute cache key: "/repo/apps/web/public": not found
 COPY --from=build --chown=node:node /repo/apps/web/package.json ./apps/web/package.json
 COPY --from=build --chown=node:node /repo/apps/web/next.config.js ./apps/web/next.config.js
 
