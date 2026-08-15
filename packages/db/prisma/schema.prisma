@@ -571,7 +571,19 @@ model PiracyMatch {
   status          String   @default("pending")
   detectedAt      DateTime @default(now()) @map("detected_at") @db.Timestamptz
   reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
+
+  // Perceptual-fingerprint evidence. `matchMethod` records how the match was
+  // reached so a review never has to guess whether it was a durable signal.
+  fingerprintId   String?  @map("fingerprint_id")
+  matchMethod     String   @default("unknown") @map("match_method") // perceptual-hash|watermark|manual|unknown
+  hammingDistance Int?     @map("hamming_distance")
+  watermarkId     String?  @map("watermark_id")
+  evidence        Json     @default("{}")
+
+  fingerprint     Fingerprint? @relation(fields: [fingerprintId], references: [id])
+
   @@index([userId, status])
+  @@index([fingerprintId])
   @@map("piracy_matches")
 }
 
@@ -579,13 +591,112 @@ model DMCANotice {
   id          String   @id @default(cuid())
   matchId     String   @map("match_id")
   userId      String   @map("user_id")
+  platform    String   @default("unknown")
   status      String   @default("draft")
+  body        String?
   filedAt     DateTime? @map("filed_at") @db.Timestamptz
   caseNumber  String?  @map("case_number")
   responseAt  DateTime? @map("response_at") @db.Timestamptz
   metadata    Json     @default("{}")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([matchId])
   @@map("dmca_notices")
+}
+
+// ============================================
+// PROVENANCE — C2PA, WATERMARKS, FINGERPRINTS
+// ============================================
+
+/// One row per signed (or attempted) output. `mode` and `signed` are what
+/// separate a real embedded C2PA manifest from an unsigned degraded record;
+/// nothing downstream may treat the two alike.
+model C2PAManifest {
+  id                String    @id @default(cuid())
+  outputId          String    @unique @map("output_id")
+  jobId             String    @map("job_id")
+  projectId         String?   @map("project_id")
+  /// SHA-256 of the user id, never the raw id — manifests are public.
+  userIdHash        String?   @map("user_id_hash")
+  assetUrl          String?   @map("asset_url")
+  assetPath         String?   @map("asset_path")
+  assetSha256       String?   @map("asset_sha256")
+  signedAssetSha256 String?   @map("signed_asset_sha256")
+  format            String
+  manifestLabel     String?   @map("manifest_label")
+  claimGenerator    String    @map("claim_generator")
+  signatureAlg      String?   @map("signature_alg")
+  certSerialNumber  String?   @map("cert_serial_number")
+  certIssuer        String?   @map("cert_issuer")
+  timestampedAt     DateTime? @map("timestamped_at") @db.Timestamptz
+  /// True only when a COSE signature was produced by a real certificate.
+  signed            Boolean   @default(false)
+  /// True only when the manifest was written into the asset bytes.
+  embedded          Boolean   @default(false)
+  mode              String    @default("degraded") // c2pa-embedded|unsigned-record|degraded
+  degradedReason    String?   @map("degraded_reason")
+  manifestJson      Json      @default("{}") @map("manifest_json")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([jobId])
+  @@index([signedAssetSha256])
+  @@map("c2pa_manifests")
+}
+
+/// Index from a recovered watermark payload back to the job that produced it.
+/// The payload lives in the pixels; this row is only the lookup table.
+model Watermark {
+  id           String   @id @default(cuid())
+  watermarkId  String   @unique @map("watermark_id")
+  jobId        String   @map("job_id")
+  outputId     String?  @map("output_id")
+  userId       String?  @map("user_id")
+  /// The 48-bit payload key carried by the pixels, hex encoded.
+  payloadHex   String   @map("payload_hex")
+  algorithm    String   @default("dct-pair-v1")
+  strength     Float    @default(20)
+  /// Keying material for block placement; stored so rotating it stays readable.
+  seed         String
+  mediaType    String   @map("media_type")
+  /// embedded = pixels altered; registered-only = no asset was supplied.
+  mode         String   @default("embedded")
+  sourceSha256 String?  @map("source_sha256")
+  markedSha256 String?  @map("marked_sha256")
+  outputUrl    String?  @map("output_url")
+  metadata     Json     @default("{}")
+  embeddedAt   DateTime @default(now()) @map("embedded_at") @db.Timestamptz
+
+  @@index([jobId])
+  @@index([payloadHex])
+  @@map("watermarks")
+}
+
+/// Perceptual fingerprint of a protected output. Unlike a cryptographic hash
+/// these stay close under re-encode and rescale, which is what makes
+/// near-duplicate search possible at all.
+model Fingerprint {
+  id           String   @id @default(cuid())
+  outputId     String   @map("output_id")
+  userId       String?  @map("user_id")
+  mediaType    String   @map("media_type") // image|video
+  algorithm    String   @default("phash-dct64")
+  /// 64-bit DCT perceptual hash, hex encoded.
+  phash        String
+  ahash        String?
+  dhash        String?
+  /// Per-sampled-frame pHashes for video, in timeline order.
+  frameHashes  String[] @default([]) @map("frame_hashes")
+  durationMs   Int?     @map("duration_ms")
+  width        Int?
+  height       Int?
+  sourceSha256 String?  @map("source_sha256")
+  metadata     Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  matches      PiracyMatch[]
+
+  @@index([outputId])
+  @@index([phash])
+  @@map("fingerprints")
 }
 
 // ============================================
