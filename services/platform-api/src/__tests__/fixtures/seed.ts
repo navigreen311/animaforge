@@ -50,11 +50,34 @@ export async function seedFixtureRows(): Promise<boolean> {
   if (seeded) return true;
   if (!(await isDatabaseReachable()) || !prisma) return false;
 
+  try {
+    return await insertFixtureRows();
+  } catch (err) {
+    // A seed that throws aborts every suite before a single test runs, and the
+    // reporter then emits a report with zero tests in it — which reads exactly
+    // like a clean pass. Say what happened instead.
+    const message = err instanceof Error ? err.message.split('\n')[0] : String(err);
+    throw new Error(
+      `Fixture seeding failed, so no test in this suite ran: ${message}. ` +
+        'Check that migrations are applied and that every NOT NULL column ' +
+        'without a database default is supplied above.',
+    );
+  }
+}
+
+async function insertFixtureRows(): Promise<boolean> {
+  if (!prisma) return false;
+
   for (const id of SEED_USER_IDS) {
     // email is UNIQUE, so it is derived from the id rather than shared.
+    //
+    // updated_at is @updatedAt in the schema, which Prisma maintains in the
+    // client rather than the database — so the column is NOT NULL with no
+    // DEFAULT, and raw SQL has to supply it. Omitting it threw on every row
+    // and took the whole suite down with the seed.
     await prisma.$executeRawUnsafe(
-      `INSERT INTO users (id, email, display_name, role, tier)
-       VALUES ($1::uuid, $2, $3, 'creator', 'free')
+      `INSERT INTO users (id, email, display_name, role, tier, updated_at)
+       VALUES ($1::uuid, $2, $3, 'creator', 'free', NOW())
        ON CONFLICT (id) DO NOTHING`,
       id,
       `fixture+${id}@animaforge.test`,
