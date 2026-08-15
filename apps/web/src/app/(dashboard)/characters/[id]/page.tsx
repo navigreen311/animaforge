@@ -30,6 +30,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from 'recharts';
 import type { Character, StyleMode } from '@/lib/types';
+import { useAuthStore } from '@/stores/authStore';
 import { Toast, useToast } from '@/components/shared/Toast';
 import HairTab from './HairTab';
 import WardrobeTab from './WardrobeTab';
@@ -173,6 +174,7 @@ function formatDate(dateString: string): string {
 export default function CharacterDetailPage() {
   const params = useParams<{ id: string }>();
   const { toast, toasts, dismiss } = useToast();
+  const authToken = useAuthStore((s) => s.token);
 
   const [character] = useState(MOCK_CHARACTER);
   const [activeTab, setActiveTab] = useState<Tab>('Appearance');
@@ -453,11 +455,11 @@ export default function CharacterDetailPage() {
   }
 
   function renderHairTab() {
-    return <HairTab />;
+    return <HairTab characterId={params.id} token={authToken} />;
   }
 
   function renderWardrobeTab() {
-    return <WardrobeTab />;
+    return <WardrobeTab characterId={params.id} token={authToken} />;
   }
 
   /* ── Web Audio preview helper ──────────────────────────────── */

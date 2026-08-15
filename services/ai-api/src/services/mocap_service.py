@@ -1,15 +1,57 @@
-"""Motion capture input service -- BVH parsing, retargeting, blending, keyframe export."""
+"""Motion capture input service -- parsing, retargeting, blending, keyframe export.
+
+Format support is uneven, and the difference is visible to callers through
+:data:`FORMAT_SUPPORT` and the ``/mocap/formats`` endpoint:
+
+* ``c3d`` and ``trc`` are **parsed for real** — the file is fetched and its
+  bytes decoded by :mod:`.mocap_formats`.
+* ``bvh`` and ``fbx`` are **simulated** — they validate the URL and return a
+  synthetic skeleton with generated keyframes. FBX in particular needs the
+  proprietary Autodesk SDK to parse properly.
+"""
 
 from __future__ import annotations
 
 import math
 import re
 import uuid
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
+from urllib.request import url2pathname
+
+from .mocap_formats import parse_c3d_bytes, parse_trc_bytes
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
 SUPPORTED_FORMATS: list[str] = ["bvh", "fbx", "c3d", "trc"]
+
+#: What each supported format actually does, so callers are not misled.
+FORMAT_SUPPORT: dict[str, dict[str, Any]] = {
+    "bvh": {
+        "parsed": False,
+        "note": "Simulated: returns a synthetic humanoid skeleton, "
+        "the file contents are not read.",
+    },
+    "fbx": {
+        "parsed": False,
+        "note": "Simulated: full FBX parsing requires the proprietary "
+        "Autodesk FBX SDK, which is not bundled.",
+    },
+    "c3d": {
+        "parsed": True,
+        "note": "Parsed: Intel-encoded C3D header, parameter section "
+        "(POINT:LABELS) and 3D point block. DEC and MIPS files are rejected.",
+    },
+    "trc": {
+        "parsed": True,
+        "note": "Parsed: TRC header, marker names and per-frame marker "
+        "coordinates.",
+    },
+}
+
+#: Maximum motion file this service will read into memory.
+MAX_MOTION_FILE_BYTES = 64 * 1024 * 1024
 
 _MAX_DURATION_MS = 600_000  # 10 minutes
 _MIN_FPS = 1
@@ -71,6 +113,75 @@ def parse_fbx_motion(file_url: str) -> dict[str, Any]:
         "joints": joints,
         "keyframes": keyframes,
     }
+
+
+def parse_c3d(file_url: str) -> dict[str, Any]:
+    """Fetch and parse a C3D motion capture file.
+
+    Raises:
+        ValueError: if the URL is not a ``.c3d``, the file cannot be
+            retrieved, or its contents are not a readable Intel-encoded C3D.
+    """
+    _validate_file_url(file_url, "c3d")
+    return parse_c3d_bytes(fetch_motion_bytes(file_url))
+
+
+def parse_trc(file_url: str) -> dict[str, Any]:
+    """Fetch and parse a TRC motion capture file.
+
+    Raises:
+        ValueError: if the URL is not a ``.trc``, the file cannot be
+            retrieved, or its header is malformed.
+    """
+    _validate_file_url(file_url, "trc")
+    return parse_trc_bytes(fetch_motion_bytes(file_url))
+
+
+def fetch_motion_bytes(file_url: str) -> bytes:
+    """Read a motion file from an http(s) URL, a file:// URL or a local path.
+
+    Raises:
+        ValueError: if the file cannot be read or exceeds
+            :data:`MAX_MOTION_FILE_BYTES`.
+    """
+    if file_url.startswith(("http://", "https://")):
+        payload = _fetch_http(file_url)
+    else:
+        payload = _read_local(file_url)
+
+    if len(payload) > MAX_MOTION_FILE_BYTES:
+        raise ValueError(
+            f"Motion file is {len(payload)} bytes, over the "
+            f"{MAX_MOTION_FILE_BYTES} byte limit"
+        )
+    if not payload:
+        raise ValueError(f"Motion file is empty: {file_url}")
+    return payload
+
+
+def _fetch_http(file_url: str) -> bytes:
+    import httpx
+
+    try:
+        response = httpx.get(file_url, timeout=30.0, follow_redirects=True)
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise ValueError(f"Could not fetch motion file: {exc}") from exc
+    return response.content
+
+
+def _read_local(file_url: str) -> bytes:
+    if file_url.startswith("file://"):
+        # url2pathname, not a manual lstrip("/"): on POSIX the leading slash is
+        # part of the absolute path and stripping it yields a relative one.
+        path = Path(url2pathname(urlparse(file_url).path))
+    else:
+        path = Path(file_url)
+
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        raise ValueError(f"Could not read motion file {file_url!r}: {exc}") from exc
 
 
 def retarget_motion(

@@ -10,6 +10,19 @@ import {
   Shirt, Footprints, Wind, Sparkles, Move, Sliders, Save,
   CloudUpload, CheckCircle2, Circle, Music, FileVideo, Package,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+
+import { useAuthStore } from '@/stores/authStore';
+import {
+  describeCapability,
+  identityScore,
+  fetchCapabilities,
+  generateAvatar,
+  persistAvatarArtifacts,
+  skippedSteps,
+  type AvatarCapability,
+  type AvatarJob,
+} from './avatarApi';
 
 // ── Types ────────────────────────────────────────────────────
 type PipelineStepId = 'upload' | 'detect' | 'reconstruct' | 'rig' | 'texture' | 'animate' | 'voice' | 'export';
@@ -312,8 +325,35 @@ export default function AvatarStudioPage() {
   const [downloadingFormats, setDownloadingFormats] = useState<Set<ExportFormat>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
 
-  // Properties panel
-  const [qualityScore] = useState(87);
+  // ── X5 pipeline (real) ─────────────────────────────────────
+  const searchParams = useSearchParams();
+  const linkedCharacterId = searchParams?.get('characterId') ?? null;
+  const authToken = useAuthStore((st) => st.token);
+  const [capability, setCapability] = useState<AvatarCapability | null>(null);
+  const [job, setJob] = useState<AvatarJob | null>(null);
+  const [jobError, setJobError] = useState<string | null>(null);
+  const [jobRunning, setJobRunning] = useState(false);
+
+  // Ask the AI API what it can actually do, so the UI can say so up front
+  // rather than implying a photogrammetric reconstruction it cannot run.
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    fetchCapabilities({ token: authToken, signal: controller.signal })
+      .then((probed) => {
+        if (active) setCapability(probed);
+      })
+      .catch(() => {
+        // A failed probe leaves capability null, which renders as "unknown"
+        // rather than as a claim in either direction.
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [authToken]);
 
   // ── Processing auto-progression ────────────────────────────
   useEffect(() => {
@@ -400,7 +440,40 @@ export default function AvatarStudioPage() {
 
   const startReconstruction = () => {
     if (photos.length === 0 || !consentChecked || !avatarName.trim()) return;
+    if (jobRunning) return;
+
     setCurrentStepIndex(1); // Move to Detect
+    setJob(null);
+    setJobError(null);
+    setJobRunning(true);
+
+    const characterId = linkedCharacterId ?? `studio-${avatarName.trim()}`;
+
+    generateAvatar(
+      {
+        characterId,
+        photos: photos.map((photo) => photo.url),
+        styleMode: styleMode === 'cel-shaded' ? 'cel' : styleMode,
+        skinTone: skinTone ?? null,
+      },
+      { token: authToken },
+    )
+      .then(async (result) => {
+        // Only write to a character record when the studio was opened for
+        // one; a standalone session has nothing to attach artifacts to.
+        if (linkedCharacterId) {
+          await persistAvatarArtifacts(linkedCharacterId, result, {
+            token: authToken,
+          });
+        }
+        setJob(result);
+      })
+      .catch((err: unknown) => {
+        setJobError(
+          err instanceof Error ? err.message : 'Reconstruction failed',
+        );
+      })
+      .finally(() => setJobRunning(false));
   };
 
   // ── Step click handler ─────────────────────────────────────
@@ -668,6 +741,53 @@ export default function AvatarStudioPage() {
                   </span>
                 </label>
 
+                {/* Engine capability — says up front what this host produces */}
+                {(() => {
+                  const described = describeCapability(capability);
+                  const palette: Record<string, { fg: string; bg: string; border: string }> = {
+                    ready: { fg: '#6ee7b7', bg: 'rgba(52,211,153,0.10)', border: 'rgba(52,211,153,0.3)' },
+                    mock: { fg: '#fbbf24', bg: 'rgba(234,179,8,0.10)', border: 'rgba(234,179,8,0.3)' },
+                    blocked: { fg: '#f87171', bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.3)' },
+                    unknown: { fg: 'var(--text-tertiary)', bg: 'var(--bg-surface)', border: 'var(--border)' },
+                  };
+                  const tone = palette[described.tone];
+                  return (
+                    <div
+                      role="status"
+                      style={{
+                        display: 'flex', flexDirection: 'column', gap: 4,
+                        padding: '10px 12px', marginBottom: 12,
+                        borderRadius: 'var(--radius-md)',
+                        border: `1px solid ${tone.border}`, background: tone.bg,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 600, color: tone.fg }}>
+                        {described.headline}
+                      </span>
+                      {described.detail && (
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.45 }}>
+                          {described.detail}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {jobError && (
+                  <div
+                    role="alert"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '10px 12px', marginBottom: 12, fontSize: 12,
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(248,113,113,0.3)',
+                      background: 'rgba(248,113,113,0.10)', color: '#f87171',
+                    }}
+                  >
+                    <AlertTriangle size={13} /> {jobError}
+                  </div>
+                )}
+
                 {/* Start button */}
                 {(() => {
                   const canStart = photos.length > 0 && consentChecked && avatarName.trim().length > 0;
@@ -678,7 +798,7 @@ export default function AvatarStudioPage() {
                   return (
                     <button
                       title={canStart ? 'Start avatar reconstruction' : `Missing: ${missingParts.join(', ')}`}
-                      disabled={!canStart}
+                      disabled={!canStart || jobRunning}
                       onClick={startReconstruction}
                       style={{
                         padding: '8px 16px', fontSize: 12, fontWeight: 600,
@@ -690,7 +810,8 @@ export default function AvatarStudioPage() {
                         display: 'flex', alignItems: 'center', gap: 8,
                       }}
                     >
-                      <Sparkles size={14} /> Start Reconstruction
+                      <Sparkles size={14} />{' '}
+                      {jobRunning ? 'Reconstructing…' : 'Start Reconstruction'}
                     </button>
                   );
                 })()}
@@ -1390,13 +1511,55 @@ export default function AvatarStudioPage() {
               </div>
             </div>
 
-            {/* Quality gauge */}
+            {/* Identity score — shown only when one was actually computed.
+                Scoring needs a face-recognition model the service reports as
+                unavailable, in which case this says so rather than showing a
+                number nothing measured. */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '4px 0' }}>
-              <QualityGauge
-                score={qualityScore}
-                status={editingUnlocked ? 'complete' : isProcessing ? 'processing' : 'idle'}
-              />
+              {(() => {
+                const score = identityScore(job);
+                if (score !== null) {
+                  return (
+                    <QualityGauge
+                      score={Math.round(score * 100)}
+                      status={editingUnlocked ? 'complete' : isProcessing ? 'processing' : 'idle'}
+                    />
+                  );
+                }
+                return (
+                  <div style={{ textAlign: 'center', padding: '8px 4px' }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>
+                      Identity score not measured
+                    </p>
+                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                      {job
+                        ? 'No face-recognition model is configured on the inference host.'
+                        : 'Run a reconstruction to populate this.'}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
+
+            {/* What the last run actually did */}
+            {job && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <SectionLabel>Last run</SectionLabel>
+                <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5 }}>
+                  Engine: {job.engine}
+                  {job.is_mock ? ' (procedural preview)' : ''} · {job.steps_summary.completed ?? 0} of{' '}
+                  {job.steps_completed.length} stages ran
+                </p>
+                {skippedSteps(job).map((step) => (
+                  <p
+                    key={step.name}
+                    style={{ fontSize: 10, color: '#fbbf24', margin: 0, lineHeight: 1.45 }}
+                  >
+                    {step.name} skipped — {step.reason}
+                  </p>
+                ))}
+              </div>
+            )}
 
             {/* Pipeline progress */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

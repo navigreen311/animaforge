@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Check, X, Save, FolderOpen } from 'lucide-react';
 
+import {
+  loadCharacter,
+  saveWardrobe,
+  wardrobePayloadToState,
+  type WardrobeSelection,
+  type WardrobeState,
+} from './characterApi';
+import SaveIndicator, { type SaveStatus } from './SaveIndicator';
+
 /* ── Constants ──────────────────────────────────────────────── */
 
 const CATEGORIES = ['Tops', 'Bottoms', 'Outerwear', 'Footwear', 'Accessories', 'Full Outfit'] as const;
@@ -48,28 +57,146 @@ const DEFAULT_DETAIL: ItemDetail = {
   fit: 'Regular',
 };
 
+const AUTOSAVE_DELAY_MS = 800;
+
+export interface WardrobeTabProps {
+  /** Character whose wardrobe is being edited. Omit to run without persistence. */
+  characterId?: string;
+  /** Bearer token forwarded to the platform API. */
+  token?: string | null;
+}
+
+type Selections = Partial<Record<Category, OutfitSelection>>;
+
+/* ── Wire <-> UI mapping ────────────────────────────────────── */
+
+/**
+ * Fill in any detail fields a stored record is missing.
+ *
+ * The stored shape allows a partial detail (an older record, or one written
+ * by another client), while the editor's controls need every field present.
+ */
+function toOutfitSelection(stored: WardrobeSelection): OutfitSelection {
+  return {
+    item: stored.item,
+    detail: { ...DEFAULT_DETAIL, ...(stored.detail ?? {}) } as ItemDetail,
+  };
+}
+
+function fromStored(state: WardrobeState): {
+  selections: Selections;
+  presets: OutfitPreset[];
+} {
+  const selections: Selections = {};
+  for (const [category, selection] of Object.entries(state.selections)) {
+    selections[category as Category] = toOutfitSelection(selection);
+  }
+
+  const presets = state.presets.map((preset) => ({
+    id: preset.id,
+    name: preset.name,
+    selections: Object.fromEntries(
+      Object.entries(preset.selections).map(([category, selection]) => [
+        category,
+        toOutfitSelection(selection),
+      ]),
+    ) as Selections,
+  }));
+
+  return { selections, presets };
+}
+
+function toStored(selections: Selections, presets: OutfitPreset[]): WardrobeState {
+  return {
+    selections: selections as Record<string, WardrobeSelection>,
+    presets: presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      selections: preset.selections as Record<string, WardrobeSelection>,
+    })),
+  };
+}
+
 /* ── Component ──────────────────────────────────────────────── */
 
-export default function WardrobeTab() {
+export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {}) {
   const [activeCategory, setActiveCategory] = useState<Category>('Tops');
-  const [selections, setSelections] = useState<Partial<Record<Category, OutfitSelection>>>({});
+  const [selections, setSelections] = useState<Selections>({});
   const [presets, setPresets] = useState<OutfitPreset[]>([]);
   const [presetName, setPresetName] = useState('');
+  const [status, setStatus] = useState<SaveStatus>(characterId ? 'loading' : 'idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Hydrating from the server sets state, which would otherwise trip the
+     autosave effect and write the record straight back on first render. */
+  const skipNextSave = useRef(true);
 
   const currentSelection = selections[activeCategory];
 
-  /* auto-save debounced 800ms */
+  /* Load the stored wardrobe on mount. */
   useEffect(() => {
+    if (!characterId) {
+      setStatus('idle');
+      return;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+    setStatus('loading');
+
+    loadCharacter(characterId, { token, signal: controller.signal })
+      .then((character) => {
+        if (!active) return;
+        const restored = fromStored(wardrobePayloadToState(character.wardrobe));
+        skipNextSave.current = true;
+        setSelections(restored.selections);
+        setPresets(restored.presets);
+        setStatus('idle');
+        setErrorMessage(null);
+      })
+      .catch((err: unknown) => {
+        if (!active || controller.signal.aborted) return;
+        setStatus('error');
+        setErrorMessage(
+          err instanceof Error ? err.message : 'Could not load wardrobe',
+        );
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [characterId, token]);
+
+  /* Auto-save, debounced. Presets are part of the saved state, so an edit to
+     either the current outfit or the preset list triggers a write. */
+  useEffect(() => {
+    if (!characterId) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      // TODO: persist state (API call)
-      console.log('[WardrobeTab] auto-save', selections);
-    }, 800);
+      setStatus('saving');
+      saveWardrobe(characterId, toStored(selections, presets), { token })
+        .then(() => {
+          setStatus('saved');
+          setErrorMessage(null);
+        })
+        .catch((err: unknown) => {
+          setStatus('error');
+          setErrorMessage(
+            err instanceof Error ? err.message : 'Could not save wardrobe',
+          );
+        });
+    }, AUTOSAVE_DELAY_MS);
+
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [selections]);
+  }, [selections, presets, characterId, token]);
 
   const selectItem = useCallback(
     (item: string) => {
@@ -147,6 +274,12 @@ export default function WardrobeTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <SaveIndicator
+        status={status}
+        errorMessage={errorMessage}
+        persisted={Boolean(characterId)}
+      />
+
       {/* ── Category Tabs (horizontal) ───────────────────────── */}
       <div
         style={{

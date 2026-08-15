@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
+import {
+  DEFAULT_HAIR_STATE,
+  hairParamsToState,
+  loadCharacter,
+  saveHairParams,
+  type HairState,
+} from './characterApi';
+import SaveIndicator, { type SaveStatus } from './SaveIndicator';
+
 /* ── Constants ──────────────────────────────────────────────── */
 
 const HAIRSTYLES = [
@@ -40,57 +49,91 @@ const ACCESSORIES = ['None', 'Clips', 'Headband', 'Cap', 'Beanie', 'Hijab', 'Oth
 
 /* ── Types ──────────────────────────────────────────────────── */
 
-export interface HairState {
-  style: string;
-  color: string;
-  customHex: string;
-  highlightsEnabled: boolean;
-  highlightColor: string;
-  texture: (typeof TEXTURES)[number];
-  length: number;
-  volume: number;
-  shine: number;
-  facialHairStyle: (typeof FACIAL_HAIR_STYLES)[number];
-  accessory: (typeof ACCESSORIES)[number];
+export type { HairState } from './characterApi';
+
+export interface HairTabProps {
+  /** Character whose hair is being edited. Omit to run without persistence. */
+  characterId?: string;
+  /** Bearer token forwarded to the platform API. */
+  token?: string | null;
 }
 
-const DEFAULT_STATE: HairState = {
-  style: 'Short Crop',
-  color: '#1a1a2e',
-  customHex: '',
-  highlightsEnabled: false,
-  highlightColor: '#DAA520',
-  texture: 'Straight',
-  length: 40,
-  volume: 50,
-  shine: 50,
-  facialHairStyle: 'None',
-  accessory: 'None',
-};
+const AUTOSAVE_DELAY_MS = 800;
 
 /* ── Component ──────────────────────────────────────────────── */
 
-export default function HairTab() {
-  const [state, setState] = useState<HairState>(DEFAULT_STATE);
+export default function HairTab({ characterId, token }: HairTabProps = {}) {
+  const [state, setState] = useState<HairState>(DEFAULT_HAIR_STATE);
   const [facialHairOpen, setFacialHairOpen] = useState(false);
   const [accessoriesOpen, setAccessoriesOpen] = useState(false);
+  const [status, setStatus] = useState<SaveStatus>(characterId ? 'loading' : 'idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Hydrating from the server sets state, which would otherwise trip the
+     autosave effect and write the record straight back on first render. */
+  const skipNextSave = useRef(true);
 
   const update = useCallback((patch: Partial<HairState>) => {
     setState((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  /* auto-save debounced 800ms */
+  /* Load the stored hair state on mount. */
   useEffect(() => {
+    if (!characterId) {
+      setStatus('idle');
+      return;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+    setStatus('loading');
+
+    loadCharacter(characterId, { token, signal: controller.signal })
+      .then((character) => {
+        if (!active) return;
+        skipNextSave.current = true;
+        setState(hairParamsToState(character.hairParams));
+        setStatus('idle');
+        setErrorMessage(null);
+      })
+      .catch((err: unknown) => {
+        if (!active || controller.signal.aborted) return;
+        setStatus('error');
+        setErrorMessage(err instanceof Error ? err.message : 'Could not load hair');
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [characterId, token]);
+
+  /* Auto-save, debounced. */
+  useEffect(() => {
+    if (!characterId) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      // TODO: persist state (API call)
-      console.log('[HairTab] auto-save', state);
-    }, 800);
+      setStatus('saving');
+      saveHairParams(characterId, state, { token })
+        .then(() => {
+          setStatus('saved');
+          setErrorMessage(null);
+        })
+        .catch((err: unknown) => {
+          setStatus('error');
+          setErrorMessage(err instanceof Error ? err.message : 'Could not save hair');
+        });
+    }, AUTOSAVE_DELAY_MS);
+
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [state]);
+  }, [state, characterId, token]);
 
   /* ── Section header style ─────────────────────────────────── */
   const sectionTitle: React.CSSProperties = {
@@ -104,6 +147,12 @@ export default function HairTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      <SaveIndicator
+        status={status}
+        errorMessage={errorMessage}
+        persisted={Boolean(characterId)}
+      />
+
       {/* ── Style Grid (4x5) ─────────────────────────────────── */}
       <div>
         <h4 style={sectionTitle}>Hairstyle</h4>

@@ -1,9 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../db.js";
 import type {
+  AvatarArtifactsInput,
   Character,
   CreateCharacterInput,
+  HairParamsInput,
   UpdateCharacterInput,
+  WardrobeInput,
 } from "../models/characterSchemas.js";
 
 // In-memory fallback store
@@ -147,6 +150,52 @@ export async function deleteCharacter(id: string): Promise<boolean> {
 
   // In-memory fallback
   return characters.delete(id);
+}
+
+/**
+ * Persist the Hair tab's state to `Character.hairParams`.
+ *
+ * Replaces the stored object rather than merging: the tab always submits its
+ * full state, and a merge would make removing a property impossible.
+ */
+export async function updateHairParams(
+  id: string,
+  hairParams: HairParamsInput,
+): Promise<Character | undefined> {
+  return updateCharacter(id, { hairParams });
+}
+
+/** Persist the Wardrobe tab's state to `Character.wardrobe`. */
+export async function updateWardrobe(
+  id: string,
+  wardrobe: WardrobeInput,
+): Promise<Character | undefined> {
+  return updateCharacter(id, { wardrobe });
+}
+
+/**
+ * Record the artifacts an X5 reconstruction produced.
+ *
+ * Only the fields present in `artifacts` are written, so a partial pipeline
+ * result never blanks a URL that a previous successful run stored.
+ */
+export async function updateAvatarArtifacts(
+  id: string,
+  artifacts: AvatarArtifactsInput,
+): Promise<Character | undefined> {
+  const patch: UpdateCharacterInput = {};
+  if (artifacts.gltfUrl !== undefined) patch.gltfUrl = artifacts.gltfUrl;
+  if (artifacts.facsRigUrl !== undefined) patch.facsRigUrl = artifacts.facsRigUrl;
+  if (artifacts.faceModelUrl !== undefined) {
+    patch.faceModelUrl = artifacts.faceModelUrl;
+  }
+  if (artifacts.isDigitalTwin !== undefined) {
+    patch.isDigitalTwin = artifacts.isDigitalTwin;
+  }
+  if (artifacts.styleMode !== undefined) patch.styleMode = artifacts.styleMode;
+  if (artifacts.bodyParams !== undefined) patch.bodyParams = artifacts.bodyParams;
+
+  return updateCharacter(id, patch);
 }
 
 export async function triggerDigitalTwin(id: string): Promise<{ jobId: string } | undefined> {

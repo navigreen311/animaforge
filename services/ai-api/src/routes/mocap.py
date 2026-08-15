@@ -8,11 +8,14 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..services.mocap_service import (
+    FORMAT_SUPPORT,
     SUPPORTED_FORMATS,
     blend_motions,
     motion_to_keyframes,
     parse_bvh,
+    parse_c3d,
     parse_fbx_motion,
+    parse_trc,
     retarget_motion,
     validate_motion_data,
 )
@@ -71,6 +74,7 @@ class ApplyResponse(BaseModel):
 
 class FormatsResponse(BaseModel):
     formats: list[str]
+    support: dict[str, dict[str, Any]]
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
@@ -86,19 +90,17 @@ async def upload_mocap(body: UploadRequest) -> UploadResponse:
             detail=f"Unsupported format {fmt!r}. Supported: {SUPPORTED_FORMATS}",
         )
 
+    parsers = {
+        "bvh": parse_bvh,
+        "fbx": parse_fbx_motion,
+        "c3d": parse_c3d,
+        "trc": parse_trc,
+    }
+
     try:
-        if fmt == "bvh":
-            motion = parse_bvh(body.file_url)
-        elif fmt == "fbx":
-            motion = parse_fbx_motion(body.file_url)
-        else:
-            # c3d / trc -- not yet implemented
-            raise HTTPException(
-                status_code=501,
-                detail=f"Format {fmt!r} parsing is not yet implemented",
-            )
+        motion = parsers[fmt](body.file_url)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     validation = validate_motion_data(motion)
     if not validation["valid"]:
@@ -115,6 +117,8 @@ async def upload_mocap(body: UploadRequest) -> UploadResponse:
             "frame_count": motion["frame_count"],
             "fps": motion["fps"],
             "duration_ms": motion["duration_ms"],
+            # False means the skeleton is synthetic and the file was not read.
+            "parsed_from_file": FORMAT_SUPPORT[fmt]["parsed"],
         },
     )
 
@@ -172,5 +176,9 @@ async def apply_mocap(body: ApplyRequest) -> ApplyResponse:
 
 @router.get("/mocap/formats", response_model=FormatsResponse)
 async def list_formats() -> FormatsResponse:
-    """List supported motion capture formats."""
-    return FormatsResponse(formats=SUPPORTED_FORMATS)
+    """List supported motion capture formats and how each is handled.
+
+    ``support[fmt]["parsed"]`` distinguishes formats whose bytes are really
+    decoded (c3d, trc) from those returning a synthetic skeleton (bvh, fbx).
+    """
+    return FormatsResponse(formats=SUPPORTED_FORMATS, support=FORMAT_SUPPORT)
