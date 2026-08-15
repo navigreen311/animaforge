@@ -17,7 +17,8 @@ import re
 import uuid
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from .mocap_formats import parse_c3d_bytes, parse_trc_bytes
 
@@ -171,7 +172,9 @@ def _fetch_http(file_url: str) -> bytes:
 
 def _read_local(file_url: str) -> bytes:
     if file_url.startswith("file://"):
-        path = Path(unquote(urlparse(file_url).path).lstrip("/"))
+        # url2pathname, not a manual lstrip("/"): on POSIX the leading slash is
+        # part of the absolute path and stripping it yields a relative one.
+        path = Path(url2pathname(urlparse(file_url).path))
     else:
         path = Path(file_url)
 

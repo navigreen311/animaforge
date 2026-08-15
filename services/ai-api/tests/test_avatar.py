@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 # Allow imports from the ai-api package tree.
 _AI_API_ROOT = Path(__file__).resolve().parent.parent
@@ -56,7 +57,9 @@ def client() -> TestClient:
 def _local_path(url: str) -> Path:
     """Resolve a file:// artifact URL back to a filesystem path."""
     assert url.startswith("file:///"), f"expected a file URL, got {url!r}"
-    return Path(unquote(urlparse(url).path).lstrip("/"))
+    # url2pathname handles both the POSIX "/tmp/x" and the Windows "/C:/x"
+    # forms; stripping the leading slash by hand breaks the former.
+    return Path(url2pathname(urlparse(url).path))
 
 
 class TestGenerateAvatarEndpoint:
