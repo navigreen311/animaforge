@@ -302,6 +302,13 @@ jobs:
       # the real database came up missing columns. That history was squashed to
       # a verified baseline in #71, so `migrate deploy` now reproduces
       # schema.prisma exactly — checked by .github/workflows/schema-drift.yml.
+      #
+      # This suite is red at 55 of 139, up from 27 against the in-memory store.
+      # The 28 new failures are not drift: every Postgres-level error in the run
+      # is a foreign key violation (25 characters_owner_id, 15 scenes_project_id,
+      # 2 projects_owner_id) because the fixtures reference users and projects
+      # no test ever inserts. A Map does not enforce referential integrity, so
+      # the in-memory store had been hiding that. See #21 and #73.
       - name: Generate the Prisma client
         run: npx prisma generate --schema packages/db/prisma/schema.prisma
 
