@@ -181,9 +181,13 @@ jobs:
           # that pair crashes at collection:
           #   AttributeError: 'Package' object has no attribute 'obj'
           # 0.24 is the first release that handles pytest 8's Package collector.
+          # Capped below 0.25 deliberately: pytest-asyncio 1.x drops the implicit
+          # event loop these tests rely on, turning 4 of them into
+          # "RuntimeError: There is no current event loop". 0.24.x is the
+          # smallest step that fixes collection without changing test semantics.
           # The pin in services/ai-api/requirements.txt still needs fixing by its
           # owner — this only unbreaks CI.
-          pip install pytest-cov "pytest-asyncio>=0.24,<2.0"
+          pip install pytest-cov "pytest-asyncio>=0.24,<0.25"
 
       - name: Run pytest with coverage
         run: |
