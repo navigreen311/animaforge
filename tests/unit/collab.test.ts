@@ -10,7 +10,11 @@ describe('Collab - Auth / Token Verification', () => {
   it('verifies a valid JWT token and returns userId + displayName', () => {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(
-      JSON.stringify({ sub: 'user-1', displayName: 'Alice', exp: Math.floor(Date.now() / 1000) + 3600 }),
+      JSON.stringify({
+        sub: 'user-1',
+        displayName: 'Alice',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }),
     ).toString('base64url');
     const token = `${header}.${payload}.fakesig`;
 
@@ -42,8 +46,13 @@ describe('Collab - Auth / Token Verification', () => {
 describe('Collab - Shot Lock', () => {
   let lm: ShotLockManager;
 
-  beforeEach(() => { lm = new ShotLockManager(); });
-  afterEach(() => { lm.releaseAllForUser('user-a'); lm.releaseAllForUser('user-b'); });
+  beforeEach(() => {
+    lm = new ShotLockManager();
+  });
+  afterEach(() => {
+    lm.releaseAllForUser('user-a');
+    lm.releaseAllForUser('user-b');
+  });
 
   it('locks a shot and reports the lock holder', () => {
     const info = lm.lockShot('user-a', 'shot-1');
@@ -65,8 +74,13 @@ describe('Collab - Shot Lock', () => {
 describe('Collab - Shot Unlock', () => {
   let lm: ShotLockManager;
 
-  beforeEach(() => { lm = new ShotLockManager(); });
-  afterEach(() => { lm.releaseAllForUser('user-a'); lm.releaseAllForUser('user-b'); });
+  beforeEach(() => {
+    lm = new ShotLockManager();
+  });
+  afterEach(() => {
+    lm.releaseAllForUser('user-a');
+    lm.releaseAllForUser('user-b');
+  });
 
   it('unlocks a shot when requested by the lock owner', () => {
     lm.lockShot('user-a', 'shot-1');

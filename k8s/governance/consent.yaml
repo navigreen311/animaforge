@@ -34,11 +34,11 @@ spec:
               name: http
           env:
             - name: PORT
-              value: "8013"
+              value: '8013'
             - name: CONSENT_VERIFICATION_MODE
-              value: "strict"
+              value: 'strict'
             - name: GDPR_COMPLIANCE
-              value: "enabled"
+              value: 'enabled'
           resources:
             requests:
               cpu: 200m

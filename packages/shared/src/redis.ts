@@ -14,8 +14,12 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
       console.error('Redis error:', err.message);
       isConnected = false;
     });
-    client.on('connect', () => { isConnected = true; });
-    client.on('disconnect', () => { isConnected = false; });
+    client.on('connect', () => {
+      isConnected = true;
+    });
+    client.on('disconnect', () => {
+      isConnected = false;
+    });
     await client.connect();
     return client;
   } catch (err) {
@@ -80,7 +84,11 @@ export async function cacheDelete(key: string): Promise<void> {
 }
 
 // Rate limiting
-export async function checkRateLimit(key: string, limit: number, windowSec: number): Promise<{allowed: boolean; remaining: number; resetAt: number}> {
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowSec: number,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const redis = await getRedisClient();
   if (!redis) return { allowed: true, remaining: limit, resetAt: Date.now() + windowSec * 1000 };
 

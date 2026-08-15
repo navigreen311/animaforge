@@ -74,30 +74,27 @@ export function useAuth() {
     return response.user;
   }, []);
 
-  const register = useCallback(
-    async (email: string, password: string, displayName: string) => {
-      const response = await api.post<{ token: string; user: User }>(
-        '/auth/register',
-        { email, password, displayName },
-        { authenticated: false },
-      );
+  const register = useCallback(async (email: string, password: string, displayName: string) => {
+    const response = await api.post<{ token: string; user: User }>(
+      '/auth/register',
+      { email, password, displayName },
+      { authenticated: false },
+    );
 
-      await Promise.all([
-        AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token),
-        AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user)),
-      ]);
+    await Promise.all([
+      AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token),
+      AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user)),
+    ]);
 
-      setState({
-        user: response.user,
-        token: response.token,
-        isLoading: false,
-        isAuthenticated: true,
-      });
+    setState({
+      user: response.user,
+      token: response.token,
+      isLoading: false,
+      isAuthenticated: true,
+    });
 
-      return response.user;
-    },
-    [],
-  );
+    return response.user;
+  }, []);
 
   const logout = useCallback(async () => {
     await Promise.all([

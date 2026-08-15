@@ -17,11 +17,15 @@ export default function CreditBadge({ credits, size = 'medium' }: Props) {
   const isSmall = size === 'small';
 
   return (
-    <View style={[styles.badge, { backgroundColor: color + '20', borderColor: color }, isSmall && styles.badgeSmall]}>
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: color + '20', borderColor: color },
+        isSmall && styles.badgeSmall,
+      ]}
+    >
       <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={[styles.text, { color }, isSmall && styles.textSmall]}>
-        {credits}
-      </Text>
+      <Text style={[styles.text, { color }, isSmall && styles.textSmall]}>{credits}</Text>
       {!isSmall && <Text style={[styles.label, { color }]}>credits</Text>}
     </View>
   );

@@ -8,7 +8,9 @@ function createMockStore(initial = {}) {
   const data = { ...initial };
   return {
     get: vi.fn((key, defaultVal) => (key in data ? data[key] : defaultVal)),
-    set: vi.fn((key, value) => { data[key] = value; }),
+    set: vi.fn((key, value) => {
+      data[key] = value;
+    }),
     _data: data,
   };
 }

@@ -40,7 +40,13 @@ describe('AnimaForgeClient', () => {
   });
 
   it('lists projects', async () => {
-    const mockData = { data: [{ id: 'p1', name: 'Project 1' }], total: 1, page: 1, limit: 20, hasMore: false };
+    const mockData = {
+      data: [{ id: 'p1', name: 'Project 1' }],
+      total: 1,
+      page: 1,
+      limit: 20,
+      hasMore: false,
+    };
     mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
     const result = await client.projects.list();
@@ -48,12 +54,18 @@ describe('AnimaForgeClient', () => {
     expect(result.data[0].id).toBe('p1');
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/projects'),
-      expect.objectContaining({ method: 'GET' })
+      expect.objectContaining({ method: 'GET' }),
     );
   });
 
   it('creates a project with correct body', async () => {
-    const mockProject = { id: 'p2', name: 'New Project', status: 'draft', createdAt: '', updatedAt: '' };
+    const mockProject = {
+      id: 'p2',
+      name: 'New Project',
+      status: 'draft',
+      createdAt: '',
+      updatedAt: '',
+    };
     mockFetch.mockResolvedValueOnce(jsonResponse(mockProject));
 
     const result = await client.projects.create({ name: 'New Project' });
@@ -87,7 +99,7 @@ describe('AnimaForgeClient', () => {
 
   it('throws RateLimitError on 429 with no retries', async () => {
     mockFetch.mockResolvedValueOnce(
-      jsonResponse({ message: 'Too many requests' }, 429, { 'retry-after': '5' })
+      jsonResponse({ message: 'Too many requests' }, 429, { 'retry-after': '5' }),
     );
 
     await expect(client.projects.list()).rejects.toThrow(RateLimitError);
@@ -97,7 +109,7 @@ describe('AnimaForgeClient', () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ message: 'No credits' }, 402));
 
     await expect(client.generate.video({ projectId: 'p1', prompt: 'test' })).rejects.toThrow(
-      InsufficientCreditsError
+      InsufficientCreditsError,
     );
   });
 

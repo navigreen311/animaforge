@@ -1,4 +1,4 @@
-export { s3Client } from "./s3Client.js";
+export { s3Client } from './s3Client.js';
 
 export {
   uploadFile,
@@ -11,7 +11,7 @@ export {
   type UploadResult,
   type ListFilesResult,
   type FileMetadata,
-} from "./storageService.js";
+} from './storageService.js';
 
 export {
   generateAssetKey,
@@ -21,7 +21,7 @@ export {
   getAllowedMimeTypes,
   validateFileSize,
   type UploadCategory,
-} from "./uploadHelpers.js";
+} from './uploadHelpers.js';
 
 export {
   getLifecyclePolicy,
@@ -29,4 +29,4 @@ export {
   type StorageTier,
   type TierName,
   type LifecycleRule,
-} from "./lifecycleRules.js";
+} from './lifecycleRules.js';

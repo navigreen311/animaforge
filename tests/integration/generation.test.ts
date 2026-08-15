@@ -33,10 +33,15 @@ describe('Generation Jobs', () => {
 
     const job = await prisma.generationJob.create({
       data: {
-        shotId: shot.id, projectId: project.id, userId: user.id,
-        jobType: 'video_10s_preview', modelId: 'animaforge-v1',
+        shotId: shot.id,
+        projectId: project.id,
+        userId: user.id,
+        jobType: 'video_10s_preview',
+        modelId: 'animaforge-v1',
         inputParams: { prompt: 'Hero running', style: 'cinematic' },
-        status: 'queued', tier: 'preview', progress: 0,
+        status: 'queued',
+        tier: 'preview',
+        progress: 0,
       },
     });
 
@@ -57,9 +62,13 @@ describe('Generation Jobs', () => {
 
     const job = await prisma.generationJob.create({
       data: {
-        projectId: project.id, userId: user.id,
-        jobType: 'video_10s_final', modelId: 'animaforge-v1',
-        inputParams: {}, status: 'processing', progress: 45,
+        projectId: project.id,
+        userId: user.id,
+        jobType: 'video_10s_final',
+        modelId: 'animaforge-v1',
+        inputParams: {},
+        status: 'processing',
+        progress: 45,
       },
     });
 
@@ -74,14 +83,19 @@ describe('Generation Jobs', () => {
   it('should deduct credits when a job is submitted', async () => {
     const userId = uuidv4();
 
-    const topUpRes = await billingRequest('post', '/billing/credits/topup', { userId, amount: 100 });
+    const topUpRes = await billingRequest('post', '/billing/credits/topup', {
+      userId,
+      amount: 100,
+    });
     expect(topUpRes.status).toBe(200);
     expect(topUpRes.body.balance).toBe(100);
 
     await billingRequest('post', '/billing/subscribe', { userId, tier: 'pro' });
 
     const deductRes = await billingRequest('post', '/billing/credits/deduct', {
-      userId, jobType: 'video_10s_preview', tier: 'pro',
+      userId,
+      jobType: 'video_10s_preview',
+      tier: 'pro',
     });
 
     expect(deductRes.status).toBe(200);
@@ -99,7 +113,9 @@ describe('Generation Jobs', () => {
     await billingRequest('post', '/billing/subscribe', { userId, tier: 'free' });
 
     const res = await billingRequest('post', '/billing/credits/deduct', {
-      userId, jobType: 'video_10s_final', tier: 'free',
+      userId,
+      jobType: 'video_10s_final',
+      tier: 'free',
     });
 
     expect(res.status).toBe(402);
@@ -113,16 +129,21 @@ describe('Generation Jobs', () => {
 
     const job = await prisma.generationJob.create({
       data: {
-        projectId: project.id, userId: user.id,
-        jobType: 'video_10s_final', modelId: 'animaforge-v1',
-        inputParams: { prompt: 'Final render' }, status: 'processing', progress: 90,
+        projectId: project.id,
+        userId: user.id,
+        jobType: 'video_10s_final',
+        modelId: 'animaforge-v1',
+        inputParams: { prompt: 'Final render' },
+        status: 'processing',
+        progress: 90,
       },
     });
 
     const completed = await prisma.generationJob.update({
       where: { id: job.id },
       data: {
-        status: 'complete', progress: 100,
+        status: 'complete',
+        progress: 100,
         outputUrl: 'https://cdn.animaforge.io/renders/output-abc123.mp4',
         completedAt: new Date(),
       },

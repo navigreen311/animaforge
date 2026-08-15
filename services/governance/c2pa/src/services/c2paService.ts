@@ -229,7 +229,7 @@ function rowToEntry(row: C2paManifestRow): StoredManifestEntry {
 
 async function findByOutputId(outputId: string): Promise<StoredManifestEntry | null> {
   try {
-    if ((await isDatabaseReachable())) {
+    if (await isDatabaseReachable()) {
       const row = await prisma!.c2PAManifest.findUnique({
         where: { outputId },
       });
@@ -244,7 +244,7 @@ async function findByOutputId(outputId: string): Promise<StoredManifestEntry | n
 
 async function findByDigest(sha256: string): Promise<StoredManifestEntry | null> {
   try {
-    if ((await isDatabaseReachable())) {
+    if (await isDatabaseReachable()) {
       const row = await prisma!.c2PAManifest.findFirst({
         where: { OR: [{ signedAssetSha256: sha256 }, { assetSha256: sha256 }] },
         orderBy: { createdAt: 'desc' },
@@ -260,7 +260,7 @@ async function findByDigest(sha256: string): Promise<StoredManifestEntry | null>
 
 export async function getManifestByJobId(jobId: string): Promise<StoredManifestEntry | null> {
   try {
-    if ((await isDatabaseReachable())) {
+    if (await isDatabaseReachable()) {
       const row = await prisma!.c2PAManifest.findFirst({
         where: { jobId },
         orderBy: { createdAt: 'desc' },
@@ -581,7 +581,7 @@ export async function getCapabilities(): Promise<C2paCapabilities> {
       timestamp_authority: status.tsaUrl,
     },
     verification: { available: status.canVerify },
-    database: { connected: (await isDatabaseReachable()) },
+    database: { connected: await isDatabaseReachable() },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };

@@ -113,9 +113,7 @@ export default function AvatarScreen() {
         <Text style={styles.headerSubtitle}>Upload a photo and choose a style</Text>
       </View>
 
-      {isGenerating && (
-        <GenerationProgress progress={progress} stage={stage} />
-      )}
+      {isGenerating && <GenerationProgress progress={progress} stage={stage} />}
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Photo picker */}
@@ -157,9 +155,7 @@ export default function AvatarScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.styleIcon, { backgroundColor: option.color }]}>
-                  <Text style={styles.styleIconText}>
-                    {option.label.charAt(0)}
-                  </Text>
+                  <Text style={styles.styleIconText}>{option.label.charAt(0)}</Text>
                 </View>
                 <Text style={styles.styleLabel}>{option.label}</Text>
               </TouchableOpacity>
@@ -173,9 +169,7 @@ export default function AvatarScreen() {
             <Text style={styles.sectionTitle}>Result</Text>
             <View style={styles.resultContainer}>
               <Image source={{ uri: resultUrl }} style={styles.resultImage} />
-              <Text style={styles.resultHint}>
-                Avatar generated with {selectedStyle} style
-              </Text>
+              <Text style={styles.resultHint}>Avatar generated with {selectedStyle} style</Text>
             </View>
           </View>
         )}

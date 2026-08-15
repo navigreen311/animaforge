@@ -63,13 +63,11 @@ describe('Governance — Moderation', () => {
   it('should pass moderation for safe content', async () => {
     const app = await getModerationApp();
 
-    const res = await request(app)
-      .post('/governance/moderate')
-      .send({
-        job_id: uuidv4(),
-        content_url: 'https://cdn.example.com/assets/beautiful-sunset.mp4',
-        content_type: 'video',
-      });
+    const res = await request(app).post('/governance/moderate').send({
+      job_id: uuidv4(),
+      content_url: 'https://cdn.example.com/assets/beautiful-sunset.mp4',
+      content_type: 'video',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.result).toBe('pass');
@@ -81,13 +79,11 @@ describe('Governance — Moderation', () => {
   it('should block moderation for unsafe content', async () => {
     const app = await getModerationApp();
 
-    const res = await request(app)
-      .post('/governance/moderate')
-      .send({
-        job_id: uuidv4(),
-        content_url: 'https://cdn.example.com/assets/murder-gore-weapon.mp4',
-        content_type: 'video',
-      });
+    const res = await request(app).post('/governance/moderate').send({
+      job_id: uuidv4(),
+      content_url: 'https://cdn.example.com/assets/murder-gore-weapon.mp4',
+      content_type: 'video',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.result).toBe('block');

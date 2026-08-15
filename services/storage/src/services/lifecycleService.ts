@@ -88,9 +88,11 @@ export function calculateUserUsage(userId: string): {
 /**
  * Archive an asset to glacier storage class.
  */
-export function archiveAsset(
-  assetId: string,
-): { success: boolean; asset?: StorageAsset; error?: string } {
+export function archiveAsset(assetId: string): {
+  success: boolean;
+  asset?: StorageAsset;
+  error?: string;
+} {
   const asset = assets.get(assetId);
   if (!asset) return { success: false, error: 'Asset not found' };
   if (asset.status === 'archived') return { success: false, error: 'Asset already archived' };
@@ -111,9 +113,11 @@ export function archiveAsset(
 /**
  * Initiate restore of an archived asset from cold storage.
  */
-export function restoreAsset(
-  assetId: string,
-): { success: boolean; asset?: StorageAsset; error?: string } {
+export function restoreAsset(assetId: string): {
+  success: boolean;
+  asset?: StorageAsset;
+  error?: string;
+} {
   const asset = assets.get(assetId);
   if (!asset) return { success: false, error: 'Asset not found' };
   if (asset.status !== 'archived') return { success: false, error: 'Asset is not archived' };
@@ -232,7 +236,8 @@ export function checkQuota(userId: string): {
     }
   }
 
-  const usagePercent = tier === 'enterprise' ? 0 : Math.round((usedBytes / quotaBytes) * 10000) / 100;
+  const usagePercent =
+    tier === 'enterprise' ? 0 : Math.round((usedBytes / quotaBytes) * 10000) / 100;
 
   return {
     userId,
@@ -262,7 +267,12 @@ export function getDefaultPolicies() {
  */
 export function setRetentionPolicy(
   projectId: string,
-  updates: Partial<Pick<RetentionPolicy, 'retentionDays' | 'autoArchiveDays' | 'autoDeleteExpired' | 'excludeTypes'>>,
+  updates: Partial<
+    Pick<
+      RetentionPolicy,
+      'retentionDays' | 'autoArchiveDays' | 'autoDeleteExpired' | 'excludeTypes'
+    >
+  >,
 ): RetentionPolicy {
   const existing = retentionPolicies.get(projectId);
   const timestamp = now();

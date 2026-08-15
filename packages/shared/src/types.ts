@@ -17,7 +17,15 @@ export type ShotStatus = 'draft' | 'generating' | 'review' | 'approved' | 'locke
 export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:3' | '21:9';
 
 // Generation
-export type JobType = 'video' | 'audio' | 'avatar' | 'style_clone' | 'img_to_cartoon' | 'qc' | 'script' | 'music';
+export type JobType =
+  | 'video'
+  | 'audio'
+  | 'avatar'
+  | 'style_clone'
+  | 'img_to_cartoon'
+  | 'qc'
+  | 'script'
+  | 'music';
 export type JobStatus = 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';
 export type RenderTier = 'preview' | 'standard' | 'final' | 'batch';
 
@@ -37,7 +45,12 @@ export interface WSJobProgress {
 
 export interface WSJobComplete {
   event: 'job:complete';
-  data: { job_id: UUID; output_url: string; quality_scores: Record<string, number>; c2pa_manifest: string };
+  data: {
+    job_id: UUID;
+    output_url: string;
+    quality_scores: Record<string, number>;
+    c2pa_manifest: string;
+  };
 }
 
 export interface WSJobFailed {
@@ -113,17 +126,17 @@ export interface ApiResponse<T> {
 
 // Credit costs
 export const CREDIT_COSTS = {
-  'video_10s_preview': 1,
-  'video_10s_final': 5,
-  'video_30s_preview': 2,
-  'video_30s_final': 12,
-  'avatar_reconstruction': 10,
-  'avatar_animation_10s_preview': 3,
-  'avatar_animation_10s_final': 10,
-  'style_clone': 2,
-  'img_to_cartoon': 0.5,
-  'script_generation': 1,
-  'music_30s': 2,
-  'audio_voice_30s': 1,
-  'auto_qc': 0.5,
+  video_10s_preview: 1,
+  video_10s_final: 5,
+  video_30s_preview: 2,
+  video_30s_final: 12,
+  avatar_reconstruction: 10,
+  avatar_animation_10s_preview: 3,
+  avatar_animation_10s_final: 10,
+  style_clone: 2,
+  img_to_cartoon: 0.5,
+  script_generation: 1,
+  music_30s: 2,
+  audio_voice_30s: 1,
+  auto_qc: 0.5,
 } as const;

@@ -22,7 +22,9 @@ export function excludeDeleted(): { deletedAt: null } {
  * @returns The updated record
  */
 export async function softDelete<
-  T extends { update: (args: { where: { id: string }; data: { deletedAt: Date } }) => Promise<unknown> },
+  T extends {
+    update: (args: { where: { id: string }; data: { deletedAt: Date } }) => Promise<unknown>;
+  },
 >(model: T, id: string) {
   return model.update({
     where: { id },

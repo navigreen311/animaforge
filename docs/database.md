@@ -10,72 +10,72 @@ AnimaForge uses **PostgreSQL 16** with the **pgvector** extension as its primary
 
 ### 1. Identity & Access
 
-| Table | Description |
-|-------|-------------|
-| `users` | User accounts with auth provider references |
-| `organizations` | Enterprise organization entities |
-| `org_memberships` | User-to-org mapping with roles |
-| `api_keys` | Developer API keys with scopes |
-| `sessions` | Active session tracking |
+| Table             | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `users`           | User accounts with auth provider references |
+| `organizations`   | Enterprise organization entities            |
+| `org_memberships` | User-to-org mapping with roles              |
+| `api_keys`        | Developer API keys with scopes              |
+| `sessions`        | Active session tracking                     |
 
 ### 2. Projects & Content
 
-| Table | Description |
-|-------|-------------|
-| `projects` | Animation projects with phase tracking |
-| `shots` | Individual shots within a project timeline |
-| `shot_versions` | Version history for each shot |
-| `scenes` | Scene groupings within a project |
-| `assets` | Uploaded media files (images, video, audio, 3D) |
-| `project_assets` | Many-to-many linking assets to projects |
+| Table            | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `projects`       | Animation projects with phase tracking          |
+| `shots`          | Individual shots within a project timeline      |
+| `shot_versions`  | Version history for each shot                   |
+| `scenes`         | Scene groupings within a project                |
+| `assets`         | Uploaded media files (images, video, audio, 3D) |
+| `project_assets` | Many-to-many linking assets to projects         |
 
 ### 3. Characters & Identity
 
-| Table | Description |
-|-------|-------------|
-| `characters` | Character definitions with style metadata |
-| `character_references` | Reference images with angle metadata |
-| `character_embeddings` | pgvector embeddings for identity consistency |
-| `consent_records` | Likeness consent tracking |
-| `digital_twins` | 3D avatar reconstructions linked to characters |
+| Table                  | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `characters`           | Character definitions with style metadata      |
+| `character_references` | Reference images with angle metadata           |
+| `character_embeddings` | pgvector embeddings for identity consistency   |
+| `consent_records`      | Likeness consent tracking                      |
+| `digital_twins`        | 3D avatar reconstructions linked to characters |
 
 ### 4. Generation & Processing
 
-| Table | Description |
-|-------|-------------|
-| `generation_jobs` | Job queue entries with status and progress |
-| `generation_outputs` | Completed output files with quality scores |
-| `style_fingerprints` | Extracted style descriptors |
-| `style_transfers` | Applied style transfer records |
+| Table                  | Description                                  |
+| ---------------------- | -------------------------------------------- |
+| `generation_jobs`      | Job queue entries with status and progress   |
+| `generation_outputs`   | Completed output files with quality scores   |
+| `style_fingerprints`   | Extracted style descriptors                  |
+| `style_transfers`      | Applied style transfer records               |
 | `post_processing_jobs` | Stabilization, upscaling, interpolation jobs |
 
 ### 5. Review & Collaboration
 
-| Table | Description |
-|-------|-------------|
-| `reviews` | Shot review status and approver tracking |
-| `comments` | Timestamped comments on shots |
-| `comment_threads` | Threaded discussion groupings |
-| `notifications` | User notification queue |
+| Table             | Description                              |
+| ----------------- | ---------------------------------------- |
+| `reviews`         | Shot review status and approver tracking |
+| `comments`        | Timestamped comments on shots            |
+| `comment_threads` | Threaded discussion groupings            |
+| `notifications`   | User notification queue                  |
 
 ### 6. Governance & Provenance
 
-| Table | Description |
-|-------|-------------|
-| `c2pa_manifests` | Content Credentials manifests |
-| `watermark_records` | Embedded watermark metadata |
-| `moderation_results` | Content moderation scan results |
-| `audit_log` | Immutable audit trail (append-only) |
+| Table                | Description                         |
+| -------------------- | ----------------------------------- |
+| `c2pa_manifests`     | Content Credentials manifests       |
+| `watermark_records`  | Embedded watermark metadata         |
+| `moderation_results` | Content moderation scan results     |
+| `audit_log`          | Immutable audit trail (append-only) |
 
 ### 7. Marketplace & Billing
 
-| Table | Description |
-|-------|-------------|
-| `marketplace_items` | Published marketplace listings |
-| `marketplace_purchases` | Purchase transaction records |
-| `credit_ledger` | Credit balance transactions |
-| `subscriptions` | User subscription tier tracking |
-| `invoices` | Billing invoice records |
+| Table                   | Description                     |
+| ----------------------- | ------------------------------- |
+| `marketplace_items`     | Published marketplace listings  |
+| `marketplace_purchases` | Purchase transaction records    |
+| `credit_ledger`         | Credit balance transactions     |
+| `subscriptions`         | User subscription tier tracking |
+| `invoices`              | Billing invoice records         |
 
 ---
 
@@ -252,6 +252,7 @@ DELETE FROM projects WHERE deleted_at < now() - INTERVAL '30 days';
 ```
 
 Benefits:
+
 - Immediate "undo" capability for accidental deletions
 - Audit trail preservation (audit_log references remain valid)
 - Background cleanup keeps table sizes manageable
@@ -295,11 +296,11 @@ LIMIT 5;
 
 ### Embedding Dimensions
 
-| Table | Column | Dimensions | Model |
-|-------|--------|------------|-------|
-| `character_embeddings` | `embedding` | 512 | CLIP ViT-L/14 |
-| `style_fingerprints` | `mood_vector` | 128 | Custom style encoder |
-| `style_fingerprints` | `texture_vector` | 256 | Custom texture encoder |
+| Table                  | Column           | Dimensions | Model                  |
+| ---------------------- | ---------------- | ---------- | ---------------------- |
+| `character_embeddings` | `embedding`      | 512        | CLIP ViT-L/14          |
+| `style_fingerprints`   | `mood_vector`    | 128        | Custom style encoder   |
+| `style_fingerprints`   | `texture_vector` | 256        | Custom texture encoder |
 
 ---
 

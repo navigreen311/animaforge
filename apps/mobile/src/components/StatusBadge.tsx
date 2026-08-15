@@ -32,13 +32,7 @@ const STATUS_META: Record<ShotStatus, { label: string; color: string; bg: string
 export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const meta = STATUS_META[status];
   return (
-    <View
-      style={[
-        styles.badge,
-        { backgroundColor: meta.bg },
-        size === 'sm' && styles.badgeSm,
-      ]}
-    >
+    <View style={[styles.badge, { backgroundColor: meta.bg }, size === 'sm' && styles.badgeSm]}>
       <View style={[styles.dot, { backgroundColor: meta.color }]} />
       <Text style={[styles.label, { color: meta.color }, size === 'sm' && styles.labelSm]}>
         {meta.label}

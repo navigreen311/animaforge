@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 interface QuickAction {
   id: string;
@@ -52,7 +47,6 @@ const UNAVAILABLE_REASON =
   'sample data rather than starting a job.';
 
 export default function StudioScreen() {
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -90,8 +84,8 @@ export default function StudioScreen() {
         <View style={styles.creditsCard}>
           <Text style={styles.creditsTitle}>Generation Credits</Text>
           <Text style={styles.creditsInfo}>
-            Each generation uses credits based on resolution and duration. Check your
-            Profile for balance.
+            Each generation uses credits based on resolution and duration. Check your Profile for
+            balance.
           </Text>
         </View>
       </ScrollView>

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AnimaForge Platform API
-  version: "1.0"
+  version: '1.0'
   description: |
     AnimaForge is the world's first full-stack AI animation and video production
     operating system. This specification covers both the Platform API (project
@@ -128,7 +128,7 @@ components:
               example: RESOURCE_NOT_FOUND
             message:
               type: string
-              example: "Project proj_xyz not found."
+              example: 'Project proj_xyz not found.'
             status:
               type: integer
               example: 404
@@ -145,7 +145,7 @@ components:
           example: proj_abc123
         title:
           type: string
-          example: "Cyber Samurai: Origin"
+          example: 'Cyber Samurai: Origin'
         description:
           type: string
         phase:
@@ -715,7 +715,7 @@ components:
           enum: [draft, standard, high, ultra]
         resolution:
           type: string
-          example: "1920x1080"
+          example: '1920x1080'
         fps:
           type: integer
           enum: [24, 30, 60]
@@ -1161,25 +1161,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Missing or invalid authentication
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
     ValidationError:
       description: Request validation failed
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
     RateLimited:
       description: Rate limit exceeded
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
 
 # ═══════════════════════════════════════════════════════════════════════
 # PATHS
@@ -1205,7 +1205,7 @@ paths:
           in: query
           schema: { type: string, enum: [created_at, updated_at, title] }
       responses:
-        "200":
+        '200':
           description: Paginated project list
           content:
             application/json:
@@ -1215,11 +1215,11 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Project"
+                      $ref: '#/components/schemas/Project'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createProject
       tags: [Projects]
@@ -1229,16 +1229,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProjectCreate"
+              $ref: '#/components/schemas/ProjectCreate'
       responses:
-        "201":
+        '201':
           description: Project created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
-        "422":
-          $ref: "#/components/responses/ValidationError"
+                $ref: '#/components/schemas/Project'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   /api/v1/projects/{projectId}:
     parameters:
@@ -1251,14 +1251,14 @@ paths:
       tags: [Projects]
       summary: Get a project by ID
       responses:
-        "200":
+        '200':
           description: Project details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
       operationId: updateProject
       tags: [Projects]
@@ -1268,25 +1268,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProjectUpdate"
+              $ref: '#/components/schemas/ProjectUpdate'
       responses:
-        "200":
+        '200':
           description: Project updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
+                $ref: '#/components/schemas/Project'
     delete:
       operationId: deleteProject
       tags: [Projects]
       summary: Soft-delete a project
       responses:
-        "200":
+        '200':
           description: Project deleted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   # ── Scenes ──────────────────────────────────────────────────────────
   /api/v1/projects/{projectId}/scenes:
@@ -1300,7 +1300,7 @@ paths:
       tags: [Scenes]
       summary: List scenes in a project
       responses:
-        "200":
+        '200':
           description: Scene list
           content:
             application/json:
@@ -1310,7 +1310,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Scene"
+                      $ref: '#/components/schemas/Scene'
     post:
       operationId: createScene
       tags: [Scenes]
@@ -1320,14 +1320,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SceneCreate"
+              $ref: '#/components/schemas/SceneCreate'
       responses:
-        "201":
+        '201':
           description: Scene created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Scene"
+                $ref: '#/components/schemas/Scene'
 
   # ── Shots ───────────────────────────────────────────────────────────
   /api/v1/projects/{projectId}/shots:
@@ -1348,7 +1348,7 @@ paths:
           in: query
           schema: { type: string, enum: [order, created_at, duration_ms] }
       responses:
-        "200":
+        '200':
           description: Shot list
           content:
             application/json:
@@ -1358,9 +1358,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Shot"
+                      $ref: '#/components/schemas/Shot'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
     post:
       operationId: createShot
       tags: [Shots]
@@ -1370,14 +1370,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ShotCreate"
+              $ref: '#/components/schemas/ShotCreate'
       responses:
-        "201":
+        '201':
           description: Shot created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Shot"
+                $ref: '#/components/schemas/Shot'
 
   /api/v1/projects/{projectId}/shots/{shotId}:
     parameters:
@@ -1398,25 +1398,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ShotUpdate"
+              $ref: '#/components/schemas/ShotUpdate'
       responses:
-        "200":
+        '200':
           description: Shot updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Shot"
+                $ref: '#/components/schemas/Shot'
     delete:
       operationId: deleteShot
       tags: [Shots]
       summary: Delete a shot
       responses:
-        "200":
+        '200':
           description: Shot deleted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   /api/v1/projects/{projectId}/shots/reorder:
     parameters:
@@ -1433,14 +1433,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ShotReorder"
+              $ref: '#/components/schemas/ShotReorder'
       responses:
-        "200":
+        '200':
           description: Shots reordered
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   # ── Characters ──────────────────────────────────────────────────────
   /api/v1/characters:
@@ -1449,7 +1449,7 @@ paths:
       tags: [Characters]
       summary: List all characters
       responses:
-        "200":
+        '200':
           description: Character list
           content:
             application/json:
@@ -1459,9 +1459,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Character"
+                      $ref: '#/components/schemas/Character'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
     post:
       operationId: createCharacter
       tags: [Characters]
@@ -1471,14 +1471,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CharacterCreate"
+              $ref: '#/components/schemas/CharacterCreate'
       responses:
-        "201":
+        '201':
           description: Character created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Character"
+                $ref: '#/components/schemas/Character'
 
   /api/v1/characters/{characterId}:
     parameters:
@@ -1491,12 +1491,12 @@ paths:
       tags: [Characters]
       summary: Get character details
       responses:
-        "200":
+        '200':
           description: Character details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Character"
+                $ref: '#/components/schemas/Character'
     patch:
       operationId: updateCharacter
       tags: [Characters]
@@ -1506,25 +1506,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CharacterUpdate"
+              $ref: '#/components/schemas/CharacterUpdate'
       responses:
-        "200":
+        '200':
           description: Character updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Character"
+                $ref: '#/components/schemas/Character'
     delete:
       operationId: deleteCharacter
       tags: [Characters]
       summary: Delete a character
       responses:
-        "200":
+        '200':
           description: Character deleted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   /api/v1/characters/{characterId}/references:
     parameters:
@@ -1555,7 +1555,7 @@ paths:
                     type: string
                     enum: [front, side, back, three_quarter]
       responses:
-        "200":
+        '200':
           description: References uploaded
           content:
             application/json:
@@ -1588,7 +1588,7 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        "200":
+        '200':
           description: Asset list
           content:
             application/json:
@@ -1598,9 +1598,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Asset"
+                      $ref: '#/components/schemas/Asset'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
     post:
       operationId: uploadAsset
       tags: [Assets]
@@ -1623,12 +1623,12 @@ paths:
                   type: string
                   enum: [image, video, audio, model]
       responses:
-        "201":
+        '201':
           description: Asset uploaded
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Asset"
+                $ref: '#/components/schemas/Asset'
 
   /api/v1/projects/{projectId}/assets/{assetId}:
     parameters:
@@ -1645,12 +1645,12 @@ paths:
       tags: [Assets]
       summary: Delete an asset
       responses:
-        "200":
+        '200':
           description: Asset deleted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   # ── Reviews ─────────────────────────────────────────────────────────
   /api/v1/projects/{projectId}/reviews:
@@ -1664,7 +1664,7 @@ paths:
       tags: [Reviews]
       summary: List shots under review
       responses:
-        "200":
+        '200':
           description: Review list
           content:
             application/json:
@@ -1674,7 +1674,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Review"
+                      $ref: '#/components/schemas/Review'
 
   /api/v1/projects/{projectId}/reviews/{shotId}/approve:
     parameters:
@@ -1694,14 +1694,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ReviewAction"
+              $ref: '#/components/schemas/ReviewAction'
       responses:
-        "200":
+        '200':
           description: Shot approved
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Review"
+                $ref: '#/components/schemas/Review'
 
   /api/v1/projects/{projectId}/reviews/{shotId}/reject:
     parameters:
@@ -1722,14 +1722,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ReviewAction"
+              $ref: '#/components/schemas/ReviewAction'
       responses:
-        "200":
+        '200':
           description: Shot rejected
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Review"
+                $ref: '#/components/schemas/Review'
 
   /api/v1/projects/{projectId}/reviews/bulk:
     parameters:
@@ -1746,9 +1746,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BulkReviewAction"
+              $ref: '#/components/schemas/BulkReviewAction'
       responses:
-        "200":
+        '200':
           description: Bulk action completed
           content:
             application/json:
@@ -1788,7 +1788,7 @@ paths:
                 size_bytes:
                   type: integer
       responses:
-        "200":
+        '200':
           description: Pre-signed upload URL
           content:
             application/json:
@@ -1824,12 +1824,12 @@ paths:
                   type: integer
                   default: 3600
       responses:
-        "200":
+        '200':
           description: Signed URL
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SignedUrl"
+                $ref: '#/components/schemas/SignedUrl'
 
   /api/v1/cdn/purge:
     post:
@@ -1849,12 +1849,12 @@ paths:
                   items:
                     type: string
       responses:
-        "200":
+        '200':
           description: Cache purged
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   # ── Brand Kit ───────────────────────────────────────────────────────
   /api/v1/brand-kit:
@@ -1863,12 +1863,12 @@ paths:
       tags: [Brand Kit]
       summary: Get the organization brand kit
       responses:
-        "200":
+        '200':
           description: Brand kit
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BrandKit"
+                $ref: '#/components/schemas/BrandKit'
     put:
       operationId: updateBrandKit
       tags: [Brand Kit]
@@ -1878,14 +1878,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BrandKit"
+              $ref: '#/components/schemas/BrandKit'
       responses:
-        "200":
+        '200':
           description: Brand kit updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BrandKit"
+                $ref: '#/components/schemas/BrandKit'
 
   # ── Social ──────────────────────────────────────────────────────────
   /api/v1/social/publish:
@@ -1898,14 +1898,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SocialPublish"
+              $ref: '#/components/schemas/SocialPublish'
       responses:
-        "201":
+        '201':
           description: Post created or scheduled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SocialPost"
+                $ref: '#/components/schemas/SocialPost'
 
   /api/v1/social/posts:
     get:
@@ -1920,7 +1920,7 @@ paths:
           in: query
           schema: { type: string, enum: [draft, scheduled, published, failed] }
       responses:
-        "200":
+        '200':
           description: Post list
           content:
             application/json:
@@ -1930,7 +1930,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/SocialPost"
+                      $ref: '#/components/schemas/SocialPost'
 
   # ── Repurpose ───────────────────────────────────────────────────────
   /api/v1/repurpose:
@@ -1943,14 +1943,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RepurposeRequest"
+              $ref: '#/components/schemas/RepurposeRequest'
       responses:
-        "202":
+        '202':
           description: Repurpose job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepurposeJob"
+                $ref: '#/components/schemas/RepurposeJob'
 
   /api/v1/repurpose/{jobId}:
     parameters:
@@ -1963,12 +1963,12 @@ paths:
       tags: [Repurpose]
       summary: Get repurpose job status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepurposeJob"
+                $ref: '#/components/schemas/RepurposeJob'
 
   # ── Human Review ────────────────────────────────────────────────────
   /api/v1/human-review:
@@ -1981,7 +1981,7 @@ paths:
           in: query
           schema: { type: string, enum: [pending, approved, rejected] }
       responses:
-        "200":
+        '200':
           description: Review queue
           content:
             application/json:
@@ -1991,7 +1991,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/HumanReviewItem"
+                      $ref: '#/components/schemas/HumanReviewItem'
 
   /api/v1/human-review/{itemId}:
     parameters:
@@ -2004,12 +2004,12 @@ paths:
       tags: [Human Review]
       summary: Get a human review item
       responses:
-        "200":
+        '200':
           description: Review item
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HumanReviewItem"
+                $ref: '#/components/schemas/HumanReviewItem'
 
   /api/v1/human-review/{itemId}/decide:
     parameters:
@@ -2026,14 +2026,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/HumanReviewDecision"
+              $ref: '#/components/schemas/HumanReviewDecision'
       responses:
-        "200":
+        '200':
           description: Decision recorded
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HumanReviewItem"
+                $ref: '#/components/schemas/HumanReviewItem'
 
   # ── Support ─────────────────────────────────────────────────────────
   /api/v1/support/tickets:
@@ -2042,7 +2042,7 @@ paths:
       tags: [Support]
       summary: List support tickets
       responses:
-        "200":
+        '200':
           description: Ticket list
           content:
             application/json:
@@ -2052,7 +2052,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/SupportTicket"
+                      $ref: '#/components/schemas/SupportTicket'
     post:
       operationId: createSupportTicket
       tags: [Support]
@@ -2062,14 +2062,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SupportTicketCreate"
+              $ref: '#/components/schemas/SupportTicketCreate'
       responses:
-        "201":
+        '201':
           description: Ticket created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SupportTicket"
+                $ref: '#/components/schemas/SupportTicket'
 
   # ── Plugins ─────────────────────────────────────────────────────────
   /api/v1/plugins:
@@ -2078,7 +2078,7 @@ paths:
       tags: [Plugins]
       summary: List installed plugins
       responses:
-        "200":
+        '200':
           description: Plugin list
           content:
             application/json:
@@ -2088,7 +2088,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Plugin"
+                      $ref: '#/components/schemas/Plugin'
     post:
       operationId: installPlugin
       tags: [Plugins]
@@ -2098,14 +2098,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PluginInstall"
+              $ref: '#/components/schemas/PluginInstall'
       responses:
-        "201":
+        '201':
           description: Plugin installed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Plugin"
+                $ref: '#/components/schemas/Plugin'
 
   /api/v1/plugins/{pluginId}:
     parameters:
@@ -2118,23 +2118,23 @@ paths:
       tags: [Plugins]
       summary: Get plugin details
       responses:
-        "200":
+        '200':
           description: Plugin details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Plugin"
+                $ref: '#/components/schemas/Plugin'
     delete:
       operationId: uninstallPlugin
       tags: [Plugins]
       summary: Uninstall a plugin
       responses:
-        "200":
+        '200':
           description: Plugin uninstalled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: '#/components/schemas/MessageResponse'
 
   /api/v1/plugins/{pluginId}/enable:
     parameters:
@@ -2147,12 +2147,12 @@ paths:
       tags: [Plugins]
       summary: Enable a plugin
       responses:
-        "200":
+        '200':
           description: Plugin enabled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Plugin"
+                $ref: '#/components/schemas/Plugin'
 
   /api/v1/plugins/{pluginId}/disable:
     parameters:
@@ -2165,12 +2165,12 @@ paths:
       tags: [Plugins]
       summary: Disable a plugin
       responses:
-        "200":
+        '200':
           description: Plugin disabled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Plugin"
+                $ref: '#/components/schemas/Plugin'
 
   # ── Marketplace ─────────────────────────────────────────────────────
   /api/v1/marketplace:
@@ -2189,7 +2189,7 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        "200":
+        '200':
           description: Marketplace listings
           content:
             application/json:
@@ -2199,9 +2199,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/MarketplaceListing"
+                      $ref: '#/components/schemas/MarketplaceListing'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
 
   /api/v1/marketplace/publish:
     post:
@@ -2213,9 +2213,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MarketplacePublish"
+              $ref: '#/components/schemas/MarketplacePublish'
       responses:
-        "201":
+        '201':
           description: Item submitted
           content:
             application/json:
@@ -2240,9 +2240,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MarketplacePurchase"
+              $ref: '#/components/schemas/MarketplacePurchase'
       responses:
-        "200":
+        '200':
           description: Purchase completed
           content:
             application/json:
@@ -2261,7 +2261,7 @@ paths:
       tags: [Enterprise]
       summary: List organization users (admin only)
       responses:
-        "200":
+        '200':
           description: User list
           content:
             application/json:
@@ -2271,9 +2271,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/EnterpriseUser"
+                      $ref: '#/components/schemas/EnterpriseUser'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
 
   /api/v1/enterprise/users/invite:
     post:
@@ -2297,12 +2297,12 @@ paths:
                 team:
                   type: string
       responses:
-        "201":
+        '201':
           description: User invited
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EnterpriseUser"
+                $ref: '#/components/schemas/EnterpriseUser'
 
   /api/v1/enterprise/audit:
     get:
@@ -2326,7 +2326,7 @@ paths:
           in: query
           schema: { type: string, format: date-time }
       responses:
-        "200":
+        '200':
           description: Audit entries
           content:
             application/json:
@@ -2336,9 +2336,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AuditEntry"
+                      $ref: '#/components/schemas/AuditEntry'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
 
   # ═════════════════════════════════════════════════════════════════════
   # AI INFERENCE API
@@ -2355,14 +2355,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GenerateVideoRequest"
+              $ref: '#/components/schemas/GenerateVideoRequest'
       responses:
-        "202":
+        '202':
           description: Job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GenerationJob"
+                $ref: '#/components/schemas/GenerationJob'
 
   /ai/v1/generate/{jobId}/status:
     parameters:
@@ -2375,12 +2375,12 @@ paths:
       tags: [Generation]
       summary: Check generation job status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GenerationJob"
+                $ref: '#/components/schemas/GenerationJob'
 
   /ai/v1/generate/{jobId}/result:
     parameters:
@@ -2393,12 +2393,12 @@ paths:
       tags: [Generation]
       summary: Retrieve generation outputs
       responses:
-        "200":
+        '200':
           description: Generation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GenerationResult"
+                $ref: '#/components/schemas/GenerationResult'
 
   /ai/v1/generate/{jobId}/cancel:
     parameters:
@@ -2411,7 +2411,7 @@ paths:
       tags: [Generation]
       summary: Cancel a generation job
       responses:
-        "200":
+        '200':
           description: Job cancelled
           content:
             application/json:
@@ -2436,14 +2436,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AudioGenerateRequest"
+              $ref: '#/components/schemas/AudioGenerateRequest'
       responses:
-        "202":
+        '202':
           description: Audio generation job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/audio/{jobId}/status:
     parameters:
@@ -2456,12 +2456,12 @@ paths:
       tags: [Audio]
       summary: Check audio generation status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Avatar ──────────────────────────────────────────────────────────
   /ai/v1/avatar/reconstruct:
@@ -2474,14 +2474,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AvatarReconstructRequest"
+              $ref: '#/components/schemas/AvatarReconstructRequest'
       responses:
-        "202":
+        '202':
           description: Avatar job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/avatar/{jobId}/status:
     parameters:
@@ -2494,12 +2494,12 @@ paths:
       tags: [Avatar]
       summary: Check avatar reconstruction status
       responses:
-        "200":
+        '200':
           description: Avatar job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Style ───────────────────────────────────────────────────────────
   /ai/v1/style/analyze:
@@ -2512,14 +2512,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StyleAnalyzeRequest"
+              $ref: '#/components/schemas/StyleAnalyzeRequest'
       responses:
-        "200":
+        '200':
           description: Style fingerprint
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StyleFingerprint"
+                $ref: '#/components/schemas/StyleFingerprint'
 
   /ai/v1/style/transfer:
     post:
@@ -2531,14 +2531,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StyleTransferRequest"
+              $ref: '#/components/schemas/StyleTransferRequest'
       responses:
-        "202":
+        '202':
           description: Style transfer job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Script ──────────────────────────────────────────────────────────
   /ai/v1/script/parse:
@@ -2551,9 +2551,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ScriptParseRequest"
+              $ref: '#/components/schemas/ScriptParseRequest'
       responses:
-        "200":
+        '200':
           description: Parsed script structure
           content:
             application/json:
@@ -2594,14 +2594,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MusicGenerateRequest"
+              $ref: '#/components/schemas/MusicGenerateRequest'
       responses:
-        "202":
+        '202':
           description: Music generation job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/music/{jobId}/status:
     parameters:
@@ -2614,12 +2614,12 @@ paths:
       tags: [Music]
       summary: Check music generation status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Dubbing ─────────────────────────────────────────────────────────
   /ai/v1/dubbing/start:
@@ -2632,14 +2632,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DubbingRequest"
+              $ref: '#/components/schemas/DubbingRequest'
       responses:
-        "202":
+        '202':
           description: Dubbing job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/dubbing/{jobId}/status:
     parameters:
@@ -2652,12 +2652,12 @@ paths:
       tags: [Dubbing]
       summary: Check dubbing job status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── MoCap ───────────────────────────────────────────────────────────
   /ai/v1/mocap/extract:
@@ -2670,14 +2670,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MoCapRequest"
+              $ref: '#/components/schemas/MoCapRequest'
       responses:
-        "202":
+        '202':
           description: MoCap extraction job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/mocap/{jobId}/status:
     parameters:
@@ -2690,12 +2690,12 @@ paths:
       tags: [MoCap]
       summary: Check MoCap extraction status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Continuity ──────────────────────────────────────────────────────
   /ai/v1/continuity/check:
@@ -2708,14 +2708,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContinuityCheckRequest"
+              $ref: '#/components/schemas/ContinuityCheckRequest'
       responses:
-        "200":
+        '200':
           description: Continuity report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ContinuityReport"
+                $ref: '#/components/schemas/ContinuityReport'
 
   # ── Physics ─────────────────────────────────────────────────────────
   /ai/v1/physics/simulate:
@@ -2728,14 +2728,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhysicsSimRequest"
+              $ref: '#/components/schemas/PhysicsSimRequest'
       responses:
-        "202":
+        '202':
           description: Simulation job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/physics/{jobId}/status:
     parameters:
@@ -2748,12 +2748,12 @@ paths:
       tags: [Physics]
       summary: Check physics simulation status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Memory ──────────────────────────────────────────────────────────
   /ai/v1/memory/{projectId}:
@@ -2767,7 +2767,7 @@ paths:
       tags: [Memory]
       summary: Retrieve project context memory
       responses:
-        "200":
+        '200':
           description: Memory entries
           content:
             application/json:
@@ -2777,7 +2777,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/MemoryEntry"
+                      $ref: '#/components/schemas/MemoryEntry'
     post:
       operationId: storeMemory
       tags: [Memory]
@@ -2787,14 +2787,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MemoryStoreRequest"
+              $ref: '#/components/schemas/MemoryStoreRequest'
       responses:
-        "201":
+        '201':
           description: Memory stored
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MemoryEntry"
+                $ref: '#/components/schemas/MemoryEntry'
 
   # ── Training ────────────────────────────────────────────────────────
   /ai/v1/training/jobs:
@@ -2803,7 +2803,7 @@ paths:
       tags: [Training]
       summary: List custom model training jobs
       responses:
-        "200":
+        '200':
           description: Training job list
           content:
             application/json:
@@ -2813,7 +2813,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/TrainingJob"
+                      $ref: '#/components/schemas/TrainingJob'
     post:
       operationId: createTrainingJob
       tags: [Training]
@@ -2823,14 +2823,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TrainingJobRequest"
+              $ref: '#/components/schemas/TrainingJobRequest'
       responses:
-        "202":
+        '202':
           description: Training job started
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TrainingJob"
+                $ref: '#/components/schemas/TrainingJob'
 
   /ai/v1/training/jobs/{jobId}:
     parameters:
@@ -2843,12 +2843,12 @@ paths:
       tags: [Training]
       summary: Get training job details
       responses:
-        "200":
+        '200':
           description: Training job details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TrainingJob"
+                $ref: '#/components/schemas/TrainingJob'
 
   /ai/v1/training/jobs/{jobId}/cancel:
     parameters:
@@ -2861,12 +2861,12 @@ paths:
       tags: [Training]
       summary: Cancel a training job
       responses:
-        "200":
+        '200':
           description: Training job cancelled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TrainingJob"
+                $ref: '#/components/schemas/TrainingJob'
 
   # ── Cartoon Pro ─────────────────────────────────────────────────────
   /ai/v1/cartoon/stylize:
@@ -2879,14 +2879,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CartoonProRequest"
+              $ref: '#/components/schemas/CartoonProRequest'
       responses:
-        "202":
+        '202':
           description: Stylization job queued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   /ai/v1/cartoon/{jobId}/status:
     parameters:
@@ -2899,12 +2899,12 @@ paths:
       tags: [Cartoon]
       summary: Check Cartoon Pro job status
       responses:
-        "200":
+        '200':
           description: Job status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── QC ──────────────────────────────────────────────────────────────
   /ai/v1/qc/run:
@@ -2917,14 +2917,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/QcRequest"
+              $ref: '#/components/schemas/QcRequest'
       responses:
-        "200":
+        '200':
           description: QC report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/QcReport"
+                $ref: '#/components/schemas/QcReport'
 
   # ── Jobs ────────────────────────────────────────────────────────────
   /ai/v1/jobs:
@@ -2940,7 +2940,7 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        "200":
+        '200':
           description: Job list
           content:
             application/json:
@@ -2950,9 +2950,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AsyncJob"
+                      $ref: '#/components/schemas/AsyncJob'
                   meta:
-                    $ref: "#/components/schemas/PaginationMeta"
+                    $ref: '#/components/schemas/PaginationMeta'
 
   /ai/v1/jobs/{jobId}:
     parameters:
@@ -2965,12 +2965,12 @@ paths:
       tags: [Jobs]
       summary: Get job details
       responses:
-        "200":
+        '200':
           description: Job details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AsyncJob"
+                $ref: '#/components/schemas/AsyncJob'
 
   # ── Governance ──────────────────────────────────────────────────────
   /ai/v1/governance/verify:
@@ -2983,9 +2983,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GovernanceVerifyRequest"
+              $ref: '#/components/schemas/GovernanceVerifyRequest'
       responses:
-        "200":
+        '200':
           description: Verification result
           content:
             application/json:
@@ -3028,7 +3028,7 @@ paths:
       tags: [Governance]
       summary: Check likeness consent for a character
       responses:
-        "200":
+        '200':
           description: Consent status
           content:
             application/json:
@@ -3058,9 +3058,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GovernanceModerateRequest"
+              $ref: '#/components/schemas/GovernanceModerateRequest'
       responses:
-        "200":
+        '200':
           description: Moderation result
           content:
             application/json:

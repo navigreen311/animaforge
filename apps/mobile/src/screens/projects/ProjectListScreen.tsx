@@ -1,12 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useQuery } from '@tanstack/react-query';
 import { ProjectStackParamList } from '../../navigation';
@@ -78,9 +71,7 @@ export default function ProjectListScreen({ navigation }: Props) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No Projects Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Create your first project from the Studio tab
-            </Text>
+            <Text style={styles.emptySubtitle}>Create your first project from the Studio tab</Text>
           </View>
         }
       />

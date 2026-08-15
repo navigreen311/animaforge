@@ -834,7 +834,7 @@ export async function getCapabilities(): Promise<PiracyCapabilities> {
     discovery,
     watermark_service: watermark,
     remote_fetch: { enabled: remoteFetchAllowed() },
-    database: { connected: (await isDatabaseReachable()) },
+    database: { connected: await isDatabaseReachable() },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };

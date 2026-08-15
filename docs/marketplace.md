@@ -8,13 +8,13 @@ The AnimaForge Marketplace is a community-driven store where creators can buy, s
 
 ### What Can Be Listed
 
-| Category | Description | File Format |
-|----------|-------------|-------------|
-| **Style Packs** | Color palettes, textures, lighting presets | `.animastyle` (JSON + assets) |
-| **Templates** | Pre-built project structures with shots and settings | `.animatemplate` |
-| **Characters** | Character definitions with reference images and embeddings | `.animachar` |
-| **Audio Packs** | Music loops, SFX collections, voice presets | `.zip` (WAV/MP3) |
-| **Plugins** | Extensions that add features to the platform | `.animaplugin` |
+| Category        | Description                                                | File Format                   |
+| --------------- | ---------------------------------------------------------- | ----------------------------- |
+| **Style Packs** | Color palettes, textures, lighting presets                 | `.animastyle` (JSON + assets) |
+| **Templates**   | Pre-built project structures with shots and settings       | `.animatemplate`              |
+| **Characters**  | Character definitions with reference images and embeddings | `.animachar`                  |
+| **Audio Packs** | Music loops, SFX collections, voice presets                | `.zip` (WAV/MP3)              |
+| **Plugins**     | Extensions that add features to the platform               | `.animaplugin`                |
 
 ### Submission Process
 
@@ -61,10 +61,10 @@ The AnimaForge Marketplace is a community-driven store where creators can buy, s
 
 ## Revenue Split
 
-| Party | Share |
-|-------|-------|
-| **Seller** | 70% |
-| **AnimaForge** | 30% |
+| Party          | Share |
+| -------------- | ----- |
+| **Seller**     | 70%   |
+| **AnimaForge** | 30%   |
 
 The 30% platform fee covers:
 
@@ -86,11 +86,11 @@ The 30% platform fee covers:
 
 ### Methods
 
-| Method | Availability | Processing Time |
-|--------|-------------|-----------------|
-| Stripe Connect (bank transfer) | Global | 2-5 business days |
-| PayPal | Global | 1-3 business days |
-| Wire transfer | Enterprise sellers | 3-7 business days |
+| Method                         | Availability       | Processing Time   |
+| ------------------------------ | ------------------ | ----------------- |
+| Stripe Connect (bank transfer) | Global             | 2-5 business days |
+| PayPal                         | Global             | 1-3 business days |
+| Wire transfer                  | Enterprise sellers | 3-7 business days |
 
 ### Tax Reporting
 

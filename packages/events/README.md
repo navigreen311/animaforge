@@ -11,13 +11,13 @@ package is that bus.
 
 ## Backends
 
-| | `kafka` | `memory` |
-|---|---|---|
-| Events cross service boundaries | yes | **no** |
-| Durable / replayable | yes | no |
-| Consumer groups, partitions | yes | no |
-| Late subscriber catches up | yes | no |
-| Needs a broker running | yes | no |
+|                                 | `kafka` | `memory` |
+| ------------------------------- | ------- | -------- |
+| Events cross service boundaries | yes     | **no**   |
+| Durable / replayable            | yes     | no       |
+| Consumer groups, partitions     | yes     | no       |
+| Late subscriber catches up      | yes     | no       |
+| Needs a broker running          | yes     | no       |
 
 The in-process bus exists so `docker compose up kafka` is not a prerequisite for
 running the app locally. It runs the **same validation** as the Kafka bus, so a
@@ -90,15 +90,15 @@ between them, which is how a consumer scales horizontally. Two different groups
 each receive their own copy of every event.
 
 Always pass `onInvalidMessage` in production. Without it a malformed message is
-logged and dropped; a message that *throws* inside your handler would otherwise
+logged and dropped; a message that _throws_ inside your handler would otherwise
 be redelivered forever and block its partition for every other job.
 
 ## Topics
 
-| Topic | Retention | Carries |
-|---|---|---|
-| `animaforge.generation.v1` | 7 days | `generation.started`, `.ai_submitted`, `.progress`, `.completed`, `.failed` |
-| `animaforge.governance.v1` | 30 days | `governance.stage_changed`, `governance.completed` |
+| Topic                      | Retention | Carries                                                                     |
+| -------------------------- | --------- | --------------------------------------------------------------------------- |
+| `animaforge.generation.v1` | 7 days    | `generation.started`, `.ai_submitted`, `.progress`, `.completed`, `.failed` |
+| `animaforge.governance.v1` | 30 days   | `governance.stage_changed`, `governance.completed`                          |
 
 Governance is retained ~4x longer because it is the audit trail of what was
 moderated, consented, signed and watermarked.

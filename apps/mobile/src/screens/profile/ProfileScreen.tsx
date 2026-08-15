@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 
 const tierColors: Record<string, string> = {
@@ -37,9 +30,7 @@ export default function ProfileScreen() {
         {/* Avatar & name */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user.displayName.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{user.displayName.charAt(0).toUpperCase()}</Text>
           </View>
           <Text style={styles.displayName}>{user.displayName}</Text>
           <Text style={styles.email}>{user.email}</Text>

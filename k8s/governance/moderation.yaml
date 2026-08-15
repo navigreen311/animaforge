@@ -34,19 +34,19 @@ spec:
               name: http
           env:
             - name: PORT
-              value: "8010"
+              value: '8010'
             - name: MODERATION_STRICTNESS
-              value: "high"
+              value: 'high'
             - name: NSFW_THRESHOLD
-              value: "0.85"
+              value: '0.85'
             - name: DEEPFAKE_DETECTION
-              value: "enabled"
+              value: 'enabled'
           resources:
             requests:
               cpu: 500m
               memory: 1Gi
             limits:
-              cpu: "2"
+              cpu: '2'
               memory: 4Gi
           readinessProbe:
             httpGet:

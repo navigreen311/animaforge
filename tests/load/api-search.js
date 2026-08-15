@@ -41,7 +41,9 @@ export default function () {
 
   group('Search Query', () => {
     const query = searchTerms[(__VU + __ITER) % searchTerms.length];
-    const res = http.get(`${BASE_URL}/api/v1/search?q=${encodeURIComponent(query)}&limit=20`, { headers });
+    const res = http.get(`${BASE_URL}/api/v1/search?q=${encodeURIComponent(query)}&limit=20`, {
+      headers,
+    });
     check(res, {
       'search status 200': (r) => r.status === 200,
       'search has results': (r) => {
@@ -56,7 +58,7 @@ export default function () {
     const query = searchTerms[(__VU + __ITER + 1) % searchTerms.length];
     const res = http.get(
       `${BASE_URL}/api/v1/search?q=${encodeURIComponent(query)}&type=project&limit=10&sort=relevance`,
-      { headers }
+      { headers },
     );
     check(res, {
       'filtered search status 200': (r) => r.status === 200,

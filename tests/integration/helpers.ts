@@ -48,9 +48,7 @@ export async function getBillingApp() {
 
 export async function getModerationApp() {
   if (!_moderationApp) {
-    const mod = await import(
-      '../../services/governance/moderation/src/index'
-    );
+    const mod = await import('../../services/governance/moderation/src/index');
     _moderationApp = (mod as any).app ?? mod.default;
   }
   return _moderationApp;
@@ -96,10 +94,7 @@ export interface TestProjectOverrides {
   worldBible?: Record<string, unknown>;
 }
 
-export async function createTestProject(
-  userId: string,
-  overrides: TestProjectOverrides = {},
-) {
+export async function createTestProject(userId: string, overrides: TestProjectOverrides = {}) {
   return prisma.project.create({
     data: {
       ownerId: userId,
@@ -120,10 +115,7 @@ export interface TestSceneOverrides {
   order?: number;
 }
 
-export async function createTestScene(
-  projectId: string,
-  overrides: TestSceneOverrides = {},
-) {
+export async function createTestScene(projectId: string, overrides: TestSceneOverrides = {}) {
   return prisma.scene.create({
     data: {
       projectId,
@@ -185,10 +177,7 @@ export interface TestCharacterOverrides {
   projectId?: string;
 }
 
-export async function createTestCharacter(
-  userId: string,
-  overrides: TestCharacterOverrides = {},
-) {
+export async function createTestCharacter(userId: string, overrides: TestCharacterOverrides = {}) {
   return prisma.character.create({
     data: {
       ownerId: userId,

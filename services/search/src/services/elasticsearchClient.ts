@@ -33,9 +33,9 @@ export async function createIndex(type: string, mappings?: Record<string, any>):
               metadata: { type: 'object', enabled: true },
               embedding: { type: 'dense_vector', dims: 1536, index: true, similarity: 'cosine' },
               created_at: { type: 'date' },
-            }
-          }
-        }
+            },
+          },
+        },
       });
     }
     return true;
@@ -45,16 +45,29 @@ export async function createIndex(type: string, mappings?: Record<string, any>):
   }
 }
 
-export async function indexDocument(type: string, id: string, body: Record<string, any>): Promise<boolean> {
+export async function indexDocument(
+  type: string,
+  id: string,
+  body: Record<string, any>,
+): Promise<boolean> {
   const client = getESClient();
   if (!client) return false;
   try {
     await client.index({ index: `${INDEX_PREFIX}-${type}`, id, body, refresh: 'wait_for' });
     return true;
-  } catch (err) { console.warn('ES index failed:', (err as Error).message); return false; }
+  } catch (err) {
+    console.warn('ES index failed:', (err as Error).message);
+    return false;
+  }
 }
 
-export async function searchDocuments(type: string, query: string, filters?: Record<string, any>, page = 1, limit = 20) {
+export async function searchDocuments(
+  type: string,
+  query: string,
+  filters?: Record<string, any>,
+  page = 1,
+  limit = 20,
+) {
   const client = getESClient();
   if (!client) return null; // Caller falls back to in-memory
   try {
@@ -68,20 +81,32 @@ export async function searchDocuments(type: string, query: string, filters?: Rec
         from: (page - 1) * limit,
         size: limit,
         highlight: { fields: { content: {} } },
-      }
+      },
     });
     return {
-      hits: result.hits.hits.map((h: any) => ({ id: h._id, score: h._score, ...h._source, highlight: h.highlight })),
+      hits: result.hits.hits.map((h: any) => ({
+        id: h._id,
+        score: h._score,
+        ...h._source,
+        highlight: h.highlight,
+      })),
       total: (result.hits.total as any).value,
     };
-  } catch (err) { console.warn('ES search failed:', (err as Error).message); return null; }
+  } catch (err) {
+    console.warn('ES search failed:', (err as Error).message);
+    return null;
+  }
 }
 
 export async function deleteDocument(type: string, id: string): Promise<boolean> {
   const client = getESClient();
   if (!client) return false;
-  try { await client.delete({ index: `${INDEX_PREFIX}-${type}`, id }); return true; }
-  catch { return false; }
+  try {
+    await client.delete({ index: `${INDEX_PREFIX}-${type}`, id });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function knnSearch(type: string, vector: number[], k = 10) {
@@ -90,15 +115,22 @@ export async function knnSearch(type: string, vector: number[], k = 10) {
   try {
     const result = await client.search({
       index: `${INDEX_PREFIX}-${type}`,
-      body: { knn: { field: 'embedding', query_vector: vector, k, num_candidates: k * 10 } }
+      body: { knn: { field: 'embedding', query_vector: vector, k, num_candidates: k * 10 } },
     });
-    return { hits: result.hits.hits.map((h: any) => ({ id: h._id, score: h._score, ...h._source })) };
-  } catch { return null; }
+    return {
+      hits: result.hits.hits.map((h: any) => ({ id: h._id, score: h._score, ...h._source })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getClusterHealth() {
   const client = getESClient();
   if (!client) return { status: 'unavailable' };
-  try { return await client.cluster.health(); }
-  catch { return { status: 'error' }; }
+  try {
+    return await client.cluster.health();
+  } catch {
+    return { status: 'error' };
+  }
 }

@@ -23,28 +23,28 @@ version: 2
 # block for `version-update:semver-major` first.
 updates:
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
     cooldown:
       # Wait a week before proposing a freshly published version: compromised
       # releases are typically caught and yanked within days.
       default-days: 7
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore(ci)"
+      prefix: 'chore(ci)'
     labels:
       - dependencies
       - github-actions
 
   - package-ecosystem: npm
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
     cooldown:
       # Still applies with version updates off: security-advisory PRs come
       # through regardless, and a freshly published fix can itself be bad.
@@ -52,16 +52,16 @@ updates:
     # Security updates only - see scope note above.
     open-pull-requests-limit: 0
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     labels:
       - dependencies
 
   - package-ecosystem: pip
-    directory: "/services/ai-api"
+    directory: '/services/ai-api'
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
     cooldown:
       # Still applies with version updates off: security-advisory PRs come
       # through regardless, and a freshly published fix can itself be bad.
@@ -69,6 +69,6 @@ updates:
     # Security updates only - see scope note above.
     open-pull-requests-limit: 0
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     labels:
       - dependencies

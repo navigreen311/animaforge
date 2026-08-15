@@ -6,17 +6,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import jwt from 'jsonwebtoken';
-import {
-  prisma,
-  createTestUser,
-  getAuthToken,
-  getExpiredToken,
-  authRequest,
-} from './helpers';
-import {
-  clearStore,
-  resetPrismaCheck,
-} from '../../services/auth/src/services/authService';
+import { prisma, createTestUser, getAuthToken, getExpiredToken, authRequest } from './helpers';
+import { clearStore, resetPrismaCheck } from '../../services/auth/src/services/authService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'animaforge-dev-secret';
 
@@ -192,10 +183,15 @@ describe('Auth API', () => {
     const userId = regRes.body.user.id;
 
     // The /auth/api-keys endpoint creates an API key
-    const keyRes = await authRequest('post', '/auth/api-keys', {
-      name: 'test-key',
-      scopes: ['read', 'write'],
-    }, token);
+    const keyRes = await authRequest(
+      'post',
+      '/auth/api-keys',
+      {
+        name: 'test-key',
+        scopes: ['read', 'write'],
+      },
+      token,
+    );
 
     // If the endpoint exists and works, verify the key was created
     if (keyRes.status === 201) {

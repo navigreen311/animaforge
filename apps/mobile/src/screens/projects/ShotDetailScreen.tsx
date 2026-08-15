@@ -51,8 +51,7 @@ export default function ShotDetailScreen({ route }: Props) {
   });
 
   const generateMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/projects/${projectId}/shots/${shotId}/generate`),
+    mutationFn: () => api.post(`/projects/${projectId}/shots/${shotId}/generate`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shot', projectId, shotId] });
     },

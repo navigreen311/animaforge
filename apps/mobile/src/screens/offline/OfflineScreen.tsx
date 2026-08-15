@@ -46,14 +46,13 @@ export default function OfflineScreen() {
   const [clearing, setClearing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [offlineStatus, proj, actions, usage, cacheBytes] =
-      await Promise.all([
-        isOffline(),
-        getOfflineProjects(),
-        getPendingActions(),
-        getStorageUsage(),
-        getCacheSize(),
-      ]);
+    const [offlineStatus, proj, actions, usage, cacheBytes] = await Promise.all([
+      isOffline(),
+      getOfflineProjects(),
+      getPendingActions(),
+      getStorageUsage(),
+      getCacheSize(),
+    ]);
     setOffline(offlineStatus);
     setProjects(proj);
     setPendingActions(actions);
@@ -69,10 +68,7 @@ export default function OfflineScreen() {
     setSyncing(true);
     try {
       const result = await syncPendingActions();
-      Alert.alert(
-        'Sync Complete',
-        `Synced: ${result.synced}  |  Failed: ${result.failed}`,
-      );
+      Alert.alert('Sync Complete', `Synced: ${result.synced}  |  Failed: ${result.failed}`);
     } catch {
       Alert.alert('Sync Error', 'Unable to sync actions. Please try again.');
     } finally {
@@ -82,46 +78,37 @@ export default function OfflineScreen() {
   };
 
   const handleClearCache = () => {
-    Alert.alert(
-      'Clear Cache',
-      'Remove all cached media and offline data? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            setClearing(true);
-            await Promise.all([clearCache(), clearOfflineData()]);
-            setClearing(false);
-            refresh();
-          },
+    Alert.alert('Clear Cache', 'Remove all cached media and offline data? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          setClearing(true);
+          await Promise.all([clearCache(), clearOfflineData()]);
+          setClearing(false);
+          refresh();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const totalUsed = (storage?.used ?? 0) + mediaCacheSize;
   const totalCapacity = totalUsed + (storage?.available ?? 0);
-  const usagePercent =
-    totalCapacity > 0 ? Math.min((totalUsed / totalCapacity) * 100, 100) : 0;
+  const usagePercent = totalCapacity > 0 ? Math.min((totalUsed / totalCapacity) * 100, 100) : 0;
 
   return (
     <View style={styles.container}>
       {offline && (
         <View style={styles.offlineBanner}>
-          <Text style={styles.offlineBannerText}>
-            You are currently offline
-          </Text>
+          <Text style={styles.offlineBannerText}>You are currently offline</Text>
         </View>
       )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Storage</Text>
         <View style={styles.usageBarBg}>
-          <View
-            style={[styles.usageBarFill, { width: `${usagePercent}%` }]}
-          />
+          <View style={[styles.usageBarFill, { width: `${usagePercent}%` }]} />
         </View>
         <Text style={styles.usageText}>
           {formatBytes(totalUsed)} / {formatBytes(totalCapacity)} used
@@ -129,9 +116,7 @@ export default function OfflineScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          Cached Projects ({projects.length})
-        </Text>
+        <Text style={styles.sectionTitle}>Cached Projects ({projects.length})</Text>
         {projects.length === 0 ? (
           <Text style={styles.emptyText}>No projects cached for offline use.</Text>
         ) : (
@@ -140,8 +125,7 @@ export default function OfflineScreen() {
             keyExtractor={(item) => item.projectId}
             scrollEnabled={false}
             renderItem={({ item }) => {
-              const size =
-                storage?.projects.find((p) => p.name === item.name)?.size ?? 0;
+              const size = storage?.projects.find((p) => p.name === item.name)?.size ?? 0;
               return (
                 <View style={styles.projectRow}>
                   <Text style={styles.projectName}>{item.name}</Text>
@@ -154,9 +138,7 @@ export default function OfflineScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          Pending Actions ({pendingActions.length})
-        </Text>
+        <Text style={styles.sectionTitle}>Pending Actions ({pendingActions.length})</Text>
         {pendingActions.length === 0 ? (
           <Text style={styles.emptyText}>All actions are synced.</Text>
         ) : (
@@ -166,9 +148,7 @@ export default function OfflineScreen() {
             scrollEnabled={false}
             renderItem={({ item }) => (
               <View style={styles.actionRow}>
-                <Text style={styles.actionType}>
-                  {item.type.toUpperCase()}
-                </Text>
+                <Text style={styles.actionType}>{item.type.toUpperCase()}</Text>
                 <Text style={styles.actionResource}>{item.resource}</Text>
               </View>
             )}

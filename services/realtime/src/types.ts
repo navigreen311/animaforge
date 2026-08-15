@@ -1,4 +1,4 @@
-import type { Socket } from "socket.io";
+import type { Socket } from 'socket.io';
 
 // ── Authenticated socket ────────────────────────────────────────────
 export interface AuthPayload {
@@ -88,26 +88,26 @@ export interface CollabEditEvent {
 
 // ── Server-to-client / Client-to-server event maps ──────────────────
 export interface ServerToClientEvents {
-  "job:progress": (data: JobProgressEvent) => void;
-  "job:complete": (data: JobCompleteEvent) => void;
-  "job:failed": (data: JobFailedEvent) => void;
-  "shot:updated": (data: ShotUpdatedEvent) => void;
-  "shot:status_changed": (data: ShotStatusChangedEvent) => void;
-  "notification:new": (data: NotificationNewEvent) => void;
-  "collab:cursor": (data: CollabCursorEvent) => void;
-  "collab:edit": (data: CollabEditEvent) => void;
-  "collab:joined": (data: { projectId: string; userId: string }) => void;
+  'job:progress': (data: JobProgressEvent) => void;
+  'job:complete': (data: JobCompleteEvent) => void;
+  'job:failed': (data: JobFailedEvent) => void;
+  'shot:updated': (data: ShotUpdatedEvent) => void;
+  'shot:status_changed': (data: ShotStatusChangedEvent) => void;
+  'notification:new': (data: NotificationNewEvent) => void;
+  'collab:cursor': (data: CollabCursorEvent) => void;
+  'collab:edit': (data: CollabEditEvent) => void;
+  'collab:joined': (data: { projectId: string; userId: string }) => void;
   error: (data: { message: string }) => void;
 }
 
 export interface ClientToServerEvents {
-  "job:progress": (data: JobProgressEvent) => void;
-  "job:complete": (data: JobCompleteEvent) => void;
-  "job:failed": (data: JobFailedEvent) => void;
-  "shot:updated": (data: ShotUpdatedEvent) => void;
-  "shot:status_changed": (data: ShotStatusChangedEvent) => void;
-  "notification:new": (data: NotificationNewEvent) => void;
-  "collab:join": (data: CollabJoinEvent) => void;
-  "collab:cursor": (data: CollabCursorEvent) => void;
-  "collab:edit": (data: CollabEditEvent) => void;
+  'job:progress': (data: JobProgressEvent) => void;
+  'job:complete': (data: JobCompleteEvent) => void;
+  'job:failed': (data: JobFailedEvent) => void;
+  'shot:updated': (data: ShotUpdatedEvent) => void;
+  'shot:status_changed': (data: ShotStatusChangedEvent) => void;
+  'notification:new': (data: NotificationNewEvent) => void;
+  'collab:join': (data: CollabJoinEvent) => void;
+  'collab:cursor': (data: CollabCursorEvent) => void;
+  'collab:edit': (data: CollabEditEvent) => void;
 }

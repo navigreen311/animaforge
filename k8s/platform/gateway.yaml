@@ -34,27 +34,27 @@ spec:
               name: http
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
             - name: PORT
-              value: "8080"
+              value: '8080'
             - name: UPSTREAM_PLATFORM_API
-              value: "http://platform-api.animaforge-platform.svc.cluster.local"
+              value: 'http://platform-api.animaforge-platform.svc.cluster.local'
             - name: UPSTREAM_AUTH
-              value: "http://auth.animaforge-platform.svc.cluster.local"
+              value: 'http://auth.animaforge-platform.svc.cluster.local'
             - name: UPSTREAM_BILLING
-              value: "http://billing.animaforge-platform.svc.cluster.local"
+              value: 'http://billing.animaforge-platform.svc.cluster.local'
             - name: UPSTREAM_REALTIME
-              value: "http://realtime.animaforge-platform.svc.cluster.local"
+              value: 'http://realtime.animaforge-platform.svc.cluster.local'
             - name: UPSTREAM_INFERENCE
-              value: "http://inference-api.animaforge-ai.svc.cluster.local"
+              value: 'http://inference-api.animaforge-ai.svc.cluster.local'
             - name: UPSTREAM_MODERATION
-              value: "http://moderation.animaforge-governance.svc.cluster.local"
+              value: 'http://moderation.animaforge-governance.svc.cluster.local'
           resources:
             requests:
               cpu: 500m
               memory: 512Mi
             limits:
-              cpu: "2"
+              cpu: '2'
               memory: 1Gi
           readinessProbe:
             httpGet:
@@ -101,8 +101,8 @@ metadata:
     app.kubernetes.io/part-of: animaforge
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: '100m'
 spec:
   ingressClassName: nginx
   tls:

@@ -31,9 +31,7 @@ export default function ProjectCard({ project, onPress }: Props) {
           <Image source={{ uri: project.thumbnailUrl }} style={styles.thumbnailImage} />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
-            <Text style={styles.thumbnailText}>
-              {project.name.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.thumbnailText}>{project.name.charAt(0).toUpperCase()}</Text>
           </View>
         )}
       </View>
@@ -44,12 +42,7 @@ export default function ProjectCard({ project, onPress }: Props) {
           <Text style={styles.name} numberOfLines={1}>
             {project.name}
           </Text>
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: statusColors[project.status] },
-            ]}
-          />
+          <View style={[styles.statusDot, { backgroundColor: statusColors[project.status] }]} />
         </View>
 
         <Text style={styles.description} numberOfLines={2}>
@@ -59,9 +52,7 @@ export default function ProjectCard({ project, onPress }: Props) {
         <View style={styles.meta}>
           <Text style={styles.metaText}>{project.shotCount} shots</Text>
           <Text style={styles.metaDot}>-</Text>
-          <Text style={styles.metaText}>
-            {new Date(project.updatedAt).toLocaleDateString()}
-          </Text>
+          <Text style={styles.metaText}>{new Date(project.updatedAt).toLocaleDateString()}</Text>
         </View>
       </View>
     </TouchableOpacity>

@@ -1,7 +1,7 @@
-import crypto from "crypto";
-import { createClient, type RedisClientType } from "redis";
+import crypto from 'crypto';
+import { createClient, type RedisClientType } from 'redis';
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 let redisClient: RedisClientType | null = null;
 let redisAvailable = false;
 let redisChecked = false;
@@ -13,14 +13,14 @@ async function getRedis(): Promise<RedisClientType | null> {
   try {
     redisChecked = true;
     redisClient = createClient({ url: REDIS_URL }) as RedisClientType;
-    redisClient.on("error", () => {
+    redisClient.on('error', () => {
       redisAvailable = false;
     });
     await redisClient.connect();
     redisAvailable = true;
     return redisClient;
   } catch {
-    console.warn("Redis unavailable \u2014 falling back to in-memory session store");
+    console.warn('Redis unavailable \u2014 falling back to in-memory session store');
     redisAvailable = false;
     redisClient = null;
     return null;
@@ -31,7 +31,7 @@ const memSessions = new Map<string, { token: string; expiresAt: number }>();
 const memBlacklist = new Map<string, number>();
 
 function tokenHash(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex").slice(0, 16);
+  return crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
 }
 
 function sessionKey(userId: string, hash: string): string {
@@ -69,15 +69,12 @@ export async function createSession(
   memSessions.set(key, { token, expiresAt: Date.now() + ttl * 1000 });
 }
 
-export async function invalidateSession(
-  token: string,
-  ttl: number = 86400,
-): Promise<void> {
+export async function invalidateSession(token: string, ttl: number = 86400): Promise<void> {
   const bKey = blacklistKey(token);
 
   const redis = await getRedis();
   if (redis) {
-    await redis.set(bKey, "1", { EX: ttl });
+    await redis.set(bKey, '1', { EX: ttl });
     return;
   }
 
@@ -104,7 +101,7 @@ export async function getUserSessions(userId: string): Promise<string[]> {
 
   const redis = await getRedis();
   if (redis) {
-    const keys = await redis.keys(prefix + "*");
+    const keys = await redis.keys(prefix + '*');
     if (keys.length === 0) return [];
     const values = await Promise.all(keys.map((k) => redis.get(k)));
     return values.filter((v): v is string => v !== null);
@@ -120,21 +117,18 @@ export async function getUserSessions(userId: string): Promise<string[]> {
   return tokens;
 }
 
-export async function invalidateAllSessions(
-  userId: string,
-  ttl: number = 86400,
-): Promise<void> {
+export async function invalidateAllSessions(userId: string, ttl: number = 86400): Promise<void> {
   const prefix = `session:${userId}:`;
 
   const redis = await getRedis();
   if (redis) {
-    const keys = await redis.keys(prefix + "*");
+    const keys = await redis.keys(prefix + '*');
     if (keys.length > 0) {
       const tokens = await Promise.all(keys.map((k) => redis.get(k)));
       await Promise.all(
         tokens
           .filter((t): t is string => t !== null)
-          .map((t) => redis.set(blacklistKey(t), "1", { EX: ttl })),
+          .map((t) => redis.set(blacklistKey(t), '1', { EX: ttl })),
       );
       await Promise.all(keys.map((k) => redis.del(k)));
     }
@@ -155,7 +149,7 @@ export async function getSessionCount(userId: string): Promise<number> {
 
   const redis = await getRedis();
   if (redis) {
-    const keys = await redis.keys(prefix + "*");
+    const keys = await redis.keys(prefix + '*');
     return keys.length;
   }
 

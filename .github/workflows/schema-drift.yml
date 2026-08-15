@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       apply_check:
-        description: "Also verify `migrate deploy` applies cleanly from scratch"
+        description: 'Also verify `migrate deploy` applies cleanly from scratch'
         type: boolean
         default: true
 

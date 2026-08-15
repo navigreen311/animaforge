@@ -21,24 +21,24 @@ AnimaForge follows the standard test pyramid with emphasis on fast, reliable uni
 /------------------\
 ```
 
-| Layer | Scope | Speed | Count Target |
-|-------|-------|-------|-------------|
-| **Unit** | Single function/class, mocked dependencies | < 5 ms each | 70% of tests |
+| Layer           | Scope                                           | Speed         | Count Target |
+| --------------- | ----------------------------------------------- | ------------- | ------------ |
+| **Unit**        | Single function/class, mocked dependencies      | < 5 ms each   | 70% of tests |
 | **Integration** | Service endpoints, database queries, queue jobs | < 500 ms each | 25% of tests |
-| **E2E** | Full user flows through the web app | < 30 s each | 5% of tests |
+| **E2E**         | Full user flows through the web app             | < 30 s each   | 5% of tests  |
 
 ---
 
 ## Coverage Targets
 
-| Area | Minimum Coverage | Notes |
-|------|-----------------|-------|
-| Business logic (services/) | **80%** | Core revenue and safety-critical code |
-| API routes (controllers/) | **75%** | Request handling and validation |
-| Utility functions (utils/) | **90%** | Shared helpers must be well-tested |
-| Governance pipeline | **90%** | Safety-critical; moderation, consent, C2PA |
-| Frontend components | **60%** | Focus on interactive components, not layout |
-| Database migrations | **N/A** | Tested via integration tests against test DB |
+| Area                       | Minimum Coverage | Notes                                        |
+| -------------------------- | ---------------- | -------------------------------------------- |
+| Business logic (services/) | **80%**          | Core revenue and safety-critical code        |
+| API routes (controllers/)  | **75%**          | Request handling and validation              |
+| Utility functions (utils/) | **90%**          | Shared helpers must be well-tested           |
+| Governance pipeline        | **90%**          | Safety-critical; moderation, consent, C2PA   |
+| Frontend components        | **60%**          | Focus on interactive components, not layout  |
+| Database migrations        | **N/A**          | Tested via integration tests against test DB |
 
 Coverage is measured by Vitest (Istanbul) for TypeScript and pytest-cov for Python. CI fails if coverage drops below the configured thresholds.
 
@@ -48,33 +48,33 @@ Coverage is measured by Vitest (Istanbul) for TypeScript and pytest-cov for Pyth
 
 ### TypeScript Services (Platform API, Realtime, Auth, Billing, etc.)
 
-| Tool | Purpose |
-|------|---------|
-| **Vitest** | Unit and integration test runner |
-| **@testing-library/react** | React component testing (web app) |
-| **MSW (Mock Service Worker)** | HTTP request mocking |
-| **Supertest** | HTTP integration testing for Express routes |
-| **Faker.js** | Test data generation |
-| **Testcontainers** | Dockerized Postgres/Redis for integration tests |
+| Tool                          | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| **Vitest**                    | Unit and integration test runner                |
+| **@testing-library/react**    | React component testing (web app)               |
+| **MSW (Mock Service Worker)** | HTTP request mocking                            |
+| **Supertest**                 | HTTP integration testing for Express routes     |
+| **Faker.js**                  | Test data generation                            |
+| **Testcontainers**            | Dockerized Postgres/Redis for integration tests |
 
 ### Python Services (AI API)
 
-| Tool | Purpose |
-|------|---------|
-| **Pytest** | Test runner and framework |
-| **pytest-asyncio** | Async test support for FastAPI |
-| **httpx** | Async HTTP client for testing FastAPI endpoints |
-| **factory_boy** | Test data factories |
-| **pytest-cov** | Coverage reporting |
-| **responses** | HTTP request mocking |
+| Tool               | Purpose                                         |
+| ------------------ | ----------------------------------------------- |
+| **Pytest**         | Test runner and framework                       |
+| **pytest-asyncio** | Async test support for FastAPI                  |
+| **httpx**          | Async HTTP client for testing FastAPI endpoints |
+| **factory_boy**    | Test data factories                             |
+| **pytest-cov**     | Coverage reporting                              |
+| **responses**      | HTTP request mocking                            |
 
 ### End-to-End
 
-| Tool | Purpose |
-|------|---------|
-| **Playwright** | Browser automation for E2E tests |
-| **@playwright/test** | Test runner with built-in assertions |
-| **Playwright fixtures** | Shared authentication and setup |
+| Tool                    | Purpose                              |
+| ----------------------- | ------------------------------------ |
+| **Playwright**          | Browser automation for E2E tests     |
+| **@playwright/test**    | Test runner with built-in assertions |
+| **Playwright fixtures** | Shared authentication and setup      |
 
 ---
 
@@ -151,6 +151,7 @@ pytest -k "test_generate"
 
 1. **File naming**: `<module>.test.ts` or `test_<module>.py`, colocated with the source file or in a `__tests__/` directory.
 2. **Test naming**: Use descriptive names that state the expected behavior.
+
    ```typescript
    describe('ShotService', () => {
      it('should reorder shots without gaps in the order sequence', () => {
@@ -162,6 +163,7 @@ pytest -k "test_generate"
      });
    });
    ```
+
 3. **Arrange-Act-Assert**: Structure every test with clear setup, execution, and verification phases.
 4. **One assertion per concept**: Each test should verify one logical behavior (multiple `expect` calls are fine if they verify the same concept).
 5. **No test interdependence**: Tests must pass in any order and in isolation.
@@ -171,6 +173,7 @@ pytest -k "test_generate"
 1. **Database setup**: Use transactions that roll back after each test, or use Testcontainers for isolated databases.
 2. **Seed data**: Use factory functions, not shared fixtures that create coupling.
 3. **Assert on HTTP responses**: Test status codes, response shapes, and error messages.
+
    ```typescript
    it('should return 404 for a non-existent project', async () => {
      const res = await request(app)

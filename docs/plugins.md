@@ -24,18 +24,8 @@ Every plugin requires an `animaplugin.json` manifest file at its root.
     "animaforge": ">=1.0.0"
   },
   "main": "dist/index.js",
-  "permissions": [
-    "project:read",
-    "shot:read",
-    "shot:write",
-    "character:read",
-    "ui:panel"
-  ],
-  "hooks": [
-    "onShotCreated",
-    "onGenerationComplete",
-    "onProjectOpen"
-  ],
+  "permissions": ["project:read", "shot:read", "shot:write", "character:read", "ui:panel"],
+  "hooks": ["onShotCreated", "onGenerationComplete", "onProjectOpen"],
   "ui": {
     "panels": [
       {
@@ -71,26 +61,26 @@ Plugins operate under a least-privilege model. Each capability must be explicitl
 
 ### Available Permissions
 
-| Permission | Description |
-|-----------|-------------|
-| `project:read` | Read project metadata and settings |
-| `project:write` | Modify project metadata |
-| `shot:read` | Read shot data, prompts, and outputs |
-| `shot:write` | Create or modify shots |
-| `character:read` | Read character data and references |
-| `character:write` | Modify character data |
-| `asset:read` | Access project assets |
-| `asset:write` | Upload or modify assets |
-| `generation:trigger` | Start generation jobs |
-| `generation:read` | Read generation job status and results |
-| `style:read` | Access style fingerprints |
-| `style:write` | Create or modify style fingerprints |
-| `ui:panel` | Register a UI panel in the interface |
-| `ui:menu` | Add items to the application menu |
-| `ui:overlay` | Render overlays on the canvas |
-| `network:outbound` | Make HTTP requests to external URLs |
-| `storage:local` | Store plugin-specific data locally |
-| `notification:send` | Send notifications to the user |
+| Permission           | Description                            |
+| -------------------- | -------------------------------------- |
+| `project:read`       | Read project metadata and settings     |
+| `project:write`      | Modify project metadata                |
+| `shot:read`          | Read shot data, prompts, and outputs   |
+| `shot:write`         | Create or modify shots                 |
+| `character:read`     | Read character data and references     |
+| `character:write`    | Modify character data                  |
+| `asset:read`         | Access project assets                  |
+| `asset:write`        | Upload or modify assets                |
+| `generation:trigger` | Start generation jobs                  |
+| `generation:read`    | Read generation job status and results |
+| `style:read`         | Access style fingerprints              |
+| `style:write`        | Create or modify style fingerprints    |
+| `ui:panel`           | Register a UI panel in the interface   |
+| `ui:menu`            | Add items to the application menu      |
+| `ui:overlay`         | Render overlays on the canvas          |
+| `network:outbound`   | Make HTTP requests to external URLs    |
+| `storage:local`      | Store plugin-specific data locally     |
+| `notification:send`  | Send notifications to the user         |
 
 ### Permission Prompts
 
@@ -104,21 +94,21 @@ Hooks allow plugins to react to platform events. Plugins declare which hooks the
 
 ### Available Hooks
 
-| Hook | Trigger | Payload |
-|------|---------|---------|
-| `onProjectOpen` | User opens a project | `{ projectId, project }` |
-| `onProjectClose` | User closes a project | `{ projectId }` |
-| `onShotCreated` | A new shot is added | `{ projectId, shotId, shot }` |
-| `onShotUpdated` | Shot metadata changes | `{ projectId, shotId, changes }` |
-| `onShotDeleted` | A shot is removed | `{ projectId, shotId }` |
-| `onGenerationStart` | A generation job begins | `{ jobId, projectId, shotIds }` |
-| `onGenerationProgress` | Generation progress update | `{ jobId, progress, stage }` |
-| `onGenerationComplete` | Generation finishes | `{ jobId, outputs[] }` |
-| `onGenerationFailed` | Generation fails | `{ jobId, error }` |
-| `onReviewSubmitted` | A shot is submitted for review | `{ projectId, shotId }` |
-| `onReviewDecision` | A review is approved/rejected | `{ projectId, shotId, decision }` |
-| `onAssetUploaded` | A new asset is uploaded | `{ projectId, assetId, asset }` |
-| `onExportComplete` | An export finishes | `{ projectId, exportId, url }` |
+| Hook                   | Trigger                        | Payload                           |
+| ---------------------- | ------------------------------ | --------------------------------- |
+| `onProjectOpen`        | User opens a project           | `{ projectId, project }`          |
+| `onProjectClose`       | User closes a project          | `{ projectId }`                   |
+| `onShotCreated`        | A new shot is added            | `{ projectId, shotId, shot }`     |
+| `onShotUpdated`        | Shot metadata changes          | `{ projectId, shotId, changes }`  |
+| `onShotDeleted`        | A shot is removed              | `{ projectId, shotId }`           |
+| `onGenerationStart`    | A generation job begins        | `{ jobId, projectId, shotIds }`   |
+| `onGenerationProgress` | Generation progress update     | `{ jobId, progress, stage }`      |
+| `onGenerationComplete` | Generation finishes            | `{ jobId, outputs[] }`            |
+| `onGenerationFailed`   | Generation fails               | `{ jobId, error }`                |
+| `onReviewSubmitted`    | A shot is submitted for review | `{ projectId, shotId }`           |
+| `onReviewDecision`     | A review is approved/rejected  | `{ projectId, shotId, decision }` |
+| `onAssetUploaded`      | A new asset is uploaded        | `{ projectId, assetId, asset }`   |
+| `onExportComplete`     | An export finishes             | `{ projectId, exportId, url }`    |
 
 ### Hook Implementation
 
@@ -174,14 +164,14 @@ All plugins must pass certification before they can be distributed on the AnimaF
 
 ### Certification Requirements
 
-| Requirement | Threshold |
-|-------------|-----------|
-| Startup time | < 500 ms |
-| Memory usage | < 50 MB |
-| Hook handler latency | < 200 ms (p95) |
-| No eval() or dynamic code execution | Required |
-| Content Security Policy compliance | Required |
-| Error handling (no unhandled exceptions) | Required |
+| Requirement                              | Threshold      |
+| ---------------------------------------- | -------------- |
+| Startup time                             | < 500 ms       |
+| Memory usage                             | < 50 MB        |
+| Hook handler latency                     | < 200 ms (p95) |
+| No eval() or dynamic code execution      | Required       |
+| Content Security Policy compliance       | Required       |
+| Error handling (no unhandled exceptions) | Required       |
 
 ### Re-certification
 

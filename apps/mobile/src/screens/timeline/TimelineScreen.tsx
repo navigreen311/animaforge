@@ -45,9 +45,7 @@ export default function TimelineScreen({ route }: Props) {
   const { isLoading } = useQuery({
     queryKey: ['timeline', projectId],
     queryFn: async () => {
-      const data = await api.get<TimelineShot[]>(
-        `/projects/${projectId}/timeline`,
-      );
+      const data = await api.get<TimelineShot[]>(`/projects/${projectId}/timeline`);
       setShots(data);
       return data;
     },
@@ -57,31 +55,25 @@ export default function TimelineScreen({ route }: Props) {
     setSelectedShotId((prev) => (prev === shot.id ? null : shot.id));
   }, []);
 
-  const handleMoveLeft = useCallback(
-    (shotId: string) => {
-      setShots((prev) => {
-        const index = prev.findIndex((s) => s.id === shotId);
-        if (index <= 0) return prev;
-        const updated = [...prev];
-        [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
-        return updated.map((s, i) => ({ ...s, order: i }));
-      });
-    },
-    [],
-  );
+  const handleMoveLeft = useCallback((shotId: string) => {
+    setShots((prev) => {
+      const index = prev.findIndex((s) => s.id === shotId);
+      if (index <= 0) return prev;
+      const updated = [...prev];
+      [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+      return updated.map((s, i) => ({ ...s, order: i }));
+    });
+  }, []);
 
-  const handleMoveRight = useCallback(
-    (shotId: string) => {
-      setShots((prev) => {
-        const index = prev.findIndex((s) => s.id === shotId);
-        if (index < 0 || index >= prev.length - 1) return prev;
-        const updated = [...prev];
-        [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
-        return updated.map((s, i) => ({ ...s, order: i }));
-      });
-    },
-    [],
-  );
+  const handleMoveRight = useCallback((shotId: string) => {
+    setShots((prev) => {
+      const index = prev.findIndex((s) => s.id === shotId);
+      if (index < 0 || index >= prev.length - 1) return prev;
+      const updated = [...prev];
+      [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+      return updated.map((s, i) => ({ ...s, order: i }));
+    });
+  }, []);
 
   const handleSaveOrder = useCallback(async () => {
     try {
@@ -126,18 +118,12 @@ export default function TimelineScreen({ route }: Props) {
             shots.map((shot, index) => (
               <React.Fragment key={shot.id}>
                 <TouchableOpacity
-                  style={[
-                    styles.shotBlock,
-                    selectedShotId === shot.id && styles.shotBlockSelected,
-                  ]}
+                  style={[styles.shotBlock, selectedShotId === shot.id && styles.shotBlockSelected]}
                   onPress={() => handleShotPress(shot)}
                   activeOpacity={0.7}
                 >
                   <View
-                    style={[
-                      styles.shotStatusBar,
-                      { backgroundColor: statusColors[shot.status] },
-                    ]}
+                    style={[styles.shotStatusBar, { backgroundColor: statusColors[shot.status] }]}
                   />
                   <Text style={styles.shotName} numberOfLines={1}>
                     {shot.name}
@@ -160,9 +146,7 @@ export default function TimelineScreen({ route }: Props) {
       {/* Timecode ruler */}
       <View style={styles.ruler}>
         {shots.map((shot, index) => {
-          const startTime = shots
-            .slice(0, index)
-            .reduce((sum, s) => sum + s.duration, 0);
+          const startTime = shots.slice(0, index).reduce((sum, s) => sum + s.duration, 0);
           return (
             <View key={shot.id} style={[styles.rulerMark, { width: SHOT_BLOCK_WIDTH + 16 }]}>
               <Text style={styles.rulerText}>{startTime}s</Text>
@@ -187,9 +171,7 @@ export default function TimelineScreen({ route }: Props) {
                 { backgroundColor: statusColors[selectedShot.status] },
               ]}
             >
-              <Text style={styles.detailStatusText}>
-                {selectedShot.status.toUpperCase()}
-              </Text>
+              <Text style={styles.detailStatusText}>{selectedShot.status.toUpperCase()}</Text>
             </View>
           </View>
 
@@ -228,11 +210,7 @@ export default function TimelineScreen({ route }: Props) {
 
       {/* Save order button */}
       {shots.length > 0 && (
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSaveOrder}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveOrder} activeOpacity={0.7}>
           <Text style={styles.saveButtonText}>Save Order</Text>
         </TouchableOpacity>
       )}

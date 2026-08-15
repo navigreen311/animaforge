@@ -11,9 +11,7 @@ test.describe('Generation flow', () => {
     await page.goto('/projects/1/shots/1');
 
     // The shot editor page has a Generate Shot button
-    await expect(
-      page.getByRole('button', { name: /generate/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /generate/i })).toBeVisible();
 
     // If a standalone GenerationPanel is rendered, verify the tier selector
     const tierSelect = page.getByLabel(/quality tier/i);
@@ -39,14 +37,11 @@ test.describe('Generation flow', () => {
     await page.getByRole('button', { name: /generate/i }).click();
 
     // Should see generating state — spinner or progress text
-    const generatingIndicator =
-      page.getByText(/generating/i);
+    const generatingIndicator = page.getByText(/generating/i);
     await expect(generatingIndicator).toBeVisible();
 
     // The button should reflect the generating state
-    await expect(
-      page.getByRole('button', { name: /generating/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /generating/i })).toBeVisible();
   });
 
   test('job queue shows running jobs', async ({ page }) => {
@@ -72,9 +67,7 @@ test.describe('Generation flow', () => {
         });
       } else {
         // Jobs are already present — verify status badges
-        await expect(
-          page.getByText(/queued|running|complete/i).first(),
-        ).toBeVisible();
+        await expect(page.getByText(/queued|running|complete/i).first()).toBeVisible();
       }
     } else {
       // Job Queue component may not be on this page — verify the generate flow works

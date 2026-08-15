@@ -2,7 +2,7 @@
   "name": "@animaforge/gateway",
   "version": "0.1.0",
   "private": true,
-  "description": "AnimaForge API Gateway \u2014 proxies to all backend services",
+  "description": "AnimaForge API Gateway — proxies to all backend services",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",

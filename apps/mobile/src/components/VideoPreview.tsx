@@ -15,18 +15,21 @@ export default function VideoPreview({ uri, posterUri, onError }: Props) {
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
 
-  const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (!status.isLoaded) {
-      if (status.error) {
-        onError?.(status.error);
+  const handlePlaybackStatusUpdate = useCallback(
+    (status: AVPlaybackStatus) => {
+      if (!status.isLoaded) {
+        if (status.error) {
+          onError?.(status.error);
+        }
+        return;
       }
-      return;
-    }
-    setIsLoaded(true);
-    setIsPlaying(status.isPlaying);
-    setDuration(status.durationMillis ?? 0);
-    setPosition(status.positionMillis ?? 0);
-  }, [onError]);
+      setIsLoaded(true);
+      setIsPlaying(status.isPlaying);
+      setDuration(status.durationMillis ?? 0);
+      setPosition(status.positionMillis ?? 0);
+    },
+    [onError],
+  );
 
   const togglePlayPause = useCallback(async () => {
     if (!videoRef.current) return;
@@ -58,11 +61,7 @@ export default function VideoPreview({ uri, posterUri, onError }: Props) {
       />
 
       {/* Play/Pause overlay */}
-      <TouchableOpacity
-        style={styles.overlay}
-        onPress={togglePlayPause}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.overlay} onPress={togglePlayPause} activeOpacity={0.8}>
         {!isPlaying && (
           <View style={styles.playButton}>
             <Text style={styles.playIcon}>{'>'}</Text>
@@ -74,12 +73,7 @@ export default function VideoPreview({ uri, posterUri, onError }: Props) {
       {isLoaded && duration > 0 && (
         <View style={styles.controls}>
           <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${(position / duration) * 100}%` },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: `${(position / duration) * 100}%` }]} />
           </View>
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{formatTime(position)}</Text>

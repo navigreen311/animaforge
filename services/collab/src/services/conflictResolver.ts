@@ -49,9 +49,8 @@ export class ConflictResolver {
           : conflict.remoteValue;
     } else {
       // Timestamp tie: higher clientId wins (deterministic tiebreaker, Yjs convention)
-      strategy = conflict.localClientId > conflict.remoteClientId
-        ? 'local-priority'
-        : 'remote-priority';
+      strategy =
+        conflict.localClientId > conflict.remoteClientId ? 'local-priority' : 'remote-priority';
       resolvedValue =
         conflict.localClientId > conflict.remoteClientId
           ? conflict.localValue
@@ -80,10 +79,7 @@ export class ConflictResolver {
    */
   mergeStates(stateA: MergeableState, stateB: MergeableState): MergeableState {
     const merged: Record<string, unknown> = {};
-    const allKeys = new Set([
-      ...Object.keys(stateA.data),
-      ...Object.keys(stateB.data),
-    ]);
+    const allKeys = new Set([...Object.keys(stateA.data), ...Object.keys(stateB.data)]);
 
     const tombstones = new Set<string>([
       ...(stateA.tombstones ?? []),
@@ -103,13 +99,9 @@ export class ConflictResolver {
       } else {
         // Both have the key: use clock then clientId as tiebreaker
         if (stateA.clock !== stateB.clock) {
-          merged[key] = stateA.clock > stateB.clock
-            ? stateA.data[key]
-            : stateB.data[key];
+          merged[key] = stateA.clock > stateB.clock ? stateA.data[key] : stateB.data[key];
         } else {
-          merged[key] = stateA.clientId > stateB.clientId
-            ? stateA.data[key]
-            : stateB.data[key];
+          merged[key] = stateA.clientId > stateB.clientId ? stateA.data[key] : stateB.data[key];
         }
       }
     }

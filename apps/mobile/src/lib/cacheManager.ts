@@ -84,10 +84,7 @@ export async function getCachedImage(url: string): Promise<string | null> {
  *                  distinguish cached variants of the same source.
  * @returns The local file:// URI of the cached video.
  */
-export async function cacheVideo(
-  url: string,
-  quality: string = '720p',
-): Promise<string> {
+export async function cacheVideo(url: string, quality: string = '720p'): Promise<string> {
   await ensureDir(VIDEO_CACHE_DIR);
 
   const key = hashKey(`${url}__${quality}`);

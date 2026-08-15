@@ -80,14 +80,10 @@ export default function StyleScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Clone Style</Text>
-        <Text style={styles.headerSubtitle}>
-          Extract visual style from a reference image
-        </Text>
+        <Text style={styles.headerSubtitle}>Extract visual style from a reference image</Text>
       </View>
 
-      {isConverting && (
-        <GenerationProgress progress={progress} stage={stage} />
-      )}
+      {isConverting && <GenerationProgress progress={progress} stage={stage} />}
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* URL input */}
@@ -113,21 +109,14 @@ export default function StyleScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Source Preview</Text>
             <View style={styles.previewCard}>
-              <Image
-                source={{ uri: url.trim() }}
-                style={styles.previewImage}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: url.trim() }} style={styles.previewImage} resizeMode="cover" />
             </View>
           </View>
         )}
 
         {/* Convert button */}
         <TouchableOpacity
-          style={[
-            styles.convertButton,
-            (!url.trim() || isConverting) && styles.buttonDisabled,
-          ]}
+          style={[styles.convertButton, (!url.trim() || isConverting) && styles.buttonDisabled]}
           onPress={handleConvert}
           disabled={!url.trim() || isConverting}
           activeOpacity={0.7}

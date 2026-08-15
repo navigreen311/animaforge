@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import marketplaceRouter from "./routes/marketplace";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import marketplaceRouter from './routes/marketplace';
 
 dotenv.config();
 
@@ -13,10 +13,10 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/marketplace", marketplaceRouter);
+app.use('/marketplace', marketplaceRouter);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "marketplace", timestamp: new Date().toISOString() });
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'marketplace', timestamp: new Date().toISOString() });
 });
 
 if (require.main === module) {

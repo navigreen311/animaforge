@@ -25,7 +25,9 @@ beforeEach(() => {
 describe('Analytics - Event Ingest', () => {
   it('ingests a single event and returns it with an id', async () => {
     const evt = await ingestEvent({
-      type: 'generation', userId: 'user-a1', projectId: 'proj-a1',
+      type: 'generation',
+      userId: 'user-a1',
+      projectId: 'proj-a1',
       metadata: { style: 'anime', credits: 5 },
     });
     expect(evt.id).toBeDefined();
@@ -57,9 +59,24 @@ describe('Analytics - Batch Ingest', () => {
 describe('Analytics - Project Analytics', () => {
   it('aggregates generation counts and credit usage', async () => {
     await batchIngest([
-      { type: 'generation', userId: 'u1', projectId: 'p-an', metadata: { generationType: 'video', credits: 10, quality: 0.9, renderTime: 12 } },
-      { type: 'generation', userId: 'u1', projectId: 'p-an', metadata: { generationType: 'audio', credits: 5, quality: 0.8, renderTime: 4 } },
-      { type: 'job_complete', userId: 'u2', projectId: 'p-an', metadata: { generationType: 'video', credits: 8, style: 'anime' } },
+      {
+        type: 'generation',
+        userId: 'u1',
+        projectId: 'p-an',
+        metadata: { generationType: 'video', credits: 10, quality: 0.9, renderTime: 12 },
+      },
+      {
+        type: 'generation',
+        userId: 'u1',
+        projectId: 'p-an',
+        metadata: { generationType: 'audio', credits: 5, quality: 0.8, renderTime: 4 },
+      },
+      {
+        type: 'job_complete',
+        userId: 'u2',
+        projectId: 'p-an',
+        metadata: { generationType: 'video', credits: 8, style: 'anime' },
+      },
     ]);
 
     const analytics = await getProjectAnalytics('p-an');
@@ -79,9 +96,24 @@ describe('Analytics - Project Analytics', () => {
 describe('Analytics - User Analytics', () => {
   it('aggregates user-level stats including most used style', async () => {
     await batchIngest([
-      { type: 'generation', userId: 'ua-1', projectId: 'p1', metadata: { style: 'anime', credits: 5 } },
-      { type: 'generation', userId: 'ua-1', projectId: 'p2', metadata: { style: 'anime', credits: 3 } },
-      { type: 'generation', userId: 'ua-1', projectId: 'p1', metadata: { style: 'comic', credits: 2 } },
+      {
+        type: 'generation',
+        userId: 'ua-1',
+        projectId: 'p1',
+        metadata: { style: 'anime', credits: 5 },
+      },
+      {
+        type: 'generation',
+        userId: 'ua-1',
+        projectId: 'p2',
+        metadata: { style: 'anime', credits: 3 },
+      },
+      {
+        type: 'generation',
+        userId: 'ua-1',
+        projectId: 'p1',
+        metadata: { style: 'comic', credits: 2 },
+      },
     ]);
 
     const analytics = await getUserAnalytics('ua-1');
@@ -100,8 +132,18 @@ describe('Analytics - User Analytics', () => {
 describe('Analytics - Platform Stats', () => {
   it('computes platform-wide statistics', async () => {
     await batchIngest([
-      { type: 'generation', userId: 'u1', projectId: 'p1', metadata: { credits: 10, style: 'anime' } },
-      { type: 'generation', userId: 'u2', projectId: 'p2', metadata: { credits: 20, style: 'anime' } },
+      {
+        type: 'generation',
+        userId: 'u1',
+        projectId: 'p1',
+        metadata: { credits: 10, style: 'anime' },
+      },
+      {
+        type: 'generation',
+        userId: 'u2',
+        projectId: 'p2',
+        metadata: { credits: 20, style: 'anime' },
+      },
       { type: 'job_failed', userId: 'u1', projectId: 'p1' },
       { type: 'view', userId: 'u3', projectId: 'p1' },
     ]);

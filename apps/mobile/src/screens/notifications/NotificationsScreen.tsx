@@ -1,12 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -81,14 +74,10 @@ export default function NotificationsScreen() {
       >
         <View style={[styles.notificationCard, !item.read && styles.unread]}>
           <View style={styles.notificationHeader}>
-            <View
-              style={[styles.typeBadge, { backgroundColor: typeColors[item.type] }]}
-            >
+            <View style={[styles.typeBadge, { backgroundColor: typeColors[item.type] }]}>
               <Text style={styles.typeBadgeText}>{typeLabels[item.type]}</Text>
             </View>
-            <Text style={styles.time}>
-              {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
+            <Text style={styles.time}>{new Date(item.createdAt).toLocaleDateString()}</Text>
           </View>
           <Text style={styles.notificationTitle}>{item.title}</Text>
           <Text style={styles.notificationBody}>{item.body}</Text>

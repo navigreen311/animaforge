@@ -5,9 +5,11 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 let prisma: PrismaClient | null = null;
 
 try {
-  prisma = globalForPrisma.prisma ?? new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  });
+  prisma =
+    globalForPrisma.prisma ??
+    new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    });
   if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prisma;
   }
@@ -21,7 +23,9 @@ export { prisma };
  * Whether a PrismaClient object exists — NOT whether a database answers.
  * Use `isDatabaseReachable()` below for that decision.
  */
-export function isPrismaAvailable(): boolean { return prisma !== null; }
+export function isPrismaAvailable(): boolean {
+  return prisma !== null;
+}
 
 /**
  * The client, or a thrown error explaining why there isn't one.

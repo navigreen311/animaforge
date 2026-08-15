@@ -32,7 +32,10 @@ async function detectGPU() {
             return;
           }
 
-          const lines = stdout.trim().split('\n').filter((l) => l.trim());
+          const lines = stdout
+            .trim()
+            .split('\n')
+            .filter((l) => l.trim());
           const gpus = [];
 
           for (let i = 1; i < lines.length; i++) {
@@ -78,7 +81,12 @@ async function detectGPU() {
               : firstLine.toLowerCase().includes('intel')
                 ? 'Intel'
                 : 'Unknown';
-          return { name: firstLine.replace(/^.*:\s*/, '').trim(), vendor, vramBytes: null, driver: '' };
+          return {
+            name: firstLine.replace(/^.*:\s*/, '').trim(),
+            vendor,
+            vramBytes: null,
+            driver: '',
+          };
         });
 
         resolve({ available: gpus.length > 0, gpus });

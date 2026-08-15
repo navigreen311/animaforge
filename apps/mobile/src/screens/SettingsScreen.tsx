@@ -56,16 +56,41 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="Push notifications">
-          <SettingRow label="Shot ready" value={notifs.shotReady} onChange={() => toggle('shotReady')} />
-          <SettingRow label="Render complete" value={notifs.renderComplete} onChange={() => toggle('renderComplete')} />
-          <SettingRow label="Comments" value={notifs.comments} onChange={() => toggle('comments')} />
-          <SettingRow label="Mentions" value={notifs.mentions} onChange={() => toggle('mentions')} />
-          <SettingRow label="Failures" value={notifs.failures} onChange={() => toggle('failures')} last />
+          <SettingRow
+            label="Shot ready"
+            value={notifs.shotReady}
+            onChange={() => toggle('shotReady')}
+          />
+          <SettingRow
+            label="Render complete"
+            value={notifs.renderComplete}
+            onChange={() => toggle('renderComplete')}
+          />
+          <SettingRow
+            label="Comments"
+            value={notifs.comments}
+            onChange={() => toggle('comments')}
+          />
+          <SettingRow
+            label="Mentions"
+            value={notifs.mentions}
+            onChange={() => toggle('mentions')}
+          />
+          <SettingRow
+            label="Failures"
+            value={notifs.failures}
+            onChange={() => toggle('failures')}
+            last
+          />
         </Section>
 
         <Section title="App preferences">
           <SettingRow label="Dark theme" value={darkMode} onChange={() => setDarkMode((v) => !v)} />
-          <SettingRow label="Haptic feedback" value={hapticsOn} onChange={() => setHapticsOn((v) => !v)} />
+          <SettingRow
+            label="Haptic feedback"
+            value={hapticsOn}
+            onChange={() => setHapticsOn((v) => !v)}
+          />
           <InfoRow label="Language" value="English" last />
         </Section>
 

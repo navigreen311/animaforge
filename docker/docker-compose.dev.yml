@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 # Development overrides — use with:
 #   docker compose -f docker/docker-compose.prod.yml -f docker/docker-compose.dev.yml up
@@ -7,15 +7,15 @@ services:
   # ── Infrastructure (expose ports for local tooling) ─────────
   postgres:
     ports:
-      - "5432:5432"
+      - '5432:5432'
 
   redis:
     ports:
-      - "6379:6379"
+      - '6379:6379'
 
   elasticsearch:
     ports:
-      - "9200:9200"
+      - '9200:9200'
 
   # ── Application Services ────────────────────────────────────
   web:
@@ -31,8 +31,8 @@ services:
       - ../services/platform-api/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3001:3001"
-      - "9229:9229"
+      - '3001:3001'
+      - '9229:9229'
     environment:
       NODE_ENV: development
 
@@ -41,8 +41,8 @@ services:
       - ../services/realtime/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3002:3002"
-      - "9230:9229"
+      - '3002:3002'
+      - '9230:9229'
     environment:
       NODE_ENV: development
 
@@ -51,8 +51,8 @@ services:
       - ../services/auth/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3003:3003"
-      - "9231:9229"
+      - '3003:3003'
+      - '9231:9229'
     environment:
       NODE_ENV: development
 
@@ -61,8 +61,8 @@ services:
       - ../services/billing/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3004:3004"
-      - "9232:9229"
+      - '3004:3004'
+      - '9232:9229'
     environment:
       NODE_ENV: development
 
@@ -71,7 +71,7 @@ services:
       - ../services/workers/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "9233:9229"
+      - '9233:9229'
     environment:
       NODE_ENV: development
 
@@ -80,7 +80,7 @@ services:
       - ../services/ai-api/src:/app/src
     command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
     ports:
-      - "8001:8001"
+      - '8001:8001'
 
   # ── Governance Services ─────────────────────────────────────
   moderation:
@@ -88,8 +88,8 @@ services:
       - ../services/governance/moderation/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3005:3005"
-      - "9234:9229"
+      - '3005:3005'
+      - '9234:9229'
     environment:
       NODE_ENV: development
 
@@ -98,8 +98,8 @@ services:
       - ../services/governance/c2pa/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3006:3006"
-      - "9235:9229"
+      - '3006:3006'
+      - '9235:9229'
     environment:
       NODE_ENV: development
 
@@ -108,8 +108,8 @@ services:
       - ../services/governance/watermark/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3007:3007"
-      - "9236:9229"
+      - '3007:3007'
+      - '9236:9229'
     environment:
       NODE_ENV: development
 
@@ -118,7 +118,7 @@ services:
       - ../services/governance/consent/src:/app/src
     command: npx ts-node-dev --respawn --transpile-only src/index.ts
     ports:
-      - "3008:3008"
-      - "9237:9229"
+      - '3008:3008'
+      - '9237:9229'
     environment:
       NODE_ENV: development

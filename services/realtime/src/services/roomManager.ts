@@ -1,9 +1,6 @@
-import type { Server } from "socket.io";
-import type {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from "../types";
-import { presenceService } from "./presenceService";
+import type { Server } from 'socket.io';
+import type { ClientToServerEvents, ServerToClientEvents } from '../types';
+import { presenceService } from './presenceService';
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -52,7 +49,7 @@ class RoomManager {
     }
 
     // Update presence context
-    presenceService.trackPresence(userId, "online", projectId);
+    presenceService.trackPresence(userId, 'online', projectId);
 
     // Join the Socket.IO room for the user's sockets
     if (this.io) {
@@ -106,7 +103,7 @@ class RoomManager {
       const p = presenceService.getPresence(m.userId);
       return {
         ...m,
-        presence: p?.status ?? "offline",
+        presence: p?.status ?? 'offline',
       };
     });
   }

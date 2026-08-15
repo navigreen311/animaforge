@@ -175,7 +175,7 @@ async function persist(record: WatermarkRecord): Promise<void> {
 
 async function lookupByPayload(payloadHex: string): Promise<WatermarkRecord | null> {
   try {
-    if ((await isDatabaseReachable())) {
+    if (await isDatabaseReachable()) {
       const row = await prisma!.watermark.findFirst({
         where: { payloadHex },
         orderBy: { embeddedAt: 'desc' },
@@ -211,7 +211,7 @@ async function knownSeeds(): Promise<string[]> {
   const seeds = new Set<string>([currentSeed()]);
   for (const record of watermarkStore.values()) seeds.add(record.seed);
   try {
-    if ((await isDatabaseReachable())) {
+    if (await isDatabaseReachable()) {
       const rows = await prisma!.watermark.findMany({
         distinct: ['seed'],
         select: { seed: true },
@@ -668,7 +668,7 @@ export async function getCapabilities(): Promise<WatermarkCapabilities> {
       detail: tm.error,
     },
     remote_fetch: { enabled: remoteFetchAllowed() },
-    database: { connected: (await isDatabaseReachable()) },
+    database: { connected: await isDatabaseReachable() },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };

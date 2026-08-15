@@ -47,13 +47,13 @@ npm run dev:all
 
 ### Service Ports
 
-| Service | Port | URL |
-|---------|------|-----|
-| Web App | 3000 | http://localhost:3000 |
-| Platform API | 3001 | http://localhost:3001 |
-| AI API | 8001 | http://localhost:8001 |
+| Service       | Port | URL                   |
+| ------------- | ---- | --------------------- |
+| Web App       | 3000 | http://localhost:3000 |
+| Platform API  | 3001 | http://localhost:3001 |
+| AI API        | 8001 | http://localhost:8001 |
 | WebSocket Hub | 3002 | http://localhost:3002 |
-| Gateway | 4000 | http://localhost:4000 |
+| Gateway       | 4000 | http://localhost:4000 |
 
 ---
 
@@ -61,15 +61,15 @@ npm run dev:all
 
 All branches must follow this convention:
 
-| Prefix | Purpose | Example |
-|--------|---------|---------|
-| `feature/` | New features | `feature/avatar-studio-blend-shapes` |
-| `fix/` | Bug fixes | `fix/shot-reorder-race-condition` |
-| `refactor/` | Code restructuring | `refactor/governance-pipeline-stages` |
-| `docs/` | Documentation only | `docs/api-reference-wave-4` |
-| `test/` | Test additions | `test/marketplace-integration` |
-| `ai-feature/` | AI-assisted feature branches | `ai-feature/physics-simulation` |
-| `hotfix/` | Urgent production fixes | `hotfix/auth-token-expiry` |
+| Prefix        | Purpose                      | Example                               |
+| ------------- | ---------------------------- | ------------------------------------- |
+| `feature/`    | New features                 | `feature/avatar-studio-blend-shapes`  |
+| `fix/`        | Bug fixes                    | `fix/shot-reorder-race-condition`     |
+| `refactor/`   | Code restructuring           | `refactor/governance-pipeline-stages` |
+| `docs/`       | Documentation only           | `docs/api-reference-wave-4`           |
+| `test/`       | Test additions               | `test/marketplace-integration`        |
+| `ai-feature/` | AI-assisted feature branches | `ai-feature/physics-simulation`       |
+| `hotfix/`     | Urgent production fixes      | `hotfix/auth-token-expiry`            |
 
 Always branch from `develop`. Only `hotfix/` branches may branch from `main`.
 
@@ -89,17 +89,17 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `docs` | Documentation changes only |
-| `style` | Formatting, semicolons, etc. (no code change) |
+| Type       | Description                                             |
+| ---------- | ------------------------------------------------------- |
+| `feat`     | A new feature                                           |
+| `fix`      | A bug fix                                               |
+| `docs`     | Documentation changes only                              |
+| `style`    | Formatting, semicolons, etc. (no code change)           |
 | `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `perf` | Performance improvement |
-| `test` | Adding or correcting tests |
-| `chore` | Build process, tooling, or dependency changes |
-| `ci` | CI/CD configuration changes |
+| `perf`     | Performance improvement                                 |
+| `test`     | Adding or correcting tests                              |
+| `chore`    | Build process, tooling, or dependency changes           |
+| `ci`       | CI/CD configuration changes                             |
 
 ### Scopes
 
@@ -137,6 +137,7 @@ chore(deps): upgrade fastapi to 0.111
 ### PR Title Format
 
 Follow the same conventional commit format:
+
 ```
 feat(ai-api): add physics simulation endpoint
 ```
@@ -148,36 +149,42 @@ feat(ai-api): add physics simulation endpoint
 Reviewers should verify each of the following:
 
 ### Correctness
+
 - [ ] Logic is correct and handles edge cases
 - [ ] Error handling is comprehensive (no swallowed errors)
 - [ ] Database queries are efficient (check for N+1 queries)
 - [ ] Race conditions are addressed for concurrent operations
 
 ### Security
+
 - [ ] Input validation on all user-provided data
 - [ ] Authorization checks on protected routes
 - [ ] No secrets or credentials in the code
 - [ ] SQL injection and XSS prevention
 
 ### Testing
+
 - [ ] New code has corresponding unit tests
 - [ ] Integration tests cover the happy path and key error paths
 - [ ] Test assertions are meaningful (not just "does not throw")
 - [ ] Coverage meets the 80% threshold for business logic
 
 ### Style and Standards
+
 - [ ] Code follows the project ESLint / Ruff configuration
 - [ ] TypeScript types are explicit (no `any` unless justified)
 - [ ] Python type hints are present on function signatures
 - [ ] File and function naming follows project conventions
 
 ### Documentation
+
 - [ ] Public API changes are reflected in `docs/api-reference.md`
 - [ ] Complex logic has inline comments explaining "why"
 - [ ] New environment variables are documented in `.env.example`
 - [ ] Breaking changes are noted in the PR description
 
 ### Performance
+
 - [ ] No unnecessary database round-trips
 - [ ] Large payloads are paginated
 - [ ] Expensive operations are queued (BullMQ/Celery), not synchronous

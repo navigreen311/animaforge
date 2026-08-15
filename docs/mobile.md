@@ -8,16 +8,16 @@ The AnimaForge mobile app provides on-the-go access to project management, revie
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | React Native 0.74+ |
-| Navigation | React Navigation 7 (native stack + bottom tabs) |
-| State Management | Zustand + TanStack Query |
-| Networking | Axios with interceptors for JWT refresh |
-| Real-time | Socket.IO client |
-| Storage | MMKV for key-value, SQLite for offline cache |
-| Styling | NativeWind (Tailwind CSS for React Native) |
-| Animations | Reanimated 3 + Gesture Handler |
+| Layer            | Technology                                      |
+| ---------------- | ----------------------------------------------- |
+| Framework        | React Native 0.74+                              |
+| Navigation       | React Navigation 7 (native stack + bottom tabs) |
+| State Management | Zustand + TanStack Query                        |
+| Networking       | Axios with interceptors for JWT refresh         |
+| Real-time        | Socket.IO client                                |
+| Storage          | MMKV for key-value, SQLite for offline cache    |
+| Styling          | NativeWind (Tailwind CSS for React Native)      |
+| Animations       | Reanimated 3 + Gesture Handler                  |
 
 ### Project Structure
 
@@ -74,15 +74,15 @@ App
 
 ### Supported Events
 
-| Event | Notification |
-|-------|-------------|
-| Generation complete | "Your video for [Project] is ready to review" |
-| Generation failed | "Generation failed for [Shot] in [Project]" |
-| Review requested | "[User] requested your review on [Project]" |
+| Event                    | Notification                                  |
+| ------------------------ | --------------------------------------------- |
+| Generation complete      | "Your video for [Project] is ready to review" |
+| Generation failed        | "Generation failed for [Shot] in [Project]"   |
+| Review requested         | "[User] requested your review on [Project]"   |
 | Review approved/rejected | "Your shot was [approved/rejected] by [User]" |
-| Comment added | "[User] commented on [Shot]" |
-| Collaboration invite | "[User] invited you to [Project]" |
-| System maintenance | "Scheduled maintenance on [Date]" |
+| Comment added            | "[User] commented on [Shot]"                  |
+| Collaboration invite     | "[User] invited you to [Project]"             |
+| System maintenance       | "Scheduled maintenance on [Date]"             |
 
 ### Implementation
 
@@ -125,10 +125,10 @@ The mobile app supports limited offline functionality:
 
 ## Supported Platforms
 
-| Platform | Minimum Version | Target Version |
-|----------|----------------|----------------|
-| iOS | 16.0 | 18.x |
-| Android | API 28 (Android 9) | API 35 (Android 15) |
+| Platform | Minimum Version    | Target Version      |
+| -------- | ------------------ | ------------------- |
+| iOS      | 16.0               | 18.x                |
+| Android  | API 28 (Android 9) | API 35 (Android 15) |
 
 ### Device Requirements
 

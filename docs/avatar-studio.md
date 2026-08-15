@@ -13,12 +13,12 @@ GPU requirement and licence that is still outstanding.
 
 ## Subsystems
 
-| # | Subsystem | Module | Runs on | Status |
-|---|-----------|--------|---------|--------|
-| 1 | Reconstruction | `services/ai-api/src/services/avatar/reconstruction.py` | GPU (real) / CPU (mock) | Real engine implemented, **never executed in CI** |
-| 2 | Subsurface scattering | `…/avatar/sss.py` | CPU | Implemented |
-| 3 | FACS rig | `…/avatar/facs.py` | CPU | Implemented |
-| 4 | Eye system | `…/avatar/eyes.py` | CPU | Implemented |
+| #   | Subsystem             | Module                                                  | Runs on                 | Status                                            |
+| --- | --------------------- | ------------------------------------------------------- | ----------------------- | ------------------------------------------------- |
+| 1   | Reconstruction        | `services/ai-api/src/services/avatar/reconstruction.py` | GPU (real) / CPU (mock) | Real engine implemented, **never executed in CI** |
+| 2   | Subsurface scattering | `…/avatar/sss.py`                                       | CPU                     | Implemented                                       |
+| 3   | FACS rig              | `…/avatar/facs.py`                                      | CPU                     | Implemented                                       |
+| 4   | Eye system            | `…/avatar/eyes.py`                                      | CPU                     | Implemented                                       |
 
 Subsystems 2–4 are closed-form and have no external dependency beyond numpy.
 Subsystem 1 is the only one that needs a GPU.
@@ -65,15 +65,15 @@ reconstruction must not receive a synthetic one labelled as real.
 outcome. A stage is `completed` only if it ran; otherwise it is `skipped` with
 a `reason`.
 
-| # | Stage | Typical status | Notes |
-|---|-------|----------------|-------|
-| 1 | `multi_view_alignment` | completed (≥2 photos) | **Skipped with one photo** — a single view gives no multi-view constraint, so no bundle adjustment is performed |
-| 2 | `volumetric_reconstruction` | completed | Builds the Gaussian splat cloud; reports `splat_count` and engine |
-| 3 | `mesh_extraction` | completed | Reports vertex and triangle counts |
-| 4 | `texture_baking` | completed | Per-vertex albedo and spherical UVs. **No raster texture atlas is written** — the GLB carries vertex colour only |
-| 5 | `flame_fitting` | **always skipped** | FLAME needs a separately licensed model file. A generic SVD shape basis is fitted instead and reported as `substitute_model` — this is *not* a FLAME fit |
-| 6 | `body_estimation` | completed | Proportions scaled from head height using the canonical 7.5-head figure. **No body geometry is reconstructed** |
-| 7 | `quality_validation` | **always skipped** | Identity scoring needs a face-recognition model. `identity_score` is `null`, `identity_check_ran` is `false`. Geometric self-consistency checks do run and are reported separately |
+| #   | Stage                       | Typical status        | Notes                                                                                                                                                                              |
+| --- | --------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `multi_view_alignment`      | completed (≥2 photos) | **Skipped with one photo** — a single view gives no multi-view constraint, so no bundle adjustment is performed                                                                    |
+| 2   | `volumetric_reconstruction` | completed             | Builds the Gaussian splat cloud; reports `splat_count` and engine                                                                                                                  |
+| 3   | `mesh_extraction`           | completed             | Reports vertex and triangle counts                                                                                                                                                 |
+| 4   | `texture_baking`            | completed             | Per-vertex albedo and spherical UVs. **No raster texture atlas is written** — the GLB carries vertex colour only                                                                   |
+| 5   | `flame_fitting`             | **always skipped**    | FLAME needs a separately licensed model file. A generic SVD shape basis is fitted instead and reported as `substitute_model` — this is _not_ a FLAME fit                           |
+| 6   | `body_estimation`           | completed             | Proportions scaled from head height using the canonical 7.5-head figure. **No body geometry is reconstructed**                                                                     |
+| 7   | `quality_validation`        | **always skipped**    | Identity scoring needs a face-recognition model. `identity_score` is `null`, `identity_check_ran` is `false`. Geometric self-consistency checks do run and are reported separately |
 
 Stages 5 and 7 are skipped on **every** host in the current configuration,
 including one with a working GPU, because neither model ships with the repo.
@@ -93,13 +93,13 @@ Every URL in a job record points at bytes that were written. `store_artifact`
 writes first and derives the URL from the path it wrote to; there is no code
 path that mints a URL for an artifact that does not exist.
 
-| Artifact | Format | Notes |
-|----------|--------|-------|
-| `avatar.glb` | glTF 2.0 binary | Positions, normals, indexed triangles, six morph targets named to match the FACS solver's blendshape output |
-| `splats.ply` | Binary little-endian PLY | Standard 3DGS property names (`x,y,z,nx,ny,nz,f_dc_0..2,opacity,scale_0..2,rot_0..3`), so it loads in splat viewers. Colours stored as zeroth-order SH coefficients |
-| `facs_rig.json` | JSON | AU catalogue, antagonist pairs, and solved blendshapes for every emotion prototype |
-| `eye_animation.json` | JSON | Per-frame gaze, eyelid and pupil channels plus the saccade and blink event lists |
-| `skin_profile.json` | JSON | Per-channel scattering parameters |
+| Artifact             | Format                   | Notes                                                                                                                                                               |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `avatar.glb`         | glTF 2.0 binary          | Positions, normals, indexed triangles, six morph targets named to match the FACS solver's blendshape output                                                         |
+| `splats.ply`         | Binary little-endian PLY | Standard 3DGS property names (`x,y,z,nx,ny,nz,f_dc_0..2,opacity,scale_0..2,rot_0..3`), so it loads in splat viewers. Colours stored as zeroth-order SH coefficients |
+| `facs_rig.json`      | JSON                     | AU catalogue, antagonist pairs, and solved blendshapes for every emotion prototype                                                                                  |
+| `eye_animation.json` | JSON                     | Per-frame gaze, eyelid and pupil channels plus the saccade and blink event lists                                                                                    |
+| `skin_profile.json`  | JSON                     | Per-channel scattering parameters                                                                                                                                   |
 
 Storage backends: `local` (default) writes under `AVATAR_STORAGE_DIR` and
 returns a `file://` URL unless `AVATAR_STORAGE_BASE_URL` is set — a `file://`
@@ -147,7 +147,7 @@ drives, over the full 52-target set.
 - FACS `A`–`E` intensity letters map to 0.2–1.0
 - **Antagonist resolution**: opposing targets (`eyeWide` vs `eyeSquint`,
   `mouthSmile` vs `mouthFrown`, `browInnerUp` vs `browDown`) reduce to their net
-  difference. A target's opposing drive is its *strongest single* antagonist,
+  difference. A target's opposing drive is its _strongest single_ antagonist,
   not their sum — `browInnerUp` is opposed by both `browDownLeft` and
   `browDownRight`, and subtracting both would wrongly zero a brow raise that
   should survive
@@ -207,14 +207,14 @@ partial result cannot blank a URL an earlier successful run stored.
 
 ## API
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/ai/v1/avatar/capabilities` | True dependency state: torch, gsplat, CUDA, weights, active engine, what is missing |
-| `POST` | `/ai/v1/generate/avatar` | Run the 7-step pipeline. `503` when `AVATAR_ENGINE=real` cannot be honoured |
-| `POST` | `/ai/v1/avatar/skin` | Subsystem 2 |
-| `GET` | `/ai/v1/avatar/facs/action-units` | Subsystem 3 catalogue |
-| `POST` | `/ai/v1/avatar/facs/solve` | Subsystem 3 solver |
-| `POST` | `/ai/v1/avatar/eyes/simulate` | Subsystem 4 |
+| Method | Path                              | Purpose                                                                             |
+| ------ | --------------------------------- | ----------------------------------------------------------------------------------- |
+| `GET`  | `/ai/v1/avatar/capabilities`      | True dependency state: torch, gsplat, CUDA, weights, active engine, what is missing |
+| `POST` | `/ai/v1/generate/avatar`          | Run the 7-step pipeline. `503` when `AVATAR_ENGINE=real` cannot be honoured         |
+| `POST` | `/ai/v1/avatar/skin`              | Subsystem 2                                                                         |
+| `GET`  | `/ai/v1/avatar/facs/action-units` | Subsystem 3 catalogue                                                               |
+| `POST` | `/ai/v1/avatar/facs/solve`        | Subsystem 3 solver                                                                  |
+| `POST` | `/ai/v1/avatar/eyes/simulate`     | Subsystem 4                                                                         |
 
 Query capabilities before offering to run a job — that is what the Avatar
 Studio banner is driven from.
@@ -285,7 +285,7 @@ Things a reader might reasonably expect that are **not** true:
    persisted but drive no simulation.
 5. **`parse_bvh` and `parse_fbx_motion` do not read their files** — they return
    a synthetic skeleton. `GET /ai/v1/mocap/formats` reports this per format via
-   `support[fmt].parsed`. C3D and TRC *are* parsed for real.
+   `support[fmt].parsed`. C3D and TRC _are_ parsed for real.
 6. **C3D DEC and MIPS encodings are rejected**, not decoded. Analog channels
    are skipped.
 
@@ -298,11 +298,11 @@ provisioned by this branch.
 
 ### Model weights
 
-| Item | Needed for | Licence | Where |
-|------|-----------|---------|-------|
-| **FLAME** head model (`FLAME2020/generic_model.pkl`) | Step 5, `flame_fitting`. Until provisioned the stage reports `skipped` | **Non-commercial research licence.** Commercial use requires a separate agreement with the Max Planck Society — this is a legal blocker for a commercial product, not just a download | flame.is.tue.mpg.de (registration required). Set `AVATAR_FLAME_MODEL_PATH` |
-| **Face-recognition embedder** (e.g. ArcFace / InsightFace `buffalo_l`) | Step 7 identity scoring against the 0.92 threshold. Until provisioned `identity_score` is `null` | InsightFace models are released for **non-commercial research use**. Verify before shipping | Set `AVATAR_IDENTITY_MODEL_PATH` |
-| **nerfstudio / splatfacto weights** | `AVATAR_ENGINE=real`. splatfacto optimises per scene, so there is no pretrained checkpoint, but `ns-process-data` may pull auxiliary models | nerfstudio and gsplat are Apache-2.0 | `AVATAR_WEIGHTS_DIR` |
+| Item                                                                   | Needed for                                                                                                                                  | Licence                                                                                                                                                                               | Where                                                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **FLAME** head model (`FLAME2020/generic_model.pkl`)                   | Step 5, `flame_fitting`. Until provisioned the stage reports `skipped`                                                                      | **Non-commercial research licence.** Commercial use requires a separate agreement with the Max Planck Society — this is a legal blocker for a commercial product, not just a download | flame.is.tue.mpg.de (registration required). Set `AVATAR_FLAME_MODEL_PATH` |
+| **Face-recognition embedder** (e.g. ArcFace / InsightFace `buffalo_l`) | Step 7 identity scoring against the 0.92 threshold. Until provisioned `identity_score` is `null`                                            | InsightFace models are released for **non-commercial research use**. Verify before shipping                                                                                           | Set `AVATAR_IDENTITY_MODEL_PATH`                                           |
+| **nerfstudio / splatfacto weights**                                    | `AVATAR_ENGINE=real`. splatfacto optimises per scene, so there is no pretrained checkpoint, but `ns-process-data` may pull auxiliary models | nerfstudio and gsplat are Apache-2.0                                                                                                                                                  | `AVATAR_WEIGHTS_DIR`                                                       |
 
 ### Hardware
 

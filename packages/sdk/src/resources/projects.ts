@@ -13,7 +13,10 @@ export class ProjectsResource {
   constructor(private readonly http: HttpClient) {}
 
   async list(params?: ListProjectsParams): Promise<PaginatedResponse<Project>> {
-    return this.http.get('/projects', params as Record<string, string | number | boolean | undefined>);
+    return this.http.get(
+      '/projects',
+      params as Record<string, string | number | boolean | undefined>,
+    );
   }
 
   async get(id: string): Promise<Project> {

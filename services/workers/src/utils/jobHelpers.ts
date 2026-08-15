@@ -1,10 +1,10 @@
-import { Job } from "bullmq";
-import { prisma, requirePrisma } from "../db.js";
+import { Job } from 'bullmq';
+import { prisma, requirePrisma } from '../db.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 /* ---------- Types ---------- */
 
-export type JobStatus = "queued" | "running" | "complete" | "failed";
+export type JobStatus = 'queued' | 'running' | 'complete' | 'failed';
 
 export interface StageDefinition {
   name: string;
@@ -73,7 +73,7 @@ async function withFallback<T, F = T>(
     return await prismaFn();
   } catch (err) {
     console.warn(
-      "[jobHelpers] Prisma unavailable, falling back to in-memory store:",
+      '[jobHelpers] Prisma unavailable, falling back to in-memory store:',
       err instanceof Error ? err.message : err,
     );
     usePrisma = false;
@@ -86,10 +86,7 @@ async function withFallback<T, F = T>(
 /**
  * Calculate cumulative progress (0-100) based on completed stages.
  */
-export function calculateProgress(
-  stages: StageDefinition[],
-  completedIndex: number,
-): number {
+export function calculateProgress(stages: StageDefinition[], completedIndex: number): number {
   const totalWeight = stages.reduce((sum, s) => sum + s.weight, 0);
   if (totalWeight === 0) return 0;
 
@@ -114,11 +111,11 @@ export async function createJobRecord(data: CreateJobData) {
           projectId: data.projectId,
           userId: data.userId,
           jobType: data.jobType,
-          modelId: data.modelId ?? "default",
+          modelId: data.modelId ?? 'default',
           inputParams: data.inputParams as Prisma.InputJsonValue,
-          tier: data.tier ?? "preview",
+          tier: data.tier ?? 'preview',
           shotId: data.shotId,
-          status: "queued",
+          status: 'queued',
           progress: 0,
         },
       }),
@@ -129,10 +126,10 @@ export async function createJobRecord(data: CreateJobData) {
         projectId: data.projectId,
         userId: data.userId,
         jobType: data.jobType,
-        modelId: data.modelId ?? "default",
+        modelId: data.modelId ?? 'default',
         inputParams: data.inputParams,
-        tier: data.tier ?? "preview",
-        status: "queued" as JobStatus,
+        tier: data.tier ?? 'preview',
+        status: 'queued' as JobStatus,
         progress: 0,
         createdAt: new Date().toISOString(),
       };
@@ -166,11 +163,10 @@ export async function updateJobStatus(
   progress: number,
   extra?: Record<string, unknown>,
 ): Promise<void> {
-  const jobId =
-    typeof jobOrId === "string" ? jobOrId : (jobOrId.id ?? jobOrId.name);
+  const jobId = typeof jobOrId === 'string' ? jobOrId : (jobOrId.id ?? jobOrId.name);
 
   // Update BullMQ job progress if a Job object was passed
-  if (typeof jobOrId !== "string") {
+  if (typeof jobOrId !== 'string') {
     const update: StatusUpdate = {
       status,
       stage,
@@ -189,16 +185,14 @@ export async function updateJobStatus(
         data: {
           status,
           progress,
-          ...(status === "running" && !extra?.startedAt
-            ? { startedAt: new Date() }
-            : {}),
+          ...(status === 'running' && !extra?.startedAt ? { startedAt: new Date() } : {}),
           ...extra,
         },
       }),
     () => {
       const existing = memoryStore.get(jobId) ?? {
         id: jobId,
-        status: "queued" as JobStatus,
+        status: 'queued' as JobStatus,
         progress: 0,
       };
       memoryStore.set(jobId, {
@@ -225,7 +219,7 @@ export async function markComplete(
       requirePrisma().generationJob.update({
         where: { id: jobId },
         data: {
-          status: "complete",
+          status: 'complete',
           progress: 100,
           outputUrl,
           qualityScores,
@@ -236,12 +230,12 @@ export async function markComplete(
     () => {
       const existing = memoryStore.get(jobId) ?? {
         id: jobId,
-        status: "queued" as JobStatus,
+        status: 'queued' as JobStatus,
         progress: 0,
       };
       memoryStore.set(jobId, {
         ...existing,
-        status: "complete",
+        status: 'complete',
         progress: 100,
         outputUrl,
         qualityScores,
@@ -261,19 +255,19 @@ export async function markFailed(jobId: string, error: string): Promise<void> {
       requirePrisma().generationJob.update({
         where: { id: jobId },
         data: {
-          status: "failed",
+          status: 'failed',
           completedAt: new Date(),
         },
       }),
     () => {
       const existing = memoryStore.get(jobId) ?? {
         id: jobId,
-        status: "queued" as JobStatus,
+        status: 'queued' as JobStatus,
         progress: 0,
       };
       memoryStore.set(jobId, {
         ...existing,
-        status: "failed",
+        status: 'failed',
         error,
         completedAt: new Date().toISOString(),
       });

@@ -88,11 +88,7 @@ async function redisGet(key: string): Promise<string | null> {
   }
 }
 
-async function redisSet(
-  key: string,
-  value: string,
-  ttlSeconds?: number,
-): Promise<void> {
+async function redisSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
   try {
     const redis = getRedis();
     if (!redis) return;
@@ -141,11 +137,7 @@ export async function cacheGet(key: string): Promise<string | null> {
  * Store a value in both L1 and L2.
  * @param ttlSeconds  Optional TTL applied to the Redis entry only.
  */
-export async function cacheSet(
-  key: string,
-  value: string,
-  ttlSeconds?: number,
-): Promise<void> {
+export async function cacheSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
   l1.set(key, value);
   await redisSet(key, value, ttlSeconds);
 }

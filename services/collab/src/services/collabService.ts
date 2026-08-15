@@ -96,7 +96,12 @@ export class CollabService {
     };
   }
 
-  addUser(projectId: string, userId: string, displayName: string, role: CollabRole = 'edit'): CollabUser {
+  addUser(
+    projectId: string,
+    userId: string,
+    displayName: string,
+    role: CollabRole = 'edit',
+  ): CollabUser {
     const session = this.getOrCreateSession(projectId);
     const user: CollabUser = { userId, displayName, role, joinedAt: Date.now() };
     session.users.set(userId, user);
@@ -136,7 +141,12 @@ export class CollabService {
     return session.editHistory.slice(-limit);
   }
 
-  recordEdit(projectId: string, userId: string, action: string, shotId: string | null = null): EditEntry {
+  recordEdit(
+    projectId: string,
+    userId: string,
+    action: string,
+    shotId: string | null = null,
+  ): EditEntry {
     const session = this.getOrCreateSession(projectId);
     const entry: EditEntry = { userId, action, timestamp: Date.now(), shotId };
     session.editHistory.push(entry);

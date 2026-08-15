@@ -95,8 +95,8 @@ describe('Storage - MIME Type Validation', () => {
 // ---------------------------------------------------------------------------
 describe('Storage - File Size Validation', () => {
   it('validates file sizes within limits', () => {
-    expect(validateFileSize(10 * 1024 * 1024, 'image')).toBe(true);   // 10 MB < 50 MB
-    expect(validateFileSize(60 * 1024 * 1024, 'image')).toBe(false);  // 60 MB > 50 MB
+    expect(validateFileSize(10 * 1024 * 1024, 'image')).toBe(true); // 10 MB < 50 MB
+    expect(validateFileSize(60 * 1024 * 1024, 'image')).toBe(false); // 60 MB > 50 MB
   });
 
   it('validates video size limit at 500 MB', () => {

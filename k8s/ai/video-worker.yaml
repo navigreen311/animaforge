@@ -19,7 +19,7 @@ spec:
     spec:
       serviceAccountName: video-worker
       nodeSelector:
-        nvidia.com/gpu: "true"
+        nvidia.com/gpu: 'true'
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
@@ -41,22 +41,22 @@ spec:
                 - ALL
           env:
             - name: WORKER_TYPE
-              value: "video"
+              value: 'video'
             - name: QUEUE_NAME
-              value: "video-generation"
+              value: 'video-generation'
             - name: MAX_BATCH_SIZE
-              value: "4"
+              value: '4'
             - name: MODEL_CACHE_DIR
-              value: "/models"
+              value: '/models'
           resources:
             requests:
-              cpu: "2"
+              cpu: '2'
               memory: 8Gi
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: '1'
             limits:
-              cpu: "8"
+              cpu: '8'
               memory: 32Gi
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: '1'
           volumeMounts:
             - name: model-cache
               mountPath: /models
@@ -90,7 +90,7 @@ spec:
           name: queue_depth_video
         target:
           type: AverageValue
-          averageValue: "2"
+          averageValue: '2'
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 30

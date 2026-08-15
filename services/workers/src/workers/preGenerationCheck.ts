@@ -1,7 +1,4 @@
-import {
-  preCheckSafety,
-  validateConsent,
-} from "../utils/governanceClient.js";
+import { preCheckSafety, validateConsent } from '../utils/governanceClient.js';
 
 /* ---------- Types ---------- */
 
@@ -25,15 +22,11 @@ export async function runPreCheck(
   // Run safety pre-check and consent validation in parallel
   const [safetyResult, consentResult] = await Promise.all([
     preCheckSafety(prompt, sceneGraph),
-    validateConsent(characterRefs, ["likeness", "voice", "motion"]),
+    validateConsent(characterRefs, ['likeness', 'voice', 'motion']),
   ]);
 
-  const blockedCategories = safetyResult.safe
-    ? undefined
-    : safetyResult.blockedCategories;
-  const missingConsents = consentResult.valid
-    ? undefined
-    : consentResult.missingConsents;
+  const blockedCategories = safetyResult.safe ? undefined : safetyResult.blockedCategories;
+  const missingConsents = consentResult.valid ? undefined : consentResult.missingConsents;
 
   const allowed = safetyResult.safe && consentResult.valid;
 

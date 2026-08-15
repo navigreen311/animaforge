@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-export type RightsType = "face" | "voice" | "likeness";
-export type RightsScope = "personal" | "commercial";
-export type RightsStatus = "active" | "revoked" | "expired" | "transferred";
+export type RightsType = 'face' | 'voice' | 'likeness';
+export type RightsScope = 'personal' | 'commercial';
+export type RightsStatus = 'active' | 'revoked' | 'expired' | 'transferred';
 
 export interface UsageLogEntry {
   jobId: string;
@@ -47,7 +47,7 @@ export function createRightsRecord(params: {
     ownerId: params.ownerId,
     type: params.type,
     scope: params.scope,
-    status: "active",
+    status: 'active',
     grantedAt: now,
     expiresAt: params.expiresAt ?? null,
     revokedAt: null,
@@ -67,10 +67,10 @@ export function appendUsage(
   const record = store.get(recordId);
   if (!record) {
     const err: Error & { statusCode?: number; code?: string } = new Error(
-      "Rights record not found",
+      'Rights record not found',
     );
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -94,7 +94,7 @@ export function verifyRights(
   }
 
   const activeRecords = subjectRecords.filter((r) => {
-    if (r.status !== "active") return false;
+    if (r.status !== 'active') return false;
     if (r.expiresAt && new Date(r.expiresAt) <= now) return false;
     return true;
   });
@@ -119,26 +119,21 @@ export function getAuditTrail(subjectId: string): RightsRecord[] {
       trail.push(record);
     }
   }
-  return trail.sort(
-    (a, b) => new Date(a.grantedAt).getTime() - new Date(b.grantedAt).getTime(),
-  );
+  return trail.sort((a, b) => new Date(a.grantedAt).getTime() - new Date(b.grantedAt).getTime());
 }
 
-export function revokeRights(
-  recordId: string,
-  reason: string,
-): RightsRecord {
+export function revokeRights(recordId: string, reason: string): RightsRecord {
   const record = store.get(recordId);
   if (!record) {
     const err: Error & { statusCode?: number; code?: string } = new Error(
-      "Rights record not found",
+      'Rights record not found',
     );
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
-  record.status = "revoked";
+  record.status = 'revoked';
   record.revokedAt = new Date().toISOString();
   record.revokeReason = reason;
   return record;
@@ -151,15 +146,15 @@ export function transferRights(
   const oldRecord = store.get(recordId);
   if (!oldRecord) {
     const err: Error & { statusCode?: number; code?: string } = new Error(
-      "Rights record not found",
+      'Rights record not found',
     );
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
   // Mark old record as transferred
-  oldRecord.status = "transferred";
+  oldRecord.status = 'transferred';
   oldRecord.transferredTo = newOwnerId;
 
   // Create new record for the new owner
@@ -193,11 +188,11 @@ export function getRightsReport(ownerId: string): {
     total++;
     byType[record.type] = (byType[record.type] ?? 0) + 1;
 
-    if (record.status === "revoked") {
+    if (record.status === 'revoked') {
       revoked++;
     } else if (record.expiresAt && new Date(record.expiresAt) <= now) {
       expired++;
-    } else if (record.status === "active") {
+    } else if (record.status === 'active') {
       active++;
     }
   }
@@ -207,7 +202,12 @@ export function getRightsReport(ownerId: string): {
 
 export function bulkVerify(
   subjects: Array<{ subjectId: string; usageType: RightsType; scope: RightsScope }>,
-): Array<{ subjectId: string; authorized: boolean; records: RightsRecord[]; expiringWithin30Days: RightsRecord[] }> {
+): Array<{
+  subjectId: string;
+  authorized: boolean;
+  records: RightsRecord[];
+  expiringWithin30Days: RightsRecord[];
+}> {
   return subjects.map((s) => {
     const result = verifyRights(s.subjectId, s.usageType, s.scope);
     return { subjectId: s.subjectId, ...result };

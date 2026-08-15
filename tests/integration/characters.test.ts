@@ -31,12 +31,17 @@ describe('Characters API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const project = await createTestProject(user.id);
 
-    const res = await apiRequest('post', '/api/v1/characters', {
-      name: 'Hero Alpha',
-      projectId: project.id,
-      styleMode: 'realistic',
-      isDigitalTwin: false,
-    }, token);
+    const res = await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Hero Alpha',
+        projectId: project.id,
+        styleMode: 'realistic',
+        isDigitalTwin: false,
+      },
+      token,
+    );
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -55,17 +60,27 @@ describe('Characters API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const project = await createTestProject(user.id);
 
-    const createRes = await apiRequest('post', '/api/v1/characters', {
-      name: 'Morph Character',
-      projectId: project.id,
-      styleMode: 'realistic',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Morph Character',
+        projectId: project.id,
+        styleMode: 'realistic',
+      },
+      token,
+    );
 
     const charId = (await createRes.body.data).id;
 
-    const res = await apiRequest('put', `/api/v1/characters/${charId}`, {
-      styleMode: 'anime',
-    }, token);
+    const res = await apiRequest(
+      'put',
+      `/api/v1/characters/${charId}`,
+      {
+        styleMode: 'anime',
+      },
+      token,
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -79,11 +94,16 @@ describe('Characters API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const project = await createTestProject(user.id);
 
-    const createRes = await apiRequest('post', '/api/v1/characters', {
-      name: 'Twin Candidate',
-      projectId: project.id,
-      styleMode: 'realistic',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Twin Candidate',
+        projectId: project.id,
+        styleMode: 'realistic',
+      },
+      token,
+    );
 
     const charId = (await createRes.body.data).id;
 
@@ -102,21 +122,36 @@ describe('Characters API', () => {
     const projectB = await createTestProject(user.id, { title: 'Project B' });
 
     // Create 2 characters in project A, 1 in project B
-    await apiRequest('post', '/api/v1/characters', {
-      name: 'Char A1',
-      projectId: projectA.id,
-      styleMode: 'anime',
-    }, token);
-    await apiRequest('post', '/api/v1/characters', {
-      name: 'Char A2',
-      projectId: projectA.id,
-      styleMode: 'cartoon',
-    }, token);
-    await apiRequest('post', '/api/v1/characters', {
-      name: 'Char B1',
-      projectId: projectB.id,
-      styleMode: 'cel',
-    }, token);
+    await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Char A1',
+        projectId: projectA.id,
+        styleMode: 'anime',
+      },
+      token,
+    );
+    await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Char A2',
+        projectId: projectA.id,
+        styleMode: 'cartoon',
+      },
+      token,
+    );
+    await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Char B1',
+        projectId: projectB.id,
+        styleMode: 'cel',
+      },
+      token,
+    );
 
     const res = await apiRequest(
       'get',
@@ -141,11 +176,16 @@ describe('Characters API', () => {
     const token = getPlatformToken(user.id, { email: user.email });
     const project = await createTestProject(user.id);
 
-    const createRes = await apiRequest('post', '/api/v1/characters', {
-      name: 'Expendable',
-      projectId: project.id,
-      styleMode: 'pixel',
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Expendable',
+        projectId: project.id,
+        styleMode: 'pixel',
+      },
+      token,
+    );
 
     const charId = (await createRes.body.data).id;
 
@@ -164,12 +204,17 @@ describe('Characters API', () => {
     const project = await createTestProject(user.id);
 
     // Create a character
-    const createRes = await apiRequest('post', '/api/v1/characters', {
-      name: 'Consent Character',
-      projectId: project.id,
-      styleMode: 'realistic',
-      isDigitalTwin: true,
-    }, token);
+    const createRes = await apiRequest(
+      'post',
+      '/api/v1/characters',
+      {
+        name: 'Consent Character',
+        projectId: project.id,
+        styleMode: 'realistic',
+        isDigitalTwin: true,
+      },
+      token,
+    );
 
     const charId = (await createRes.body.data).id;
 

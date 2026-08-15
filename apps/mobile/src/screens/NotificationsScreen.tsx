@@ -1,12 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, Pressable, FlatList, StyleSheet, SafeAreaView } from 'react-native';
 
 type NotifType = 'shot_ready' | 'render_complete' | 'comment' | 'mention' | 'failure';
 type Bucket = 'Today' | 'Yesterday' | 'Earlier';
@@ -31,16 +24,106 @@ const TYPE_META: Record<NotifType, { icon: string; color: string }> = {
 };
 
 const MOCK: Notification[] = [
-  { id: 'n1', type: 'shot_ready', title: 'Shot SH-014 ready for review', subtitle: 'Neon Samurai', timeAgo: '5m', bucket: 'Today', read: false, target: { screen: 'ShotReview', params: { shotId: 'SH-014' } } },
-  { id: 'n2', type: 'render_complete', title: 'Render complete', subtitle: 'SH-012 · Cyberpunk City', timeAgo: '1h', bucket: 'Today', read: false, target: { screen: 'ShotReview', params: { shotId: 'SH-012' } } },
-  { id: 'n3', type: 'comment', title: 'New comment from Maya', subtitle: 'On SH-007', timeAgo: '3h', bucket: 'Today', read: true, target: { screen: 'ShotReview', params: { shotId: 'SH-007' } } },
-  { id: 'n4', type: 'mention', title: 'You were mentioned', subtitle: 'In Forest Spirits', timeAgo: '6h', bucket: 'Today', read: true, target: { screen: 'ProjectDetail', params: { projectId: 'p2' } } },
-  { id: 'n5', type: 'failure', title: 'Render failed', subtitle: 'SH-001 · Ocean Depths', timeAgo: '1d', bucket: 'Yesterday', read: false, target: { screen: 'RenderQueue' } },
-  { id: 'n6', type: 'render_complete', title: 'Batch complete', subtitle: '4 shots in Mecha Pilot', timeAgo: '1d', bucket: 'Yesterday', read: true, target: { screen: 'ProjectDetail', params: { projectId: 'p4' } } },
-  { id: 'n7', type: 'comment', title: 'Director left feedback', subtitle: 'On 3 shots', timeAgo: '1d', bucket: 'Yesterday', read: true, target: { screen: 'ProjectDetail', params: { projectId: 'p1' } } },
-  { id: 'n8', type: 'shot_ready', title: 'Shot SH-005 ready', subtitle: 'Forest Spirits', timeAgo: '3d', bucket: 'Earlier', read: true, target: { screen: 'ShotReview', params: { shotId: 'SH-005' } } },
-  { id: 'n9', type: 'render_complete', title: 'Project exported', subtitle: 'Cyberpunk City Loop', timeAgo: '5d', bucket: 'Earlier', read: true, target: { screen: 'ProjectDetail', params: { projectId: 'p3' } } },
-  { id: 'n10', type: 'mention', title: 'Team invite accepted', subtitle: 'Jordan joined', timeAgo: '1w', bucket: 'Earlier', read: true, target: { screen: 'Settings' } },
+  {
+    id: 'n1',
+    type: 'shot_ready',
+    title: 'Shot SH-014 ready for review',
+    subtitle: 'Neon Samurai',
+    timeAgo: '5m',
+    bucket: 'Today',
+    read: false,
+    target: { screen: 'ShotReview', params: { shotId: 'SH-014' } },
+  },
+  {
+    id: 'n2',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'SH-012 · Cyberpunk City',
+    timeAgo: '1h',
+    bucket: 'Today',
+    read: false,
+    target: { screen: 'ShotReview', params: { shotId: 'SH-012' } },
+  },
+  {
+    id: 'n3',
+    type: 'comment',
+    title: 'New comment from Maya',
+    subtitle: 'On SH-007',
+    timeAgo: '3h',
+    bucket: 'Today',
+    read: true,
+    target: { screen: 'ShotReview', params: { shotId: 'SH-007' } },
+  },
+  {
+    id: 'n4',
+    type: 'mention',
+    title: 'You were mentioned',
+    subtitle: 'In Forest Spirits',
+    timeAgo: '6h',
+    bucket: 'Today',
+    read: true,
+    target: { screen: 'ProjectDetail', params: { projectId: 'p2' } },
+  },
+  {
+    id: 'n5',
+    type: 'failure',
+    title: 'Render failed',
+    subtitle: 'SH-001 · Ocean Depths',
+    timeAgo: '1d',
+    bucket: 'Yesterday',
+    read: false,
+    target: { screen: 'RenderQueue' },
+  },
+  {
+    id: 'n6',
+    type: 'render_complete',
+    title: 'Batch complete',
+    subtitle: '4 shots in Mecha Pilot',
+    timeAgo: '1d',
+    bucket: 'Yesterday',
+    read: true,
+    target: { screen: 'ProjectDetail', params: { projectId: 'p4' } },
+  },
+  {
+    id: 'n7',
+    type: 'comment',
+    title: 'Director left feedback',
+    subtitle: 'On 3 shots',
+    timeAgo: '1d',
+    bucket: 'Yesterday',
+    read: true,
+    target: { screen: 'ProjectDetail', params: { projectId: 'p1' } },
+  },
+  {
+    id: 'n8',
+    type: 'shot_ready',
+    title: 'Shot SH-005 ready',
+    subtitle: 'Forest Spirits',
+    timeAgo: '3d',
+    bucket: 'Earlier',
+    read: true,
+    target: { screen: 'ShotReview', params: { shotId: 'SH-005' } },
+  },
+  {
+    id: 'n9',
+    type: 'render_complete',
+    title: 'Project exported',
+    subtitle: 'Cyberpunk City Loop',
+    timeAgo: '5d',
+    bucket: 'Earlier',
+    read: true,
+    target: { screen: 'ProjectDetail', params: { projectId: 'p3' } },
+  },
+  {
+    id: 'n10',
+    type: 'mention',
+    title: 'Team invite accepted',
+    subtitle: 'Jordan joined',
+    timeAgo: '1w',
+    bucket: 'Earlier',
+    read: true,
+    target: { screen: 'Settings' },
+  },
 ];
 
 type Row = { kind: 'header'; bucket: Bucket } | { kind: 'item'; item: Notification };
@@ -92,7 +175,9 @@ export default function NotificationsScreen({ navigation }: Props) {
           <Text style={[styles.title, !n.read && styles.titleUnread]} numberOfLines={1}>
             {n.title}
           </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>{n.subtitle}</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {n.subtitle}
+          </Text>
         </View>
         <Text style={styles.time}>{n.timeAgo}</Text>
         {!n.read && <View style={styles.unreadDot} />}

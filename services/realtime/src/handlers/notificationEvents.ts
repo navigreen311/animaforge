@@ -1,10 +1,10 @@
-import type { Server } from "socket.io";
+import type { Server } from 'socket.io';
 import type {
   AuthenticatedSocket,
   ClientToServerEvents,
   NotificationNewEvent,
   ServerToClientEvents,
-} from "../types";
+} from '../types';
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -15,35 +15,38 @@ type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
  * - system:broadcast  – broadcast a message to every connected client
  * - user:typing       – relay typing indicator within a project collab room
  */
-export function registerNotificationEvents(
-  io: AppServer,
-  socket: AuthenticatedSocket,
-): void {
+export function registerNotificationEvents(io: AppServer, socket: AuthenticatedSocket): void {
   // ── render:notify ──────────────────────────────────────────────
-  socket.on("render:notify" as any, (data: { userId: string; message: string; payload?: Record<string, unknown> }) => {
-    const room = `user:${data.userId}`;
-    io.to(room).emit("render:notify" as any, {
-      from: socket.data.user.userId,
-      message: data.message,
-      payload: data.payload ?? {},
-      timestamp: Date.now(),
-    });
-  });
+  socket.on(
+    'render:notify' as any,
+    (data: { userId: string; message: string; payload?: Record<string, unknown> }) => {
+      const room = `user:${data.userId}`;
+      io.to(room).emit('render:notify' as any, {
+        from: socket.data.user.userId,
+        message: data.message,
+        payload: data.payload ?? {},
+        timestamp: Date.now(),
+      });
+    },
+  );
 
   // ── system:broadcast ───────────────────────────────────────────
-  socket.on("system:broadcast" as any, (data: { message: string; level?: "info" | "warning" | "critical" }) => {
-    io.emit("system:broadcast" as any, {
-      from: socket.data.user.userId,
-      message: data.message,
-      level: data.level ?? "info",
-      timestamp: Date.now(),
-    });
-  });
+  socket.on(
+    'system:broadcast' as any,
+    (data: { message: string; level?: 'info' | 'warning' | 'critical' }) => {
+      io.emit('system:broadcast' as any, {
+        from: socket.data.user.userId,
+        message: data.message,
+        level: data.level ?? 'info',
+        timestamp: Date.now(),
+      });
+    },
+  );
 
   // ── user:typing ────────────────────────────────────────────────
-  socket.on("user:typing" as any, (data: { projectId: string; isTyping: boolean }) => {
+  socket.on('user:typing' as any, (data: { projectId: string; isTyping: boolean }) => {
     const room = `project:${data.projectId}`;
-    socket.to(room).emit("user:typing" as any, {
+    socket.to(room).emit('user:typing' as any, {
       userId: socket.data.user.userId,
       projectId: data.projectId,
       isTyping: data.isTyping,
@@ -52,9 +55,9 @@ export function registerNotificationEvents(
   });
 
   // ── notification:new ──────────────────────────────────────────
-  socket.on("notification:new", (data: NotificationNewEvent) => {
+  socket.on('notification:new', (data: NotificationNewEvent) => {
     const targetUserId = data.notification.userId;
     const room = `user:${targetUserId}`;
-    io.to(room).emit("notification:new", data);
+    io.to(room).emit('notification:new', data);
   });
 }

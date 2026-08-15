@@ -3,12 +3,7 @@ export class AnimaForgeError extends Error {
   public readonly code: string;
   public readonly requestId?: string;
 
-  constructor(
-    message: string,
-    status: number,
-    code: string,
-    requestId?: string
-  ) {
+  constructor(message: string, status: number, code: string, requestId?: string) {
     super(message);
     this.name = 'AnimaForgeError';
     this.status = status;
@@ -29,11 +24,7 @@ export class AuthenticationError extends AnimaForgeError {
 export class RateLimitError extends AnimaForgeError {
   public readonly retryAfter?: number;
 
-  constructor(
-    message = 'Rate limit exceeded',
-    retryAfter?: number,
-    requestId?: string
-  ) {
+  constructor(message = 'Rate limit exceeded', retryAfter?: number, requestId?: string) {
     super(message, 429, 'rate_limit_error', requestId);
     this.name = 'RateLimitError';
     this.retryAfter = retryAfter;
@@ -42,10 +33,7 @@ export class RateLimitError extends AnimaForgeError {
 }
 
 export class InsufficientCreditsError extends AnimaForgeError {
-  constructor(
-    message = 'Insufficient credits to complete this request',
-    requestId?: string
-  ) {
+  constructor(message = 'Insufficient credits to complete this request', requestId?: string) {
     super(message, 402, 'insufficient_credits', requestId);
     this.name = 'InsufficientCreditsError';
     Object.setPrototypeOf(this, new.target.prototype);

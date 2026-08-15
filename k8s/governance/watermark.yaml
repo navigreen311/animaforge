@@ -34,17 +34,17 @@ spec:
               name: http
           env:
             - name: PORT
-              value: "8012"
+              value: '8012'
             - name: WATERMARK_TYPE
-              value: "invisible"
+              value: 'invisible'
             - name: WATERMARK_STRENGTH
-              value: "0.7"
+              value: '0.7'
           resources:
             requests:
               cpu: 500m
               memory: 512Mi
             limits:
-              cpu: "2"
+              cpu: '2'
               memory: 2Gi
           readinessProbe:
             httpGet:

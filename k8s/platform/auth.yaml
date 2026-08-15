@@ -34,15 +34,15 @@ spec:
               name: http
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
             - name: PORT
-              value: "3002"
+              value: '3002'
             - name: JWT_ISSUER
-              value: "https://auth.animaforge.com"
+              value: 'https://auth.animaforge.com'
             - name: TOKEN_EXPIRY
-              value: "3600"
+              value: '3600'
             - name: REFRESH_TOKEN_EXPIRY
-              value: "2592000"
+              value: '2592000'
           resources:
             requests:
               cpu: 200m

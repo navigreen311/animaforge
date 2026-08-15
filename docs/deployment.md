@@ -43,6 +43,7 @@ pnpm dev
 ```
 
 This starts:
+
 - **Web App**: http://localhost:3000
 - **Platform API**: http://localhost:4000
 - **AI Inference API**: http://localhost:8000
@@ -101,67 +102,67 @@ docker compose logs -f --tail=100  # All services, last 100 lines
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/animaforge` |
-| `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
-| `AUTH_SECRET` | JWT signing secret (min 32 chars) | `your-secret-key-here` |
-| `AUTH_PROVIDER` | Auth provider (`auth0` or `clerk`) | `clerk` |
-| `AUTH_PROVIDER_KEY` | Auth provider publishable key | `pk_test_...` |
-| `AUTH_PROVIDER_SECRET` | Auth provider secret key | `sk_test_...` |
+| Variable               | Description                        | Example                                            |
+| ---------------------- | ---------------------------------- | -------------------------------------------------- |
+| `DATABASE_URL`         | PostgreSQL connection string       | `postgresql://user:pass@localhost:5432/animaforge` |
+| `REDIS_URL`            | Redis connection string            | `redis://localhost:6379`                           |
+| `AUTH_SECRET`          | JWT signing secret (min 32 chars)  | `your-secret-key-here`                             |
+| `AUTH_PROVIDER`        | Auth provider (`auth0` or `clerk`) | `clerk`                                            |
+| `AUTH_PROVIDER_KEY`    | Auth provider publishable key      | `pk_test_...`                                      |
+| `AUTH_PROVIDER_SECRET` | Auth provider secret key           | `sk_test_...`                                      |
 
 ### Storage & CDN
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `S3_BUCKET` | Primary storage bucket | `animaforge-assets` |
-| `S3_REGION` | AWS region or R2 endpoint | `us-east-1` |
-| `S3_ACCESS_KEY` | S3 access key ID | `AKIA...` |
-| `S3_SECRET_KEY` | S3 secret access key | `wJal...` |
-| `CDN_BASE_URL` | CDN base URL for public assets | `https://cdn.animaforge.ai` |
+| Variable        | Description                    | Example                     |
+| --------------- | ------------------------------ | --------------------------- |
+| `S3_BUCKET`     | Primary storage bucket         | `animaforge-assets`         |
+| `S3_REGION`     | AWS region or R2 endpoint      | `us-east-1`                 |
+| `S3_ACCESS_KEY` | S3 access key ID               | `AKIA...`                   |
+| `S3_SECRET_KEY` | S3 secret access key           | `wJal...`                   |
+| `CDN_BASE_URL`  | CDN base URL for public assets | `https://cdn.animaforge.ai` |
 
 ### AI Services
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `AI_API_URL` | AI inference API base URL | `http://localhost:8000` |
-| `AI_MODEL_PATH` | Path to model weights | `/models/animaforge-v2` |
-| `GPU_DEVICE` | GPU device index | `cuda:0` |
-| `CELERY_BROKER_URL` | Celery broker (Redis) | `redis://localhost:6379/1` |
+| Variable            | Description               | Example                    |
+| ------------------- | ------------------------- | -------------------------- |
+| `AI_API_URL`        | AI inference API base URL | `http://localhost:8000`    |
+| `AI_MODEL_PATH`     | Path to model weights     | `/models/animaforge-v2`    |
+| `GPU_DEVICE`        | GPU device index          | `cuda:0`                   |
+| `CELERY_BROKER_URL` | Celery broker (Redis)     | `redis://localhost:6379/1` |
 
 ### Event Bus
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `KAFKA_BROKERS` | Kafka broker addresses | `localhost:9092` |
+| Variable          | Description             | Example          |
+| ----------------- | ----------------------- | ---------------- |
+| `KAFKA_BROKERS`   | Kafka broker addresses  | `localhost:9092` |
 | `KAFKA_CLIENT_ID` | Kafka client identifier | `animaforge-api` |
 
 ### Search
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ELASTICSEARCH_URL` | Elasticsearch endpoint | `http://localhost:9200` |
-| `ELASTICSEARCH_INDEX_PREFIX` | Index name prefix | `animaforge_` |
+| Variable                     | Description            | Example                 |
+| ---------------------------- | ---------------------- | ----------------------- |
+| `ELASTICSEARCH_URL`          | Elasticsearch endpoint | `http://localhost:9200` |
+| `ELASTICSEARCH_INDEX_PREFIX` | Index name prefix      | `animaforge_`           |
 
 ### Governance
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `C2PA_SIGNING_KEY` | Private key for C2PA manifest signing | `-----BEGIN EC PRIVATE KEY-----...` |
-| `C2PA_CERT_CHAIN` | Certificate chain for C2PA | `-----BEGIN CERTIFICATE-----...` |
-| `WATERMARK_SECRET` | Secret for watermark encoding | `wm-secret-key` |
-| `MODERATION_API_URL` | Content moderation service URL | `http://localhost:8001` |
+| Variable             | Description                           | Example                             |
+| -------------------- | ------------------------------------- | ----------------------------------- |
+| `C2PA_SIGNING_KEY`   | Private key for C2PA manifest signing | `-----BEGIN EC PRIVATE KEY-----...` |
+| `C2PA_CERT_CHAIN`    | Certificate chain for C2PA            | `-----BEGIN CERTIFICATE-----...`    |
+| `WATERMARK_SECRET`   | Secret for watermark encoding         | `wm-secret-key`                     |
+| `MODERATION_API_URL` | Content moderation service URL        | `http://localhost:8001`             |
 
 ### Feature Flags
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ENABLE_C2PA` | Enable C2PA content credentials | `true` |
-| `ENABLE_WATERMARK` | Enable invisible watermarking | `true` |
-| `ENABLE_MARKETPLACE` | Enable marketplace features | `true` |
-| `ENABLE_ENTERPRISE` | Enable enterprise features | `false` |
-| `MAX_CONCURRENT_JOBS` | Max parallel generation jobs | `10` |
-| `MAX_UPLOAD_SIZE_MB` | Maximum file upload size | `500` |
+| Variable              | Description                     | Default |
+| --------------------- | ------------------------------- | ------- |
+| `ENABLE_C2PA`         | Enable C2PA content credentials | `true`  |
+| `ENABLE_WATERMARK`    | Enable invisible watermarking   | `true`  |
+| `ENABLE_MARKETPLACE`  | Enable marketplace features     | `true`  |
+| `ENABLE_ENTERPRISE`   | Enable enterprise features      | `false` |
+| `MAX_CONCURRENT_JOBS` | Max parallel generation jobs    | `10`    |
+| `MAX_UPLOAD_SIZE_MB`  | Maximum file upload size        | `500`   |
 
 ---
 
@@ -169,14 +170,14 @@ docker compose logs -f --tail=100  # All services, last 100 lines
 
 ### Infrastructure Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **App Nodes** | 2x 4 vCPU / 8GB RAM | 4x 8 vCPU / 16GB RAM |
-| **GPU Nodes** | 1x NVIDIA A100 40GB | 4x NVIDIA H100 80GB |
-| **PostgreSQL** | db.r6g.xlarge (4 vCPU / 32GB) | db.r6g.2xlarge + 2 read replicas |
-| **Redis** | cache.r6g.large (2 vCPU / 13GB) | 3-node cluster, cache.r6g.xlarge |
-| **Kafka** | 3-broker cluster, m5.large | 5-broker cluster, m5.xlarge |
-| **Elasticsearch** | 2-node cluster, r5.large | 3-node cluster, r5.xlarge |
+| Component         | Minimum                         | Recommended                      |
+| ----------------- | ------------------------------- | -------------------------------- |
+| **App Nodes**     | 2x 4 vCPU / 8GB RAM             | 4x 8 vCPU / 16GB RAM             |
+| **GPU Nodes**     | 1x NVIDIA A100 40GB             | 4x NVIDIA H100 80GB              |
+| **PostgreSQL**    | db.r6g.xlarge (4 vCPU / 32GB)   | db.r6g.2xlarge + 2 read replicas |
+| **Redis**         | cache.r6g.large (2 vCPU / 13GB) | 3-node cluster, cache.r6g.xlarge |
+| **Kafka**         | 3-broker cluster, m5.large      | 5-broker cluster, m5.xlarge      |
+| **Elasticsearch** | 2-node cluster, r5.large        | 3-node cluster, r5.xlarge        |
 
 ### Kubernetes Deployment
 
@@ -224,6 +225,7 @@ spec:
 ## Production Checklist
 
 ### Security
+
 - [ ] All secrets stored in external secret manager (AWS Secrets Manager / Vault)
 - [ ] TLS termination configured at load balancer
 - [ ] CORS origins restricted to production domains
@@ -234,6 +236,7 @@ spec:
 - [ ] Network policies restrict pod-to-pod communication
 
 ### Database
+
 - [ ] PostgreSQL streaming replication configured with read replicas
 - [ ] Automated daily backups with 30-day retention
 - [ ] Point-in-time recovery (PITR) enabled
@@ -242,6 +245,7 @@ spec:
 - [ ] Vacuum and analyze scheduled during off-peak hours
 
 ### Monitoring
+
 - [ ] Application metrics exported to Prometheus / Datadog
 - [ ] Log aggregation via Loki / CloudWatch
 - [ ] Distributed tracing with OpenTelemetry
@@ -250,6 +254,7 @@ spec:
 - [ ] Uptime checks on all public endpoints
 
 ### Performance
+
 - [ ] CDN configured for static assets and generated outputs
 - [ ] Redis cluster with automatic failover
 - [ ] Horizontal pod autoscaler for API and worker pods
@@ -258,6 +263,7 @@ spec:
 - [ ] Elasticsearch index lifecycle management configured
 
 ### CI/CD
+
 - [ ] All tests passing (unit, integration, e2e)
 - [ ] Docker images scanned for vulnerabilities
 - [ ] Staging environment mirrors production topology

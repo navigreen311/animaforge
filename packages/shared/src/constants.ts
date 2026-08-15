@@ -23,7 +23,7 @@ export const PIPELINE_STAGES = [
   'export_logging',
 ] as const;
 
-export type PipelineStage = typeof PIPELINE_STAGES[number];
+export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
 // Governance Pipeline Stages (4-stage)
 export const GOVERNANCE_STAGES = [

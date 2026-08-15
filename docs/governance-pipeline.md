@@ -32,18 +32,20 @@ than assumed.
 ## Stage 1: Content Moderation
 
 ### Purpose
+
 Scan all generated content for policy violations before any further processing.
 
 ### Checks Performed
 
-| Check | Threshold | Action on Fail |
-|-------|-----------|----------------|
-| **NSFW** | Score > 0.15 | Block + flag for review |
-| **Violence** | Score > 0.30 | Block + flag for review |
-| **Bias/Stereotypes** | Score > 0.20 | Block + flag for review |
-| **Copyright Similarity** | Score > 0.85 | Block + legal review |
+| Check                    | Threshold    | Action on Fail          |
+| ------------------------ | ------------ | ----------------------- |
+| **NSFW**                 | Score > 0.15 | Block + flag for review |
+| **Violence**             | Score > 0.30 | Block + flag for review |
+| **Bias/Stereotypes**     | Score > 0.20 | Block + flag for review |
+| **Copyright Similarity** | Score > 0.85 | Block + legal review    |
 
 ### Process
+
 1. Generated frames are sampled (every 12th frame for video, all frames for images)
 2. Each sample is passed through the moderation model ensemble
 3. Audio is transcribed and checked for harmful content
@@ -51,6 +53,7 @@ Scan all generated content for policy violations before any further processing.
 5. If any check exceeds its threshold, the output is blocked
 
 ### Override Policy
+
 - Enterprise admins can adjust thresholds within platform-defined bounds
 - Human reviewers can override automated decisions with documented justification
 - All overrides are recorded in the audit log
@@ -60,6 +63,7 @@ Scan all generated content for policy violations before any further processing.
 ## Stage 2: Consent Validation
 
 ### Purpose
+
 Verify that all character likenesses used in generated content have valid consent records.
 
 ### Consent Model
@@ -77,15 +81,16 @@ stateDiagram-v2
 
 ### Consent Types
 
-| Type | Duration | Scope |
-|------|----------|-------|
-| **Perpetual** | Indefinite | All projects by this creator |
-| **Project-scoped** | Duration of project | Single project only |
-| **Time-limited** | Specified end date | All projects until expiry |
-| **Commercial** | Per license agreement | Commercial use permitted |
-| **Non-commercial** | Per license agreement | Personal/educational only |
+| Type               | Duration              | Scope                        |
+| ------------------ | --------------------- | ---------------------------- |
+| **Perpetual**      | Indefinite            | All projects by this creator |
+| **Project-scoped** | Duration of project   | Single project only          |
+| **Time-limited**   | Specified end date    | All projects until expiry    |
+| **Commercial**     | Per license agreement | Commercial use permitted     |
+| **Non-commercial** | Per license agreement | Personal/educational only    |
 
 ### Validation Process
+
 1. Extract all character IDs referenced in the generation job
 2. For each character, query the `consent_records` table
 3. Verify consent is in `approved` status and not expired
@@ -93,19 +98,20 @@ stateDiagram-v2
 5. If any character lacks valid consent, block delivery and notify the creator
 
 ### Self-Owned Characters
+
 Characters marked as `self_created: true` with no real-person likeness reference automatically pass consent validation. The creator is the sole rights holder.
 
 ---
 
 ## 3. What replaced what
 
-| Concern | Before | Now |
-| --- | --- | --- |
-| C2PA signing | Bespoke JSON manifest, HMAC-SHA256 with the hardcoded string `animaforge-c2pa-dev-secret`, stored beside the asset in `audit_trail` | Standards-conformant C2PA manifest, COSE-signed via `c2pa-node` with a real X.509 chain and an RFC 3161 timestamp, **embedded into the asset bytes** |
-| Watermarking | `output_url + "?wm=<uuid>"`, then SHA-256 of that string | 64-bit payload written into mid-low frequency DCT coefficients of 8×8 luma blocks — real pixel changes that survive re-encoding |
-| Watermark detection | Database lookup of the URL hash | Extraction from the media itself, CRC-validated |
-| Piracy matching | Exact hash lookup, plus `Math.random()` for scan results | 64-bit perceptual hash (pHash/aHash/dHash) with a Hamming-distance threshold |
-| Storage | Everything overloaded onto `AuditTrail` | Dedicated `C2PAManifest`, `Watermark` and `Fingerprint` models |
+| Concern             | Before                                                                                                                              | Now                                                                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C2PA signing        | Bespoke JSON manifest, HMAC-SHA256 with the hardcoded string `animaforge-c2pa-dev-secret`, stored beside the asset in `audit_trail` | Standards-conformant C2PA manifest, COSE-signed via `c2pa-node` with a real X.509 chain and an RFC 3161 timestamp, **embedded into the asset bytes** |
+| Watermarking        | `output_url + "?wm=<uuid>"`, then SHA-256 of that string                                                                            | 64-bit payload written into mid-low frequency DCT coefficients of 8×8 luma blocks — real pixel changes that survive re-encoding                      |
+| Watermark detection | Database lookup of the URL hash                                                                                                     | Extraction from the media itself, CRC-validated                                                                                                      |
+| Piracy matching     | Exact hash lookup, plus `Math.random()` for scan results                                                                            | 64-bit perceptual hash (pHash/aHash/dHash) with a Hamming-distance threshold                                                                         |
+| Storage             | Everything overloaded onto `AuditTrail`                                                                                             | Dedicated `C2PAManifest`, `Watermark` and `Fingerprint` models                                                                                       |
 
 The old `audit_trail` rows are not deleted — it is an audit log — but the
 migration re-labels their `action` to `legacy:c2pa:manifest` /
@@ -206,11 +212,11 @@ rejects SEC1 (`-----BEGIN EC PRIVATE KEY-----`); convert with
 `POST /governance/c2pa/sign` always returns 201, and always says which mode it
 was in:
 
-| `mode` | `signed` | `embedded` | When |
-| --- | --- | --- | --- |
-| `c2pa-embedded` | `true` | `true` | Credentials present, library loaded, asset supplied, signing succeeded |
-| `unsigned-record` | `false` | `false` | Credentials present but no asset bytes were sent — there was nothing to embed into |
-| `degraded` | `false` | `false` | No credentials, no library, or signing failed |
+| `mode`            | `signed` | `embedded` | When                                                                               |
+| ----------------- | -------- | ---------- | ---------------------------------------------------------------------------------- |
+| `c2pa-embedded`   | `true`   | `true`     | Credentials present, library loaded, asset supplied, signing succeeded             |
+| `unsigned-record` | `false`  | `false`    | Credentials present but no asset bytes were sent — there was nothing to embed into |
+| `degraded`        | `false`  | `false`    | No credentials, no library, or signing failed                                      |
 
 Only `c2pa-embedded` produces a signature. The other two carry
 `degraded: true` and a `warning` string. **There is no fallback signature.** The
@@ -233,7 +239,7 @@ asset), `unverified` (nothing was checked) and `not_found`.
 ### Assertions embedded
 
 - `c2pa.actions` — `c2pa.created` with `digitalSourceType:
-  trainedAlgorithmicMedia`, the IPTC code for model-generated media
+trainedAlgorithmicMedia`, the IPTC code for model-generated media
 - `stds.schema-org.CreativeWork`
 - `com.animaforge.generation` — job, project, shot, model, input hash, consent
   ids, watermark id, and a **SHA-256 hash of the user id**, never the raw id,
@@ -245,7 +251,7 @@ asset), `unverified` (nothing was checked) and `not_found`.
 
 ### Algorithm `dct-pair-v1`
 
-Each of 64 payload bits is carried by the *sign of the difference* between DCT
+Each of 64 payload bits is carried by the _sign of the difference_ between DCT
 coefficients `(1,2)` and `(2,1)` of an 8×8 luma block — the Koch-Zhao
 coefficient-pair construction. Writing a bit pushes the pair symmetrically apart
 around their mean, so block average energy is preserved.
@@ -256,7 +262,7 @@ visited in a seeded pseudorandom order so a local edit degrades every bit a
 little rather than destroying a few outright.
 
 The blocks align with the JPEG 8×8 grid deliberately — the perturbation is
-quantised *alongside* image content rather than smeared across it.
+quantised _alongside_ image content rather than smeared across it.
 
 **Payload framing:** 48-bit key + 16-bit CRC-16/CCITT. Detection reports a find
 only when the CRC validates, which is what makes "not detected" trustworthy: a
@@ -264,13 +270,13 @@ random 64-bit read has a ~1-in-65 536 chance of passing.
 
 **Measured** on a 512×512 synthetic frame, strength 20:
 
-| Transform | Result |
-| --- | --- |
-| Lossless (PNG) | 64/64 bits, PSNR ≈ 43 dB |
-| JPEG q80 / q65 / q50 / q40 | 64/64 bits |
-| JPEG q35 | 64/64 bits |
-| Double re-encode (q70 → q55) | Recovered |
-| H.264 CRF 30 re-encode (video) | Recovered |
+| Transform                      | Result                   |
+| ------------------------------ | ------------------------ |
+| Lossless (PNG)                 | 64/64 bits, PSNR ≈ 43 dB |
+| JPEG q80 / q65 / q50 / q40     | 64/64 bits               |
+| JPEG q35                       | 64/64 bits               |
+| Double re-encode (q70 → q55)   | Recovered                |
+| H.264 CRF 30 re-encode (video) | Recovered                |
 
 **What it does not survive:** resize, crop, rotation, heavy blur. Geometric
 attacks are the job of perceptual fingerprinting (§7), not of this watermark.
@@ -313,10 +319,10 @@ is why it is the default rather than a fallback.
 
 ### Honest embedding modes
 
-| `mode` | `embedded` | When |
-| --- | --- | --- |
-| `embedded` | `true` | Asset bytes supplied; pixels were altered |
-| `registered-only` | `false` | No asset supplied — a database row exists but **the media is unmarked and undetectable** |
+| `mode`            | `embedded` | When                                                                                     |
+| ----------------- | ---------- | ---------------------------------------------------------------------------------------- |
+| `embedded`        | `true`     | Asset bytes supplied; pixels were altered                                                |
+| `registered-only` | `false`    | No asset supplied — a database row exists but **the media is unmarked and undetectable** |
 
 Detection never reports a hit from a URL lookup. `detect` with only a
 `content_url` returns `detected: false` and a reason, unless
@@ -338,16 +344,16 @@ pHash value.
 
 **Measured** on a 640×480 synthetic frame:
 
-| Transform | pHash distance |
-| --- | --- |
-| JPEG q80 / q40 | 0 |
-| JPEG q15 | 2 |
-| Resize 50% | 0 |
-| Resize 25% | 10 |
-| Crop 5% border | 14 |
-| Crop 15% border | 24 |
-| Brightness +20% | 0 |
-| Unrelated image | 28 |
+| Transform       | pHash distance |
+| --------------- | -------------- |
+| JPEG q80 / q40  | 0              |
+| JPEG q15        | 2              |
+| Resize 50%      | 0              |
+| Resize 25%      | 10             |
+| Crop 5% border  | 14             |
+| Crop 15% border | 24             |
+| Brightness +20% | 0              |
+| Unrelated image | 28             |
 
 **Read the last two rows carefully.** A 15% crop (24) and unrelated content (28)
 are not far apart. Global perceptual hashing does not reliably catch crops beyond
@@ -412,12 +418,12 @@ says so through `database.connected: false`.
 
 Every optional dependency is reported, never assumed:
 
-| Endpoint | Reports |
-| --- | --- |
-| `GET /governance/c2pa/capabilities` | library loaded, credentials present, algorithm, TSA URL, degraded reasons |
-| `GET /governance/watermark/capabilities` | active engine, ffmpeg state, TrustMark state, remote-fetch flag |
-| `GET /piracy/capabilities` | image/video fingerprinting, discovery provider, watermark-service URL, match threshold, known limitations |
-| `GET /health/detailed` (all three) | the above, with `status: "ok" \| "degraded"` |
+| Endpoint                                 | Reports                                                                                                   |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `GET /governance/c2pa/capabilities`      | library loaded, credentials present, algorithm, TSA URL, degraded reasons                                 |
+| `GET /governance/watermark/capabilities` | active engine, ffmpeg state, TrustMark state, remote-fetch flag                                           |
+| `GET /piracy/capabilities`               | image/video fingerprinting, discovery provider, watermark-service URL, match threshold, known limitations |
+| `GET /health/detailed` (all three)       | the above, with `status: "ok" \| "degraded"`                                                              |
 
 The `/verify/:outputId` page and the piracy dashboard both read these and show a
 banner when the pipeline is reduced, so the UI never looks equally confident

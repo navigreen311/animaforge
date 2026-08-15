@@ -43,15 +43,12 @@ describe('Search API', () => {
     expect(indexRes.body.type).toBe('shots');
 
     // Search for it
-    const searchRes = await request(app)
-      .get('/search?q=hero+forest+sunset');
+    const searchRes = await request(app).get('/search?q=hero+forest+sunset');
 
     expect(searchRes.status).toBe(200);
     expect(searchRes.body.results.length).toBeGreaterThanOrEqual(1);
 
-    const found = searchRes.body.results.find(
-      (r: any) => r.id === indexRes.body.id,
-    );
+    const found = searchRes.body.results.find((r: any) => r.id === indexRes.body.id);
     expect(found).toBeDefined();
     expect(found.score).toBeGreaterThan(0);
   });
@@ -80,9 +77,7 @@ describe('Search API', () => {
     expect(res.body.results.length).toBe(3);
     // Results should be ranked by score descending
     for (let i = 0; i < res.body.results.length - 1; i++) {
-      expect(res.body.results[i].score).toBeGreaterThanOrEqual(
-        res.body.results[i + 1].score,
-      );
+      expect(res.body.results[i].score).toBeGreaterThanOrEqual(res.body.results[i + 1].score);
     }
   });
 
@@ -123,9 +118,7 @@ describe('Search API', () => {
       { type: 'projects' as const, content: 'Horror anthology in a haunted mansion' },
     ];
 
-    const res = await request(app)
-      .post('/search/bulk-index')
-      .send({ documents });
+    const res = await request(app).post('/search/bulk-index').send({ documents });
 
     expect(res.status).toBe(201);
     expect(res.body.indexed).toBe(3);
@@ -142,12 +135,10 @@ describe('Search API', () => {
   it('should remove a document so it is no longer searchable', async () => {
     const app = await getSearchApp();
 
-    const indexRes = await request(app)
-      .post('/search/index')
-      .send({
-        type: 'assets',
-        content: 'A unique crystal dragon model for deletion test',
-      });
+    const indexRes = await request(app).post('/search/index').send({
+      type: 'assets',
+      content: 'A unique crystal dragon model for deletion test',
+    });
 
     const docId = indexRes.body.id;
 
@@ -194,9 +185,7 @@ describe('Search API', () => {
     expect(selfMatch).toBeUndefined();
     // Results should be ordered by descending score
     for (let i = 0; i < res.body.results.length - 1; i++) {
-      expect(res.body.results[i].score).toBeGreaterThanOrEqual(
-        res.body.results[i + 1].score,
-      );
+      expect(res.body.results[i].score).toBeGreaterThanOrEqual(res.body.results[i + 1].score);
     }
   });
 });

@@ -1,12 +1,7 @@
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import app from '../index';
-import {
-  assets,
-  retentionPolicies,
-  userTiers,
-  TIER_QUOTAS,
-} from '../services/lifecycleService';
+import { assets, retentionPolicies, userTiers, TIER_QUOTAS } from '../services/lifecycleService';
 import type { StorageAsset } from '../models/storageSchemas';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -44,9 +39,18 @@ describe('Storage Lifecycle Service', () => {
   test('GET /storage/usage/:projectId returns usage breakdown by type', async () => {
     const projectId = uuidv4();
     const userId = uuidv4();
-    assets.set('a1', makeAsset({ id: 'a1', projectId, userId, assetType: 'image', sizeBytes: 5000 }));
-    assets.set('a2', makeAsset({ id: 'a2', projectId, userId, assetType: 'video', sizeBytes: 20000 }));
-    assets.set('a3', makeAsset({ id: 'a3', projectId, userId, assetType: 'image', sizeBytes: 3000 }));
+    assets.set(
+      'a1',
+      makeAsset({ id: 'a1', projectId, userId, assetType: 'image', sizeBytes: 5000 }),
+    );
+    assets.set(
+      'a2',
+      makeAsset({ id: 'a2', projectId, userId, assetType: 'video', sizeBytes: 20000 }),
+    );
+    assets.set(
+      'a3',
+      makeAsset({ id: 'a3', projectId, userId, assetType: 'image', sizeBytes: 3000 }),
+    );
 
     const res = await request(app).get(`/storage/usage/${projectId}`);
     expect(res.status).toBe(200);
@@ -82,7 +86,11 @@ describe('Storage Lifecycle Service', () => {
   });
 
   test('POST /storage/restore/:assetId restores archived asset', async () => {
-    const asset = makeAsset({ status: 'archived', storageClass: 'glacier', archivedAt: new Date().toISOString() });
+    const asset = makeAsset({
+      status: 'archived',
+      storageClass: 'glacier',
+      archivedAt: new Date().toISOString(),
+    });
     assets.set(asset.id, asset);
 
     const res = await request(app).post(`/storage/restore/${asset.id}`);

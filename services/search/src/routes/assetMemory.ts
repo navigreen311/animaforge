@@ -1,5 +1,5 @@
-import { Router, Request, Response } from "express";
-import { z } from "zod";
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import {
   indexAssetWithEmbedding,
   findSimilarAssets,
@@ -9,7 +9,7 @@ import {
   getMostUsedAssets,
   getRelatedAssets,
   reindexProject,
-} from "../services/assetMemory";
+} from '../services/assetMemory';
 
 const router = Router();
 
@@ -36,7 +36,7 @@ const usageSchema = z.object({
 // ---------------------------------------------------------------------------
 
 // POST /search/assets/index — index asset with embedding
-router.post("/index", (req: Request, res: Response) => {
+router.post('/index', (req: Request, res: Response) => {
   const parsed = indexAssetSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.errors });
@@ -54,14 +54,14 @@ router.post("/index", (req: Request, res: Response) => {
 });
 
 // GET /search/assets/similar/:assetId — find similar
-router.get("/similar/:assetId", (req: Request, res: Response) => {
+router.get('/similar/:assetId', (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const results = findSimilarAssets(req.params.assetId, limit);
   return res.json({ results });
 });
 
 // GET /search/assets/describe?q=description — semantic search
-router.get("/describe", (req: Request, res: Response) => {
+router.get('/describe', (req: Request, res: Response) => {
   const q = req.query.q as string;
   if (!q || q.trim().length === 0) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -73,7 +73,7 @@ router.get("/describe", (req: Request, res: Response) => {
 });
 
 // GET /search/assets/recommend/:projectId — AI recommendations
-router.get("/recommend/:projectId", (req: Request, res: Response) => {
+router.get('/recommend/:projectId', (req: Request, res: Response) => {
   const context = {
     style: req.query.style as string | undefined,
     character: req.query.character as string | undefined,
@@ -84,22 +84,18 @@ router.get("/recommend/:projectId", (req: Request, res: Response) => {
 });
 
 // POST /search/assets/usage — track usage
-router.post("/usage", (req: Request, res: Response) => {
+router.post('/usage', (req: Request, res: Response) => {
   const parsed = usageSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.errors });
   }
 
-  const record = trackAssetUsage(
-    parsed.data.assetId,
-    parsed.data.projectId,
-    parsed.data.shotId
-  );
+  const record = trackAssetUsage(parsed.data.assetId, parsed.data.projectId, parsed.data.shotId);
   return res.status(201).json(record);
 });
 
 // GET /search/assets/popular/:projectId — most used
-router.get("/popular/:projectId", (req: Request, res: Response) => {
+router.get('/popular/:projectId', (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const results = getMostUsedAssets(req.params.projectId, limit);
   return res.json({
@@ -113,13 +109,13 @@ router.get("/popular/:projectId", (req: Request, res: Response) => {
 });
 
 // GET /search/assets/related/:assetId — related assets
-router.get("/related/:assetId", (req: Request, res: Response) => {
+router.get('/related/:assetId', (req: Request, res: Response) => {
   const results = getRelatedAssets(req.params.assetId);
   return res.json({ results });
 });
 
 // POST /search/assets/reindex/:projectId — rebuild index
-router.post("/reindex/:projectId", (req: Request, res: Response) => {
+router.post('/reindex/:projectId', (req: Request, res: Response) => {
   const count = reindexProject(req.params.projectId);
   return res.json({ reindexed: count, projectId: req.params.projectId });
 });

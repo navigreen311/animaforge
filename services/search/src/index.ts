@@ -1,9 +1,9 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import searchRoutes from "./routes/search";
-import assetMemoryRoutes from "./routes/assetMemory";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import searchRoutes from './routes/search';
+import assetMemoryRoutes from './routes/assetMemory';
 
 dotenv.config();
 
@@ -14,14 +14,14 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/search", searchRoutes);
-app.use("/search/assets", assetMemoryRoutes);
+app.use('/search', searchRoutes);
+app.use('/search/assets', assetMemoryRoutes);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "search" });
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'search' });
 });
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Search service running on port ${PORT}`);
   });

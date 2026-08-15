@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import StatusBadge from '../components/StatusBadge';
 
 interface Props {
@@ -53,11 +45,7 @@ export default function ShotReviewScreen({ navigation, route }: Props) {
           <Text style={styles.previewText}>▶ Preview</Text>
           <Text style={styles.previewSub}>Shot {shotId}</Text>
         </View>
-        <Pressable
-          style={styles.closeBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-        >
+        <Pressable style={styles.closeBtn} onPress={() => navigation.goBack()} hitSlop={12}>
           <Text style={styles.closeBtnText}>✕</Text>
         </Pressable>
       </View>
@@ -80,7 +68,8 @@ export default function ShotReviewScreen({ navigation, route }: Props) {
                   styles.scoreFill,
                   {
                     width: `${s.value * 100}%`,
-                    backgroundColor: s.value > 0.85 ? '#4ade80' : s.value > 0.7 ? '#facc15' : '#f87171',
+                    backgroundColor:
+                      s.value > 0.85 ? '#4ade80' : s.value > 0.7 ? '#facc15' : '#f87171',
                   },
                 ]}
               />
@@ -94,13 +83,21 @@ export default function ShotReviewScreen({ navigation, route }: Props) {
         <Pressable
           disabled={submitting}
           onPress={handleApprove}
-          style={({ pressed }) => [styles.actionBtn, styles.approveBtn, pressed && { opacity: 0.85 }]}
+          style={({ pressed }) => [
+            styles.actionBtn,
+            styles.approveBtn,
+            pressed && { opacity: 0.85 },
+          ]}
         >
           <Text style={styles.actionText}>✓ Approve</Text>
         </Pressable>
         <Pressable
           onPress={handleReject}
-          style={({ pressed }) => [styles.actionBtn, styles.rejectBtn, pressed && { opacity: 0.85 }]}
+          style={({ pressed }) => [
+            styles.actionBtn,
+            styles.rejectBtn,
+            pressed && { opacity: 0.85 },
+          ]}
         >
           <Text style={styles.actionText}>✗ Reject</Text>
         </Pressable>

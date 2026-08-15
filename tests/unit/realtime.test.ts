@@ -109,8 +109,14 @@ describe('Realtime WebSocket Service', () => {
         setTimeout(() => clientB.emit('collab:join', { projectId: 'proj-rt-1' }), 50);
       }
 
-      clientA.on('connect', () => { aReady = true; if (bReady) afterBoth(); });
-      clientB.on('connect', () => { bReady = true; if (aReady) afterBoth(); });
+      clientA.on('connect', () => {
+        aReady = true;
+        if (bReady) afterBoth();
+      });
+      clientB.on('connect', () => {
+        bReady = true;
+        if (aReady) afterBoth();
+      });
     }));
 
   // ── 3. Job progress broadcast ───────────────────────────────────────
@@ -141,8 +147,14 @@ describe('Realtime WebSocket Service', () => {
         }, 100);
       }
 
-      sender.on('connect', () => { sReady = true; if (lReady) afterBoth(); });
-      listener.on('connect', () => { lReady = true; if (sReady) afterBoth(); });
+      sender.on('connect', () => {
+        sReady = true;
+        if (lReady) afterBoth();
+      });
+      listener.on('connect', () => {
+        lReady = true;
+        if (sReady) afterBoth();
+      });
     }));
 
   // ── 4. Collab cursor relay ──────────────────────────────────────────
@@ -182,8 +194,14 @@ describe('Realtime WebSocket Service', () => {
         }, 100);
       }
 
-      sender.on('connect', () => { sReady = true; if (oReady) afterBoth(); });
-      other.on('connect', () => { oReady = true; if (sReady) afterBoth(); });
+      sender.on('connect', () => {
+        sReady = true;
+        if (oReady) afterBoth();
+      });
+      other.on('connect', () => {
+        oReady = true;
+        if (sReady) afterBoth();
+      });
     }));
 
   // ── 5. Presence tracking ────────────────────────────────────────────
@@ -232,8 +250,14 @@ describe('Realtime WebSocket Service', () => {
         }, 100);
       }
 
-      sender.on('connect', () => { sReady = true; if (rReady) afterBoth(); });
-      receiver.on('connect', () => { rReady = true; if (sReady) afterBoth(); });
+      sender.on('connect', () => {
+        sReady = true;
+        if (rReady) afterBoth();
+      });
+      receiver.on('connect', () => {
+        rReady = true;
+        if (sReady) afterBoth();
+      });
     }));
 
   // ── 7. Room member list ─────────────────────────────────────────────

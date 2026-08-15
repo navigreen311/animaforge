@@ -45,43 +45,40 @@ router.get('/auth/oauth/:provider', (req: Request, res: Response) => {
 // -----------------------------------------------------------------------
 // GET /auth/oauth/:provider/callback — handle provider callback
 // -----------------------------------------------------------------------
-router.get(
-  '/auth/oauth/:provider/callback',
-  async (req: Request, res: Response) => {
-    const { provider } = req.params;
-    const { code, error } = req.query;
+router.get('/auth/oauth/:provider/callback', async (req: Request, res: Response) => {
+  const { provider } = req.params;
+  const { code, error } = req.query;
 
-    if (error) {
-      res.status(400).json({ error: `OAuth error: ${error}` });
-      return;
-    }
+  if (error) {
+    res.status(400).json({ error: `OAuth error: ${error}` });
+    return;
+  }
 
-    if (!code || typeof code !== 'string') {
-      res.status(400).json({ error: 'Missing authorization code' });
-      return;
-    }
+  if (!code || typeof code !== 'string') {
+    res.status(400).json({ error: 'Missing authorization code' });
+    return;
+  }
 
-    // Exchange code for tokens
-    const tokens = await exchangeCode(provider, code);
-    if (!tokens) {
-      res.status(401).json({ error: 'Failed to exchange authorization code' });
-      return;
-    }
+  // Exchange code for tokens
+  const tokens = await exchangeCode(provider, code);
+  if (!tokens) {
+    res.status(401).json({ error: 'Failed to exchange authorization code' });
+    return;
+  }
 
-    // Fetch user info from provider
-    const userInfo = await getUserInfo(provider, tokens.accessToken);
-    if (!userInfo) {
-      res.status(401).json({ error: 'Failed to retrieve user info from provider' });
-      return;
-    }
+  // Fetch user info from provider
+  const userInfo = await getUserInfo(provider, tokens.accessToken);
+  if (!userInfo) {
+    res.status(401).json({ error: 'Failed to retrieve user info from provider' });
+    return;
+  }
 
-    // Find or create user in our database
-    const user = await findOrCreateOAuthUser(userInfo);
+  // Find or create user in our database
+  const user = await findOrCreateOAuthUser(userInfo);
 
-    // In production this would issue a JWT and set cookies.
-    // For now, return the user object.
-    res.json({ user, provider });
-  },
-);
+  // In production this would issue a JWT and set cookies.
+  // For now, return the user object.
+  res.json({ user, provider });
+});
 
 export default router;

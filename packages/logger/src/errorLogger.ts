@@ -54,7 +54,12 @@ export interface ErrorLoggerOptions {
 export function errorLogger(options: ErrorLoggerOptions = {}) {
   const { logger: baseLogger = defaultLogger, includeStack = true } = options;
 
-  return (err: Error & { code?: string; statusCode?: number; details?: unknown }, req: Request, res: Response, _next: NextFunction): void => {
+  return (
+    err: Error & { code?: string; statusCode?: number; details?: unknown },
+    req: Request,
+    res: Response,
+    _next: NextFunction,
+  ): void => {
     const requestId = req.id;
     const childLogger = requestId ? baseLogger.child({ requestId }) : baseLogger;
 

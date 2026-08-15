@@ -34,13 +34,13 @@ spec:
               name: http
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
             - name: PORT
-              value: "3004"
+              value: '3004'
             - name: EMAIL_PROVIDER
-              value: "ses"
+              value: 'ses'
             - name: PUSH_PROVIDER
-              value: "fcm"
+              value: 'fcm'
           resources:
             requests:
               cpu: 100m
