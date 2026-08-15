@@ -66,7 +66,13 @@ describe('POST /api/v1/characters', () => {
       .post('/api/v1/characters')
       .send({ ...validCharacter, styleMode: 'watercolor' });
 
-    expect(res.status).toBe(500); // Zod error falls through to error handler
+    // Was asserting 500 with the comment "Zod error falls through to error
+    // handler" -- codifying the bug rather than the contract. A schema failure
+    // is the caller's mistake; the error handler now translates ZodError to a
+    // 400 that names the offending field.
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toContain('styleMode');
   });
 });
 

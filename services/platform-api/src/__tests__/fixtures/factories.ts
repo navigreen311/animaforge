@@ -185,8 +185,11 @@ export async function resetFixtures(): Promise<void> {
   if (!(await isDatabaseReachable())) return;
 
   const prisma = requirePrisma();
-  // Order matters. shots -> scenes -> projects -> users, with the tables that
-  // reference users directly cleared before users.
+
+  // Order matters, and this is the single ordered list: users are referenced by
+  // a dozen tables, so every one of them has to be cleared first or
+  // `user.deleteMany` fails on a foreign key. Adding a user-owned table? Add it
+  // here, not to a second cleanup in your own suite.
   await prisma.shotTake.deleteMany({});
   await prisma.shot.deleteMany({});
   await prisma.scene.deleteMany({});
@@ -195,6 +198,19 @@ export async function resetFixtures(): Promise<void> {
   await prisma.asset.deleteMany({});
   await prisma.character.deleteMany({});
   await prisma.receipt.deleteMany({});
+  // Console resources (#58).
+  await prisma.avatar.deleteMany({});
+  await prisma.voice.deleteMany({});
+  await prisma.brandKit.deleteMany({});
+  await prisma.script.deleteMany({});
+  await prisma.marker.deleteMany({});
+  await prisma.customDomain.deleteMany({});
+  await prisma.assetFolder.deleteMany({});
+  await prisma.apiKey.deleteMany({});
+  await prisma.userSession.deleteMany({});
+  await prisma.webhookEndpoint.deleteMany({});
+  await prisma.notification.deleteMany({});
+
   await prisma.user.deleteMany({
     where: {
       OR: [{ email: { contains: '@animaforge.test' } }, { email: { in: ['test@animaforge.io'] } }],
