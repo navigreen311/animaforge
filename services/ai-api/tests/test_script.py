@@ -99,7 +99,14 @@ class TestQCValidateEndpoint:
         )
         assert resp.status_code == 200
 
-    def test_all_checks_pass(self, client: TestClient) -> None:
+    def test_all_checks_run(self, client: TestClient) -> None:
+        """A remote URL is never opened, so the verdict is unmeasurable.
+
+        This asserted passed is True, which required QC to certify a file it
+        had not read -- the numbers behind it came from a hash of the URL
+        string. The honest outcome for an artifact that cannot be resolved is
+        no verdict at all, and a reason.
+        """
         resp = client.post(
             "/ai/v1/qc/validate",
             json={
@@ -108,7 +115,13 @@ class TestQCValidateEndpoint:
             },
         )
         data = resp.json()
-        assert data["passed"] is True
+        assert data["verdict"] == "unmeasurable"
+        assert data["passed"] is False
+        assert data["engine"]["is_mock"] is True
+        assert "remote artifact" in data["report"]["unmeasurable_reason"]
+        # The aliases still resolve: all four checks ran, none unknown.
+        assert len(data["details"]) == 4
+        assert not any("Unknown check" in i for i in data["issues"])
 
     def test_no_recognised_checks(self, client: TestClient) -> None:
         resp = client.post(
@@ -167,11 +180,20 @@ class TestGenerateMockScript:
 class TestValidateOutputService:
 
     def test_all_checks(self) -> None:
+        """Legacy check names resolve, and an unfetched artifact gets no pass.
+
+        'flicker' and 'identity' are the public names; they were renamed
+        internally to temporal_lpips and identity_drift, which silently turned
+        every validation using them into "Unknown check" and failed the run.
+        """
         result = validate_output(
             "http://example.com/test.mp4",
             ["flicker", "identity", "loudness", "artifacts"],
         )
-        assert result["passed"] is True
+        assert len(result["details"]) == 4
+        assert not any("Unknown check" in i for i in result["issues"])
+        assert result["verdict"] == "unmeasurable"
+        assert result["passed"] is False
 
     def test_no_recognised_checks_fails(self) -> None:
         result = validate_output("http://example.com/test.mp4", ["bogus"])
