@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { liveRouter } from './routes/live';
+import { SignalingServer } from './webrtc/signaling';
 
 dotenv.config();
 
@@ -15,8 +16,22 @@ app.use(express.json());
 
 app.use(liveRouter);
 
+const signaling = new SignalingServer();
+
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'live-runtime', timestamp: new Date().toISOString() });
+  const stats = signaling.stats();
+  res.json({
+    status: 'ok',
+    service: 'live-runtime',
+    timestamp: new Date().toISOString(),
+    webrtc: {
+      ...stats,
+      // Surfaced rather than hidden: without a TURN relay, peers behind
+      // symmetric NAT cannot connect, and the failure mode is an ICE timeout
+      // that looks like nothing happening at all.
+      warnings: signaling.iceWarnings,
+    },
+  });
 });
 
 const server = http.createServer(app);
@@ -24,23 +39,24 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws/live' });
 
 wss.on('connection', (ws: WebSocket) => {
-  console.log('[WS] Client connected');
+  // `ws` satisfies SignalingSocket structurally; the server only needs
+  // send() and close(), which keeps the protocol testable without a port.
+  const socket = {
+    send: (data: string) => ws.send(data),
+    close: () => ws.close(),
+  };
 
   ws.on('message', (data: Buffer) => {
-    try {
-      const message = JSON.parse(data.toString());
-      console.log('[WS] Received:', message);
-      ws.send(JSON.stringify({ type: 'ack', timestamp: Date.now() }));
-    } catch {
-      ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON' }));
-    }
+    signaling.handleMessage(socket, data.toString());
   });
 
   ws.on('close', () => {
-    console.log('[WS] Client disconnected');
+    signaling.handleDisconnect(socket);
   });
 
-  ws.send(JSON.stringify({ type: 'connected', message: 'AnimaForge Live Runtime' }));
+  ws.on('error', () => {
+    signaling.handleDisconnect(socket);
+  });
 });
 
 if (process.env.NODE_ENV !== 'test') {
@@ -49,4 +65,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-export { app, server, wss };
+export { app, server, wss, signaling };
