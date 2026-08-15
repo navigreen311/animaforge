@@ -14,7 +14,7 @@
 
 Built by **Green Companies LLC** | v1.0.0
 
-[Quick Start](#quick-start) | [Architecture](#architecture) | [Services](#services-22) | [API](#api) | [Docs](#documentation) | [Contributing](#contributing)
+[Quick Start](#quick-start) | [Architecture](#architecture) | [Services](#services) | [API](#api) | [Docs](#documentation) | [Contributing](#contributing)
 
 </div>
 
@@ -22,7 +22,7 @@ Built by **Green Companies LLC** | v1.0.0
 
 ## What is AnimaForge?
 
-AnimaForge is a distributed production operating system that orchestrates **22 microservices** for AI-powered animation and video creation. It transforms text scripts and creative direction into fully rendered, provenance-tracked animated video within a single platform.
+AnimaForge is a distributed production operating system built around **18 services** for AI-powered animation and video creation. It transforms text scripts and creative direction into fully rendered, provenance-tracked animated video within a single platform.
 
 Every piece of AI-generated content passes through a **mandatory 4-stage governance pipeline** before delivery:
 
@@ -34,7 +34,58 @@ From script to publish-ready video -- one platform, one pipeline, full provenanc
 
 ---
 
+## Project status
+
+This section exists because the rest of this README describes an architecture,
+and an architecture is not the same thing as a running product. Read it before
+the feature tables.
+
+**The web dashboard has no persistence layer.** Of 46 dashboard pages, 5 fetch
+from an API at all; 40 declare hardcoded data arrays and render them as if they
+were yours. Of 128 API routes under
+`apps/web/src/app/api`, **none** connects to a database and none proxies to a
+service. `POST /api/team/teams` returns a team it never stores. A real
+Prisma-backed backend exists in `services/platform-api`, and the web app does
+not call it. Tracked in [#58](https://github.com/navigreen311/animaforge/issues/58).
+
+Controls that cannot work are disabled and say why, rather than showing a
+plausible success. The reason for each is recorded in
+`apps/web/src/app/(dashboard)/components/unavailable/featureStatus.ts`.
+
+**What is genuinely wired end to end**
+
+| | |
+|---|---|
+| Governance pipeline | C2PA signing, moderation, consent, watermarking |
+| Generation worker | 11 stages, publishing lifecycle events to Kafka |
+| Yjs CRDT collaboration | `services/collab` — persistence, awareness, shot locking |
+| WebRTC signalling | `services/live` — SDP/ICE relay, session-scoped |
+| Transactional email triggers | real queries against Prisma |
+
+**What exists but is not connected**
+
+| | |
+|---|---|
+| Kafka | `services/workers` publishes; **nothing consumes yet** |
+| Terraform | validates cleanly; **never applied to an AWS account** |
+| WebRTC | signalling only — no SFU, no TURN configured, no auth on the socket |
+| `services/platform-api` | real and Prisma-backed; the web app never calls it |
+
+**CI**: `test-frontend`, `test-governance`, `terraform` and `security-scan`
+block merge. `lint`, `type-check`, `test-api`, `test-ai-api` and `test-e2e`
+still run and still show red, but do not block — each has a tracking issue and
+the exclusion is documented inline in `.github/workflows/ci.yml`. See
+[#18](https://github.com/navigreen311/animaforge/issues/18),
+[#19](https://github.com/navigreen311/animaforge/issues/19),
+[#21](https://github.com/navigreen311/animaforge/issues/21),
+[#23](https://github.com/navigreen311/animaforge/issues/23).
+
+---
+
 ## Key Features
+
+These describe the services and pipelines in this repository. Where a feature is
+implemented but not reachable from the dashboard, see **Project status** above.
 
 | Feature | Description |
 |---------|-------------|
@@ -51,8 +102,8 @@ From script to publish-ready video -- one platform, one pipeline, full provenanc
 | **Marketplace** | Creator economy for styles, templates, characters, audio, and plugins with 70/30 revenue split |
 | **Cartoon Pro** | Stylized rendering in anime, watercolor, comic book, and 20+ additional styles |
 | **Motion Capture** | Extract MoCap data from standard video input |
-| **Desktop + Mobile** | Electron desktop app with native features and React Native mobile app |
-| **Live Streaming** | Real-time interactive animation sessions via WebRTC |
+| **Desktop + Mobile** | Electron desktop wrapper and a React Native mobile app. The mobile app has no API client, so its studio and review screens are read-only |
+| **Live Streaming** | WebRTC signalling for interactive sessions. Signalling only: no SFU, and no TURN relay is configured, so peers behind symmetric NAT cannot connect |
 
 ---
 
@@ -70,7 +121,13 @@ AnimaForge is organized into **7 architecture zones**, each with a clear respons
 | **6. Governance** | Content Moderator, C2PA Signer, Watermark Engine, Consent Validator | Mandatory pipeline -- every output passes all 4 stages before delivery |
 | **7. Delivery** | CDN/CloudFront, S3/R2 Storage, Export Engine, Analytics, Social Distribution | Output packaging, hosting, metrics collection, multi-platform distribution |
 
-Data flows top-down from Client to Delivery. WebSocket connections provide real-time feedback from Orchestration back to Clients. Kafka events propagate state changes across all zones.
+Data flows top-down from Client to Delivery. WebSocket connections provide real-time feedback from Orchestration back to Clients.
+
+Kafka carries the generation and governance events: `services/workers` publishes
+the full job lifecycle to `animaforge.generation.v1` and
+`animaforge.governance.v1`. **No service subscribes to them yet** — the consumer
+side of `packages/events` is implemented and tested, but nothing is listening in
+production, so events do not currently propagate state anywhere.
 
 ---
 
@@ -133,26 +190,32 @@ npm run dev:all
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | Next.js 14+, TypeScript, Tailwind CSS, Radix UI, Zustand, TanStack Query, Three.js |
-| **Mobile** | React Native 0.74+, NativeWind, MMKV, React Navigation |
+| **Frontend** | Next.js 14, TypeScript, Tailwind CSS, Radix UI, Zustand, TanStack Query. WebGL rendering is hand-rolled in `components/timeline/WebGLRenderer.tsx` — three.js is **not** a dependency |
+| **Mobile** | React Native 0.73.6, Expo 50, React Navigation |
 | **Desktop** | Electron 30+, electron-builder, auto-update |
 | **Platform API** | Node.js + Express + TypeScript |
 | **AI API** | FastAPI + Python 3.11 |
 | **Database** | PostgreSQL 16 + pgvector |
 | **Cache / Queue** | Redis 7 + BullMQ |
-| **Event Bus** | Apache Kafka |
+| **Event Bus** | Apache Kafka (kafkajs) — producer wired, no consumer yet |
 | **Search** | Elasticsearch 8.13 |
 | **Real-time** | Socket.IO + Yjs CRDT |
 | **Object Storage** | S3 / Cloudflare R2 / MinIO (dev) |
 | **Video Export** | FFmpeg (H.264, H.265, VP9, AV1, ProRes) |
 | **Auth** | JWT + RBAC + OAuth (Google, GitHub) + SSO/SAML + SCIM |
-| **Testing** | Vitest, Pytest, Playwright, Supertest, Testcontainers |
-| **CI/CD** | GitHub Actions, ArgoCD |
-| **Infrastructure** | Docker, Kubernetes, Terraform |
+| **Testing** | Vitest, Pytest, Playwright, Supertest |
+| **CI/CD** | GitHub Actions. ArgoCD is referenced in the deployment docs but nothing in this repo installs or configures it |
+| **Infrastructure** | Docker, Kubernetes, Terraform (`infra/terraform`, validated but never applied) |
 
 ---
 
-## Services (22)
+## Services
+
+**18 service directories under `services/`.** Twelve of them build a container
+image; the rest run in-process or are not containerised yet. Entries 19-22 below
+are Python modules inside the AI API, not separate services — they are listed
+because they are distinct capabilities, not because they are separately
+deployable.
 
 | # | Service | Stack | Port | Description |
 |---|---------|-------|------|-------------|
@@ -169,17 +232,19 @@ npm run dev:all
 | 11 | **Notification** | Node.js | 3008 | Email, push notifications, in-app notifications |
 | 12 | **Analytics** | Node.js + ClickHouse | 3009 | Usage metrics, quality scores, billing events, dashboards |
 | 13 | **Export** | Node.js + FFmpeg | 3010 | MP4, WebM, ProRes, image sequence export with codec options |
-| 14 | **Collab** | Node.js + Yjs | 3011 | Real-time collaboration, presence indicators, threaded comments |
+| 14 | **Collab** | Node.js + Yjs | 3012 | Real-time collaboration, presence indicators, threaded comments |
 | 15 | **Marketplace** | Node.js + Express | 3012 | Community marketplace for styles, templates, plugins (70/30 split) |
-| 16 | **Live** | Node.js + WebRTC | 3013 | Live streaming for interactive animation sessions |
+| 16 | **Live** | Node.js + WebRTC | 3015 | Live streaming for interactive animation sessions |
 | 17 | **Talent** | Node.js | 3014 | Voice actor and performer management, consent tracking |
-| 18 | **Piracy** | Node.js + Python | 3015 | Content fingerprinting, similarity detection, DMCA takedowns |
-| 19 | **Physics** | Python (AI API sub) | -- | PBD cloth, hair, rigid body, and fluid simulation |
-| 20 | **Training** | Python (AI API sub) | -- | Custom model fine-tuning and LoRA training |
-| 21 | **Cartoon Pro** | Python (AI API sub) | -- | Stylized cartoon rendering (anime, watercolor, comic, 20+ styles) |
-| 22 | **MoCap** | Python (AI API sub) | -- | Motion capture extraction from video input |
+| 18 | **Piracy** | Node.js + Python | 3016 | Content fingerprinting, similarity detection, DMCA takedowns |
+| 19 | *Physics* | AI API module | -- | PBD cloth, hair, rigid body, and fluid simulation |
+| 20 | *Training* | AI API module | -- | Custom model fine-tuning and LoRA training |
+| 21 | *Cartoon Pro* | AI API module | -- | Stylized cartoon rendering (anime, watercolor, comic, 20+ styles) |
+| 22 | *MoCap* | AI API module | -- | Motion capture extraction from video input |
 
-> **~320 API endpoints** across Platform API, AI API, and auxiliary services.
+> Roughly **340 route handlers** across the Node services and the AI API, plus
+> **128 route files** under `apps/web/src/app/api`. Those 128 are Next.js routes
+> serving fixed sample data, not a persistence layer — see **Project status**.
 
 ---
 
@@ -210,7 +275,7 @@ Full endpoint documentation: [API Reference](docs/api-reference.md) | [OpenAPI S
 | Document | Description |
 |----------|-------------|
 | [Architecture](docs/architecture.md) | System architecture, 7 zones, pipelines, data flow diagrams |
-| [API Reference](docs/api-reference.md) | All ~320 API endpoints with request/response examples |
+| [API Reference](docs/api-reference.md) | Endpoint reference with request/response examples |
 | [OpenAPI Spec](services/platform-api/src/openapi.yaml) | Machine-readable OpenAPI 3.1 specification |
 | [Governance Pipeline](docs/governance-pipeline.md) | 4-stage mandatory pipeline: moderation, consent, C2PA, watermark |
 | [Style Intelligence](docs/style-intelligence.md) | Style fingerprinting and transfer engine (X6) |
@@ -226,6 +291,12 @@ Full endpoint documentation: [API Reference](docs/api-reference.md) | [OpenAPI S
 | [Security](docs/security.md) | Auth, encryption, compliance, audit logging, and threat model |
 | [Testing](docs/testing.md) | Test strategy, coverage targets, frameworks, and CI integration |
 | [Contributing](docs/contributing.md) | Development setup, conventions, branching model, and PR process |
+| [WebRTC Live Runtime](docs/webrtc-live-runtime.md) | Signalling protocol, client sketch, and why TURN is not optional |
+| [Event Bus](packages/events/README.md) | Kafka topics, event schemas, and the in-process fallback |
+| [Infrastructure](infra/terraform/README.md) | Terraform layout, design decisions, and what is not covered |
+| [Accessibility](docs/accessibility.md) | Audit findings and remediation |
+| [Piracy](docs/piracy.md) | Fingerprinting, similarity detection, and DMCA workflow |
+| [Disaster Recovery](docs/disaster-recovery.md) | Backup, restore, and failover procedures |
 
 ---
 
@@ -283,25 +354,32 @@ make clean                # Remove all node_modules and build artifacts
 
 ## Testing
 
-AnimaForge follows the test pyramid with fast unit tests as the foundation:
+AnimaForge follows the test pyramid with fast unit tests as the foundation.
 
-| Layer | Tool | Count Target | Speed | Coverage Target |
-|-------|------|-------------|-------|-----------------|
-| **Unit** | Vitest + Pytest | ~1,500 tests (70%) | < 5 ms each | 80-90% |
-| **Integration** | Vitest + Supertest + Pytest | ~300 tests (25%) | < 500 ms each | 75% |
-| **E2E** | Playwright | ~50 tests (5%) | < 30 s each | Critical flows |
+**What exists today:**
 
-### Coverage Thresholds
+| Layer | Tool | Files | Status |
+|-------|------|-------|--------|
+| **Unit** | Vitest | 14 files, 216 tests in `tests/unit` | passing, blocks merge |
+| **Governance / piracy** | Vitest | `services/governance`, `services/piracy`, `tests/integration/governance.test.ts` | passing, blocks merge |
+| **Integration** | Vitest + Supertest | 9 files in `tests/integration` | not run by CI |
+| **Service suites** | Vitest | e.g. `services/platform-api` (117 tests) | 35 failing — [#21](https://github.com/navigreen311/animaforge/issues/21) |
+| **AI API** | Pytest | 35 files, 280 tests | 11 failing — [#23](https://github.com/navigreen311/animaforge/issues/23) |
+| **E2E** | Playwright | 5 specs in `tests/e2e` | never verified green — [#21](https://github.com/navigreen311/animaforge/issues/21) |
 
-| Area | Minimum |
-|------|---------|
-| Business logic (`services/`) | 80% |
-| API routes (`controllers/`) | 75% |
-| Utility functions (`utils/`) | 90% |
-| Governance pipeline | 90% |
-| Frontend components | 60% |
+The original targets for this pyramid were ~1,500 unit, ~300 integration and ~50
+E2E tests. Those remain goals, not measurements.
 
-CI enforces these thresholds -- builds fail if coverage drops below the configured minimums.
+### Coverage
+
+Coverage is collected (`@vitest/coverage-v8`) and uploaded as a CI artifact.
+
+**No thresholds are enforced.** Nothing in `vitest.config.ts` or the workflows
+sets a `coverage.thresholds` block, so a build cannot fail on a coverage drop.
+An earlier version of this README stated the opposite. The intended minimums —
+80% for service logic, 90% for the governance pipeline and utilities, 75% for
+API routes, 60% for frontend components — are recorded here as the target to
+configure, not as a gate that exists.
 
 ---
 
@@ -313,7 +391,18 @@ CI enforces these thresholds -- builds fail if coverage drops below the configur
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-Infrastructure containers: PostgreSQL 16 (pgvector), Redis 7, Elasticsearch 8.13, MinIO (S3-compatible).
+Infrastructure containers: PostgreSQL 16 (pgvector), Redis 7, Elasticsearch 8.13,
+MinIO (S3-compatible), and Kafka in KRaft mode.
+
+```bash
+# Kafka alone, with its topics created
+docker compose -f docker/docker-compose.yml up kafka kafka-init
+```
+
+`kafka-init` creates `animaforge.generation.v1` and `animaforge.governance.v1`
+with reviewed partition counts and retention, then exits. Broker auto-creation
+is deliberately off. Reach the broker at `localhost:9092` from the host and
+`kafka:29092` from inside compose.
 
 ### Docker Compose (Full Stack)
 
@@ -322,17 +411,42 @@ make docker-up            # Build and start all services + infrastructure
 make docker-down          # Stop and remove volumes
 ```
 
+### Infrastructure (Terraform)
+
+`infra/terraform` provisions the AWS estate the manifests in `k8s/` target: a
+VPC across three subnet tiers, EKS, RDS PostgreSQL 16 with pgvector,
+ElastiCache Redis, S3 buckets and CloudFront.
+
+```bash
+terraform -chdir=infra/terraform init -backend=false
+terraform -chdir=infra/terraform validate
+terraform -chdir=infra/terraform plan -var-file=environments/production.tfvars
+```
+
+**It has never been applied.** There is no AWS account attached to this
+repository, so nothing here has been through a real `plan` or `apply` — expect
+quota limits and IAM edge cases on first contact. CI validates the root and each
+module in isolation on every PR. Kafka (MSK), Elasticsearch, Route 53/ACM and
+the state backend itself are deliberately out of scope; see
+`infra/terraform/README.md`.
+
 ### Kubernetes (Production)
 
-AnimaForge deploys to Kubernetes via ArgoCD with the following pipeline:
+The intended pipeline is:
 
 ```
 Push to main --> GitHub Actions CI --> Docker Build --> Container Registry --> ArgoCD Sync --> Kubernetes
 ```
 
-Staging deploys automatically on merge to `develop`. Production deploys require approval on merge to `main`.
+`deploy-staging.yml` and `deploy-production.yml` implement the build-and-deploy
+steps. **ArgoCD is not installed or configured by anything in this repository** —
+the sync step above is a description of intent, not of a running system.
 
-See [Deployment Guide](docs/deployment.md) for full Kubernetes manifests, Terraform configs, and runbooks.
+Twelve of the eighteen services build a container image. Three of the five
+images the security workflow scans currently fail to build
+([#20](https://github.com/navigreen311/animaforge/issues/20)).
+
+See [Deployment Guide](docs/deployment.md) for Kubernetes manifests and runbooks.
 
 ---
 
@@ -341,9 +455,9 @@ See [Deployment Guide](docs/deployment.md) for full Kubernetes manifests, Terraf
 ```
 animaforge/
   apps/
-    web/                  # Next.js 14+ frontend
-    mobile/               # React Native mobile app
-    desktop/              # Electron desktop app
+    web/                  # Next.js 14 frontend
+    mobile/               # React Native (Expo) app — no API client yet
+    desktop/              # Electron wrapper
   services/
     platform-api/         # Node.js Express API (projects, shots, assets)
     ai-api/               # FastAPI AI inference (video, audio, avatar, style)
@@ -366,9 +480,16 @@ animaforge/
   packages/
     shared/               # Shared types, constants, utilities
     db/                   # Prisma schema & migrations
+    events/               # Kafka topics, event schemas, producer/consumer
+    logger/               # Structured logging, metrics, health checks
+    storage/              # Storage helpers
     sdk/                  # Client SDK for third-party integrations
+  infra/
+    terraform/            # AWS: VPC, EKS, RDS, ElastiCache, S3 + CloudFront
+  k8s/                    # Kubernetes manifests
   docker/                 # Docker Compose configurations
-  docs/                   # Feature documentation (17 docs)
+  docs/                   # Feature documentation (21 docs)
+  tests/                  # unit, integration, e2e, load
   scripts/                # Automation and deployment scripts
   .github/workflows/      # CI/CD pipelines
 ```
