@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma, isPrismaAvailable, requirePrisma } from "../db";
+import { prisma, isDatabaseReachable, requirePrisma } from "../db";
 import type {
   ModerateRequest,
   ModerateResponse,
@@ -65,7 +65,7 @@ export async function moderate(req: ModerateRequest): Promise<ModerateResponse> 
   const details = category === "safe" ? "No policy violations detected." : `Detected ${category} content (score=${score.toFixed(2)}).`;
   const logRecord: ModerationLogRecord = { id: uuidv4(), job_id: req.job_id, timestamp: new Date().toISOString(), result, category, score, details };
   try {
-    if (await isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       await requirePrisma().moderationLog.create({ data: { jobId: req.job_id, result, category: category === "safe" ? null : category, score, details: { message: details, content_type: req.content_type } } });
     } else { appendLogInMemory(logRecord); }
   } catch { appendLogInMemory(logRecord); }
@@ -84,7 +84,7 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
   const allowed = blockedCategories.length === 0;
   const reason_code = allowed ? "NONE" : reasons.join(";");
   try {
-    if (await isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       await requirePrisma().moderationLog.create({ data: { jobId: `precheck-${uuidv4()}`, result: allowed ? "pass" : "block", category: blockedCategories[0] ?? null, score: allowed ? 0.0 : 1.0, details: { type: "pre_check", prompt: req.prompt, reason_code, blocked_categories: blockedCategories } } });
     }
   } catch { /* pre-check logging is best-effort */ }
@@ -93,7 +93,7 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
 
 export async function getModerationLog(jobId: string): Promise<ModerationLogRecord[]> {
   try {
-    if (await isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const rows = await requirePrisma().moderationLog.findMany({ where: { jobId }, orderBy: { createdAt: "asc" } });
       // Typed from the fields read here rather than the generated Prisma
       // model, so the check does not depend on `prisma generate` having run.

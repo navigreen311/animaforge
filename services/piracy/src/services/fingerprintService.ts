@@ -9,7 +9,7 @@
 
 import crypto from 'crypto';
 import { promises as fs } from 'node:fs';
-import { prisma, isPrismaAvailable } from '../db';
+import { prisma, isDatabaseReachable } from '../db';
 import { ffmpegStatus, sampleFrames } from '../lib/ffmpeg';
 import {
   HASH_BITS,
@@ -209,7 +209,7 @@ export async function registerFingerprint(
   fingerprints.set(record.id, record);
 
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const row = await prisma!.fingerprint.create({
         data: {
           outputId: record.outputId,
@@ -263,7 +263,7 @@ interface FingerprintRow {
 
 async function allFingerprints(): Promise<FingerprintRecord[]> {
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const rows = (await prisma!.fingerprint.findMany({
         orderBy: { createdAt: 'desc' },
         take: Number(process.env.FINGERPRINT_SEARCH_LIMIT ?? 5000),

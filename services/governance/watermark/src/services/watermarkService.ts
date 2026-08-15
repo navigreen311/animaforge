@@ -10,7 +10,7 @@
 import crypto from 'crypto';
 import { promises as fs } from 'node:fs';
 import { v4 as uuidv4 } from 'uuid';
-import { prisma, isPrismaAvailable } from '../db';
+import { prisma, isDatabaseReachable } from '../db';
 import {
   DEFAULT_STRENGTH,
   MIN_DIMENSION,
@@ -144,7 +144,7 @@ export function clearStore(): void {
 
 async function persist(record: WatermarkRecord): Promise<void> {
   try {
-    if (!isPrismaAvailable()) {
+    if (!(await isDatabaseReachable())) {
       remember(record);
       return;
     }
@@ -175,7 +175,7 @@ async function persist(record: WatermarkRecord): Promise<void> {
 
 async function lookupByPayload(payloadHex: string): Promise<WatermarkRecord | null> {
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const row = await prisma!.watermark.findFirst({
         where: { payloadHex },
         orderBy: { embeddedAt: 'desc' },
@@ -211,7 +211,7 @@ async function knownSeeds(): Promise<string[]> {
   const seeds = new Set<string>([currentSeed()]);
   for (const record of watermarkStore.values()) seeds.add(record.seed);
   try {
-    if (isPrismaAvailable()) {
+    if ((await isDatabaseReachable())) {
       const rows = await prisma!.watermark.findMany({
         distinct: ['seed'],
         select: { seed: true },
@@ -644,7 +644,7 @@ export async function getCapabilities(): Promise<WatermarkCapabilities> {
       `WATERMARK_ENGINE=trustmark but TrustMark is not importable (${tm.error ?? 'unknown error'}); using ${ALGORITHM}`,
     );
   }
-  if (!isPrismaAvailable()) {
+  if (!(await isDatabaseReachable())) {
     reasons.push('no database connection — watermark records are in-memory only');
   }
 
@@ -668,7 +668,7 @@ export async function getCapabilities(): Promise<WatermarkCapabilities> {
       detail: tm.error,
     },
     remote_fetch: { enabled: remoteFetchAllowed() },
-    database: { connected: isPrismaAvailable() },
+    database: { connected: (await isDatabaseReachable()) },
     degraded: reasons.length > 0,
     degraded_reasons: reasons,
   };
