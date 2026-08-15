@@ -22,7 +22,7 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "editor");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "editor");
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
 const PROJECT_ID = "00000000-0000-4000-8000-000000000001";
@@ -40,7 +40,7 @@ const VALID_SHOT_BODY = {
   sceneGraph: VALID_SCENE_GRAPH,
   prompt: "A hero walks toward the camera in a misty forest",
   styleRef: "cinematic-dark",
-  characterRefs: ["char-001", "char-002"],
+  characterRefs: ["22222222-2222-4222-8222-000000000001", "22222222-2222-4222-8222-000000000002"],
   durationMs: 3000,
   aspectRatio: "16:9",
 };
@@ -237,7 +237,7 @@ describe("Shot Approval & Lock Flow", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("approved");
-    expect(res.body.data.approvedBy).toBe("user-1");
+    expect(res.body.data.approvedBy).toBe("00000000-0000-4000-8000-000000000001");
     expect(res.body.data.approvedAt).toBeDefined();
   });
 

@@ -22,9 +22,9 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "editor");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "editor");
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
-const PROJECT_ID = "proj-001";
+const PROJECT_ID = "11111111-1111-4111-8111-000000000001";
 
 describe("UX Receipts (D9)", () => {
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe("UX Receipts (D9)", () => {
     const res = await request(app)
       .post("/api/v1/receipts")
       .set(AUTH)
-      .send({ userId: "user-1", action: "generation_completed", details: { projectId: PROJECT_ID, credits: 5 } });
+      .send({ userId: "00000000-0000-4000-8000-000000000001", action: "generation_completed", details: { projectId: PROJECT_ID, credits: 5 } });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -47,12 +47,12 @@ describe("UX Receipts (D9)", () => {
 
   // 2. List receipts with pagination
   it("GET /api/v1/receipts — returns paginated receipts", async () => {
-    await receiptService.createReceipt("user-1", "generation_started", {});
-    await receiptService.createReceipt("user-1", "generation_completed", { credits: 2 });
-    await receiptService.createReceipt("user-2", "export_completed", {});
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_started", {});
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_completed", { credits: 2 });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000002", "export_completed", {});
 
     const res = await request(app)
-      .get("/api/v1/receipts?userId=user-1&page=1&limit=10")
+      .get("/api/v1/receipts?userId=00000000-0000-4000-8000-000000000001&page=1&limit=10")
       .set(AUTH);
 
     expect(res.status).toBe(200);
@@ -63,7 +63,7 @@ describe("UX Receipts (D9)", () => {
 
   // 3. Get single receipt
   it("GET /api/v1/receipts/:id — returns a single receipt", async () => {
-    const receipt = await receiptService.createReceipt("user-1", "payment_processed", { amount: 9.99 });
+    const receipt = await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "payment_processed", { amount: 9.99 });
 
     const res = await request(app)
       .get(`/api/v1/receipts/${receipt.receiptId}`)
@@ -76,9 +76,9 @@ describe("UX Receipts (D9)", () => {
 
   // 4. Get receipts by project
   it("GET /api/v1/receipts/project/:projectId — returns project receipts", async () => {
-    await receiptService.createReceipt("user-1", "generation_completed", { projectId: PROJECT_ID });
-    await receiptService.createReceipt("user-1", "export_completed", { projectId: PROJECT_ID });
-    await receiptService.createReceipt("user-1", "generation_completed", { projectId: "other-proj" });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_completed", { projectId: PROJECT_ID });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "export_completed", { projectId: PROJECT_ID });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_completed", { projectId: "11111111-1111-4111-8111-000000000002" });
 
     const res = await request(app)
       .get(`/api/v1/receipts/project/${PROJECT_ID}`)
@@ -90,13 +90,13 @@ describe("UX Receipts (D9)", () => {
 
   // 5. Generate summary
   it("GET /api/v1/receipts/summary — returns activity summary", async () => {
-    await receiptService.createReceipt("user-1", "generation_completed", { credits: 3 });
-    await receiptService.createReceipt("user-1", "generation_completed", { credits: 5 });
-    await receiptService.createReceipt("user-1", "export_completed", {});
-    await receiptService.createReceipt("user-1", "consent_granted", {});
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_completed", { credits: 3 });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "generation_completed", { credits: 5 });
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "export_completed", {});
+    await receiptService.createReceipt("00000000-0000-4000-8000-000000000001", "consent_granted", {});
 
     const res = await request(app)
-      .get("/api/v1/receipts/summary?userId=user-1")
+      .get("/api/v1/receipts/summary?userId=00000000-0000-4000-8000-000000000001")
       .set(AUTH);
 
     expect(res.status).toBe(200);

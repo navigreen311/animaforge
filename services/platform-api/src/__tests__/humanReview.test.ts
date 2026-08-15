@@ -19,7 +19,7 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "admin");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "admin");
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
 describe("Human Review Service (N6)", () => {
@@ -138,7 +138,7 @@ describe("Human Review Service (N6)", () => {
     const res = await request(app)
       .post("/api/v1/support/tickets")
       .set(AUTH)
-      .send({ userId: "user-1", subject: "Cannot export", body: "Export fails on MP4", category: "technical" });
+      .send({ userId: "00000000-0000-4000-8000-000000000001", subject: "Cannot export", body: "Export fails on MP4", category: "technical" });
 
     expect(res.status).toBe(201);
     expect(res.body.data.subject).toBe("Cannot export");
@@ -148,7 +148,7 @@ describe("Human Review Service (N6)", () => {
 
   // 9. Respond to a support ticket
   it("POST /api/v1/support/tickets/:id/respond — adds response to ticket", async () => {
-    const ticket = humanReviewService.createSupportTicket("user-1", "Help", "Need help", "general");
+    const ticket = humanReviewService.createSupportTicket("00000000-0000-4000-8000-000000000001", "Help", "Need help", "general");
 
     const res = await request(app)
       .post(`/api/v1/support/tickets/${ticket.id}/respond`)
@@ -163,7 +163,7 @@ describe("Human Review Service (N6)", () => {
 
   // 10. Close a support ticket
   it("PUT /api/v1/support/tickets/:id/close — closes the ticket", async () => {
-    const ticket = humanReviewService.createSupportTicket("user-1", "Bug", "Found a bug", "bug");
+    const ticket = humanReviewService.createSupportTicket("00000000-0000-4000-8000-000000000001", "Bug", "Found a bug", "bug");
 
     const res = await request(app)
       .put(`/api/v1/support/tickets/${ticket.id}/close`)

@@ -19,7 +19,7 @@ function makeToken(sub: string, email: string, role: string): string {
   return header + "." + payload + "." + signature;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "editor");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "editor");
 const AUTH = { Authorization: "Bearer " + TOKEN };
 
 const SAMPLE_BRAND_KIT = {
@@ -95,7 +95,7 @@ describe("Brand Kit + Social Publishing (F4)", () => {
 
   it("GET /api/v1/social/calendar — returns publishing calendar for a month", async () => {
     socialService.publishToPlatform(
-      "user-1",
+      "00000000-0000-4000-8000-000000000001",
       "youtube",
       "https://cdn.animaforge.io/videos/v1.mp4",
       { title: "March Video" },
@@ -152,8 +152,8 @@ describe("Brand Kit + Social Publishing (F4)", () => {
   });
 
   it("GET /api/v1/social/cross-platform-report — aggregates metrics across platforms", async () => {
-    socialService.publishToPlatform("user-1", "youtube", "https://cdn.animaforge.io/v1.mp4", {});
-    socialService.publishToPlatform("user-1", "tiktok", "https://cdn.animaforge.io/v2.mp4", {});
+    socialService.publishToPlatform("00000000-0000-4000-8000-000000000001", "youtube", "https://cdn.animaforge.io/v1.mp4", {});
+    socialService.publishToPlatform("00000000-0000-4000-8000-000000000001", "tiktok", "https://cdn.animaforge.io/v2.mp4", {});
 
     const now = new Date();
     const period = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
@@ -172,7 +172,7 @@ describe("Brand Kit + Social Publishing (F4)", () => {
   });
 
   it("DELETE /api/v1/social/disconnect — revokes platform access", async () => {
-    socialService.connectPlatform("user-1", "vimeo", { accessToken: "vm-token" });
+    socialService.connectPlatform("00000000-0000-4000-8000-000000000001", "vimeo", { accessToken: "vm-token" });
 
     const res = await request(app)
       .delete("/api/v1/social/disconnect")
@@ -182,7 +182,7 @@ describe("Brand Kit + Social Publishing (F4)", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.disconnected).toBe(true);
 
-    const conns = socialService.getConnections("user-1");
+    const conns = socialService.getConnections("00000000-0000-4000-8000-000000000001");
     const vimeoConn = conns.find((c) => c.platform === "vimeo");
     expect(vimeoConn).toBeUndefined();
   });

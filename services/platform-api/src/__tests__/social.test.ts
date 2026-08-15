@@ -19,7 +19,7 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "editor");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "editor");
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
 describe("Social Publishing (F4)", () => {
@@ -52,8 +52,8 @@ describe("Social Publishing (F4)", () => {
   });
 
   it("GET /api/v1/social/connections — lists connected platforms", async () => {
-    socialService.connectPlatform("user-1", "youtube", { accessToken: "yt" });
-    socialService.connectPlatform("user-1", "tiktok", { accessToken: "tt" });
+    socialService.connectPlatform("00000000-0000-4000-8000-000000000001", "youtube", { accessToken: "yt" });
+    socialService.connectPlatform("00000000-0000-4000-8000-000000000001", "tiktok", { accessToken: "tt" });
 
     const res = await request(app)
       .get("/api/v1/social/connections")
@@ -65,7 +65,7 @@ describe("Social Publishing (F4)", () => {
   });
 
   it("DELETE /api/v1/social/disconnect — disconnects a platform", async () => {
-    socialService.connectPlatform("user-1", "instagram", { accessToken: "ig" });
+    socialService.connectPlatform("00000000-0000-4000-8000-000000000001", "instagram", { accessToken: "ig" });
 
     const res = await request(app)
       .delete("/api/v1/social/disconnect")
@@ -75,7 +75,7 @@ describe("Social Publishing (F4)", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.disconnected).toBe(true);
 
-    const conns = socialService.getConnections("user-1");
+    const conns = socialService.getConnections("00000000-0000-4000-8000-000000000001");
     expect(conns).toHaveLength(0);
   });
 
@@ -117,8 +117,8 @@ describe("Social Publishing (F4)", () => {
   });
 
   it("GET /api/v1/social/history — returns publication history", async () => {
-    socialService.publishToYouTube("user-1", "https://cdn.animaforge.io/v1.mp4", { title: "V1" });
-    socialService.publishToTikTok("user-1", "https://cdn.animaforge.io/v2.mp4", { title: "V2" });
+    socialService.publishToYouTube("00000000-0000-4000-8000-000000000001", "https://cdn.animaforge.io/v1.mp4", { title: "V1" });
+    socialService.publishToTikTok("00000000-0000-4000-8000-000000000001", "https://cdn.animaforge.io/v2.mp4", { title: "V2" });
 
     const res = await request(app)
       .get("/api/v1/social/history")

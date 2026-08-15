@@ -19,7 +19,7 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const TOKEN = makeToken("user-1", "test@animaforge.io", "editor");
+const TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "test@animaforge.io", "editor");
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
 const PROJECT_ID = "00000000-0000-4000-8000-000000000001";
@@ -35,7 +35,7 @@ describe("Review Workflow", () => {
     const res = await request(app)
       .post("/api/v1/reviews")
       .set(AUTH)
-      .send({ shotId: SHOT_ID, reviewerId: "user-1" });
+      .send({ shotId: SHOT_ID, reviewerId: "00000000-0000-4000-8000-000000000001" });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -48,7 +48,7 @@ describe("Review Workflow", () => {
 
   // 2. Submit approval
   it("PUT /api/v1/reviews/:id — approves a review", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
 
     const res = await request(app)
       .put(`/api/v1/reviews/${review.id}`)
@@ -62,7 +62,7 @@ describe("Review Workflow", () => {
 
   // 3. Submit changes_requested
   it("PUT /api/v1/reviews/:id — requests changes on a review", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
 
     const res = await request(app)
       .put(`/api/v1/reviews/${review.id}`)
@@ -76,12 +76,12 @@ describe("Review Workflow", () => {
 
   // 4. Add comments to a review
   it("POST /api/v1/reviews/:id/comments — adds a comment", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
 
     const res = await request(app)
       .post(`/api/v1/reviews/${review.id}/comments`)
       .set(AUTH)
-      .send({ authorId: "user-2", body: "Needs more contrast", timecodeMs: 1500 });
+      .send({ authorId: "00000000-0000-4000-8000-000000000002", body: "Needs more contrast", timecodeMs: 1500 });
 
     expect(res.status).toBe(201);
     expect(res.body.data.body).toBe("Needs more contrast");
@@ -92,13 +92,13 @@ describe("Review Workflow", () => {
 
   // 5. Threaded comments
   it("POST /api/v1/reviews/:id/comments — supports threading via parentId", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
-    const parent = await reviewService.addComment(review.id, "user-2", "Fix this frame");
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
+    const parent = await reviewService.addComment(review.id, "00000000-0000-4000-8000-000000000002", "Fix this frame");
 
     const res = await request(app)
       .post(`/api/v1/reviews/${review.id}/comments`)
       .set(AUTH)
-      .send({ authorId: "user-1", body: "Done, see updated render", parentId: parent!.id });
+      .send({ authorId: "00000000-0000-4000-8000-000000000001", body: "Done, see updated render", parentId: parent!.id });
 
     expect(res.status).toBe(201);
     expect(res.body.data.parentId).toBe(parent!.id);
@@ -106,8 +106,8 @@ describe("Review Workflow", () => {
 
   // 6. Review history for a shot
   it("GET /api/v1/reviews/shot/:shotId — returns review history ordered by round", async () => {
-    await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
-    await reviewService.createReview(SHOT_ID, "user-2", PROJECT_ID);
+    await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
+    await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000002", PROJECT_ID);
 
     const res = await request(app)
       .get(`/api/v1/reviews/shot/${SHOT_ID}`)
@@ -121,7 +121,7 @@ describe("Review Workflow", () => {
 
   // 7. Escalation flow: editor → director → final
   it("PUT /api/v1/reviews/:id/escalate — escalates from editor to director", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
     await reviewService.submitReview(review.id, "approved");
 
     const res = await request(app)
@@ -145,8 +145,8 @@ describe("Review Workflow", () => {
 
   // 8. Resolve a comment
   it("PUT /api/v1/comments/:id/resolve — resolves a comment", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
-    const comment = await reviewService.addComment(review.id, "user-2", "Fix color grading");
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
+    const comment = await reviewService.addComment(review.id, "00000000-0000-4000-8000-000000000002", "Fix color grading");
 
     const res = await request(app)
       .put(`/api/v1/comments/${comment!.id}/resolve`)
@@ -159,8 +159,8 @@ describe("Review Workflow", () => {
   // 9. Project-level aggregation
   it("GET /api/v1/reviews/project/:projectId — returns all reviews for a project", async () => {
     const shotId2 = "00000000-0000-4000-8000-000000000020";
-    await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
-    await reviewService.createReview(shotId2, "user-2", PROJECT_ID);
+    await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
+    await reviewService.createReview(shotId2, "00000000-0000-4000-8000-000000000002", PROJECT_ID);
     const r3 = await reviewService.createReview(SHOT_ID, "user-3", PROJECT_ID);
     await reviewService.submitReview(r3.id, "approved");
 
@@ -184,7 +184,7 @@ describe("Review Workflow", () => {
 
   // 10. Escalation fails if review is not approved
   it("PUT /api/v1/reviews/:id/escalate — fails if review is not approved", async () => {
-    const review = await reviewService.createReview(SHOT_ID, "user-1", PROJECT_ID);
+    const review = await reviewService.createReview(SHOT_ID, "00000000-0000-4000-8000-000000000001", PROJECT_ID);
     // review is still 'pending', not approved
 
     const res = await request(app)

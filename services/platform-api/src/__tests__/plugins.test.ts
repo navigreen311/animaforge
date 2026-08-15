@@ -19,8 +19,8 @@ function makeToken(sub: string, email: string, role: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
-const USER_TOKEN = makeToken("user-1", "dev@animaforge.io", "editor");
-const ADMIN_TOKEN = makeToken("admin-1", "admin@animaforge.io", "admin");
+const USER_TOKEN = makeToken("00000000-0000-4000-8000-000000000001", "dev@animaforge.io", "editor");
+const ADMIN_TOKEN = makeToken("00000000-0000-4000-8000-0000000000a1", "admin@animaforge.io", "admin");
 const USER_AUTH = { Authorization: `Bearer ${USER_TOKEN}` };
 const ADMIN_AUTH = { Authorization: `Bearer ${ADMIN_TOKEN}` };
 
@@ -61,7 +61,7 @@ describe("Plugin Certification System", () => {
     const res = await request(app)
       .put(`/api/v1/plugins/${reg.pluginId}/certify`)
       .set(ADMIN_AUTH)
-      .send({ reviewerId: "admin-1" });
+      .send({ reviewerId: "00000000-0000-4000-8000-0000000000a1" });
 
     expect(res.status).toBe(200);
     expect(res.body.data.certified).toBe(true);
@@ -76,7 +76,7 @@ describe("Plugin Certification System", () => {
     const res = await request(app)
       .put(`/api/v1/plugins/${reg.pluginId}/certify`)
       .set(USER_AUTH)
-      .send({ reviewerId: "user-1" });
+      .send({ reviewerId: "00000000-0000-4000-8000-000000000001" });
 
     expect(res.status).toBe(403);
     expect(res.body.success).toBe(false);
@@ -132,7 +132,7 @@ describe("Plugin Certification System", () => {
 
     expect(installRes.status).toBe(201);
     expect(installRes.body.data.pluginId).toBe(reg.pluginId);
-    expect(installRes.body.data.userId).toBe("user-1");
+    expect(installRes.body.data.userId).toBe("00000000-0000-4000-8000-000000000001");
 
     const uninstallRes = await request(app)
       .delete(`/api/v1/plugins/${reg.pluginId}/install`)
@@ -150,8 +150,8 @@ describe("Plugin Certification System", () => {
       id: "plugin-2",
       name: "Second Plugin",
     });
-    await pluginService.installPlugin("user-1", reg1.pluginId);
-    await pluginService.installPlugin("user-1", reg2.pluginId);
+    await pluginService.installPlugin("00000000-0000-4000-8000-000000000001", reg1.pluginId);
+    await pluginService.installPlugin("00000000-0000-4000-8000-000000000001", reg2.pluginId);
 
     const res = await request(app)
       .get("/api/v1/plugins/installed")
@@ -164,7 +164,7 @@ describe("Plugin Certification System", () => {
   // 8. Execute a plugin hook (requires certification)
   it("POST /api/v1/plugins/:id/execute — executes hook on certified plugin", async () => {
     const reg = await pluginService.registerPlugin(VALID_MANIFEST);
-    await pluginService.certifyPlugin(reg.pluginId, "admin-1");
+    await pluginService.certifyPlugin(reg.pluginId, "00000000-0000-4000-8000-0000000000a1");
 
     const res = await request(app)
       .post(`/api/v1/plugins/${reg.pluginId}/execute`)
@@ -194,7 +194,7 @@ describe("Plugin Certification System", () => {
   // 9. Revoke a plugin's certification
   it("PUT /api/v1/plugins/:id/revoke — revokes certification", async () => {
     const reg = await pluginService.registerPlugin(VALID_MANIFEST);
-    await pluginService.certifyPlugin(reg.pluginId, "admin-1");
+    await pluginService.certifyPlugin(reg.pluginId, "00000000-0000-4000-8000-0000000000a1");
 
     const res = await request(app)
       .put(`/api/v1/plugins/${reg.pluginId}/revoke`)
@@ -210,9 +210,9 @@ describe("Plugin Certification System", () => {
   // 10. Get plugin metrics
   it("GET /api/v1/plugins/:id/metrics — returns plugin metrics", async () => {
     const reg = await pluginService.registerPlugin(VALID_MANIFEST);
-    await pluginService.certifyPlugin(reg.pluginId, "admin-1");
-    await pluginService.installPlugin("user-1", reg.pluginId);
-    await pluginService.installPlugin("user-2", reg.pluginId);
+    await pluginService.certifyPlugin(reg.pluginId, "00000000-0000-4000-8000-0000000000a1");
+    await pluginService.installPlugin("00000000-0000-4000-8000-000000000001", reg.pluginId);
+    await pluginService.installPlugin("00000000-0000-4000-8000-000000000002", reg.pluginId);
     await pluginService.executePluginHook(reg.pluginId, "pre_generation", {});
 
     const res = await request(app)
