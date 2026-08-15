@@ -4,23 +4,23 @@ import { CreateSceneSchema, UpdateSceneSchema } from '../models/sceneSchemas.js'
 import * as apiResponse from '../utils/apiResponse.js';
 
 export const sceneController = {
-  create(req: Request, res: Response): void {
+  async create(req: Request, res: Response): Promise<void> {
     const { projectId } = req.params;
     const input = CreateSceneSchema.parse(req.body);
-    const scene = sceneService.create(projectId, input);
+    const scene = await sceneService.create(projectId, input);
     apiResponse.success(res, scene, 201);
   },
 
-  list(req: Request, res: Response): void {
+  async list(req: Request, res: Response): Promise<void> {
     const { projectId } = req.params;
-    const scenes = sceneService.listByProject(projectId);
+    const scenes = await sceneService.listByProject(projectId);
     apiResponse.success(res, scenes);
   },
 
-  update(req: Request, res: Response): void {
+  async update(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const input = UpdateSceneSchema.parse(req.body);
-    const scene = sceneService.update(id, input);
+    const scene = await sceneService.update(id, input);
     if (!scene) {
       apiResponse.error(res, 'NOT_FOUND', 'Scene not found', 404);
       return;
@@ -28,9 +28,9 @@ export const sceneController = {
     apiResponse.success(res, scene);
   },
 
-  delete(req: Request, res: Response): void {
+  async delete(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const deleted = sceneService.delete(id);
+    const deleted = await sceneService.delete(id);
     if (!deleted) {
       apiResponse.error(res, 'NOT_FOUND', 'Scene not found', 404);
       return;

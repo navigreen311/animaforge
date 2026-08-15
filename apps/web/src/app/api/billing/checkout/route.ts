@@ -1,17 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { credits } = body as { credits?: number };
+const handler = notImplemented(
+  '/api/billing/checkout',
+  'it requires Stripe credentials (STRIPE_SECRET_KEY), which are not configured',
+);
 
-  if (!credits || credits <= 0) {
-    return NextResponse.json({ error: 'A positive credits amount is required' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    checkoutUrl: '/mock-stripe-checkout',
-    credits,
-    estimatedPrice: Math.round(credits * 0.005 * 100) / 100,
-    currency: 'USD',
-  });
-}
+export const POST = handler;

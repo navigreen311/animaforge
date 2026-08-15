@@ -7,7 +7,7 @@ const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const input = CreateAssetSchema.parse(req.body);
-    const asset = assetService.createAsset(input, STUB_OWNER_ID);
+    const asset = await assetService.createAsset(input, STUB_OWNER_ID);
     res.status(201).json({ success: true, data: asset });
   } catch (err) {
     next(err);
@@ -17,7 +17,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { projectId, type, page, limit } = req.query;
-    const result = assetService.listAssets({
+    const result = await assetService.listAssets({
       projectId: projectId as string | undefined,
       type: type as string | undefined,
       page: page ? Number(page) : undefined,
@@ -39,7 +39,7 @@ export async function search(req: Request, res: Response, next: NextFunction) {
       });
       return;
     }
-    const result = assetService.searchAssets(q);
+    const result = await assetService.searchAssets(q);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);
@@ -48,7 +48,7 @@ export async function search(req: Request, res: Response, next: NextFunction) {
 
 export async function getById(req: Request, res: Response, next: NextFunction) {
   try {
-    const asset = assetService.getAssetById(req.params.id);
+    const asset = await assetService.getAssetById(req.params.id);
     if (!asset) {
       res.status(404).json({
         success: false,
@@ -64,7 +64,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    const deleted = assetService.deleteAsset(req.params.id);
+    const deleted = await assetService.deleteAsset(req.params.id);
     if (!deleted) {
       res.status(404).json({
         success: false,

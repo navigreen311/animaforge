@@ -23,6 +23,23 @@ import devportalRouter from './routes/devportal.js';
 import onboardingRouter from './routes/onboarding.js';
 import verifyRouter from './routes/verify.js';
 import cdnRouter from './routes/cdn.js';
+// Seven routers existed but were never mounted, so their endpoints were
+// unreachable in production even though each had a passing test suite (the
+// suites mount the router themselves). #58 needs several of them.
+import brandKitRouter from './routes/brandKit.js';
+import humanReviewRouter from './routes/humanReview.js';
+import pluginsRouter from './routes/plugins.js';
+import receiptsRouter from './routes/receipts.js';
+import reproducibilityRouter from './routes/reproducibility.js';
+import reviewsRouter from './routes/reviews.js';
+import worldBibleRouter from './routes/worldBible.js';
+// Console persistence (#58).
+import consoleResourcesRouter from './routes/console/resources.js';
+import consoleAccountRouter from './routes/console/account.js';
+import consoleProductionRouter from './routes/console/production.js';
+import consoleTeamRouter from './routes/console/team.js';
+import consoleMarketRouter from './routes/console/market.js';
+import consoleInsightsRouter from './routes/console/insights.js';
 
 const app = express();
 
@@ -47,6 +64,19 @@ app.use('/api/v1', devportalRouter);
 app.use('/api/v1', onboardingRouter);
 app.use('/api/v1', verifyRouter);
 app.use('/api/v1', cdnRouter);
+app.use('/api/v1', brandKitRouter);
+app.use('/api/v1', humanReviewRouter);
+app.use('/api/v1', pluginsRouter);
+app.use('/api/v1', receiptsRouter);
+app.use('/api/v1', reproducibilityRouter);
+app.use('/api/v1', reviewsRouter);
+app.use('/api/v1', worldBibleRouter);
+app.use('/api/v1', consoleResourcesRouter);
+app.use('/api/v1', consoleAccountRouter);
+app.use('/api/v1', consoleProductionRouter);
+app.use('/api/v1', consoleTeamRouter);
+app.use('/api/v1', consoleMarketRouter);
+app.use('/api/v1', consoleInsightsRouter);
 app.use('/api/v1', metricsRouter());
 
 // Global error handler (must be registered after routes)

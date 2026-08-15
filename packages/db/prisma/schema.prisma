@@ -787,6 +787,11 @@ model MarketplaceItem {
   purchaseCount Int      @default(0) @map("purchase_count")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  purchases MarketplacePurchase[]
+  reviews   MarketplaceReview[]
+  wishlists WishlistItem[]
+
   @@index([creatorId])
   @@index([status, featured])
   @@map("marketplace_items")
@@ -845,4 +850,267 @@ model Receipt {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@index([userId, createdAt])
   @@map("receipts")
+}
+
+// ============================================
+// CONSOLE PERSISTENCE (issue #58)
+// ============================================
+// Fourteen models the apps/web routes already claimed to manage but the schema
+// never defined. Each exists because a route says it does, not speculatively;
+// docs/persistence.md section 5 lists the route that claims each one.
+//
+// These use cuid() ids and String foreign keys, matching the newer half of this
+// schema (MarketplaceItem, CalendarEvent, Receipt) rather than the uuid/@db.Uuid
+// convention of the original core tables. Mixing is unfortunate, but changing
+// the core tables' key type is a separate migration with a data backfill.
+
+/// Folder tree for the asset library. Parent is null at the root.
+model AssetFolder {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  parentId  String?  @map("parent_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  parent   AssetFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children AssetFolder[] @relation("FolderTree")
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("asset_folders")
+}
+
+/// A generated avatar, optionally paired with a voice.
+model Avatar {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  name       String
+  status     String   @default("draft") // draft|processing|ready|failed
+  sourceType String   @default("upload") @map("source_type") // upload|photo|generated
+  previewUrl String?  @map("preview_url")
+  modelUrl   String?  @map("model_url")
+  voiceId    String?  @map("voice_id")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  voice Voice? @relation(fields: [voiceId], references: [id])
+
+  @@index([userId])
+  @@map("avatars")
+}
+
+/// A synthetic voice available for pairing with avatars and audio.
+model Voice {
+  id         String   @id @default(cuid())
+  /// Null for the built-in catalogue; set for a cloned voice owned by a user.
+  userId     String?  @map("user_id")
+  name       String
+  provider   String   @default("builtin")
+  language   String   @default("en-US")
+  gender     String?
+  previewUrl String?  @map("preview_url")
+  isCloned   Boolean  @default(false) @map("is_cloned")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  avatars Avatar[]
+
+  @@index([userId])
+  @@map("voices")
+}
+
+/// A reusable brand kit. Distinct from Project.brandKit, which is one project's
+/// inline snapshot; this is the library that a project's kit is assigned from.
+model BrandKit {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  orgId      String?  @map("org_id")
+  name       String
+  colors     Json     @default("[]")
+  fonts      Json     @default("[]")
+  logoUrl    String?  @map("logo_url")
+  sonicUrl   String?  @map("sonic_url")
+  /// Projects this kit has been assigned to.
+  projectIds String[] @default([]) @map("project_ids")
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId])
+  @@map("brand_kits")
+}
+
+/// A custom domain pointing at a published project.
+model CustomDomain {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  domain      String    @unique
+  status      String    @default("pending") // pending|verifying|active|failed
+  verifyToken String    @map("verify_token")
+  verifiedAt  DateTime? @map("verified_at") @db.Timestamptz
+  projectId   String?   @map("project_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId])
+  @@map("custom_domains")
+}
+
+/// A timeline marker on a project or shot.
+model Marker {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  projectId String   @map("project_id")
+  shotId    String?  @map("shot_id")
+  label     String
+  timeMs    Int      @map("time_ms")
+  color     String   @default("#7c3aed")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([projectId, timeMs])
+  @@map("markers")
+}
+
+/// A script document, and the source for push-to-timeline.
+model Script {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  projectId String?  @map("project_id")
+  title     String
+  format    String   @default("screenplay") // screenplay|storyboard|outline
+  content   String   @default("")
+  /// Parsed scene/beat structure, written by the generator.
+  structure Json     @default("{}")
+  status    String   @default("draft") // draft|final
+  wordCount Int      @default(0) @map("word_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("scripts")
+}
+
+/// One generated take of a shot. A shot keeps every take; the selected one is
+/// flagged rather than the others being deleted.
+model ShotTake {
+  id         String   @id @default(cuid())
+  shotId     String   @map("shot_id")
+  jobId      String?  @map("job_id")
+  takeNumber Int      @map("take_number")
+  status     String   @default("queued") // queued|running|complete|failed
+  outputUrl  String?  @map("output_url")
+  thumbUrl   String?  @map("thumb_url")
+  durationMs Int?     @map("duration_ms")
+  selected   Boolean  @default(false)
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([shotId, takeNumber])
+  @@map("shot_takes")
+}
+
+/// A pending invitation to join a team. Distinct from Membership, which is the
+/// accepted state.
+model TeamInvitation {
+  id         String    @id @default(cuid())
+  teamId     String?   @map("team_id")
+  orgId      String?   @map("org_id")
+  email      String
+  role       String    @default("member")
+  status     String    @default("pending") // pending|accepted|revoked|expired
+  token      String    @unique
+  invitedBy  String    @map("invited_by")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz
+  resentAt   DateTime? @map("resent_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([email, status])
+  @@index([teamId])
+  @@map("team_invitations")
+}
+
+/// An authenticated browser/device session, so the console can list and revoke.
+model UserSession {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  userAgent    String?   @map("user_agent")
+  ip           String?
+  location     String?
+  lastActiveAt DateTime  @default(now()) @map("last_active_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, revokedAt])
+  @@map("user_sessions")
+}
+
+/// A configured outbound webhook. WebhookDelivery records attempts against it.
+model WebhookEndpoint {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  url           String
+  events        String[]  @default([])
+  secret        String
+  active        Boolean   @default(true)
+  lastStatus    Int?      @map("last_status")
+  lastTriggered DateTime? @map("last_triggered") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId])
+  @@map("webhook_endpoints")
+}
+
+/// A completed marketplace purchase. Grants library access to the buyer.
+model MarketplacePurchase {
+  id         String   @id @default(cuid())
+  itemId     String   @map("item_id")
+  buyerId    String   @map("buyer_id")
+  sellerId   String   @map("seller_id")
+  priceCents Int      @map("price_cents")
+  /// Platform's cut in cents; the remainder is the seller's earnings.
+  feeCents   Int      @map("fee_cents")
+  status     String   @default("complete") // complete|refunded
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  item MarketplaceItem @relation(fields: [itemId], references: [id])
+
+  @@unique([itemId, buyerId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@map("marketplace_purchases")
+}
+
+/// A review left on a marketplace item.
+model MarketplaceReview {
+  id        String   @id @default(cuid())
+  itemId    String   @map("item_id")
+  authorId  String   @map("author_id")
+  rating    Int
+  body      String   @default("")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  item MarketplaceItem @relation(fields: [itemId], references: [id])
+
+  @@unique([itemId, authorId])
+  @@index([itemId])
+  @@map("marketplace_reviews")
+}
+
+/// A marketplace item a user has saved for later.
+model WishlistItem {
+  id        String   @id @default(cuid())
+  itemId    String   @map("item_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  item MarketplaceItem @relation(fields: [itemId], references: [id])
+
+  @@unique([itemId, userId])
+  @@index([userId])
+  @@map("wishlist_items")
 }

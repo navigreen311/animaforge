@@ -6,6 +6,7 @@ import { reproducibilityService } from '../services/reproducibilityService.js';
 import receiptsRouter from '../routes/receipts.js';
 import reproducibilityRouter from '../routes/reproducibility.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { resetFixtures } from './fixtures/factories.js';
 
 // Build a self-contained test app
 const app = express();
@@ -27,7 +28,10 @@ const AUTH = { Authorization: `Bearer ${TOKEN}` };
 const PROJECT_ID = '11111111-1111-4111-8111-000000000001';
 
 describe('UX Receipts (D9)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    // _clear() only empties the in-memory map; with DATABASE_URL set the
+    // service writes to Postgres, so rows survived into the next test.
+    await resetFixtures();
     receiptService._clear();
   });
 

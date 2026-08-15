@@ -1,20 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+const handler = notImplemented(
+  '/api/brand-kits/[id]/export',
+  'export rendering requires the export service and object storage, neither of which is configured',
+);
 
-  if (!id || !id.startsWith('bk_')) {
-    return NextResponse.json({ error: 'Brand kit not found' }, { status: 404 });
-  }
-
-  const body = await request.json().catch(() => ({}));
-  const format = (body as { format?: string }).format ?? 'pdf';
-
-  return NextResponse.json({
-    downloadUrl: '/mock-style-guide.pdf',
-    format,
-    kitName: 'AnimaForge Studio',
-    kitId: id,
-    generatedAt: new Date().toISOString(),
-  });
-}
+export const POST = handler;

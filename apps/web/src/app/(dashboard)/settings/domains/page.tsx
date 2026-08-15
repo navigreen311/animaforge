@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Globe, Plus, Trash2, RefreshCw, Lock, ExternalLink, Check, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { ResourceView } from '@/components/api/ResourceStates';
 
 interface Domain {
   id: string;
@@ -12,58 +14,83 @@ interface Domain {
   cnameTarget: string;
 }
 
-const MOCK: Domain[] = [
-  {
-    id: 'cd_001',
-    domain: 'reviews.acmecorp.com',
-    status: 'verified',
-    sslStatus: 'issued',
+/** The shape /api/custom-domains returns. */
+interface DomainList {
+  items: Array<{
+    id: string;
+    domain: string;
+    status: string;
+    verifyToken: string;
+    projectId: string | null;
+  }>;
+  total: number;
+}
+
+/**
+ * The API models verification as one `status`; this screen shows DNS and SSL
+ * separately. SSL is issued on verification, so it is derived rather than
+ * invented as a second stored field.
+ */
+function toRow(item: DomainList['items'][number]): Domain {
+  const verified = item.status === 'active';
+  return {
+    id: item.id,
+    domain: item.domain,
+    status: verified ? 'verified' : item.status === 'failed' ? 'failed' : 'pending',
+    sslStatus: verified ? 'issued' : item.status === 'failed' ? 'failed' : 'pending',
     cnameTarget: 'review.animaforge.com',
-  },
-  {
-    id: 'cd_002',
-    domain: 'preview.studio.io',
-    status: 'pending',
-    sslStatus: 'pending',
-    cnameTarget: 'review.animaforge.com',
-  },
-];
+  };
+}
 
 export default function CustomDomainsPage() {
-  const [domains, setDomains] = useState<Domain[]>(MOCK);
+  const state = useResource<DomainList>('/api/custom-domains');
   const [showAdd, setShowAdd] = useState(false);
   const [newDomain, setNewDomain] = useState('');
-  const isEnterprise = true; // mock
+  const [busy, setBusy] = useState(false);
+  const isEnterprise = true;
 
-  const handleAdd = () => {
-    if (!newDomain.trim()) return;
-    const d: Domain = {
-      id: `cd_${Date.now()}`,
-      domain: newDomain.trim(),
-      status: 'pending',
-      sslStatus: 'pending',
-      cnameTarget: 'review.animaforge.com',
-    };
-    setDomains([...domains, d]);
+  const handleAdd = async () => {
+    const domain = newDomain.trim();
+    if (!domain || busy) return;
+    setBusy(true);
+    const { error } = await mutate('/api/custom-domains', 'POST', { domain });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setNewDomain('');
     setShowAdd(false);
     toast.success('Domain added — configure DNS to verify');
+    state.reload();
   };
 
-  const handleVerify = (id: string) => {
-    toast.loading('Verifying CNAME...');
-    setTimeout(() => {
-      setDomains((ds) =>
-        ds.map((d) => (d.id === id ? { ...d, status: 'verified', sslStatus: 'issued' } : d)),
-      );
-      toast.dismiss();
-      toast.success('Domain verified — SSL issued');
-    }, 1500);
+  const handleVerify = async (id: string) => {
+    if (busy) return;
+    setBusy(true);
+    const { error } = await mutate(`/api/custom-domains/${id}`, 'PATCH', { status: 'verifying' });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    // Verification finishes when DNS propagates, so this reports what was
+    // started rather than claiming the domain is already verified.
+    toast.success('Verification started — this completes once DNS propagates');
+    state.reload();
   };
 
-  const handleDelete = (id: string) => {
-    setDomains((ds) => ds.filter((d) => d.id !== id));
+  const handleDelete = async (id: string) => {
+    if (busy) return;
+    setBusy(true);
+    const { error } = await mutate(`/api/custom-domains/${id}`, 'DELETE');
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success('Domain removed');
+    state.reload();
   };
 
   if (!isEnterprise) {
@@ -114,77 +141,89 @@ export default function CustomDomainsPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {domains.map((d) => (
-          <div
-            key={d.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: 16,
-              background: 'var(--bg-elevated)',
-              border: '0.5px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-            }}
-          >
-            <Globe size={18} color="var(--text-secondary)" />
-            <div style={{ flex: 1 }}>
-              <div style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 500 }}>
-                {d.domain}
-              </div>
-              <div style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
-                CNAME → {d.cnameTarget}
-              </div>
-            </div>
-            <span
-              style={{
-                fontSize: 11,
-                padding: '3px 8px',
-                borderRadius: 12,
-                background:
-                  d.status === 'verified' ? 'rgba(16,185,129,0.15)' : 'rgba(234,179,8,0.15)',
-                color: d.status === 'verified' ? '#10b981' : '#eab308',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              {d.status === 'verified' ? <Check size={10} /> : <Clock size={10} />}
-              {d.status}
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>SSL: {d.sslStatus}</span>
-            {d.status === 'pending' && (
-              <button
-                onClick={() => handleVerify(d.id)}
-                aria-label="Verify domain"
+        <ResourceView
+          state={state}
+          isEmpty={(d) => d.items.length === 0}
+          emptyTitle="No custom domains yet"
+          emptyHint="Add a domain to serve review portals from your own hostname."
+          loadingLabel="Loading domains…"
+        >
+          {(list) =>
+            list.items.map(toRow).map((d) => (
+              <div
+                key={d.id}
                 style={{
-                  padding: 6,
-                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: 16,
+                  background: 'var(--bg-elevated)',
                   border: '0.5px solid var(--border)',
-                  borderRadius: 6,
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
+                  borderRadius: 'var(--radius-md)',
                 }}
               >
-                <RefreshCw size={13} />
-              </button>
-            )}
-            <button
-              onClick={() => handleDelete(d.id)}
-              aria-label="Delete domain"
-              style={{
-                padding: 6,
-                background: 'transparent',
-                border: '0.5px solid var(--border)',
-                borderRadius: 6,
-                color: '#ef4444',
-                cursor: 'pointer',
-              }}
-            >
-              <Trash2 size={13} />
-            </button>
-          </div>
-        ))}
+                <Globe size={18} color="var(--text-secondary)" />
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 500 }}>
+                    {d.domain}
+                  </div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
+                    CNAME → {d.cnameTarget}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 12,
+                    background:
+                      d.status === 'verified' ? 'rgba(16,185,129,0.15)' : 'rgba(234,179,8,0.15)',
+                    color: d.status === 'verified' ? '#10b981' : '#eab308',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  {d.status === 'verified' ? <Check size={10} /> : <Clock size={10} />}
+                  {d.status}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  SSL: {d.sslStatus}
+                </span>
+                {d.status === 'pending' && (
+                  <button
+                    onClick={() => handleVerify(d.id)}
+                    aria-label="Verify domain"
+                    style={{
+                      padding: 6,
+                      background: 'transparent',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 6,
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <RefreshCw size={13} />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(d.id)}
+                  aria-label="Delete domain"
+                  style={{
+                    padding: 6,
+                    background: 'transparent',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: 6,
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))
+          }
+        </ResourceView>
 
         {!showAdd ? (
           <button

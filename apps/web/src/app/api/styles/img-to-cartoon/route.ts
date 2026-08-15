@@ -1,20 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { imageUrl, style, strength } = body as {
-    imageUrl?: string;
-    style?: string;
-    strength?: number;
-  };
+const handler = notImplemented(
+  '/api/styles/img-to-cartoon',
+  'it requires the AI inference service (services/ai-api), which this change does not touch',
+);
 
-  if (!imageUrl) {
-    return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    resultUrl: '/mock-cartoon-result.png',
-    style: style ?? 'default',
-    strength: strength ?? 0.8,
-  });
-}
+export const POST = handler;

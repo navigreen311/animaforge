@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { isDatabaseReachable, requirePrisma } from '../db.js';
+import { isUuid } from '../utils/uuid.js';
 import type { Shot, CreateShotInput, UpdateShotInput } from '../models/shotSchemas.js';
 
 import type { Prisma } from '@prisma/client';
@@ -8,11 +9,23 @@ const shots = new Map<string, Shot>();
 
 export const shotService = {
   async create(sceneId: string, projectId: string, input: CreateShotInput): Promise<Shot> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(sceneId)) {
+      // `shot_number` is NOT NULL and CreateShotInput does not carry it, so
+      // every Postgres insert failed with "Argument `shotNumber` is missing" —
+      // shot creation against a real database had never worked. The number is
+      // the shot's position within its scene, so derive it from the scene's
+      // current highest rather than asking the caller for it.
+      const highest = await requirePrisma().shot.findFirst({
+        where: { sceneId },
+        orderBy: { shotNumber: 'desc' },
+        select: { shotNumber: true },
+      });
+
       return requirePrisma().shot.create({
         data: {
           sceneId,
           projectId,
+          shotNumber: (highest?.shotNumber ?? 0) + 1,
           sceneGraph: input.sceneGraph as any,
           prompt: input.prompt,
           styleRef: input.styleRef,
@@ -46,7 +59,7 @@ export const shotService = {
   },
 
   async listByProject(projectId: string): Promise<Shot[]> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(projectId)) {
       const results = await requirePrisma().shot.findMany({
         where: { projectId },
         orderBy: { createdAt: 'desc' },
@@ -62,7 +75,7 @@ export const shotService = {
   },
 
   async getById(id: string): Promise<Shot | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const shot = await requirePrisma().shot.findUnique({
         where: { id },
         include: {
@@ -77,7 +90,7 @@ export const shotService = {
   },
 
   async update(id: string, input: UpdateShotInput): Promise<Shot | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === 'locked') return undefined;
@@ -112,7 +125,7 @@ export const shotService = {
   },
 
   async approve(id: string, userId: string): Promise<Shot | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === 'locked') return undefined;
@@ -145,7 +158,7 @@ export const shotService = {
   },
 
   async reject(id: string, rejectionReason?: string): Promise<Shot | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
       if (existing.status === 'locked') return undefined;
@@ -178,7 +191,7 @@ export const shotService = {
   },
 
   async lock(id: string): Promise<Shot | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
 
@@ -203,7 +216,7 @@ export const shotService = {
   },
 
   async delete(id: string): Promise<boolean> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return false;
       if (existing.status === 'locked') return false;

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { isDatabaseReachable, requirePrisma } from '../db.js';
+import { isUuid } from '../utils/uuid.js';
 import type { Project, CreateProjectInput, UpdateProjectInput } from '../models/projectSchemas.js';
 
 import type { Prisma } from '@prisma/client';
@@ -88,7 +89,7 @@ export const projectService = {
   },
 
   async getById(id: string): Promise<Project | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const project = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
         include: {
@@ -107,7 +108,7 @@ export const projectService = {
   },
 
   async update(id: string, input: UpdateProjectInput): Promise<Project | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
@@ -134,7 +135,7 @@ export const projectService = {
   },
 
   async softDelete(id: string): Promise<boolean> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
@@ -164,7 +165,7 @@ export const projectService = {
     id: string,
     worldBible: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
@@ -191,7 +192,7 @@ export const projectService = {
     id: string,
     brandKit: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });
@@ -218,7 +219,7 @@ export const projectService = {
     id: string,
     styleLock: Record<string, unknown>,
   ): Promise<Project | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().project.findUnique({
         where: { id, deletedAt: null },
       });

@@ -1,9 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { proxy } from '@/lib/api/proxy';
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
-  return NextResponse.json({
-    success: true,
-    message: 'Job cancelled',
-    jobId: params.id,
-  });
-}
+export const DELETE = proxy('DELETE', '/api/v1/jobs/[id]');

@@ -1,10 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { proxy } from '@/lib/api/proxy';
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
-
-  return NextResponse.json({
-    message: `Session ${id} revoked`,
-    revokedAt: new Date().toISOString(),
-  });
-}
+export const DELETE = proxy('DELETE', '/api/v1/users/me/sessions/[id]');

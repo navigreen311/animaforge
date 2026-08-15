@@ -19,8 +19,12 @@ export const SceneGraphSchema = z.object({
 export const CreateShotSchema = z.object({
   sceneGraph: SceneGraphSchema,
   prompt: z.string().min(1, 'Prompt is required').max(2000),
-  styleRef: z.string().min(1).optional(),
-  characterRefs: z.array(z.string()).default([]),
+  // Both columns are @db.Uuid FKs (style_packs.id, characters.id). Accepting
+  // any string here pushed the failure down to Postgres, which answered
+  // "Inconsistent column data: Error creating UUID" as a 500. Validating at the
+  // boundary turns a bad reference into a 400 that names the field.
+  styleRef: z.string().uuid('styleRef must be a style pack UUID').optional(),
+  characterRefs: z.array(z.string().uuid('characterRefs must be character UUIDs')).default([]),
   durationMs: z.number().int().positive(),
   aspectRatio: z.string().regex(/^\d+:\d+$/, 'Aspect ratio must be in format W:H'),
 });

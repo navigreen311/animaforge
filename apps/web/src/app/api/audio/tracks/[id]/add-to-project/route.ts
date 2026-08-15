@@ -1,18 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await request.json();
-  const { projectId } = body as { projectId?: string };
+const handler = notImplemented(
+  '/api/audio/tracks/[id]/add-to-project',
+  'moving a track between projects has no endpoint yet',
+);
 
-  if (!projectId) {
-    return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    success: true,
-    message: 'Track added to project timeline',
-    trackId: id,
-    projectId,
-  });
-}
+export const POST = handler;

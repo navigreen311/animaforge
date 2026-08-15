@@ -6,6 +6,7 @@ import assetsRouter from '../routes/assets.js';
 import { clearCharacters } from '../services/characterService.js';
 import { clearAssets } from '../services/assetService.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { resetFixtures, seedStubOwner } from './fixtures/factories.js';
 
 const app = express();
 app.use(express.json());
@@ -34,9 +35,13 @@ const validAsset = {
   metadata: { width: 1920, height: 1080 },
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetFixtures();
   clearCharacters();
   clearAssets();
+  // characterController and assetController both attribute writes to
+  // STUB_OWNER_ID, a non-null FK to users (#73).
+  await seedStubOwner();
 });
 
 // ─── CHARACTER TESTS ────────────────────────────────────────
@@ -61,7 +66,13 @@ describe('POST /api/v1/characters', () => {
       .post('/api/v1/characters')
       .send({ ...validCharacter, styleMode: 'watercolor' });
 
-    expect(res.status).toBe(500); // Zod error falls through to error handler
+    // Was asserting 500 with the comment "Zod error falls through to error
+    // handler" -- codifying the bug rather than the contract. A schema failure
+    // is the caller's mistake; the error handler now translates ZodError to a
+    // 400 that names the offending field.
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toContain('styleMode');
   });
 });
 

@@ -1,24 +1,8 @@
-import { NextResponse } from 'next/server';
+import { notImplemented } from '@/lib/api/proxy';
 
-const MOCK_USAGE = {
-  totalCalls: 1247,
-  byEndpoint: {
-    generate: 890,
-    characters: 240,
-    export: 117,
-  },
-  rateLimit: {
-    current: 84,
-    max: 100,
-    windowMs: 60000,
-    resetsAt: new Date(Date.now() + 30000).toISOString(),
-  },
-  period: {
-    start: '2026-03-01T00:00:00Z',
-    end: '2026-03-31T23:59:59Z',
-  },
-};
+const handler = notImplemented(
+  '/api/api-keys/usage',
+  'per-key usage counters are not recorded; see docs/persistence.md section 7',
+);
 
-export async function GET() {
-  return NextResponse.json(MOCK_USAGE);
-}
+export const GET = handler;
