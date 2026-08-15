@@ -29,8 +29,19 @@ export const SEED_USER_IDS = [
   '00000000-0000-4000-8000-000000000020',
 ] as const;
 
-/** Projects the fixtures attach characters, scenes and shots to. */
+/**
+ * Projects the fixtures attach characters, scenes and shots to.
+ *
+ * The first three overlap with SEED_USER_IDS on purpose. The suites reuse the
+ * same UUID constants across entity kinds -- scenes-shots.test.ts uses
+ * `00000000-0000-4000-8000-000000000001` as its PROJECT_ID while other suites
+ * use it as a user id -- and since these are different tables, one row in each
+ * is what the fixtures actually need.
+ */
 export const SEED_PROJECT_IDS = [
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-0000000000a1',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   '11111111-1111-4111-8111-000000000001',
   '11111111-1111-4111-8111-000000000002',
