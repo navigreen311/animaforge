@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 
 // ── Types ───────────────────────────────────────────────────────────
 export type ReceiptAction =
@@ -58,9 +58,12 @@ export const receiptService = {
       throw new Error(`Invalid action: ${action}`);
     }
 
-    if (prisma) {
+    if (await isDatabaseReachable()) {
       try {
-        const row = await (prisma as any).receipt?.create({
+        // There is no Receipt model in packages/db/prisma/schema.prisma, so
+        // `.receipt` is undefined and the optional call yields undefined —
+        // this has always fallen through to the in-memory store below.
+        const row = await (requirePrisma() as any).receipt?.create({
           data: { userId, action, details, status: "confirmed" },
         });
         if (row) {

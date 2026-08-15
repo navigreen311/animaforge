@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { isDatabaseReachable, requirePrisma } from "../db.js";
 import type { Asset, CreateAssetInput } from "../models/assetSchemas.js";
 
 import type { Prisma } from "@prisma/client";
@@ -11,11 +11,11 @@ export function clearAssets(): void {
 }
 
 export async function createAsset(input: CreateAssetInput, ownerId: string): Promise<Asset> {
-  if (prisma) {
+  if (await isDatabaseReachable()) {
     // The Asset model has no ownerId column (id, projectId, type, name, url,
     // metadata, createdAt). Writing one would fail at runtime, so ownership is
     // recorded in the Json metadata field instead.
-    return prisma.asset.create({
+    return requirePrisma().asset.create({
       data: {
         ...input,
         metadata: { ...(input.metadata ?? {}), ownerId },
@@ -47,19 +47,19 @@ export async function listAssets(query: ListAssetsQuery) {
   const page = Math.max(query.page ?? 1, 1);
   const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
 
-  if (prisma) {
+  if (await isDatabaseReachable()) {
     const where: Record<string, unknown> = {};
     if (query.projectId) where.projectId = query.projectId;
     if (query.type) where.type = query.type;
 
     const [items, total] = await Promise.all([
-      prisma.asset.findMany({
+      requirePrisma().asset.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.asset.count({ where }),
+      requirePrisma().asset.count({ where }),
     ]);
 
     return { items: items as unknown as Asset[], total, page, limit };
@@ -83,8 +83,8 @@ export async function listAssets(query: ListAssetsQuery) {
 }
 
 export async function getAssetById(id: string): Promise<Asset | undefined> {
-  if (prisma) {
-    const asset = await prisma.asset.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const asset = await requirePrisma().asset.findUnique({ where: { id } });
     return (asset ?? undefined) as Asset | undefined;
   }
 
@@ -93,11 +93,11 @@ export async function getAssetById(id: string): Promise<Asset | undefined> {
 }
 
 export async function deleteAsset(id: string): Promise<boolean> {
-  if (prisma) {
-    const existing = await prisma.asset.findUnique({ where: { id } });
+  if (await isDatabaseReachable()) {
+    const existing = await requirePrisma().asset.findUnique({ where: { id } });
     if (!existing) return false;
 
-    await prisma.asset.delete({ where: { id } });
+    await requirePrisma().asset.delete({ where: { id } });
     return true;
   }
 
@@ -106,8 +106,8 @@ export async function deleteAsset(id: string): Promise<boolean> {
 }
 
 export async function searchAssets(q: string) {
-  if (prisma) {
-    const items = await prisma.asset.findMany({
+  if (await isDatabaseReachable()) {
+    const items = await requirePrisma().asset.findMany({
       where: {
         name: {
           contains: q,
