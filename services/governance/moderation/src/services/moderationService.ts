@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { prisma, isPrismaAvailable } from "../db";
+import { prisma, isPrismaAvailable, requirePrisma } from "../db";
 import type {
   ModerateRequest,
   ModerateResponse,
@@ -66,7 +66,7 @@ export async function moderate(req: ModerateRequest): Promise<ModerateResponse> 
   const logRecord: ModerationLogRecord = { id: uuidv4(), job_id: req.job_id, timestamp: new Date().toISOString(), result, category, score, details };
   try {
     if (await isPrismaAvailable()) {
-      await prisma.moderationLog.create({ data: { jobId: req.job_id, result, category: category === "safe" ? null : category, score, details: { message: details, content_type: req.content_type } } });
+      await requirePrisma().moderationLog.create({ data: { jobId: req.job_id, result, category: category === "safe" ? null : category, score, details: { message: details, content_type: req.content_type } } });
     } else { appendLogInMemory(logRecord); }
   } catch { appendLogInMemory(logRecord); }
   return { result, category, score, details };
@@ -85,7 +85,7 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
   const reason_code = allowed ? "NONE" : reasons.join(";");
   try {
     if (await isPrismaAvailable()) {
-      await prisma.moderationLog.create({ data: { jobId: `precheck-${uuidv4()}`, result: allowed ? "pass" : "block", category: blockedCategories[0] ?? null, score: allowed ? 0.0 : 1.0, details: { type: "pre_check", prompt: req.prompt, reason_code, blocked_categories: blockedCategories } } });
+      await requirePrisma().moderationLog.create({ data: { jobId: `precheck-${uuidv4()}`, result: allowed ? "pass" : "block", category: blockedCategories[0] ?? null, score: allowed ? 0.0 : 1.0, details: { type: "pre_check", prompt: req.prompt, reason_code, blocked_categories: blockedCategories } } });
     }
   } catch { /* pre-check logging is best-effort */ }
   return { allowed, reason_code, blocked_categories: blockedCategories };
@@ -94,8 +94,19 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
 export async function getModerationLog(jobId: string): Promise<ModerationLogRecord[]> {
   try {
     if (await isPrismaAvailable()) {
-      const rows = await prisma.moderationLog.findMany({ where: { jobId }, orderBy: { createdAt: "asc" } });
-      return rows.map((r) => ({ id: r.id, job_id: r.jobId, timestamp: r.createdAt.toISOString(), result: r.result as ModerationLogRecord["result"], category: (r.category ?? "safe") as ModerationCategory, score: r.score ?? 0, details: typeof r.details === "object" && r.details !== null ? ((r.details as Record<string, unknown>).message as string) ?? JSON.stringify(r.details) : String(r.details) }));
+      const rows = await requirePrisma().moderationLog.findMany({ where: { jobId }, orderBy: { createdAt: "asc" } });
+      // Typed from the fields read here rather than the generated Prisma
+      // model, so the check does not depend on `prisma generate` having run.
+      type ModerationLogRow = {
+        id: string;
+        jobId: string;
+        createdAt: Date;
+        result: string;
+        category: string | null;
+        score: number | null;
+        details: unknown;
+      };
+      return rows.map((r: ModerationLogRow) => ({ id: r.id, job_id: r.jobId, timestamp: r.createdAt.toISOString(), result: r.result as ModerationLogRecord["result"], category: (r.category ?? "safe") as ModerationCategory, score: r.score ?? 0, details: typeof r.details === "object" && r.details !== null ? ((r.details as Record<string, unknown>).message as string) ?? JSON.stringify(r.details) : String(r.details) }));
     }
   } catch { /* fall through to in-memory */ }
   return logStore.get(jobId) ?? [];

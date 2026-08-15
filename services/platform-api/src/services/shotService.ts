@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../db.js";
 import type { Shot, CreateShotInput, UpdateShotInput } from "../models/shotSchemas.js";
 
+import type { Prisma } from "@prisma/client";
 // In-memory fallback store
 const shots = new Map<string, Shot>();
 
@@ -19,7 +20,8 @@ export const shotService = {
           durationMs: input.durationMs,
           aspectRatio: input.aspectRatio,
           status: "draft",
-        },
+          // sceneGraph and characterRefs land in Json columns.
+        } as Prisma.ShotUncheckedCreateInput,
       }) as unknown as Shot;
     }
 

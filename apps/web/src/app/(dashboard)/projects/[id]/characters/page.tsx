@@ -22,7 +22,7 @@ export default function CharactersPage() {
     create,
     update,
     remove,
-    selectCharacter,
+    select,
     startTwinCreation,
   } = useCharacters(projectId);
 
@@ -33,7 +33,18 @@ export default function CharactersPage() {
   const filteredCharacters = filterByStyleMode(styleFilter);
 
   const handleCreate = async (data: Partial<Character>) => {
-    await create(data);
+    await create({
+      // The form cannot know these; the page can.
+      projectId,
+      description: '',
+      referenceImages: [],
+      traits: [],
+      ...data,
+      // Narrowed after the spread because the form types them as optional.
+      name: data.name ?? '',
+      styleMode: data.styleMode ?? 'realistic',
+      isDigitalTwin: data.isDigitalTwin ?? false,
+    });
     setShowCreateModal(false);
   };
 
@@ -127,7 +138,7 @@ export default function CharactersPage() {
               character={character}
               onEdit={(c) => setEditingCharacter(c)}
               onDelete={handleDelete}
-              onClick={(id) => selectCharacter(id)}
+              onClick={(id) => select(id)}
             />
           ))}
         </div>
@@ -165,12 +176,19 @@ export default function CharactersPage() {
       {/* Character Detail Slide-over */}
       {activeCharacter && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => selectCharacter(null)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => select(null)} />
           <div className="relative w-full max-w-xl overflow-y-auto bg-gray-900 p-6 shadow-2xl">
             <CharacterDetail
               character={activeCharacter}
-              onTwinCreate={startTwinCreation}
-              onClose={() => selectCharacter(null)}
+              onTwinCreate={(id, photos) =>
+                // Nothing uploads these files: apps/web has no working presign
+                // endpoint (see issue #58), so only the filenames are recorded.
+                startTwinCreation(
+                  id,
+                  photos.map((file) => file.name),
+                )
+              }
+              onClose={() => select(null)}
             />
           </div>
         </div>

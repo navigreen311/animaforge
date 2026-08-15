@@ -1,6 +1,6 @@
 import { Worker, Job, Queue } from "bullmq";
 import { redisConnection, allQueues } from "../queues/index.js";
-import { prisma } from "../db.js";
+import { prisma, requirePrisma } from "../db.js";
 
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const EXPIRED_JOB_AGE_HOURS = 72;
@@ -13,7 +13,7 @@ let usePrisma = true;
 
 async function cleanExpiredJobs(): Promise<number> {
   const cutoff = new Date(Date.now() - EXPIRED_JOB_AGE_HOURS * 3600000);
-  if (usePrisma) { try { return (await prisma.generationJob.deleteMany({ where: { status: { in: ["failed","complete"] }, completedAt: { lt: cutoff } } })).count; } catch { usePrisma = false; } }
+  if (usePrisma) { try { return (await requirePrisma().generationJob.deleteMany({ where: { status: { in: ["failed","complete"] }, completedAt: { lt: cutoff } } })).count; } catch { usePrisma = false; } }
   return 0;
 }
 

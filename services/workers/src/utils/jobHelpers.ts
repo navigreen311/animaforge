@@ -1,6 +1,7 @@
 import { Job } from "bullmq";
-import { prisma } from "../db.js";
+import { prisma, requirePrisma } from "../db.js";
 
+import type { Prisma } from "@prisma/client";
 /* ---------- Types ---------- */
 
 export type JobStatus = "queued" | "running" | "complete" | "failed";
@@ -58,10 +59,14 @@ let usePrisma = true;
 /**
  * Attempt a Prisma operation; fall back to in-memory on failure.
  */
-async function withFallback<T>(
+// The two branches genuinely return different shapes: the Prisma path returns
+// a row, the in-memory path returns whatever the local store holds (sometimes
+// nothing). Forcing both to one type parameter claimed a symmetry that does not
+// exist, so the fallback gets its own.
+async function withFallback<T, F = T>(
   prismaFn: () => Promise<T>,
-  memoryFn: () => T,
-): Promise<T> {
+  memoryFn: () => F,
+): Promise<T | F> {
   if (!usePrisma) return memoryFn();
 
   try {
@@ -103,14 +108,14 @@ export function calculateProgress(
 export async function createJobRecord(data: CreateJobData) {
   return withFallback(
     () =>
-      prisma.generationJob.create({
+      requirePrisma().generationJob.create({
         data: {
           ...(data.id ? { id: data.id } : {}),
           projectId: data.projectId,
           userId: data.userId,
           jobType: data.jobType,
           modelId: data.modelId ?? "default",
-          inputParams: data.inputParams,
+          inputParams: data.inputParams as Prisma.InputJsonValue,
           tier: data.tier ?? "preview",
           shotId: data.shotId,
           status: "queued",
@@ -143,7 +148,7 @@ export async function createJobRecord(data: CreateJobData) {
 export async function getJob(jobId: string) {
   return withFallback(
     () =>
-      prisma.generationJob.findUnique({
+      requirePrisma().generationJob.findUnique({
         where: { id: jobId },
       }),
     () => memoryStore.get(jobId) ?? null,
@@ -179,7 +184,7 @@ export async function updateJobStatus(
   // Persist to database
   await withFallback(
     () =>
-      prisma.generationJob.update({
+      requirePrisma().generationJob.update({
         where: { id: jobId },
         data: {
           status,
@@ -217,7 +222,7 @@ export async function markComplete(
 ): Promise<void> {
   await withFallback(
     () =>
-      prisma.generationJob.update({
+      requirePrisma().generationJob.update({
         where: { id: jobId },
         data: {
           status: "complete",
@@ -253,7 +258,7 @@ export async function markComplete(
 export async function markFailed(jobId: string, error: string): Promise<void> {
   await withFallback(
     () =>
-      prisma.generationJob.update({
+      requirePrisma().generationJob.update({
         where: { id: jobId },
         data: {
           status: "failed",

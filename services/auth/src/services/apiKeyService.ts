@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import prisma from "../db";
+import { requirePrisma } from "../db";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,7 +46,7 @@ export async function createApiKey(
   const rawKey = generateRawKey();
   const keyHash = hashKey(rawKey);
 
-  const row = await prisma.apiKey.create({
+  const row = await requirePrisma().apiKey.create({
     data: {
       userId,
       name,
@@ -82,7 +83,7 @@ export async function validateApiKey(
 } | null> {
   const keyHash = hashKey(raw);
 
-  const row = await prisma.apiKey.findUnique({ where: { keyHash } });
+  const row = await requirePrisma().apiKey.findUnique({ where: { keyHash } });
   if (!row) return null;
 
   // Check expiration
@@ -100,12 +101,24 @@ export async function validateApiKey(
  * List all API keys belonging to a user (masked).
  */
 export async function listApiKeys(userId: string): Promise<ApiKeyRecord[]> {
-  const rows = await prisma.apiKey.findMany({
+  const rows = await requirePrisma().apiKey.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((row) => ({
+  // Typed from the fields this function reads rather than from the generated
+  // Prisma model: CI does not run `prisma generate`, so that type is not
+  // guaranteed to exist at type-check time.
+  type ApiKeyRow = {
+    id: string;
+    name: string;
+    scopes: string[];
+    keyHash: string;
+    createdAt: Date;
+    expiresAt: Date | null;
+  };
+
+  return rows.map((row: ApiKeyRow) => ({
     id: row.id,
     name: row.name,
     scopes: row.scopes,
@@ -124,7 +137,7 @@ export async function revokeApiKey(
   userId: string,
 ): Promise<boolean> {
   try {
-    await prisma.apiKey.deleteMany({
+    await requirePrisma().apiKey.deleteMany({
       where: { id, userId },
     });
     return true;

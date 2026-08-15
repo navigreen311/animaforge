@@ -5,27 +5,27 @@ import { CreateShotSchema, UpdateShotSchema } from "../models/shotSchemas.js";
 import * as apiResponse from "../utils/apiResponse.js";
 
 export const shotController = {
-  create(req: Request, res: Response): void {
+  async create(req: Request, res: Response): Promise<void> {
     const { sceneId } = req.params;
-    const scene = sceneService.getById(sceneId);
+    const scene = await sceneService.getById(sceneId);
     if (!scene) {
       apiResponse.error(res, "NOT_FOUND", "Scene not found", 404);
       return;
     }
     const input = CreateShotSchema.parse(req.body);
-    const shot = shotService.create(sceneId, scene.projectId, input);
+    const shot = await shotService.create(sceneId, scene.projectId, input);
     apiResponse.success(res, shot, 201);
   },
 
-  listByProject(req: Request, res: Response): void {
+  async listByProject(req: Request, res: Response): Promise<void> {
     const { projectId } = req.params;
-    const shots = shotService.listByProject(projectId);
+    const shots = await shotService.listByProject(projectId);
     apiResponse.success(res, shots);
   },
 
-  getById(req: Request, res: Response): void {
+  async getById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const shot = shotService.getById(id);
+    const shot = await shotService.getById(id);
     if (!shot) {
       apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
       return;
@@ -33,9 +33,9 @@ export const shotController = {
     apiResponse.success(res, shot);
   },
 
-  update(req: Request, res: Response): void {
+  async update(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const shot = shotService.getById(id);
+    const shot = await shotService.getById(id);
     if (!shot) {
       apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
       return;
@@ -45,7 +45,7 @@ export const shotController = {
       return;
     }
     const input = UpdateShotSchema.parse(req.body);
-    const updated = shotService.update(id, input);
+    const updated = await shotService.update(id, input);
     apiResponse.success(res, updated);
   },
 
@@ -81,20 +81,20 @@ export const shotController = {
     apiResponse.success(res, rejected);
   },
 
-  lock(req: Request, res: Response): void {
+  async lock(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const shot = shotService.getById(id);
+    const shot = await shotService.getById(id);
     if (!shot) {
       apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
       return;
     }
-    const locked = shotService.lock(id);
+    const locked = await shotService.lock(id);
     apiResponse.success(res, locked);
   },
 
-  delete(req: Request, res: Response): void {
+  async delete(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const shot = shotService.getById(id);
+    const shot = await shotService.getById(id);
     if (!shot) {
       apiResponse.error(res, "NOT_FOUND", "Shot not found", 404);
       return;
@@ -103,7 +103,7 @@ export const shotController = {
       apiResponse.error(res, "LOCKED", "Shot is locked and cannot be deleted", 409);
       return;
     }
-    shotService.delete(id);
+    await shotService.delete(id);
     apiResponse.success(res, { deleted: true });
   },
 };

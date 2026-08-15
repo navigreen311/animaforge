@@ -11,6 +11,7 @@ import {
   Save,
   Type,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type AnimationIn = 'None' | 'Fade' | 'Slide' | 'Pop';
 type Trigger = 'Manual' | 'Event' | 'Schedule';
@@ -22,7 +23,7 @@ type Position =
 interface OverlayTemplate {
   id: string;
   name: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: LucideIcon;
   defaultPosition: Position;
 }
 

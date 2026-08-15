@@ -6,21 +6,26 @@ import type {
   UpdateProjectInput,
 } from "../models/projectSchemas.js";
 
+import type { Prisma } from "@prisma/client";
 // In-memory fallback store
 const projects = new Map<string, Project>();
 
 export const projectService = {
-  async create(input: CreateProjectInput): Promise<Project> {
-    if (prisma) {
+  async create(input: CreateProjectInput, ownerId?: string): Promise<Project> {
+    // Project.ownerId is a required column. It was never passed here, so this
+    // create could only ever have failed at runtime. With no owner there is
+    // nothing valid to write, so fall through to the in-memory store.
+    if (prisma && ownerId) {
       return prisma.project.create({
         data: {
+          ownerId,
           title: input.title,
           description: input.description ?? "",
           status: "active",
           worldBible: {},
           brandKit: {},
           styleLock: {},
-        },
+        } as Prisma.ProjectUncheckedCreateInput,
       }) as unknown as Project;
     }
 

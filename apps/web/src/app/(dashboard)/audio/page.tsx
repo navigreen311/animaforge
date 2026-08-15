@@ -432,7 +432,9 @@ export default function AudioStudioPage() {
   const [bpmRangeOn, setBpmRangeOn] = useState(false);
   const [bpmMin, setBpmMin] = useState('100');
   const [bpmMax, setBpmMax] = useState('140');
-  const [selectedProject, setSelectedProject] = useState(PROJECTS[0].id);
+  // Without the explicit parameter, useState infers the literal type of
+  // PROJECTS[0].id ('proj-1'), so the setter rejects every other project.
+  const [selectedProject, setSelectedProject] = useState<string>(PROJECTS[0].id);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);

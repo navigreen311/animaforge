@@ -579,14 +579,12 @@ export default function CharactersPage() {
 
                       {/* Voice icon */}
                       {character.voiceId && (
-                        <Volume2
-                          size={13}
-                          style={{
-                            color: 'var(--text-tertiary)',
-                            flexShrink: 0,
-                          }}
+                        <span
                           title={character.voiceName ?? 'Voice paired'}
-                        />
+                          style={{ display: 'inline-flex', flexShrink: 0 }}
+                        >
+                          <Volume2 size={13} style={{ color: 'var(--text-tertiary)' }} />
+                        </span>
                       )}
                     </div>
 

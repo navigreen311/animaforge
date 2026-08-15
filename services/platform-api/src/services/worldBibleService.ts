@@ -179,7 +179,7 @@ export async function updateSection(
     throw err;
   }
 
-  (bible.sections as Record<string, unknown>)[section] = data;
+  (bible.sections as unknown as Record<string, unknown>)[section] = data;
   bible.updatedAt = new Date().toISOString();
   return bible;
 }

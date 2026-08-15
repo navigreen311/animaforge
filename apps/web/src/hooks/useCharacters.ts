@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useCharacterStore } from '@/stores/characterStore';
-import type { Character } from '@/types';
+import type { Character, StyleMode } from '@/types';
 
 /**
  * Custom hook wrapping the character store with convenience methods
@@ -48,7 +48,7 @@ export function useCharacters(projectId: string | undefined) {
   );
 
   const select = useCallback(
-    (id: string) => {
+    (id: string | null) => {
       setActiveCharacter(id);
     },
     [setActiveCharacter],
@@ -72,12 +72,22 @@ export function useCharacters(projectId: string | undefined) {
   /** Original (non-twin) characters only. */
   const originals = projectCharacters.filter((c) => !c.isDigitalTwin);
 
+  /** Project characters narrowed to one style mode, or all of them. */
+  const filterByStyleMode = useCallback(
+    (mode: StyleMode | 'all') =>
+      mode === 'all'
+        ? projectCharacters
+        : projectCharacters.filter((c) => c.styleMode === mode),
+    [projectCharacters],
+  );
+
   return {
     characters: projectCharacters,
     twins,
     originals,
     activeCharacter,
     isLoading,
+    filterByStyleMode,
     create,
     update,
     remove,

@@ -29,7 +29,7 @@ import {
   runGovernancePipeline,
   type GovernancePipelineJob,
 } from "./governancePipeline.js";
-import { prisma } from "../db.js";
+import { prisma, requirePrisma } from "../db.js";
 
 /* ---------- Constants ---------- */
 
@@ -156,7 +156,7 @@ let usePrisma = true;
 async function findCachedResult(inputHash: string): Promise<GenerationResult | null> {
   if (!usePrisma) return null;
   try {
-    const existing = await prisma.generationJob.findFirst({
+    const existing = await requirePrisma().generationJob.findFirst({
       where: { inputHash, status: "complete" },
       orderBy: { completedAt: "desc" },
     });

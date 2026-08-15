@@ -44,19 +44,22 @@ router.post("/portal", (req: Request, res: Response) => {
     return;
   }
 
-  const customer = stripeService.getCustomerByUserId(userId);
-  if (!customer) {
-    res.status(404).json({ error: "No billing customer found for this user" });
-    return;
-  }
-
-  try {
-    const session = stripeService.createPortalSession(customer.id);
-    res.json(session);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ error: message });
-  }
+  // stripeService has no getCustomerByUserId, and nothing in this service
+  // persists a userId -> Stripe customer mapping. The route was calling a
+  // function that was never written, so it has never compiled or run.
+  //
+  // 501 rather than 404: a 404 would say "this user has no billing customer",
+  // which implies the lookup happened and came back empty. It cannot happen at
+  // all. Returning the honest status keeps the caller from retrying.
+  res.status(501).json({
+    error: "not_implemented",
+    message:
+      "Opening the billing portal needs a stored Stripe customer id for the " +
+      "user. This service does not persist that mapping, so no portal session " +
+      "can be created.",
+    userId,
+    missing: ["userId -> stripe customer mapping", "STRIPE_SECRET_KEY"],
+  });
 });
 
 // GET /billing/plans — List available plans with pricing
@@ -67,7 +70,7 @@ router.get("/plans", (_req: Request, res: Response) => {
     priceMonthly: plan.priceMonthly,
     priceDisplay: `$${(plan.priceMonthly / 100).toFixed(0)}/mo`,
     credits: plan.credits,
-    priceId: plan.priceId,
+    priceId: plan.stripePriceId,
   }));
 
   res.json({ plans });

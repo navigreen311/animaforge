@@ -32,22 +32,11 @@ export const reviewService = {
     reviewerId: string,
     projectId: string = "00000000-0000-4000-8000-000000000001",
   ): Promise<Review> {
-    if (prisma) {
-      try {
-        return await prisma.review.create({
-          data: {
-            shotId,
-            reviewerId,
-            projectId,
-            status: "pending",
-            approvalLevel: "editor",
-            round: 1,
-          },
-        }) as unknown as Review;
-      } catch {
-        // Prisma not set up -- fall through to in-memory
-      }
-    }
+    // No Postgres path. packages/db/prisma/schema.prisma has no Review model —
+    // ShotReview exists but is a different thing (token-based external review
+    // with reviewerName/action/comment, not an internal approval round). The
+    // block that used to be here targeted a table that has never existed, so
+    // it always threw and fell through to the in-memory store below.
 
     // Determine round number based on existing reviews for this shot
     const existing = Array.from(reviews.values()).filter(
@@ -82,19 +71,7 @@ export const reviewService = {
     status: ReviewStatus,
     reviewComments?: string,
   ): Promise<Review | undefined> {
-    if (prisma) {
-      try {
-        const existing = await prisma.review.findUnique({ where: { id: reviewId } });
-        if (!existing) return undefined;
-        const updated = await prisma.review.update({
-          where: { id: reviewId },
-          data: { status, comments: reviewComments, updatedAt: new Date() },
-        });
-        return updated as unknown as Review;
-      } catch {
-        // fall through
-      }
-    }
+    // No Review model — see createReview above.
 
     const review = reviews.get(reviewId);
     if (!review) return undefined;

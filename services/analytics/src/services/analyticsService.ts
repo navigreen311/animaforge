@@ -219,13 +219,13 @@ export async function getProjectAnalytics(
         ch.query({ query: `SELECT avg(JSONExtractFloat(metadata, ${Q("renderTime")})) as avg_rt FROM events WHERE project_id = {projectId:String} AND JSONHas(metadata, ${Q("renderTime")})${clause}`, query_params: baseParams, format: "JSONEachRow" }),
       ]);
 
-    const count = await countRes.json<{ cnt: string }[]>();
-    const quality = await qualityRes.json<{ avg_q: number }[]>();
-    const credits = await creditsRes.json<{ total: number }[]>();
-    const types = await typeRes.json<{ gtype: string; cnt: string }[]>();
-    const styles = await styleRes.json<{ style: string; cnt: string }[]>();
-    const daily = await dailyRes.json<{ day: string; cnt: string }[]>();
-    const render = await renderRes.json<{ avg_rt: number }[]>();
+    const count = await countRes.json<{ cnt: string }>();
+    const quality = await qualityRes.json<{ avg_q: number }>();
+    const credits = await creditsRes.json<{ total: number }>();
+    const types = await typeRes.json<{ gtype: string; cnt: string }>();
+    const styles = await styleRes.json<{ style: string; cnt: string }>();
+    const daily = await dailyRes.json<{ day: string; cnt: string }>();
+    const render = await renderRes.json<{ avg_rt: number }>();
 
     const byType = { video: 0, audio: 0, avatar: 0, style: 0 };
     for (const t of types) {
@@ -339,11 +339,11 @@ export async function getUserAnalytics(
       ch.query({ query: `SELECT toDate(timestamp) as date, type, project_id FROM events WHERE user_id = {userId:String} AND type IN ${genTypes}${clause} ORDER BY timestamp DESC LIMIT 50`, query_params: baseParams, format: "JSONEachRow" }),
     ]);
 
-    const proj = await projRes.json<{ cnt: string }[]>();
-    const gen = await genRes.json<{ cnt: string }[]>();
-    const cred = await credRes.json<{ total: number }[]>();
-    const styleRows = await styleRes.json<{ style: string; cnt: string }[]>();
-    const hist = await histRes.json<{ date: string; type: string; project_id: string }[]>();
+    const proj = await projRes.json<{ cnt: string }>();
+    const gen = await genRes.json<{ cnt: string }>();
+    const cred = await credRes.json<{ total: number }>();
+    const styleRows = await styleRes.json<{ style: string; cnt: string }>();
+    const hist = await histRes.json<{ date: string; type: string; project_id: string }>();
 
     const creditsUsed = Number(cred[0]?.total || 0);
 
@@ -438,14 +438,14 @@ export async function getPlatformAnalytics(
         ch.query({ query: `SELECT toHour(timestamp) as hr, count() as cnt FROM events WHERE 1=1${clause} GROUP BY hr ORDER BY hr`, query_params: params, format: "JSONEachRow" }),
       ]);
 
-    const totalUsers = await totalUsersRes.json<{ cnt: string }[]>();
-    const active = await activeRes.json<{ cnt: string }[]>();
-    const jobs = await jobsRes.json<{ cnt: string }[]>();
-    const statuses = await statusRes.json<{ type: string; cnt: string }[]>();
-    const rev = await revRes.json<{ total: number }[]>();
-    const creators = await creatorsRes.json<{ user_id: string; cnt: string }[]>();
-    const styles = await stylesRes.json<{ style: string; cnt: string }[]>();
-    const hours = await hoursRes.json<{ hr: number; cnt: string }[]>();
+    const totalUsers = await totalUsersRes.json<{ cnt: string }>();
+    const active = await activeRes.json<{ cnt: string }>();
+    const jobs = await jobsRes.json<{ cnt: string }>();
+    const statuses = await statusRes.json<{ type: string; cnt: string }>();
+    const rev = await revRes.json<{ total: number }>();
+    const creators = await creatorsRes.json<{ user_id: string; cnt: string }>();
+    const styles = await stylesRes.json<{ style: string; cnt: string }>();
+    const hours = await hoursRes.json<{ hr: number; cnt: string }>();
 
     const jobsByStatus: Record<string, number> = {};
     for (const s of statuses) jobsByStatus[s.type] = Number(s.cnt);
@@ -552,11 +552,11 @@ export async function getContentAnalytics(
       ch.query({ query: `SELECT count() as cnt FROM events WHERE project_id = {projectId:String}`, query_params: p, format: "JSONEachRow" }),
     ]);
 
-    const views = Number((await viewRes.json<{ cnt: string }[]>())[0]?.cnt || 0);
-    const shares = Number((await shareRes.json<{ cnt: string }[]>())[0]?.cnt || 0);
-    const exports = Number((await exportRes.json<{ cnt: string }[]>())[0]?.cnt || 0);
-    const avgWt = (await watchRes.json<{ avg_wt: number }[]>())[0]?.avg_wt || 0;
-    const total = Number((await totalRes.json<{ cnt: string }[]>())[0]?.cnt || 0);
+    const views = Number((await viewRes.json<{ cnt: string }>())[0]?.cnt || 0);
+    const shares = Number((await shareRes.json<{ cnt: string }>())[0]?.cnt || 0);
+    const exports = Number((await exportRes.json<{ cnt: string }>())[0]?.cnt || 0);
+    const avgWt = (await watchRes.json<{ avg_wt: number }>())[0]?.avg_wt || 0;
+    const total = Number((await totalRes.json<{ cnt: string }>())[0]?.cnt || 0);
 
     const interactions = views + shares + exports;
     const engagementRate = total > 0 ? Math.round((interactions / total) * 10000) / 10000 : 0;
@@ -617,7 +617,7 @@ export async function getRetentionCohorts(
       format: "JSONEachRow",
     });
 
-    const rows = await res.json<{ period: string; users: string; retained: string }[]>();
+    const rows = await res.json<{ period: string; users: string; retained: string }>();
 
     return {
       cohorts: rows.map((r) => {

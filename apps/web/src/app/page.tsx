@@ -15,8 +15,6 @@ import {
   Eye,
   Download,
   Star,
-  Github,
-  Twitter,
 } from 'lucide-react';
 
 /* ── Data ── */

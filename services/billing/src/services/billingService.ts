@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../db";
+import { requirePrisma } from "../db";
 import type {
   Subscription,
   CreditBalance,
@@ -59,7 +60,7 @@ export async function subscribeTier(
   tier: SubscriptionTier,
 ): Promise<Subscription> {
   try {
-    const existing = await prisma.subscription.findFirst({
+    const existing = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -70,7 +71,7 @@ export async function subscribeTier(
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-    const sub = await prisma.subscription.create({
+    const sub = await requirePrisma().subscription.create({
       data: {
         userId,
         stripeId: `local_${uuidv4()}`,
@@ -81,7 +82,7 @@ export async function subscribeTier(
     });
 
     // Initialize usage meter for current period
-    await prisma.usageMeter.upsert({
+    await requirePrisma().usageMeter.upsert({
       where: { userId_period: { userId, period: currentPeriod() } },
       create: { userId, period: currentPeriod(), credits: 0 },
       update: {},
@@ -158,7 +159,7 @@ export async function getSubscription(
   userId: string,
 ): Promise<Subscription | undefined> {
   try {
-    const sub = await prisma.subscription.findFirst({
+    const sub = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -182,7 +183,7 @@ export async function changeTier(
   newTier: SubscriptionTier,
 ): Promise<Subscription> {
   try {
-    const existing = await prisma.subscription.findFirst({
+    const existing = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -190,7 +191,7 @@ export async function changeTier(
       throw new Error("No active subscription found for user");
     }
 
-    const updated = await prisma.subscription.update({
+    const updated = await requirePrisma().subscription.update({
       where: { id: existing.id },
       data: { tier: newTier },
     });
@@ -237,7 +238,7 @@ export async function cancelSubscription(
   userId: string,
 ): Promise<Subscription> {
   try {
-    const existing = await prisma.subscription.findFirst({
+    const existing = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
@@ -245,7 +246,7 @@ export async function cancelSubscription(
       throw new Error("No active subscription found for user");
     }
 
-    const updated = await prisma.subscription.update({
+    const updated = await requirePrisma().subscription.update({
       where: { id: existing.id },
       data: { status: "cancelled" },
     });
@@ -289,7 +290,7 @@ export async function deductCredits(
   const tierCredits = TIER_CREDITS[tier] ?? 0;
 
   try {
-    const meter = await prisma.usageMeter.upsert({
+    const meter = await requirePrisma().usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: 0 },
       update: {},
@@ -300,7 +301,7 @@ export async function deductCredits(
       throw new Error("Insufficient credits");
     }
 
-    const updated = await prisma.usageMeter.update({
+    const updated = await requirePrisma().usageMeter.update({
       where: { id: meter.id },
       data: { credits: meter.credits + cost },
     });
@@ -355,13 +356,13 @@ export async function getBalance(userId: string): Promise<CreditBalance> {
   const period = currentPeriod();
 
   try {
-    const sub = await prisma.subscription.findFirst({
+    const sub = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await prisma.usageMeter.findUnique({
+    const meter = await requirePrisma().usageMeter.findUnique({
       where: { userId_period: { userId, period } },
     });
 
@@ -408,13 +409,13 @@ export async function topUp(
   const period = currentPeriod();
 
   try {
-    const sub = await prisma.subscription.findFirst({
+    const sub = await requirePrisma().subscription.findFirst({
       where: { userId, status: "active" },
     });
 
     const tierCredits = sub ? (TIER_CREDITS[sub.tier] ?? 0) : 0;
 
-    const meter = await prisma.usageMeter.upsert({
+    const meter = await requirePrisma().usageMeter.upsert({
       where: { userId_period: { userId, period } },
       create: { userId, period, credits: -credits },
       update: { credits: { decrement: credits } },
