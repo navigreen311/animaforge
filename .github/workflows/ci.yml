@@ -291,18 +291,25 @@ jobs:
 
       - run: npm ci
 
-      # NOTE: this job provisions Postgres and sets DATABASE_URL but does not
-      # use either. Without `prisma generate` the client stub throws on
+      # Without these two steps the job provisions Postgres and sets
+      # DATABASE_URL but uses neither: the ungenerated client stub throws on
       # construction, db.ts catches it, and every service falls back to its
-      # in-memory store — so this suite tests the in-memory implementation, not
-      # Postgres, despite the job name.
+      # in-memory store — so the suite tested the in-memory implementation
+      # despite the job name.
       #
-      # Generating the client and running `prisma migrate deploy` here was tried
-      # and reverted (#67, #69): the migration history is ~82 columns behind
-      # schema.prisma across 17 tables, so the real database is missing columns
-      # like characters.is_digital_twin and shots.shot_number, and the suite
-      # goes from 27 failures to 62. Re-enable once that drift is closed — see
-      # #68.
+      # Enabling them was tried and reverted twice (#67, #69) because the
+      # migration history encoded a different datamodel than schema.prisma and
+      # the real database came up missing columns. That history was squashed to
+      # a verified baseline in #71, so `migrate deploy` now reproduces
+      # schema.prisma exactly — checked by .github/workflows/schema-drift.yml.
+      - name: Generate the Prisma client
+        run: npx prisma generate --schema packages/db/prisma/schema.prisma
+
+      - name: Apply migrations
+        run: cd packages/db && npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_test
+
       - name: Run API tests with coverage
         run: cd services/platform-api && npx vitest run --coverage --reporter=json --outputFile=coverage-report.json
         env:
