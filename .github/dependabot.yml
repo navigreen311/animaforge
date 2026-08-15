@@ -9,14 +9,14 @@ version: 2
 #
 # Routine npm/pip *version* updates are deliberately switched off. When they
 # were enabled this file opened 10+ PRs within minutes, including breaking
-# majors nobody had asked for (vitest 1→4, express 4→5, expo 50→57,
-# typescript-eslint 7→8). That churn is not worth it while the repo still has
-# a lint/type-check backlog and parallel feature work in flight.
+# majors nobody had asked for (vitest 1 to 4, express 4 to 5, expo 50 to 57,
+# typescript-eslint 7 to 8). That churn is not worth it while the repo still
+# has a lint/type-check backlog and parallel feature work in flight.
 #
 # `open-pull-requests-limit: 0` disables version-update PRs for an ecosystem.
 # It does NOT disable security updates: those are driven by Dependabot alerts
-# in repo settings (Settings → Code security → Dependabot security updates) and
-# keep raising PRs for actual advisories. That is the intended behaviour here —
+# in repo settings (Settings > Code security > Dependabot security updates) and
+# keep raising PRs for actual advisories. That is the intended behaviour here:
 # security fixes get through, routine churn does not.
 #
 # To re-enable routine npm updates later, raise the limit and add an `ignore`
@@ -45,7 +45,11 @@ updates:
       interval: weekly
       day: monday
       time: "06:00"
-    # Security updates only — see scope note above.
+    cooldown:
+      # Still applies with version updates off: security-advisory PRs come
+      # through regardless, and a freshly published fix can itself be bad.
+      default-days: 7
+    # Security updates only - see scope note above.
     open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
@@ -58,7 +62,11 @@ updates:
       interval: weekly
       day: monday
       time: "06:00"
-    # Security updates only — see scope note above.
+    cooldown:
+      # Still applies with version updates off: security-advisory PRs come
+      # through regardless, and a freshly published fix can itself be bad.
+      default-days: 7
+    # Security updates only - see scope note above.
     open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
