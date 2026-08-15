@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import { sceneController } from '../controllers/sceneController.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -16,14 +17,14 @@ router.post(
   requireAuth,
   validate(ProjectParamsSchema, 'params'),
   validate(CreateSceneSchema, 'body'),
-  sceneController.create,
+  asyncHandler(sceneController.create),
 );
 
 router.get(
   '/projects/:projectId/scenes',
   requireAuth,
   validate(ProjectParamsSchema, 'params'),
-  sceneController.list,
+  asyncHandler(sceneController.list),
 );
 
 router.put(
@@ -31,14 +32,14 @@ router.put(
   requireAuth,
   validate(SceneParamsSchema, 'params'),
   validate(UpdateSceneSchema, 'body'),
-  sceneController.update,
+  asyncHandler(sceneController.update),
 );
 
 router.delete(
   '/scenes/:id',
   requireAuth,
   validate(SceneParamsSchema, 'params'),
-  sceneController.delete,
+  asyncHandler(sceneController.delete),
 );
 
 export default router;

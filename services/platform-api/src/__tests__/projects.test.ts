@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { projectService } from '../services/projectService.js';
+import { resetFixtures, seedProject, seedTestUser } from './fixtures/factories.js';
 import projectsRouter from '../routes/projects.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 
@@ -21,8 +22,9 @@ const TOKEN = makeToken('00000000-0000-4000-8000-000000000001', 'test@animaforge
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
 describe('Projects CRUD', () => {
-  beforeEach(() => {
-    projectService.resetStore();
+  beforeEach(async () => {
+    await resetFixtures();
+    await seedTestUser();
   });
 
   it('POST /api/v1/projects — creates a project', async () => {
@@ -53,9 +55,9 @@ describe('Projects CRUD', () => {
   });
 
   it('GET /api/v1/projects — lists projects with pagination', async () => {
-    projectService.create({ title: 'Project A' });
-    projectService.create({ title: 'Project B' });
-    projectService.create({ title: 'Project C' });
+    await seedProject({ title: 'Project A' });
+    await seedProject({ title: 'Project B' });
+    await seedProject({ title: 'Project C' });
 
     const res = await request(app).get('/api/v1/projects?page=1&limit=2').set(AUTH);
 
@@ -67,7 +69,7 @@ describe('Projects CRUD', () => {
   });
 
   it('GET /api/v1/projects/:id — returns a single project', async () => {
-    const project = projectService.create({ title: 'Lookup' });
+    const { project } = await seedProject({ title: 'Lookup' });
 
     const res = await request(app).get(`/api/v1/projects/${project.id}`).set(AUTH);
 
@@ -83,7 +85,7 @@ describe('Projects CRUD', () => {
   });
 
   it('PUT /api/v1/projects/:id — updates a project', async () => {
-    const project = projectService.create({ title: 'Original' });
+    const { project } = await seedProject({ title: 'Original' });
 
     const res = await request(app)
       .put(`/api/v1/projects/${project.id}`)
@@ -95,7 +97,7 @@ describe('Projects CRUD', () => {
   });
 
   it('DELETE /api/v1/projects/:id — soft-deletes a project', async () => {
-    const project = projectService.create({ title: 'To Delete' });
+    const { project } = await seedProject({ title: 'To Delete' });
 
     const res = await request(app).delete(`/api/v1/projects/${project.id}`).set(AUTH);
 
@@ -108,7 +110,7 @@ describe('Projects CRUD', () => {
   });
 
   it('PUT /api/v1/projects/:id/world-bible — updates world bible', async () => {
-    const project = projectService.create({ title: 'WB Project' });
+    const { project } = await seedProject({ title: 'WB Project' });
 
     const res = await request(app)
       .put(`/api/v1/projects/${project.id}/world-bible`)
@@ -121,7 +123,7 @@ describe('Projects CRUD', () => {
   });
 
   it('PUT /api/v1/projects/:id/brand-kit — updates brand kit', async () => {
-    const project = projectService.create({ title: 'BK Project' });
+    const { project } = await seedProject({ title: 'BK Project' });
 
     const res = await request(app)
       .put(`/api/v1/projects/${project.id}/brand-kit`)
@@ -133,7 +135,7 @@ describe('Projects CRUD', () => {
   });
 
   it('PUT /api/v1/projects/:id/style-lock — updates style lock', async () => {
-    const project = projectService.create({ title: 'SL Project' });
+    const { project } = await seedProject({ title: 'SL Project' });
 
     const res = await request(app)
       .put(`/api/v1/projects/${project.id}/style-lock`)
@@ -152,8 +154,8 @@ describe('Projects CRUD', () => {
   });
 
   it('excludes soft-deleted projects from list', async () => {
-    const project = projectService.create({ title: 'Will Delete' });
-    projectService.create({ title: 'Will Keep' });
+    const { project } = await seedProject({ title: 'Will Delete' });
+    await seedProject({ title: 'Will Keep' });
     projectService.softDelete(project.id);
 
     const res = await request(app).get('/api/v1/projects').set(AUTH);

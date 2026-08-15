@@ -11,21 +11,21 @@ import {
 import * as apiResponse from '../utils/apiResponse.js';
 
 export const projectController = {
-  create(req: Request, res: Response): void {
+  async create(req: Request, res: Response): Promise<void> {
     const input = createProjectSchema.parse(req.body);
-    const project = projectService.create(input, req.user?.id);
+    const project = await projectService.create(input, req.user?.id);
     apiResponse.success(res, project, 201);
   },
 
-  list(req: Request, res: Response): void {
+  async list(req: Request, res: Response): Promise<void> {
     const query = listQuerySchema.parse(req.query);
-    const result = projectService.list(query.page, query.limit, query.status);
+    const result = await projectService.list(query.page, query.limit, query.status);
     apiResponse.success(res, result);
   },
 
-  getById(req: Request, res: Response): void {
+  async getById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const project = projectService.getById(id);
+    const project = await projectService.getById(id);
     if (!project) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
@@ -33,10 +33,10 @@ export const projectController = {
     apiResponse.success(res, project);
   },
 
-  update(req: Request, res: Response): void {
+  async update(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const input = updateProjectSchema.parse(req.body);
-    const project = projectService.update(id, input);
+    const project = await projectService.update(id, input);
     if (!project) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
@@ -44,9 +44,9 @@ export const projectController = {
     apiResponse.success(res, project);
   },
 
-  delete(req: Request, res: Response): void {
+  async delete(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const deleted = projectService.softDelete(id);
+    const deleted = await projectService.softDelete(id);
     if (!deleted) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
@@ -54,10 +54,10 @@ export const projectController = {
     apiResponse.success(res, { deleted: true });
   },
 
-  updateWorldBible(req: Request, res: Response): void {
+  async updateWorldBible(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const data = worldBibleSchema.parse(req.body);
-    const project = projectService.updateWorldBible(id, data);
+    const project = await projectService.updateWorldBible(id, data);
     if (!project) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
@@ -65,10 +65,10 @@ export const projectController = {
     apiResponse.success(res, project);
   },
 
-  updateBrandKit(req: Request, res: Response): void {
+  async updateBrandKit(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const data = brandKitSchema.parse(req.body);
-    const project = projectService.updateBrandKit(id, data);
+    const project = await projectService.updateBrandKit(id, data);
     if (!project) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
@@ -76,10 +76,10 @@ export const projectController = {
     apiResponse.success(res, project);
   },
 
-  updateStyleLock(req: Request, res: Response): void {
+  async updateStyleLock(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const data = styleLockSchema.parse(req.body);
-    const project = projectService.updateStyleLock(id, data);
+    const project = await projectService.updateStyleLock(id, data);
     if (!project) {
       apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;

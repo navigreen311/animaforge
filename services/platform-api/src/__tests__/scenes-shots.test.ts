@@ -3,6 +3,7 @@ import request from 'supertest';
 import express from 'express';
 import { sceneService } from '../services/sceneService.js';
 import { shotService } from '../services/shotService.js';
+import { resetFixtures, seedProject, seedScene, seedTestUser } from './fixtures/factories.js';
 import scenesRouter from '../routes/scenes.js';
 import shotsRouter from '../routes/shots.js';
 import { errorHandler } from '../middleware/errorHandler.js';
@@ -25,7 +26,9 @@ function makeToken(sub: string, email: string, role: string): string {
 const TOKEN = makeToken('00000000-0000-4000-8000-000000000001', 'test@animaforge.io', 'editor');
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
 
-const PROJECT_ID = '00000000-0000-4000-8000-000000000001';
+// Seeded per test in beforeEach. It used to be a hardcoded id that no row
+// ever backed, which is why every scene insert broke against Postgres (#73).
+let PROJECT_ID: string;
 
 const VALID_SCENE_GRAPH = {
   subject: 'Hero character',
@@ -46,9 +49,10 @@ const VALID_SHOT_BODY = {
 };
 
 describe('Scenes CRUD', () => {
-  beforeEach(() => {
-    sceneService._clear();
-    shotService._clear();
+  beforeEach(async () => {
+    await resetFixtures();
+    await seedTestUser();
+    PROJECT_ID = (await seedProject()).project.id;
   });
 
   it('POST /api/v1/projects/:projectId/scenes — creates a scene', async () => {
@@ -65,8 +69,8 @@ describe('Scenes CRUD', () => {
   });
 
   it('GET /api/v1/projects/:projectId/scenes — lists scenes sorted by order', async () => {
-    sceneService.create(PROJECT_ID, { title: 'Scene B', order: 2 });
-    sceneService.create(PROJECT_ID, { title: 'Scene A', order: 1 });
+    await seedScene({ projectId: PROJECT_ID, title: 'Scene B', order: 2 });
+    await seedScene({ projectId: PROJECT_ID, title: 'Scene A', order: 1 });
 
     const res = await request(app).get(`/api/v1/projects/${PROJECT_ID}/scenes`).set(AUTH);
 
@@ -77,7 +81,7 @@ describe('Scenes CRUD', () => {
   });
 
   it('PUT /api/v1/scenes/:id — updates a scene', async () => {
-    const scene = sceneService.create(PROJECT_ID, { title: 'Draft', order: 0 });
+    const { scene } = await seedScene({ projectId: PROJECT_ID, title: 'Draft', order: 0 });
 
     const res = await request(app)
       .put(`/api/v1/scenes/${scene.id}`)
@@ -89,13 +93,13 @@ describe('Scenes CRUD', () => {
   });
 
   it('DELETE /api/v1/scenes/:id — deletes a scene', async () => {
-    const scene = sceneService.create(PROJECT_ID, { title: 'To Remove', order: 0 });
+    const { scene } = await seedScene({ projectId: PROJECT_ID, title: 'To Remove', order: 0 });
 
     const res = await request(app).delete(`/api/v1/scenes/${scene.id}`).set(AUTH);
 
     expect(res.status).toBe(200);
     expect(res.body.data.deleted).toBe(true);
-    expect(sceneService.getById(scene.id)).toBeUndefined();
+    expect(await sceneService.getById(scene.id)).toBeUndefined();
   });
 
   it('returns 401 without auth token', async () => {
@@ -118,10 +122,11 @@ describe('Scenes CRUD', () => {
 describe('Shots CRUD', () => {
   let sceneId: string;
 
-  beforeEach(() => {
-    sceneService._clear();
-    shotService._clear();
-    const scene = sceneService.create(PROJECT_ID, { title: 'Test Scene', order: 0 });
+  beforeEach(async () => {
+    await resetFixtures();
+    await seedTestUser();
+    PROJECT_ID = (await seedProject()).project.id;
+    const { scene } = await seedScene({ projectId: PROJECT_ID, title: 'Test Scene', order: 0 });
     sceneId = scene.id;
   });
 
@@ -139,7 +144,7 @@ describe('Shots CRUD', () => {
   });
 
   it('GET /api/v1/projects/:projectId/shots — lists all shots for a project', async () => {
-    shotService.create(sceneId, PROJECT_ID, {
+    await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -151,7 +156,7 @@ describe('Shots CRUD', () => {
   });
 
   it('GET /api/v1/shots/:id — returns a single shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -163,7 +168,7 @@ describe('Shots CRUD', () => {
   });
 
   it('PUT /api/v1/shots/:id — updates a shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -178,7 +183,7 @@ describe('Shots CRUD', () => {
   });
 
   it('DELETE /api/v1/shots/:id — deletes a shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -207,12 +212,13 @@ describe('Shot Approval & Lock Flow', () => {
   let sceneId: string;
   let shotId: string;
 
-  beforeEach(() => {
-    sceneService._clear();
-    shotService._clear();
-    const scene = sceneService.create(PROJECT_ID, { title: 'Approval Scene', order: 0 });
+  beforeEach(async () => {
+    await resetFixtures();
+    await seedTestUser();
+    PROJECT_ID = (await seedProject()).project.id;
+    const { scene } = await seedScene({ projectId: PROJECT_ID, title: 'Approval Scene', order: 0 });
     sceneId = scene.id;
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import { shotController } from '../controllers/shotController.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -17,52 +18,57 @@ router.post(
   requireAuth,
   validate(SceneParamsSchema, 'params'),
   validate(CreateShotSchema, 'body'),
-  shotController.create,
+  asyncHandler(shotController.create),
 );
 
 router.get(
   '/projects/:projectId/shots',
   requireAuth,
   validate(ProjectParamsSchema, 'params'),
-  shotController.listByProject,
+  asyncHandler(shotController.listByProject),
 );
 
-router.get('/shots/:id', requireAuth, validate(ShotParamsSchema, 'params'), shotController.getById);
+router.get(
+  '/shots/:id',
+  requireAuth,
+  validate(ShotParamsSchema, 'params'),
+  asyncHandler(shotController.getById),
+);
 
 router.put(
   '/shots/:id',
   requireAuth,
   validate(ShotParamsSchema, 'params'),
   validate(UpdateShotSchema, 'body'),
-  shotController.update,
+  asyncHandler(shotController.update),
 );
 
 router.put(
   '/shots/:id/approve',
   requireAuth,
   validate(ShotParamsSchema, 'params'),
-  shotController.approve,
+  asyncHandler(shotController.approve),
 );
 
 router.put(
   '/shots/:id/reject',
   requireAuth,
   validate(ShotParamsSchema, 'params'),
-  shotController.reject,
+  asyncHandler(shotController.reject),
 );
 
 router.put(
   '/shots/:id/lock',
   requireAuth,
   validate(ShotParamsSchema, 'params'),
-  shotController.lock,
+  asyncHandler(shotController.lock),
 );
 
 router.delete(
   '/shots/:id',
   requireAuth,
   validate(ShotParamsSchema, 'params'),
-  shotController.delete,
+  asyncHandler(shotController.delete),
 );
 
 export default router;
