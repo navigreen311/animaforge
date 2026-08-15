@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from 'express';
 
 export interface AuthUser {
   id: string;
@@ -22,9 +22,9 @@ declare global {
 function decodeToken(token: string): AuthUser | null {
   try {
     // Simulates decoding the payload section of a JWT (header.payload.signature)
-    const parts = token.split(".");
+    const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (payload.sub && payload.email && payload.role) {
       return { id: payload.sub, email: payload.email, role: payload.role };
     }
@@ -36,7 +36,7 @@ function decodeToken(token: string): AuthUser | null {
 
 function extractBearerToken(req: Request): string | null {
   const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) return null;
+  if (!header || !header.startsWith('Bearer ')) return null;
   return header.slice(7);
 }
 
@@ -48,7 +48,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   if (!token) {
     res.status(401).json({
       success: false,
-      error: { code: "UNAUTHORIZED", message: "Authentication required" },
+      error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
     });
     return;
   }
@@ -57,7 +57,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   if (!user) {
     res.status(401).json({
       success: false,
-      error: { code: "UNAUTHORIZED", message: "Invalid or expired token" },
+      error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' },
     });
     return;
   }

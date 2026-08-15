@@ -22,10 +22,7 @@ export async function PATCH(request: NextRequest) {
   const { categories } = body as { categories?: Record<string, boolean> };
 
   if (!categories || typeof categories !== 'object') {
-    return NextResponse.json(
-      { error: 'categories object is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'categories object is required' }, { status: 400 });
   }
 
   const updatedCategories = { ...MOCK_MEMORY.categories };

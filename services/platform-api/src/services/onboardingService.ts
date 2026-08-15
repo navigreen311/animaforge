@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface OnboardingStep {
   id: string;
@@ -15,11 +15,11 @@ export interface OnboardingRecord {
 }
 
 const STEPS: Array<{ id: string; title: string }> = [
-  { id: "welcome", title: "Welcome" },
-  { id: "role", title: "Choose Role" },
-  { id: "first_project", title: "Create Project" },
-  { id: "first_generation", title: "Generate" },
-  { id: "tour_complete", title: "Tour" },
+  { id: 'welcome', title: 'Welcome' },
+  { id: 'role', title: 'Choose Role' },
+  { id: 'first_project', title: 'Create Project' },
+  { id: 'first_generation', title: 'Generate' },
+  { id: 'tour_complete', title: 'Tour' },
 ];
 
 // In-memory store
@@ -69,11 +69,9 @@ export function completeStep(
 ): { success: boolean; currentStep: number; completedSteps: string[] } {
   const record = getRecordByUser(userId);
   if (!record) {
-    const err: Error & { statusCode?: number; code?: string } = new Error(
-      "Onboarding not started",
-    );
+    const err: Error & { statusCode?: number; code?: string } = new Error('Onboarding not started');
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -83,7 +81,7 @@ export function completeStep(
       `Unknown step: ${stepId}`,
     );
     err.statusCode = 400;
-    err.code = "INVALID_STEP";
+    err.code = 'INVALID_STEP';
     throw err;
   }
 
@@ -95,9 +93,7 @@ export function completeStep(
   const nextIncomplete = record.steps.findIndex((s) => !s.completedAt);
   record.currentStep = nextIncomplete === -1 ? record.steps.length : nextIncomplete;
 
-  const completedSteps = record.steps
-    .filter((s) => s.completedAt)
-    .map((s) => s.id);
+  const completedSteps = record.steps.filter((s) => s.completedAt).map((s) => s.id);
 
   return { success: true, currentStep: record.currentStep, completedSteps };
 }
@@ -113,9 +109,7 @@ export function getProgress(userId: string): {
     return { currentStep: 0, totalSteps: 5, percentage: 0, completedSteps: [] };
   }
 
-  const completedSteps = record.steps
-    .filter((s) => s.completedAt)
-    .map((s) => s.id);
+  const completedSteps = record.steps.filter((s) => s.completedAt).map((s) => s.id);
 
   return {
     currentStep: record.currentStep,

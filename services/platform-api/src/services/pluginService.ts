@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 import {
   PluginManifestSchema,
   type Plugin,
@@ -8,7 +8,7 @@ import {
   type PluginCategory,
   type PluginHook,
   type PluginMetrics,
-} from "../models/pluginSchemas.js";
+} from '../models/pluginSchemas.js';
 
 // ── In-memory stores ────────────────────────────────────────────────
 const plugins = new Map<string, Plugin>();
@@ -22,7 +22,7 @@ export const pluginService = {
    */
   async registerPlugin(
     manifest: PluginManifestInput,
-  ): Promise<{ pluginId: string; status: "pending_review" }> {
+  ): Promise<{ pluginId: string; status: 'pending_review' }> {
     // Validate manifest
     PluginManifestSchema.parse(manifest);
 
@@ -31,12 +31,12 @@ export const pluginService = {
     const plugin: Plugin = {
       pluginId,
       manifest,
-      status: "pending_review",
+      status: 'pending_review',
       createdAt: now,
       updatedAt: now,
     };
     plugins.set(pluginId, plugin);
-    return { pluginId, status: "pending_review" };
+    return { pluginId, status: 'pending_review' };
   },
 
   /**
@@ -48,10 +48,10 @@ export const pluginService = {
   ): Promise<{ certified: true; certificate: string } | undefined> {
     const plugin = plugins.get(pluginId);
     if (!plugin) return undefined;
-    if (plugin.status === "revoked") return undefined;
+    if (plugin.status === 'revoked') return undefined;
 
     const certificate = `CERT-${pluginId.slice(0, 8)}-${Date.now()}`;
-    plugin.status = "certified";
+    plugin.status = 'certified';
     plugin.reviewerId = reviewerId;
     plugin.certificate = certificate;
     plugin.updatedAt = new Date().toISOString();
@@ -62,16 +62,13 @@ export const pluginService = {
   /**
    * List plugins, optionally filtered by category and certification status.
    */
-  async listPlugins(
-    category?: PluginCategory,
-    certifiedOnly?: boolean,
-  ): Promise<Plugin[]> {
+  async listPlugins(category?: PluginCategory, certifiedOnly?: boolean): Promise<Plugin[]> {
     let result = Array.from(plugins.values());
     if (category) {
       result = result.filter((p) => p.manifest.category === category);
     }
     if (certifiedOnly) {
-      result = result.filter((p) => p.status === "certified");
+      result = result.filter((p) => p.status === 'certified');
     }
     return result.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
@@ -86,10 +83,7 @@ export const pluginService = {
   /**
    * Install a plugin for a user.
    */
-  async installPlugin(
-    userId: string,
-    pluginId: string,
-  ): Promise<PluginInstallation | undefined> {
+  async installPlugin(userId: string, pluginId: string): Promise<PluginInstallation | undefined> {
     const plugin = plugins.get(pluginId);
     if (!plugin) return undefined;
 
@@ -112,10 +106,7 @@ export const pluginService = {
   /**
    * Uninstall a plugin for a user.
    */
-  async uninstallPlugin(
-    userId: string,
-    pluginId: string,
-  ): Promise<boolean> {
+  async uninstallPlugin(userId: string, pluginId: string): Promise<boolean> {
     const userInstalls = installations.get(userId) ?? [];
     const idx = userInstalls.findIndex((i) => i.pluginId === pluginId);
     if (idx === -1) return false;
@@ -139,10 +130,12 @@ export const pluginService = {
     pluginId: string,
     hookName: PluginHook,
     data: Record<string, unknown>,
-  ): Promise<{ success: boolean; hookName: PluginHook; result: Record<string, unknown> } | undefined> {
+  ): Promise<
+    { success: boolean; hookName: PluginHook; result: Record<string, unknown> } | undefined
+  > {
     const plugin = plugins.get(pluginId);
     if (!plugin) return undefined;
-    if (plugin.status !== "certified") return undefined;
+    if (plugin.status !== 'certified') return undefined;
 
     // Simulate execution (random success for demonstration, but deterministic for tests)
     const success = true;
@@ -164,14 +157,11 @@ export const pluginService = {
   /**
    * Revoke a plugin's certification.
    */
-  async revokePlugin(
-    pluginId: string,
-    reason: string,
-  ): Promise<Plugin | undefined> {
+  async revokePlugin(pluginId: string, reason: string): Promise<Plugin | undefined> {
     const plugin = plugins.get(pluginId);
     if (!plugin) return undefined;
 
-    plugin.status = "revoked";
+    plugin.status = 'revoked';
     plugin.revokeReason = reason;
     plugin.certificate = undefined;
     plugin.updatedAt = new Date().toISOString();

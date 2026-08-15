@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
 import type {
   AvatarArtifactsInput,
   Character,
@@ -7,9 +7,9 @@ import type {
   HairParamsInput,
   UpdateCharacterInput,
   WardrobeInput,
-} from "../models/characterSchemas.js";
+} from '../models/characterSchemas.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 // In-memory fallback store
 const characters: Map<string, Character> = new Map();
 
@@ -26,7 +26,7 @@ export async function createCharacter(
       data: {
         ...input,
         ownerId,
-        rightsStatus: "original",
+        rightsStatus: 'original',
         styleMode: input.styleMode ?? undefined,
         isDigitalTwin: input.isDigitalTwin ?? false,
         // bodyParams, hairParams and wardrobe are Json columns. Prisma types
@@ -41,7 +41,7 @@ export async function createCharacter(
   const character: Character = {
     id: uuidv4(),
     ownerId,
-    rightsStatus: "original",
+    rightsStatus: 'original',
     createdAt: now,
     updatedAt: now,
     ...input,
@@ -71,7 +71,7 @@ export async function listCharacters(query: ListCharactersQuery) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       requirePrisma().character.count({ where }),
     ]);

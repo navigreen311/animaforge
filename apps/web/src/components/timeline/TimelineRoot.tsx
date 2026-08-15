@@ -82,7 +82,9 @@ export function TimelineRoot({ shots, audioTracks, collaborators = [] }: Timelin
         onSnapToggle={() => setSnap((s) => !s)}
         mode={mode}
         onModeChange={setMode}
-        onAddShot={() => {/* stub */}}
+        onAddShot={() => {
+          /* stub */
+        }}
       />
 
       {/* Main content: viewport + inspector */}
@@ -99,8 +101,12 @@ export function TimelineRoot({ shots, audioTracks, collaborators = [] }: Timelin
         {/* Inspector right panel */}
         <ShotInspector
           shot={selectedShot}
-          onEdit={() => {/* stub */}}
-          onGenerate={() => {/* stub */}}
+          onEdit={() => {
+            /* stub */
+          }}
+          onGenerate={() => {
+            /* stub */
+          }}
         />
       </div>
     </div>

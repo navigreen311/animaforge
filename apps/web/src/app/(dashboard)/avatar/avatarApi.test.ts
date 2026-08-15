@@ -112,7 +112,7 @@ describe('fetchCapabilities', () => {
 });
 
 describe('generateAvatar', () => {
-  it('POSTs the request in the API\'s snake_case shape', async () => {
+  it("POSTs the request in the API's snake_case shape", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(mockJob, 201));
 
     await generateAvatar(
@@ -137,9 +137,11 @@ describe('generateAvatar', () => {
   });
 
   it('surfaces the 503 raised when the real engine is unavailable', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ detail: 'AVATAR_ENGINE=real requested but missing: torch' }, 503),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ detail: 'AVATAR_ENGINE=real requested but missing: torch' }, 503),
+      );
 
     await expect(
       generateAvatar(

@@ -146,18 +146,14 @@ export async function GET(request: NextRequest) {
 
   // Filter by category
   if (category) {
-    results = results.filter(
-      (a) => a.category.toLowerCase() === category.toLowerCase(),
-    );
+    results = results.filter((a) => a.category.toLowerCase() === category.toLowerCase());
   }
 
   // Search by name or tags
   if (search) {
     const q = search.toLowerCase();
     results = results.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q) ||
-        a.tags.some((t) => t.toLowerCase().includes(q)),
+      (a) => a.name.toLowerCase().includes(q) || a.tags.some((t) => t.toLowerCase().includes(q)),
     );
   }
 
@@ -174,16 +170,10 @@ export async function GET(request: NextRequest) {
         results.sort((a, b) => b.usageCount - a.usageCount);
         break;
       case 'newest':
-        results.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
+        results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'oldest':
-        results.sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-        );
+        results.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
       default:
         break;
@@ -207,10 +197,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   if (!body.assets || !Array.isArray(body.assets) || body.assets.length === 0) {

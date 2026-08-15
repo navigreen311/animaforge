@@ -10,7 +10,9 @@ export type GLColor = [number, number, number, number];
 
 /** Parse a CSS hex color (#rrggbb or #rgb) to GLColor */
 export function hexToGL(hex: string, alpha = 1.0): GLColor {
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
   if (hex.length === 7) {
     r = parseInt(hex.slice(1, 3), 16) / 255;
     g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -64,7 +66,11 @@ function compileShader(gl: WebGL2RenderingContext, type: number, src: string): W
   return shader;
 }
 
-function createProgram(gl: WebGL2RenderingContext, vert: string, frag: string): WebGLProgram | null {
+function createProgram(
+  gl: WebGL2RenderingContext,
+  vert: string,
+  frag: string,
+): WebGLProgram | null {
   const vs = compileShader(gl, gl.VERTEX_SHADER, vert);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, frag);
   if (!vs || !fs) return null;
@@ -192,10 +198,7 @@ void main() {
 
   drawRect(x: number, y: number, w: number, h: number, color: GLColor) {
     const gl = this.gl;
-    const verts = new Float32Array([
-      x, y,       x + w, y,       x, y + h,
-      x, y + h,   x + w, y,       x + w, y + h,
-    ]);
+    const verts = new Float32Array([x, y, x + w, y, x, y + h, x, y + h, x + w, y, x + w, y + h]);
     gl.useProgram(this.program);
     gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height);
     gl.uniform4fv(this.uColor, color);
@@ -214,8 +217,18 @@ void main() {
     const nx = (-dy / len) * (width / 2);
     const ny = (dx / len) * (width / 2);
     const verts = new Float32Array([
-      x1 + nx, y1 + ny,   x1 - nx, y1 - ny,   x2 + nx, y2 + ny,
-      x2 + nx, y2 + ny,   x1 - nx, y1 - ny,   x2 - nx, y2 - ny,
+      x1 + nx,
+      y1 + ny,
+      x1 - nx,
+      y1 - ny,
+      x2 + nx,
+      y2 + ny,
+      x2 + nx,
+      y2 + ny,
+      x1 - nx,
+      y1 - ny,
+      x2 - nx,
+      y2 - ny,
     ]);
     gl.useProgram(this.program);
     gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height);
@@ -295,13 +308,20 @@ void main() {
     const h = entry.height;
 
     const posVerts = new Float32Array([
-      drawX, drawY,       drawX + w, drawY,       drawX, drawY + h,
-      drawX, drawY + h,   drawX + w, drawY,       drawX + w, drawY + h,
+      drawX,
+      drawY,
+      drawX + w,
+      drawY,
+      drawX,
+      drawY + h,
+      drawX,
+      drawY + h,
+      drawX + w,
+      drawY,
+      drawX + w,
+      drawY + h,
     ]);
-    const uvVerts = new Float32Array([
-      0, 0,  1, 0,  0, 1,
-      0, 1,  1, 0,  1, 1,
-    ]);
+    const uvVerts = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
     gl.useProgram(this.textProgram);
     gl.uniform2f(this.textUResolution, gl.canvas.width, gl.canvas.height);

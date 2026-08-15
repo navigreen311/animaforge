@@ -14,13 +14,27 @@ import SaveIndicator, { type SaveStatus } from './SaveIndicator';
 
 /* ── Constants ──────────────────────────────────────────────── */
 
-const CATEGORIES = ['Tops', 'Bottoms', 'Outerwear', 'Footwear', 'Accessories', 'Full Outfit'] as const;
+const CATEGORIES = [
+  'Tops',
+  'Bottoms',
+  'Outerwear',
+  'Footwear',
+  'Accessories',
+  'Full Outfit',
+] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const ITEMS_BY_CATEGORY: Record<Category, string[]> = {
   Tops: ['T-Shirt', 'Button-Down', 'Hoodie', 'Sweater', 'Tank Top', 'Polo', 'Blouse', 'Jacket'],
   Bottoms: ['Jeans', 'Chinos', 'Shorts', 'Skirt', 'Sweatpants', 'Cargo Pants'],
-  Outerwear: ['Trench Coat', 'Puffer Jacket', 'Blazer', 'Windbreaker', 'Pea Coat', 'Leather Jacket'],
+  Outerwear: [
+    'Trench Coat',
+    'Puffer Jacket',
+    'Blazer',
+    'Windbreaker',
+    'Pea Coat',
+    'Leather Jacket',
+  ],
   Footwear: ['Sneakers', 'Boots', 'Loafers', 'Sandals', 'Heels', 'Dress Shoes'],
   Accessories: ['Watch', 'Necklace', 'Bracelet', 'Sunglasses', 'Hat', 'Scarf', 'Belt', 'Bag'],
   'Full Outfit': ['Casual', 'Formal', 'Streetwear', 'Sportswear', 'Business', 'Evening'],
@@ -157,9 +171,7 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
       .catch((err: unknown) => {
         if (!active || controller.signal.aborted) return;
         setStatus('error');
-        setErrorMessage(
-          err instanceof Error ? err.message : 'Could not load wardrobe',
-        );
+        setErrorMessage(err instanceof Error ? err.message : 'Could not load wardrobe');
       });
 
     return () => {
@@ -187,9 +199,7 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
         })
         .catch((err: unknown) => {
           setStatus('error');
-          setErrorMessage(
-            err instanceof Error ? err.message : 'Could not save wardrobe',
-          );
+          setErrorMessage(err instanceof Error ? err.message : 'Could not save wardrobe');
         });
     }, AUTOSAVE_DELAY_MS);
 
@@ -274,11 +284,7 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <SaveIndicator
-        status={status}
-        errorMessage={errorMessage}
-        persisted={Boolean(characterId)}
-      />
+      <SaveIndicator status={status} errorMessage={errorMessage} persisted={Boolean(characterId)} />
 
       {/* ── Category Tabs (horizontal) ───────────────────────── */}
       <div
@@ -299,7 +305,8 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
               fontWeight: 500,
               whiteSpace: 'nowrap',
               border: 'none',
-              borderBottom: activeCategory === cat ? '2px solid var(--brand)' : '2px solid transparent',
+              borderBottom:
+                activeCategory === cat ? '2px solid var(--brand)' : '2px solid transparent',
               backgroundColor: 'transparent',
               color: activeCategory === cat ? 'var(--text-brand)' : 'var(--text-tertiary)',
               cursor: 'pointer',
@@ -425,9 +432,7 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
             backgroundColor: 'var(--bg-surface)',
           }}
         >
-          <h4 style={{ ...sectionTitle, marginBottom: 0 }}>
-            Details: {currentSelection.item}
-          </h4>
+          <h4 style={{ ...sectionTitle, marginBottom: 0 }}>Details: {currentSelection.item}</h4>
 
           {/* Fabric segmented */}
           <div>
@@ -444,8 +449,12 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
                     fontWeight: 500,
                     borderRadius: 'var(--radius-sm)',
                     border: 'none',
-                    backgroundColor: currentSelection.detail.fabric === f ? 'var(--bg-elevated)' : 'transparent',
-                    color: currentSelection.detail.fabric === f ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    backgroundColor:
+                      currentSelection.detail.fabric === f ? 'var(--bg-elevated)' : 'transparent',
+                    color:
+                      currentSelection.detail.fabric === f
+                        ? 'var(--text-primary)'
+                        : 'var(--text-tertiary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -474,7 +483,13 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
                   backgroundColor: 'transparent',
                 }}
               />
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-tertiary)',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              >
                 {currentSelection.detail.color}
               </span>
             </div>
@@ -495,8 +510,12 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
                     fontWeight: 500,
                     borderRadius: 'var(--radius-sm)',
                     border: 'none',
-                    backgroundColor: currentSelection.detail.pattern === p ? 'var(--bg-elevated)' : 'transparent',
-                    color: currentSelection.detail.pattern === p ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    backgroundColor:
+                      currentSelection.detail.pattern === p ? 'var(--bg-elevated)' : 'transparent',
+                    color:
+                      currentSelection.detail.pattern === p
+                        ? 'var(--text-primary)'
+                        : 'var(--text-tertiary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -522,8 +541,12 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
                     fontWeight: 500,
                     borderRadius: 'var(--radius-sm)',
                     border: 'none',
-                    backgroundColor: currentSelection.detail.fit === f ? 'var(--bg-elevated)' : 'transparent',
-                    color: currentSelection.detail.fit === f ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    backgroundColor:
+                      currentSelection.detail.fit === f ? 'var(--bg-elevated)' : 'transparent',
+                    color:
+                      currentSelection.detail.fit === f
+                        ? 'var(--text-primary)'
+                        : 'var(--text-tertiary)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -582,7 +605,14 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
 
         {/* Preset list */}
         {presets.length === 0 ? (
-          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', padding: 16 }}>
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--text-tertiary)',
+              textAlign: 'center',
+              padding: 16,
+            }}
+          >
             No saved presets yet
           </p>
         ) : (
@@ -607,7 +637,15 @@ export default function WardrobeTab({ characterId, token }: WardrobeTabProps = {
                 }}
               >
                 <span>{preset.name}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-tertiary)' }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 11,
+                    color: 'var(--text-tertiary)',
+                  }}
+                >
                   <FolderOpen size={12} /> Load
                 </span>
               </button>

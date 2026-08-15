@@ -148,9 +148,24 @@ function Vec3Editor({
   return (
     <Section title={label}>
       <div className="flex gap-2">
-        <DragNumber label="X" value={value.x} step={step} onChange={(x) => onChange({ ...value, x })} />
-        <DragNumber label="Y" value={value.y} step={step} onChange={(y) => onChange({ ...value, y })} />
-        <DragNumber label="Z" value={value.z} step={step} onChange={(z) => onChange({ ...value, z })} />
+        <DragNumber
+          label="X"
+          value={value.x}
+          step={step}
+          onChange={(x) => onChange({ ...value, x })}
+        />
+        <DragNumber
+          label="Y"
+          value={value.y}
+          step={step}
+          onChange={(y) => onChange({ ...value, y })}
+        />
+        <DragNumber
+          label="Z"
+          value={value.z}
+          step={step}
+          onChange={(z) => onChange({ ...value, z })}
+        />
       </div>
     </Section>
   );
@@ -187,9 +202,24 @@ export function NodeProperties({ node, onChange }: NodePropertiesProps) {
       </Section>
 
       {/* Transform */}
-      <Vec3Editor label="Position" value={node.transform.position} step={0.1} onChange={(v) => updateTransform('position', v)} />
-      <Vec3Editor label="Rotation" value={node.transform.rotation} step={1} onChange={(v) => updateTransform('rotation', v)} />
-      <Vec3Editor label="Scale" value={node.transform.scale} step={0.05} onChange={(v) => updateTransform('scale', v)} />
+      <Vec3Editor
+        label="Position"
+        value={node.transform.position}
+        step={0.1}
+        onChange={(v) => updateTransform('position', v)}
+      />
+      <Vec3Editor
+        label="Rotation"
+        value={node.transform.rotation}
+        step={1}
+        onChange={(v) => updateTransform('rotation', v)}
+      />
+      <Vec3Editor
+        label="Scale"
+        value={node.transform.scale}
+        step={0.05}
+        onChange={(v) => updateTransform('scale', v)}
+      />
 
       {/* Camera */}
       {node.kind === 'camera' && node.camera && (
@@ -212,12 +242,19 @@ export function NodeProperties({ node, onChange }: NodePropertiesProps) {
               <select
                 value={node.camera.movementType}
                 onChange={(e) =>
-                  patch({ camera: { ...node.camera!, movementType: e.target.value as CameraProps['movementType'] } })
+                  patch({
+                    camera: {
+                      ...node.camera!,
+                      movementType: e.target.value as CameraProps['movementType'],
+                    },
+                  })
                 }
                 className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-white focus:border-purple-500 outline-none"
               >
                 {['static', 'pan', 'dolly', 'crane', 'handheld'].map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
@@ -234,7 +271,9 @@ export function NodeProperties({ node, onChange }: NodePropertiesProps) {
                 <span className="text-[10px] font-bold text-zinc-500 uppercase w-12">{field}</span>
                 <input
                   value={node.character![field]}
-                  onChange={(e) => patch({ character: { ...node.character!, [field]: e.target.value } })}
+                  onChange={(e) =>
+                    patch({ character: { ...node.character!, [field]: e.target.value } })
+                  }
                   className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-white flex-1 focus:border-purple-500 outline-none"
                 />
               </div>
@@ -257,7 +296,9 @@ export function NodeProperties({ node, onChange }: NodePropertiesProps) {
                 className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-white focus:border-purple-500 outline-none"
               >
                 {['key', 'fill', 'back'].map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>

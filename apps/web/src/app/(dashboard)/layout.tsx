@@ -38,10 +38,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   const handleEscape = useCallback(() => {
-    if (shortcutsOpen) { setShortcutsOpen(false); return; }
-    if (searchModalOpen) { setSearchModalOpen(false); return; }
-    if (newProjectModalOpen) { setNewProjectModalOpen(false); return; }
-    if (renderPanelExpanded) { setRenderPanelExpanded(false); return; }
+    if (shortcutsOpen) {
+      setShortcutsOpen(false);
+      return;
+    }
+    if (searchModalOpen) {
+      setSearchModalOpen(false);
+      return;
+    }
+    if (newProjectModalOpen) {
+      setNewProjectModalOpen(false);
+      return;
+    }
+    if (renderPanelExpanded) {
+      setRenderPanelExpanded(false);
+      return;
+    }
   }, [
     shortcutsOpen,
     searchModalOpen,
@@ -53,15 +65,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ]);
 
   useKeyboardShortcuts({
-    'search':         () => setSearchModalOpen(true),
-    'new-project':    () => setNewProjectModalOpen(true),
-    'shortcuts':      toggleShortcuts,
-    'escape':         handleEscape,
-    'go-projects':    () => router.push('/projects'),
-    'go-characters':  () => router.push('/characters'),
-    'go-timeline':    () => router.push('/timeline'),
-    'go-assets':      () => router.push('/assets'),
-    'go-settings':    () => router.push('/settings'),
+    search: () => setSearchModalOpen(true),
+    'new-project': () => setNewProjectModalOpen(true),
+    shortcuts: toggleShortcuts,
+    escape: handleEscape,
+    'go-projects': () => router.push('/projects'),
+    'go-characters': () => router.push('/characters'),
+    'go-timeline': () => router.push('/timeline'),
+    'go-assets': () => router.push('/assets'),
+    'go-settings': () => router.push('/settings'),
   });
 
   return (
@@ -80,8 +92,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           borderRadius: 'var(--radius-md)',
           zIndex: 9999,
         }}
-        onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
-        onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
+        onFocus={(e) => {
+          e.currentTarget.style.top = '8px';
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.top = '-40px';
+        }}
       >
         Skip to main content
       </a>

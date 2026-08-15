@@ -18,10 +18,8 @@ export default function QueryProvider({ children }: QueryProviderProps) {
             refetchOnWindowFocus: true,
           },
         },
-      })
+      }),
   );
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

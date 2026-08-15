@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { useSocket } from "./use-socket";
+import { useEffect, useState, useCallback } from 'react';
+import { useSocket } from './use-socket';
 
 interface Notification {
   id: string;
@@ -34,7 +34,7 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    return subscribe<{ notification: Notification }>("notification:new", (data) => {
+    return subscribe<{ notification: Notification }>('notification:new', (data) => {
       setLatestNotification(data.notification);
       setUnreadCount((prev) => prev + 1);
     });

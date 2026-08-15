@@ -81,9 +81,7 @@ export default function ProjectFilterBar() {
               onClick={() => setStatusFilter(pill.value)}
               style={{
                 background: active ? 'var(--brand-dim)' : 'transparent',
-                border: active
-                  ? '0.5px solid var(--brand-border)'
-                  : '0.5px solid var(--border)',
+                border: active ? '0.5px solid var(--brand-border)' : '0.5px solid var(--border)',
                 color: active ? 'var(--text-brand)' : 'var(--text-tertiary)',
                 borderRadius: 'var(--radius-pill)',
                 padding: '4px 12px',

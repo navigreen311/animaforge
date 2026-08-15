@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { useSocket } from "./use-socket";
+import { useEffect, useState, useCallback } from 'react';
+import { useSocket } from './use-socket';
 
-type JobStatus = "idle" | "running" | "complete" | "failed";
+type JobStatus = 'idle' | 'running' | 'complete' | 'failed';
 
 interface JobProgressState {
   /** Current progress percentage (0-100). */
@@ -22,8 +22,8 @@ interface JobProgressState {
 
 const INITIAL_STATE: JobProgressState = {
   progress: 0,
-  stage: "",
-  status: "idle",
+  stage: '',
+  status: 'idle',
   outputUrl: null,
   qualityScores: null,
   error: null,
@@ -55,13 +55,13 @@ export function useJobProgress(jobId?: string | null): JobProgressState {
       progress: number;
       stage?: string;
       message?: string;
-    }>("job:progress", (data) => {
+    }>('job:progress', (data) => {
       if (data.jobId !== jobId) return;
       setState((prev) => ({
         ...prev,
         progress: data.progress,
         stage: data.stage ?? prev.stage,
-        status: "running",
+        status: 'running',
       }));
     });
   }, [jobId, subscribe]);
@@ -74,12 +74,12 @@ export function useJobProgress(jobId?: string | null): JobProgressState {
       jobId: string;
       outputUrl: string;
       qualityScores?: Record<string, number>;
-    }>("job:complete", (data) => {
+    }>('job:complete', (data) => {
       if (data.jobId !== jobId) return;
       setState((prev) => ({
         ...prev,
         progress: 100,
-        status: "complete",
+        status: 'complete',
         outputUrl: data.outputUrl,
         qualityScores: data.qualityScores ?? null,
       }));
@@ -94,11 +94,11 @@ export function useJobProgress(jobId?: string | null): JobProgressState {
       jobId: string;
       error: string;
       reason?: string;
-    }>("job:failed", (data) => {
+    }>('job:failed', (data) => {
       if (data.jobId !== jobId) return;
       setState((prev) => ({
         ...prev,
-        status: "failed",
+        status: 'failed',
         error: data.error,
       }));
     });

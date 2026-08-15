@@ -67,14 +67,11 @@ function TreeRow({
   const hasChildren = node.children.length > 0;
   const expanded = expandedIds.has(node.id);
 
-  const handleContext = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setCtxMenu({ x: e.clientX, y: e.clientY });
-    },
-    [],
-  );
+  const handleContext = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }, []);
 
   const closeMenu = useCallback(() => setCtxMenu(null), []);
 
@@ -173,7 +170,8 @@ function TreeRow({
       </div>
 
       {/* Children */}
-      {hasChildren && expanded &&
+      {hasChildren &&
+        expanded &&
         node.children.map((child) => (
           <TreeRow
             key={child.id}
@@ -199,9 +197,28 @@ function TreeRow({
           onMouseLeave={closeMenu}
         >
           {[
-            { label: 'Rename', action: () => { setEditing(true); closeMenu(); } },
-            { label: 'Duplicate', action: () => { onDuplicate(node.id); closeMenu(); } },
-            { label: 'Delete', action: () => { onDelete(node.id); closeMenu(); }, danger: true },
+            {
+              label: 'Rename',
+              action: () => {
+                setEditing(true);
+                closeMenu();
+              },
+            },
+            {
+              label: 'Duplicate',
+              action: () => {
+                onDuplicate(node.id);
+                closeMenu();
+              },
+            },
+            {
+              label: 'Delete',
+              action: () => {
+                onDelete(node.id);
+                closeMenu();
+              },
+              danger: true,
+            },
           ].map((item) => (
             <button
               key={item.label}

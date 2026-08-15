@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ApiUsage {
   totalRequests: number;
@@ -29,7 +29,7 @@ export interface WebhookLogEntry {
 
 export interface SandboxCredentials {
   apiKey: string;
-  environment: "sandbox";
+  environment: 'sandbox';
   expiresAt: string;
   testData: { projects: number; characters: number; shots: number };
 }
@@ -37,14 +37,17 @@ export interface SandboxCredentials {
 export interface ChangelogEntry {
   version: string;
   date: string;
-  changes: { type: "added" | "changed" | "deprecated" | "removed" | "fixed"; description: string }[];
+  changes: {
+    type: 'added' | 'changed' | 'deprecated' | 'removed' | 'fixed';
+    description: string;
+  }[];
 }
 
 export interface RateLimitStatus {
   limit: number;
   remaining: number;
   resetAt: string;
-  tier: "free" | "pro" | "enterprise";
+  tier: 'free' | 'pro' | 'enterprise';
 }
 
 const webhooks = new Map<string, Webhook>();
@@ -54,47 +57,47 @@ const rateLimits = new Map<string, RateLimitStatus>();
 
 const changelog: ChangelogEntry[] = [
   {
-    version: "1.2.0",
-    date: "2026-03-20",
+    version: '1.2.0',
+    date: '2026-03-20',
     changes: [
-      { type: "added", description: "Developer portal webhooks API" },
-      { type: "added", description: "Sandbox credential generation" },
-      { type: "changed", description: "Rate limit headers now include X-RateLimit-Tier" },
+      { type: 'added', description: 'Developer portal webhooks API' },
+      { type: 'added', description: 'Sandbox credential generation' },
+      { type: 'changed', description: 'Rate limit headers now include X-RateLimit-Tier' },
     ],
   },
   {
-    version: "1.1.0",
-    date: "2026-02-15",
+    version: '1.1.0',
+    date: '2026-02-15',
     changes: [
-      { type: "added", description: "Content verification (C2PA) endpoints" },
-      { type: "added", description: "Onboarding flow with style quiz" },
-      { type: "fixed", description: "Asset upload timeout on large files" },
+      { type: 'added', description: 'Content verification (C2PA) endpoints' },
+      { type: 'added', description: 'Onboarding flow with style quiz' },
+      { type: 'fixed', description: 'Asset upload timeout on large files' },
     ],
   },
   {
-    version: "1.0.0",
-    date: "2026-01-10",
+    version: '1.0.0',
+    date: '2026-01-10',
     changes: [
-      { type: "added", description: "Initial public API release" },
-      { type: "added", description: "Projects, scenes, shots, characters CRUD" },
-      { type: "added", description: "Video/audio generation pipeline" },
+      { type: 'added', description: 'Initial public API release' },
+      { type: 'added', description: 'Projects, scenes, shots, characters CRUD' },
+      { type: 'added', description: 'Video/audio generation pipeline' },
     ],
   },
 ];
 
 export const devportalService = {
-  getApiUsage(userId: string, period: string = "30d"): ApiUsage {
-    const multiplier = period === "7d" ? 0.25 : period === "24h" ? 0.03 : 1;
-    const base = Math.abs(hashCode(userId)) % 5000 + 500;
+  getApiUsage(userId: string, period: string = '30d'): ApiUsage {
+    const multiplier = period === '7d' ? 0.25 : period === '24h' ? 0.03 : 1;
+    const base = (Math.abs(hashCode(userId)) % 5000) + 500;
     const total = Math.round(base * multiplier);
     return {
       totalRequests: total,
       byEndpoint: {
-        "/projects": Math.round(total * 0.3),
-        "/shots": Math.round(total * 0.25),
-        "/generate/video": Math.round(total * 0.2),
-        "/characters": Math.round(total * 0.15),
-        "/assets": Math.round(total * 0.1),
+        '/projects': Math.round(total * 0.3),
+        '/shots': Math.round(total * 0.25),
+        '/generate/video': Math.round(total * 0.2),
+        '/characters': Math.round(total * 0.15),
+        '/assets': Math.round(total * 0.1),
       },
       byMethod: {
         GET: Math.round(total * 0.6),
@@ -135,16 +138,16 @@ export const devportalService = {
   testWebhook(webhookId: string): WebhookLogEntry {
     const webhook = webhooks.get(webhookId);
     if (!webhook) {
-      throw new Error("Webhook " + webhookId + " not found");
+      throw new Error('Webhook ' + webhookId + ' not found');
     }
     const log: WebhookLogEntry = {
       id: uuidv4(),
       webhookId,
-      event: "test.ping",
+      event: 'test.ping',
       payload: {
-        type: "test.ping",
+        type: 'test.ping',
         timestamp: new Date().toISOString(),
-        data: { message: "This is a test webhook delivery from AnimaForge" },
+        data: { message: 'This is a test webhook delivery from AnimaForge' },
       },
       statusCode: 200,
       success: true,
@@ -166,8 +169,8 @@ export const devportalService = {
       return existing;
     }
     const creds: SandboxCredentials = {
-      apiKey: "sb_" + uuidv4().replace(/-/g, ""),
-      environment: "sandbox",
+      apiKey: 'sb_' + uuidv4().replace(/-/g, ''),
+      environment: 'sandbox',
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       testData: { projects: 3, characters: 5, shots: 12 },
     };
@@ -184,7 +187,7 @@ export const devportalService = {
     if (existing && new Date(existing.resetAt) > new Date()) {
       return existing;
     }
-    const tier = (["free", "pro", "enterprise"] as const)[Math.abs(hashCode(userId)) % 3];
+    const tier = (['free', 'pro', 'enterprise'] as const)[Math.abs(hashCode(userId)) % 3];
     const limitByTier = { free: 1000, pro: 10000, enterprise: 100000 };
     const limit = limitByTier[tier];
     const status: RateLimitStatus = {

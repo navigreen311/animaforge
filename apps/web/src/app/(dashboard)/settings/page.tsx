@@ -195,13 +195,7 @@ const dangerCardStyle: React.CSSProperties = {
 };
 
 // ── Helpers ──────────────────────────────────────────────────────
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
@@ -234,13 +228,7 @@ function Toggle({
   );
 }
 
-function Checkbox({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function Checkbox({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
@@ -249,9 +237,7 @@ function Checkbox({
         width: 16,
         height: 16,
         borderRadius: 3,
-        border: checked
-          ? '1.5px solid var(--brand)'
-          : '1.5px solid var(--border)',
+        border: checked ? '1.5px solid var(--brand)' : '1.5px solid var(--border)',
         background: checked ? 'var(--brand)' : 'transparent',
         cursor: 'pointer',
         display: 'flex',
@@ -287,12 +273,8 @@ function SegmentedControl<T extends string>({
           onClick={() => onChange(opt)}
           style={{
             background: value === opt ? 'var(--bg-surface)' : 'transparent',
-            color:
-              value === opt ? 'var(--text-primary)' : 'var(--text-secondary)',
-            border:
-              value === opt
-                ? '0.5px solid var(--border-brand)'
-                : '0.5px solid var(--border)',
+            color: value === opt ? 'var(--text-primary)' : 'var(--text-secondary)',
+            border: value === opt ? '0.5px solid var(--border-brand)' : '0.5px solid var(--border)',
             padding: '5px 16px',
             borderRadius: 'var(--radius-md)',
             fontSize: 12,
@@ -310,15 +292,7 @@ function SegmentedControl<T extends string>({
   );
 }
 
-function ProgressBar({
-  value,
-  max,
-  color,
-}: {
-  value: number;
-  max: number;
-  color?: string;
-}) {
+function ProgressBar({ value, max, color }: { value: number; max: number; color?: string }) {
   const pct = Math.min((value / max) * 100, 100);
   return (
     <div
@@ -343,11 +317,15 @@ function ProgressBar({
   );
 }
 
-function focusBorder(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+function focusBorder(
+  e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+) {
   e.currentTarget.style.borderColor = 'var(--border-brand)';
 }
 
-function blurBorder(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+function blurBorder(
+  e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+) {
   e.currentTarget.style.borderColor = 'var(--border)';
 }
 
@@ -402,14 +380,8 @@ export default function SettingsPage() {
     { label: 'Product updates', email: true, push: false },
   ]);
 
-  const updateNotifPref = (
-    idx: number,
-    field: 'email' | 'push',
-    val: boolean,
-  ) => {
-    setNotifPrefs((prev) =>
-      prev.map((p, i) => (i === idx ? { ...p, [field]: val } : p)),
-    );
+  const updateNotifPref = (idx: number, field: 'email' | 'push', val: boolean) => {
+    setNotifPrefs((prev) => prev.map((p, i) => (i === idx ? { ...p, [field]: val } : p)));
   };
 
   // ── Security State ───────────────────────────────────────
@@ -447,8 +419,7 @@ export default function SettingsPage() {
   const [wsName, setWsName] = useState('AnimaForge Studio');
   const [wsSlug, setWsSlug] = useState('animaforge-studio');
   const [wsTimezone, setWsTimezone] = useState('America/New_York');
-  const [wsRenderQuality, setWsRenderQuality] =
-    useState<RenderQuality>('standard');
+  const [wsRenderQuality, setWsRenderQuality] = useState<RenderQuality>('standard');
   const [wsAspectRatio, setWsAspectRatio] = useState<AspectRatio>('16:9');
   const [wsLanguage, setWsLanguage] = useState('en');
   const [wsAutoSave, setWsAutoSave] = useState<AutoSaveFreq>('1m');
@@ -583,9 +554,7 @@ export default function SettingsPage() {
   // RENDER
   // ────────────────────────────────────────────────────────────────
   return (
-    <div
-      style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
       {/* ── Delete Account Modal ──────────────────────────── */}
       {showDeleteModal && (
         <div
@@ -639,8 +608,8 @@ export default function SettingsPage() {
                 lineHeight: 1.6,
               }}
             >
-              This will permanently delete your account and all associated data.
-              This action <strong>cannot be undone</strong>.
+              This will permanently delete your account and all associated data. This action{' '}
+              <strong>cannot be undone</strong>.
             </p>
             <div
               style={{
@@ -664,8 +633,7 @@ export default function SettingsPage() {
               </ul>
             </div>
             <p style={labelStyle}>
-              Type <strong style={{ color: '#ef4444' }}>DELETE</strong> to
-              confirm
+              Type <strong style={{ color: '#ef4444' }}>DELETE</strong> to confirm
             </p>
             <input
               type="text"
@@ -693,8 +661,7 @@ export default function SettingsPage() {
                 style={{
                   ...btnDanger,
                   opacity: deleteConfirmText !== 'DELETE' ? 0.4 : 1,
-                  cursor:
-                    deleteConfirmText !== 'DELETE' ? 'not-allowed' : 'pointer',
+                  cursor: deleteConfirmText !== 'DELETE' ? 'not-allowed' : 'pointer',
                 }}
                 onClick={() => {
                   toast.success('Account deletion initiated');
@@ -753,8 +720,8 @@ export default function SettingsPage() {
                 lineHeight: 1.6,
               }}
             >
-              Type <strong style={{ color: '#ef4444' }}>{wsSlug}</strong> to
-              confirm workspace deletion.
+              Type <strong style={{ color: '#ef4444' }}>{wsSlug}</strong> to confirm workspace
+              deletion.
             </p>
             <input
               type="text"
@@ -872,9 +839,7 @@ export default function SettingsPage() {
                           checked={newKeyScopes.includes(scope)}
                           onChange={(v) =>
                             setNewKeyScopes((prev) =>
-                              v
-                                ? [...prev, scope]
-                                : prev.filter((s) => s !== scope),
+                              v ? [...prev, scope] : prev.filter((s) => s !== scope),
                             )
                           }
                         />
@@ -913,18 +878,10 @@ export default function SettingsPage() {
                     justifyContent: 'flex-end',
                   }}
                 >
-                  <button
-                    type="button"
-                    style={btnSecondary}
-                    onClick={resetCreateKeyModal}
-                  >
+                  <button type="button" style={btnSecondary} onClick={resetCreateKeyModal}>
                     Cancel
                   </button>
-                  <button
-                    type="button"
-                    style={btnPrimary}
-                    onClick={handleCreateKey}
-                  >
+                  <button type="button" style={btnPrimary} onClick={handleCreateKey}>
                     Create Key
                   </button>
                 </div>
@@ -988,9 +945,7 @@ export default function SettingsPage() {
                       wordBreak: 'break-all',
                     }}
                   >
-                    {showKeyValue
-                      ? createdKeyValue
-                      : '\u2022'.repeat(createdKeyValue.length)}
+                    {showKeyValue ? createdKeyValue : '\u2022'.repeat(createdKeyValue.length)}
                   </code>
                   <button
                     type="button"
@@ -1025,11 +980,7 @@ export default function SettingsPage() {
                     justifyContent: 'flex-end',
                   }}
                 >
-                  <button
-                    type="button"
-                    style={btnPrimary}
-                    onClick={resetCreateKeyModal}
-                  >
+                  <button type="button" style={btnPrimary} onClick={resetCreateKeyModal}>
                     Done
                   </button>
                 </div>
@@ -1081,16 +1032,10 @@ export default function SettingsPage() {
               type="button"
               onClick={() => setActiveTab(tab.value)}
               style={{
-                background:
-                  activeTab === tab.value ? 'var(--bg-elevated)' : 'transparent',
-                color:
-                  activeTab === tab.value
-                    ? 'var(--text-primary)'
-                    : 'var(--text-secondary)',
+                background: activeTab === tab.value ? 'var(--bg-elevated)' : 'transparent',
+                color: activeTab === tab.value ? 'var(--text-primary)' : 'var(--text-secondary)',
                 border:
-                  activeTab === tab.value
-                    ? '0.5px solid var(--border)'
-                    : '0.5px solid transparent',
+                  activeTab === tab.value ? '0.5px solid var(--border)' : '0.5px solid transparent',
                 padding: '5px 14px',
                 borderRadius: 'var(--radius-md)',
                 fontSize: 12,
@@ -1230,10 +1175,7 @@ export default function SettingsPage() {
                   Bio{' '}
                   <span
                     style={{
-                      color:
-                        bio.length > 160
-                          ? '#ef4444'
-                          : 'var(--text-tertiary)',
+                      color: bio.length > 160 ? '#ef4444' : 'var(--text-tertiary)',
                     }}
                   >
                     ({bio.length}/160)
@@ -1344,9 +1286,7 @@ export default function SettingsPage() {
                 }}
               >
                 <div>
-                  <p style={{ ...labelStyle, margin: 0 }}>
-                    Email Notifications
-                  </p>
+                  <p style={{ ...labelStyle, margin: 0 }}>Email Notifications</p>
                   <p
                     style={{
                       fontSize: 11,
@@ -1357,10 +1297,7 @@ export default function SettingsPage() {
                     Receive updates about renders, team activity, and billing
                   </p>
                 </div>
-                <Toggle
-                  checked={emailNotifications}
-                  onChange={setEmailNotifications}
-                />
+                <Toggle checked={emailNotifications} onChange={setEmailNotifications} />
               </div>
             </div>
 
@@ -1440,9 +1377,7 @@ export default function SettingsPage() {
                       gridTemplateColumns: '1fr 60px 60px',
                       padding: '8px 12px',
                       borderBottom:
-                        idx < notifPrefs.length - 1
-                          ? '0.5px solid var(--border)'
-                          : 'none',
+                        idx < notifPrefs.length - 1 ? '0.5px solid var(--border)' : 'none',
                       alignItems: 'center',
                     }}
                   >
@@ -1535,9 +1470,7 @@ export default function SettingsPage() {
                     Last changed: 3 months ago
                   </p>
                 </div>
-                <UnavailableButton feature="auth.passwordChange"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="auth.passwordChange" style={btnSecondary}>
                   Change password
                 </UnavailableButton>
               </div>
@@ -1574,9 +1507,7 @@ export default function SettingsPage() {
                     Not enabled
                   </p>
                 </div>
-                <UnavailableButton feature="auth.twoFactor"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="auth.twoFactor" style={btnSecondary}>
                   Enable 2FA
                 </UnavailableButton>
               </div>
@@ -1610,9 +1541,7 @@ export default function SettingsPage() {
                         gap: 10,
                       }}
                     >
-                      <span style={{ color: 'var(--text-tertiary)' }}>
-                        {session.icon}
-                      </span>
+                      <span style={{ color: 'var(--text-tertiary)' }}>{session.icon}</span>
                       <div>
                         <p
                           style={{
@@ -1627,9 +1556,7 @@ export default function SettingsPage() {
                         <p
                           style={{
                             fontSize: 11,
-                            color: session.isCurrent
-                              ? 'var(--brand)'
-                              : 'var(--text-tertiary)',
+                            color: session.isCurrent ? 'var(--brand)' : 'var(--text-tertiary)',
                             margin: '2px 0 0',
                           }}
                         >
@@ -1647,11 +1574,7 @@ export default function SettingsPage() {
                           color: '#ef4444',
                           borderColor: 'rgba(239,68,68,0.3)',
                         }}
-                        onClick={() =>
-                          toast.success(
-                            `Revoked session: ${session.device}`,
-                          )
-                        }
+                        onClick={() => toast.success(`Revoked session: ${session.device}`)}
                       >
                         Revoke
                       </button>
@@ -1708,13 +1631,16 @@ export default function SettingsPage() {
                     >
                       {platform}
                     </span>
-                    <UnavailableButton feature="analytics.connectPlatform" hideNote layout="inline"
+                    <UnavailableButton
+                      feature="analytics.connectPlatform"
+                      hideNote
+                      layout="inline"
                       style={{
                         ...btnSecondary,
                         fontSize: 11,
                         padding: '4px 10px',
                       }}
-                                          >
+                    >
                       Connect
                     </UnavailableButton>
                   </div>
@@ -1818,9 +1744,7 @@ export default function SettingsPage() {
                           alignItems: 'center',
                           gap: 4,
                         }}
-                        onClick={() =>
-                          toast.info(`${plugin} download started`)
-                        }
+                        onClick={() => toast.info(`${plugin} download started`)}
                       >
                         <Download size={11} />
                         Download
@@ -1885,7 +1809,8 @@ export default function SettingsPage() {
                     Remove
                   </button>
                 </div>
-                <UnavailableButton feature="settings.createWebhook"
+                <UnavailableButton
+                  feature="settings.createWebhook"
                   style={{
                     ...btnSecondary,
                     display: 'flex',
@@ -1893,7 +1818,7 @@ export default function SettingsPage() {
                     gap: 6,
                     width: 'fit-content',
                   }}
-                                  >
+                >
                   <Plus size={13} />
                   Add webhook
                 </UnavailableButton>
@@ -1922,8 +1847,8 @@ export default function SettingsPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Control what the AI remembers about your workflow to personalize
-                suggestions and improve consistency.
+                Control what the AI remembers about your workflow to personalize suggestions and
+                improve consistency.
               </p>
 
               <div
@@ -1969,9 +1894,7 @@ export default function SettingsPage() {
                   >
                     <Checkbox
                       checked={aiMemory[item.key]}
-                      onChange={(v) =>
-                        setAiMemory((prev) => ({ ...prev, [item.key]: v }))
-                      }
+                      onChange={(v) => setAiMemory((prev) => ({ ...prev, [item.key]: v }))}
                     />
                     {item.label}
                   </label>
@@ -1991,15 +1914,12 @@ export default function SettingsPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Memory: Tracking camera preferences, style parameters, and
-                character consistency across 12 sessions. Last updated 2 hours
-                ago.
+                Memory: Tracking camera preferences, style parameters, and character consistency
+                across 12 sessions. Last updated 2 hours ago.
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <UnavailableButton feature="settings.memoryEditor"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="settings.memoryEditor" style={btnSecondary}>
                   Edit memory
                 </UnavailableButton>
                 <button
@@ -2076,9 +1996,7 @@ export default function SettingsPage() {
                     alignItems: 'center',
                     gap: 6,
                   }}
-                  onClick={() =>
-                    toast.success('Export requested, email incoming')
-                  }
+                  onClick={() => toast.success('Export requested, email incoming')}
                 >
                   <Download size={13} />
                   Download
@@ -2156,11 +2074,7 @@ export default function SettingsPage() {
                   type="text"
                   value={wsSlug}
                   onChange={(e) =>
-                    setWsSlug(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9-]/g, '-'),
-                    )
+                    setWsSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))
                   }
                   style={inputStyle}
                   onFocus={focusBorder}
@@ -2227,27 +2141,13 @@ export default function SettingsPage() {
                   onFocus={focusBorder}
                   onBlur={blurBorder}
                 >
-                  <option value="America/New_York">
-                    Eastern Time (ET)
-                  </option>
-                  <option value="America/Chicago">
-                    Central Time (CT)
-                  </option>
-                  <option value="America/Denver">
-                    Mountain Time (MT)
-                  </option>
-                  <option value="America/Los_Angeles">
-                    Pacific Time (PT)
-                  </option>
-                  <option value="Europe/London">
-                    Greenwich Mean Time (GMT)
-                  </option>
-                  <option value="Europe/Paris">
-                    Central European Time (CET)
-                  </option>
-                  <option value="Asia/Tokyo">
-                    Japan Standard Time (JST)
-                  </option>
+                  <option value="America/New_York">Eastern Time (ET)</option>
+                  <option value="America/Chicago">Central Time (CT)</option>
+                  <option value="America/Denver">Mountain Time (MT)</option>
+                  <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                  <option value="Europe/London">Greenwich Mean Time (GMT)</option>
+                  <option value="Europe/Paris">Central European Time (CET)</option>
+                  <option value="Asia/Tokyo">Japan Standard Time (JST)</option>
                 </select>
               </div>
               <button
@@ -2315,9 +2215,7 @@ export default function SettingsPage() {
                 }}
               >
                 <div>
-                  <p style={{ ...labelStyle, margin: 0 }}>
-                    Preview Auto-Play
-                  </p>
+                  <p style={{ ...labelStyle, margin: 0 }}>Preview Auto-Play</p>
                   <p
                     style={{
                       fontSize: 11,
@@ -2328,10 +2226,7 @@ export default function SettingsPage() {
                     Automatically play rendered previews
                   </p>
                 </div>
-                <Toggle
-                  checked={wsPreviewAutoPlay}
-                  onChange={setWsPreviewAutoPlay}
-                />
+                <Toggle checked={wsPreviewAutoPlay} onChange={setWsPreviewAutoPlay} />
               </div>
             </div>
 
@@ -2378,9 +2273,7 @@ export default function SettingsPage() {
                     Transfer this workspace to another team member
                   </p>
                 </div>
-                <UnavailableButton feature="team.transferOwnership"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="team.transferOwnership" style={btnSecondary}>
                   Transfer
                 </UnavailableButton>
               </div>
@@ -2499,14 +2392,10 @@ export default function SettingsPage() {
               </p>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <UnavailableButton feature="billing.upgrade"
-                  style={btnPrimary}
-                                  >
+                <UnavailableButton feature="billing.upgrade" style={btnPrimary}>
                   Upgrade to Studio
                 </UnavailableButton>
-                <UnavailableButton feature="billing.comparePlans"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="billing.comparePlans" style={btnSecondary}>
                   View all plans
                 </UnavailableButton>
               </div>
@@ -2581,9 +2470,7 @@ export default function SettingsPage() {
                         textAlign: 'center',
                       }}
                       onClick={() =>
-                        toast.success(
-                          `Purchased ${pack.credits} credits for ${pack.price}`,
-                        )
+                        toast.success(`Purchased ${pack.credits} credits for ${pack.price}`)
                       }
                     >
                       Purchase
@@ -2615,10 +2502,7 @@ export default function SettingsPage() {
                     gap: 10,
                   }}
                 >
-                  <CreditCard
-                    size={16}
-                    style={{ color: 'var(--text-tertiary)' }}
-                  />
+                  <CreditCard size={16} style={{ color: 'var(--text-tertiary)' }} />
                   <div>
                     <p
                       style={{
@@ -2641,9 +2525,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <UnavailableButton feature="billing.updateCard"
-                  style={btnSecondary}
-                                  >
+                <UnavailableButton feature="billing.updateCard" style={btnSecondary}>
                   Update card
                 </UnavailableButton>
               </div>
@@ -2721,8 +2603,7 @@ export default function SettingsPage() {
                       display: 'grid',
                       gridTemplateColumns: '1fr 80px 60px 50px',
                       padding: '8px 12px',
-                      borderBottom:
-                        idx < 2 ? '0.5px solid var(--border)' : 'none',
+                      borderBottom: idx < 2 ? '0.5px solid var(--border)' : 'none',
                       alignItems: 'center',
                     }}
                   >
@@ -2765,9 +2646,7 @@ export default function SettingsPage() {
                         gap: 3,
                         fontSize: 11,
                       }}
-                      onClick={() =>
-                        toast.success(`Downloading ${inv.id}.pdf`)
-                      }
+                      onClick={() => toast.success(`Downloading ${inv.id}.pdf`)}
                     >
                       <FileText size={12} />
                       PDF
@@ -2892,9 +2771,7 @@ export default function SettingsPage() {
                             fontSize: 11,
                           }}
                           onClick={() => {
-                            setApiKeys((prev) =>
-                              prev.filter((k) => k.id !== key.id),
-                            );
+                            setApiKeys((prev) => prev.filter((k) => k.id !== key.id));
                             toast.success(`Revoked key: ${key.name}`);
                           }}
                         >
@@ -3016,9 +2893,8 @@ export default function SettingsPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Current usage is not shown. Rate-limit counters live in the
-                gateway and are not exposed to the web app, so any figure here
-                would be invented.
+                Current usage is not shown. Rate-limit counters live in the gateway and are not
+                exposed to the web app, so any figure here would be invented.
               </p>
             </div>
           </div>

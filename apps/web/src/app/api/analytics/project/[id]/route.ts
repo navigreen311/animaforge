@@ -77,18 +77,12 @@ const PROJECTS: Record<string, ProjectData> = {
 /* ------------------------------------------------------------------ */
 /*  GET /api/analytics/project/[id]                                   */
 /* ------------------------------------------------------------------ */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const project = PROJECTS[id];
 
   if (!project) {
-    return NextResponse.json(
-      { error: `Project "${id}" not found` },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: `Project "${id}" not found` }, { status: 404 });
   }
 
   /* Generation timeline — 14 days of renders + approvals */

@@ -71,14 +71,14 @@ interface ReactionFloat {
 const AVATARS = ['Nova (Default)', 'Aria', 'Kai', 'Luna', 'Orion'];
 
 const EMOTIONS: { name: Emotion; icon: React.ElementType; color: string }[] = [
-  { name: 'Happy',     icon: Smile,     color: '#ffd460' },
-  { name: 'Sad',       icon: CloudRain, color: '#5a9fd4' },
-  { name: 'Angry',     icon: Angry,     color: '#e94560' },
-  { name: 'Surprised', icon: Sparkles,  color: '#c77dff' },
-  { name: 'Fear',      icon: Frown,     color: '#7b2ff7' },
-  { name: 'Disgust',   icon: Meh,       color: '#7ec8a0' },
-  { name: 'Neutral',   icon: Meh,       color: '#888888' },
-  { name: 'Excited',   icon: Flame,     color: '#ff6b9d' },
+  { name: 'Happy', icon: Smile, color: '#ffd460' },
+  { name: 'Sad', icon: CloudRain, color: '#5a9fd4' },
+  { name: 'Angry', icon: Angry, color: '#e94560' },
+  { name: 'Surprised', icon: Sparkles, color: '#c77dff' },
+  { name: 'Fear', icon: Frown, color: '#7b2ff7' },
+  { name: 'Disgust', icon: Meh, color: '#7ec8a0' },
+  { name: 'Neutral', icon: Meh, color: '#888888' },
+  { name: 'Excited', icon: Flame, color: '#ff6b9d' },
 ];
 
 const POSES: Pose[] = ['Idle', 'Wave', 'Point', 'Sit', 'Dance'];
@@ -86,23 +86,23 @@ const POSES: Pose[] = ['Idle', 'Wave', 'Point', 'Sit', 'Dance'];
 const QUALITY_PRESETS: QualityPreset[] = ['Low/720p', 'HD/1080p', 'Studio/4K'];
 
 const DESTINATIONS: Destination[] = [
-  { id: 'twitch',  label: 'Twitch',       connected: true },
+  { id: 'twitch', label: 'Twitch', connected: true },
   { id: 'youtube', label: 'YouTube Live', connected: true },
-  { id: 'rtmp',    label: 'Custom RTMP',  connected: false },
+  { id: 'rtmp', label: 'Custom RTMP', connected: false },
 ];
 
 const MOCK_CHAT: ChatMessage[] = [
-  { id: 'm1', user: 'pixelPanda',  text: 'This looks amazing!',          color: '#ff6b9d' },
-  { id: 'm2', user: 'neonDrifter', text: 'How did you rig that?',        color: '#00d4ff' },
-  { id: 'm3', user: 'kodaFrames',  text: 'Wave hello to chat!',          color: '#ffd460' },
-  { id: 'm4', user: 'lumenArt',    text: 'Loving the lighting setup',    color: '#c77dff' },
-  { id: 'm5', user: 'vectorVibe',  text: 'Do the dance pose next pls',   color: '#7ec8a0' },
+  { id: 'm1', user: 'pixelPanda', text: 'This looks amazing!', color: '#ff6b9d' },
+  { id: 'm2', user: 'neonDrifter', text: 'How did you rig that?', color: '#00d4ff' },
+  { id: 'm3', user: 'kodaFrames', text: 'Wave hello to chat!', color: '#ffd460' },
+  { id: 'm4', user: 'lumenArt', text: 'Loving the lighting setup', color: '#c77dff' },
+  { id: 'm5', user: 'vectorVibe', text: 'Do the dance pose next pls', color: '#7ec8a0' },
 ];
 
 const SCENE_BRANCHES: SceneBranch[] = [
-  { id: 'b1', title: 'Interview Set',     description: 'Two-camera sit-down, warm lighting' },
-  { id: 'b2', title: 'Outdoor Plaza',     description: 'Daylight exterior with crowd ambience' },
-  { id: 'b3', title: 'Neon Alley',        description: 'Night scene, cyberpunk atmosphere' },
+  { id: 'b1', title: 'Interview Set', description: 'Two-camera sit-down, warm lighting' },
+  { id: 'b2', title: 'Outdoor Plaza', description: 'Daylight exterior with crowd ambience' },
+  { id: 'b3', title: 'Neon Alley', description: 'Night scene, cyberpunk atmosphere' },
 ];
 
 const REACTION_EMOJIS = ['❤️', '🔥', '✨', '😂', '👏', '🎉'];
@@ -249,10 +249,13 @@ export default function LivePage() {
     if (chatPaused || chatMuted) return;
     const t = setInterval(() => {
       setChatMessages((prev) => {
-        const next = [...prev.slice(1), {
-          ...prev[0],
-          id: `m-${Date.now()}`,
-        }];
+        const next = [
+          ...prev.slice(1),
+          {
+            ...prev[0],
+            id: `m-${Date.now()}`,
+          },
+        ];
         return next;
       });
     }, 2600);
@@ -310,8 +313,25 @@ export default function LivePage() {
       <aside style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
         {/* Header */}
         <div style={panelStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 12,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
               <Radio size={15} /> Live Session
             </h2>
             <span
@@ -360,7 +380,15 @@ export default function LivePage() {
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
-            {isLive ? <><Square size={14} /> Stop broadcast</> : <><Circle size={14} fill="#fff" /> Start broadcast</>}
+            {isLive ? (
+              <>
+                <Square size={14} /> Stop broadcast
+              </>
+            ) : (
+              <>
+                <Circle size={14} fill="#fff" /> Start broadcast
+              </>
+            )}
           </button>
         </div>
 
@@ -368,9 +396,9 @@ export default function LivePage() {
         <div style={panelStyle}>
           <p style={sectionLabelStyle}>Session Info</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <InfoRow label="Duration"  value={formatDuration(duration)} mono />
-            <InfoRow label="Viewers"   value={viewers.toLocaleString()} icon={Users} />
-            <InfoRow label="Latency"   value={latency} icon={Zap} />
+            <InfoRow label="Duration" value={formatDuration(duration)} mono />
+            <InfoRow label="Viewers" value={viewers.toLocaleString()} icon={Users} />
+            <InfoRow label="Latency" value={latency} icon={Zap} />
           </div>
         </div>
 
@@ -418,7 +446,10 @@ export default function LivePage() {
                     <button
                       key={a}
                       type="button"
-                      onClick={() => { setAvatar(a); setAvatarDropOpen(false); }}
+                      onClick={() => {
+                        setAvatar(a);
+                        setAvatarDropOpen(false);
+                      }}
                       style={{
                         display: 'block',
                         width: '100%',
@@ -639,7 +670,15 @@ export default function LivePage() {
                 {avatar[0]}
               </div>
               <span style={{ fontWeight: 600 }}>{avatar.split(' ')[0]}</span>
-              <span style={{ color: '#7ec8a0', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span
+                style={{
+                  color: '#7ec8a0',
+                  fontSize: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
                 <motion.span
                   animate={{ opacity: [1, 0.3, 1] }}
                   transition={{ duration: 0.9, repeat: Infinity }}
@@ -728,10 +767,7 @@ export default function LivePage() {
               {playing ? <Pause size={14} /> : <Play size={14} />}
             </IconButton>
 
-            <IconButton
-              onClick={() => setMuted((m) => !m)}
-              aria-label={muted ? 'Unmute' : 'Mute'}
-            >
+            <IconButton onClick={() => setMuted((m) => !m)} aria-label={muted ? 'Unmute' : 'Mute'}>
               {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             </IconButton>
 
@@ -757,7 +793,14 @@ export default function LivePage() {
                 padding: '0 8px',
               }}
             >
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-tertiary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.4px',
+                }}
+              >
                 Scenes
               </span>
               <div
@@ -921,10 +964,24 @@ export default function LivePage() {
             }}
           >
             <div>
-              <div style={{ fontSize: 9, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              <div
+                style={{
+                  fontSize: 9,
+                  color: 'var(--text-tertiary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.4px',
+                }}
+              >
                 Current Scene
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600, marginTop: 2 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  marginTop: 2,
+                }}
+              >
                 {currentScene}
               </div>
             </div>
@@ -943,10 +1000,24 @@ export default function LivePage() {
                   borderRadius: 'var(--radius-md)',
                 }}
               >
-                <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-primary)',
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 8, lineHeight: 1.4 }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text-tertiary)',
+                    marginBottom: 8,
+                    lineHeight: 1.4,
+                  }}
+                >
                   {b.description}
                 </div>
                 <button
@@ -966,7 +1037,10 @@ export default function LivePage() {
           <p style={sectionLabelStyle}>Audience Interaction</p>
 
           <p style={subLabelStyle}>
-            <MessageSquare size={9} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+            <MessageSquare
+              size={9}
+              style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
+            />
             Live Chat
           </p>
           <div
@@ -1086,7 +1160,9 @@ function InfoRow({
         fontSize: 11,
       }}
     >
-      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span
+        style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}
+      >
         {Icon ? <Icon size={11} /> : null}
         {label}
       </span>

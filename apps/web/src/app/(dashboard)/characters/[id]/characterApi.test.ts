@@ -46,9 +46,7 @@ const wardrobeState: WardrobeState = {
     },
     Footwear: { item: 'Boots', detail: { fabric: 'Leather', color: '#3b2314' } },
   },
-  presets: [
-    { id: 'preset-1', name: 'Street', selections: { Tops: { item: 'Hoodie' } } },
-  ],
+  presets: [{ id: 'preset-1', name: 'Street', selections: { Tops: { item: 'Hoodie' } } }],
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -85,9 +83,7 @@ describe('hair mapping', () => {
 
   it('falls back when a legacy descriptive length is stored', () => {
     // The original API stored "short"/"long"; the slider needs a number.
-    expect(hairParamsToState({ length: 'short' }).length).toBe(
-      DEFAULT_HAIR_STATE.length,
-    );
+    expect(hairParamsToState({ length: 'short' }).length).toBe(DEFAULT_HAIR_STATE.length);
   });
 
   it('clamps out-of-range values instead of rendering them', () => {
@@ -112,9 +108,7 @@ describe('hair mapping', () => {
 
 describe('wardrobe mapping', () => {
   it('round-trips selections and presets', () => {
-    expect(wardrobePayloadToState(wardrobeStateToPayload(wardrobeState))).toEqual(
-      wardrobeState,
-    );
+    expect(wardrobePayloadToState(wardrobeStateToPayload(wardrobeState))).toEqual(wardrobeState);
   });
 
   it('preserves per-item detail', () => {
@@ -140,10 +134,7 @@ describe('wardrobe mapping', () => {
   it('reads the legacy string array form without losing items', () => {
     const state = wardrobePayloadToState(['armor', 'cape']);
     expect(Object.keys(state.selections)).toHaveLength(2);
-    expect(Object.values(state.selections).map((s) => s.item)).toEqual([
-      'armor',
-      'cape',
-    ]);
+    expect(Object.values(state.selections).map((s) => s.item)).toEqual(['armor', 'cape']);
   });
 
   it('tolerates a payload missing presets', () => {
@@ -171,9 +162,11 @@ describe('base URL', () => {
 
 describe('saveHairParams', () => {
   it('PUTs the hair params to the character', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ success: true, data: { id: 'c1', hairParams: hairState } }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ success: true, data: { id: 'c1', hairParams: hairState } }),
+      );
 
     const result = await saveHairParams('c1', hairState, {
       baseUrl: 'https://api.test',
@@ -229,15 +222,13 @@ describe('saveHairParams', () => {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
 
-    expect(fetchImpl.mock.calls[0][0]).toBe(
-      'https://api.test/api/v1/characters/a%2Fb%20c/hair',
-    );
+    expect(fetchImpl.mock.calls[0][0]).toBe('https://api.test/api/v1/characters/a%2Fb%20c/hair');
   });
 
   it('raises the server error message', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ error: { message: 'Character not found' } }, 404),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ error: { message: 'Character not found' } }, 404));
 
     await expect(
       saveHairParams('missing', hairState, {

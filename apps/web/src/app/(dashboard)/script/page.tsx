@@ -31,12 +31,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
-import type {
-  SceneBlock,
-  DialogueLine,
-  ShotBreakdown,
-  DetectedCharacter,
-} from '@/lib/types';
+import type { SceneBlock, DialogueLine, ShotBreakdown, DetectedCharacter } from '@/lib/types';
 
 import { UnavailableButton } from '../components/unavailable/UnavailableButton';
 /* ── Constants ──────────────────────────────────────────────── */
@@ -45,8 +40,16 @@ const FORMATS = ['Short Film', 'Ad 30s', 'Explainer', 'Music Video', 'Documentar
 const TONES = ['Action', 'Drama', 'Comedy', 'Horror', 'Mystery', 'Fantasy'] as const;
 const ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const;
 const CAMERA_TYPES = [
-  'Wide', 'Medium', 'Close-up', 'Extreme CU', 'Insert',
-  'Aerial', 'POV', 'Two-Shot', 'Over-Shoulder', 'Slow-mo',
+  'Wide',
+  'Medium',
+  'Close-up',
+  'Extreme CU',
+  'Insert',
+  'Aerial',
+  'POV',
+  'Two-Shot',
+  'Over-Shoulder',
+  'Slow-mo',
 ] as const;
 
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 8, 10, 15] as const;
@@ -58,9 +61,9 @@ const MOCK_PROJECTS = [
 ];
 
 const MOCK_VERSIONS = [
-  { id: 'v3', label: 'Current', timestamp: new Date(), },
-  { id: 'v2', label: 'Auto-save', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), },
-  { id: 'v1', label: 'Initial draft', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), },
+  { id: 'v3', label: 'Current', timestamp: new Date() },
+  { id: 'v2', label: 'Auto-save', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+  { id: 'v1', label: 'Initial draft', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
 ];
 
 const EXPORT_OPTIONS = [
@@ -90,7 +93,11 @@ const INITIAL_SCENES: SceneBlock[] = [
     action:
       'Kai stands on the edge of a rain-soaked rooftop, neon lights reflecting off his cybernetic arm. The city hums below — a maze of holographic billboards and speeding drones. He clenches his fist, circuits flickering beneath synthetic skin.',
     dialogue: [
-      { characterName: 'KAI', parenthetical: 'quietly', line: 'They said the signal would be stronger up here.' },
+      {
+        characterName: 'KAI',
+        parenthetical: 'quietly',
+        line: 'They said the signal would be stronger up here.',
+      },
     ],
   },
   {
@@ -100,7 +107,10 @@ const INITIAL_SCENES: SceneBlock[] = [
     action:
       'Dr. Echo adjusts holographic displays, her fingers dancing through projected data streams. Vials of luminescent fluid line the walls. A warning klaxon pulses red as anomalous readings spike across every monitor.',
     dialogue: [
-      { characterName: 'DR. ECHO', line: 'The containment field is destabilizing. We have minutes, not hours.' },
+      {
+        characterName: 'DR. ECHO',
+        line: 'The containment field is destabilizing. We have minutes, not hours.',
+      },
     ],
   },
   {
@@ -114,15 +124,86 @@ const INITIAL_SCENES: SceneBlock[] = [
 ];
 
 const INITIAL_SHOTS: ShotBreakdown[] = [
-  { id: 'shot-1', shotNumber: 1, cameraType: 'Wide', description: 'Establishing — rooftop skyline with neon city below', durationSeconds: 4, characterIds: ['char-kai'], sceneId: 'scene-1' },
-  { id: 'shot-2', shotNumber: 2, cameraType: 'Close-up', description: 'Cybernetic arm flickering with circuit patterns', durationSeconds: 2, characterIds: ['char-kai'], sceneId: 'scene-1' },
-  { id: 'shot-3', shotNumber: 3, cameraType: 'Medium', description: 'Kai clenching fist, rain on face', durationSeconds: 3, characterIds: ['char-kai'], sceneId: 'scene-1' },
-  { id: 'shot-4', shotNumber: 4, cameraType: 'Wide', description: 'Underground lab interior, holographic displays active', durationSeconds: 4, characterIds: ['char-echo'], sceneId: 'scene-2' },
-  { id: 'shot-5', shotNumber: 5, cameraType: 'Insert', description: 'Holographic data streams and anomaly readings', durationSeconds: 2, sceneId: 'scene-2' },
-  { id: 'shot-6', shotNumber: 6, cameraType: 'Medium', description: 'Dr. Echo at console, klaxon pulsing red', durationSeconds: 3, characterIds: ['char-echo'], sceneId: 'scene-2' },
-  { id: 'shot-7', shotNumber: 7, cameraType: 'Wide', description: 'Garden ruins at dawn, mist rising', durationSeconds: 5, characterIds: ['char-luna'], sceneId: 'scene-3' },
-  { id: 'shot-8', shotNumber: 8, cameraType: 'Close-up', description: 'Energy flowing from palms into cracked earth', durationSeconds: 3, characterIds: ['char-luna'], sceneId: 'scene-3' },
-  { id: 'shot-9', shotNumber: 9, cameraType: 'Tracking', description: 'Slow-mo petals unfurling in golden light', durationSeconds: 4, characterIds: ['char-luna'], sceneId: 'scene-3' },
+  {
+    id: 'shot-1',
+    shotNumber: 1,
+    cameraType: 'Wide',
+    description: 'Establishing — rooftop skyline with neon city below',
+    durationSeconds: 4,
+    characterIds: ['char-kai'],
+    sceneId: 'scene-1',
+  },
+  {
+    id: 'shot-2',
+    shotNumber: 2,
+    cameraType: 'Close-up',
+    description: 'Cybernetic arm flickering with circuit patterns',
+    durationSeconds: 2,
+    characterIds: ['char-kai'],
+    sceneId: 'scene-1',
+  },
+  {
+    id: 'shot-3',
+    shotNumber: 3,
+    cameraType: 'Medium',
+    description: 'Kai clenching fist, rain on face',
+    durationSeconds: 3,
+    characterIds: ['char-kai'],
+    sceneId: 'scene-1',
+  },
+  {
+    id: 'shot-4',
+    shotNumber: 4,
+    cameraType: 'Wide',
+    description: 'Underground lab interior, holographic displays active',
+    durationSeconds: 4,
+    characterIds: ['char-echo'],
+    sceneId: 'scene-2',
+  },
+  {
+    id: 'shot-5',
+    shotNumber: 5,
+    cameraType: 'Insert',
+    description: 'Holographic data streams and anomaly readings',
+    durationSeconds: 2,
+    sceneId: 'scene-2',
+  },
+  {
+    id: 'shot-6',
+    shotNumber: 6,
+    cameraType: 'Medium',
+    description: 'Dr. Echo at console, klaxon pulsing red',
+    durationSeconds: 3,
+    characterIds: ['char-echo'],
+    sceneId: 'scene-2',
+  },
+  {
+    id: 'shot-7',
+    shotNumber: 7,
+    cameraType: 'Wide',
+    description: 'Garden ruins at dawn, mist rising',
+    durationSeconds: 5,
+    characterIds: ['char-luna'],
+    sceneId: 'scene-3',
+  },
+  {
+    id: 'shot-8',
+    shotNumber: 8,
+    cameraType: 'Close-up',
+    description: 'Energy flowing from palms into cracked earth',
+    durationSeconds: 3,
+    characterIds: ['char-luna'],
+    sceneId: 'scene-3',
+  },
+  {
+    id: 'shot-9',
+    shotNumber: 9,
+    cameraType: 'Tracking',
+    description: 'Slow-mo petals unfurling in golden light',
+    durationSeconds: 4,
+    characterIds: ['char-luna'],
+    sceneId: 'scene-3',
+  },
 ];
 
 const INITIAL_CHARACTERS: DetectedCharacter[] = [
@@ -166,7 +247,8 @@ export default function ScriptPage() {
   /* Script output state */
   const [scenes, setScenes] = useState<SceneBlock[]>(INITIAL_SCENES);
   const [shots, setShots] = useState<ShotBreakdown[]>(INITIAL_SHOTS);
-  const [detectedCharacters, setDetectedCharacters] = useState<DetectedCharacter[]>(INITIAL_CHARACTERS);
+  const [detectedCharacters, setDetectedCharacters] =
+    useState<DetectedCharacter[]>(INITIAL_CHARACTERS);
   const [saved, setSaved] = useState(true);
   const [hoveredScene, setHoveredScene] = useState<string | null>(null);
 
@@ -260,7 +342,7 @@ export default function ScriptPage() {
       return;
     }
     setScenes((prev) =>
-      prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, sceneNumber: i + 1 }))
+      prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, sceneNumber: i + 1 })),
     );
     setShots((prev) => prev.filter((sh) => sh.sceneId !== id));
     markDirty();
@@ -272,8 +354,8 @@ export default function ScriptPage() {
       prev.map((s) =>
         s.id === sceneId
           ? { ...s, dialogue: [...(s.dialogue || []), { characterName: 'CHARACTER', line: '' }] }
-          : s
-      )
+          : s,
+      ),
     );
     markDirty();
   };
@@ -285,7 +367,7 @@ export default function ScriptPage() {
         const dialogue = [...(s.dialogue || [])];
         dialogue[dIdx] = { ...dialogue[dIdx], ...patch };
         return { ...s, dialogue };
-      })
+      }),
     );
     markDirty();
   };
@@ -303,8 +385,8 @@ export default function ScriptPage() {
       prev.map((s) =>
         s.id === shotId
           ? { ...s, characterIds: (s.characterIds || []).filter((c) => c !== charId) }
-          : s
-      )
+          : s,
+      ),
     );
     markDirty();
     debouncedShotSave();
@@ -320,8 +402,8 @@ export default function ScriptPage() {
         prev.map((s) =>
           s.id === shotId
             ? { ...s, characterIds: [...(s.characterIds || []), available.characterId!] }
-            : s
-        )
+            : s,
+        ),
       );
       markDirty();
       debouncedShotSave();
@@ -388,8 +470,10 @@ export default function ScriptPage() {
   /* ── Render ───────────────────────────────────────────────── */
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
-
+    <div
+      className="flex h-full flex-col overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-surface)' }}
+    >
       {/* ════════════════════════════════════════════════════════
           TOP BAR
          ════════════════════════════════════════════════════════ */}
@@ -429,12 +513,18 @@ export default function ScriptPage() {
           )}
 
           {/* Divider */}
-          <span className="mx-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>|</span>
+          <span className="mx-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            |
+          </span>
 
           {/* Project selector (SA-5) */}
           <div className="relative group/proj">
             <button
-              onClick={(e) => { e.stopPropagation(); setShowProjectDropdown((p) => !p); setShowExportDropdown(false); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowProjectDropdown((p) => !p);
+                setShowExportDropdown(false);
+              }}
               className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors hover:opacity-80"
               style={{
                 borderColor: 'var(--border)',
@@ -446,7 +536,10 @@ export default function ScriptPage() {
                 <>
                   <span
                     className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: MOCK_PROJECTS.find((p) => p.id === selectedProject)?.color || '#94a3b8' }}
+                    style={{
+                      backgroundColor:
+                        MOCK_PROJECTS.find((p) => p.id === selectedProject)?.color || '#94a3b8',
+                    }}
                   />
                   {MOCK_PROJECTS.find((p) => p.id === selectedProject)?.title}
                 </>
@@ -482,7 +575,11 @@ export default function ScriptPage() {
                 {/* Search input */}
                 <div className="px-2 pb-1.5 pt-1">
                   <div className="relative">
-                    <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
+                    <Search
+                      size={12}
+                      className="absolute left-2 top-1/2 -translate-y-1/2"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    />
                     <input
                       ref={projectSearchRef}
                       value={projectSearch}
@@ -499,21 +596,37 @@ export default function ScriptPage() {
                   </div>
                 </div>
                 {/* Project list */}
-                {MOCK_PROJECTS
-                  .filter((p) => p.title.toLowerCase().includes(projectSearch.toLowerCase()))
-                  .map((p) => (
+                {MOCK_PROJECTS.filter((p) =>
+                  p.title.toLowerCase().includes(projectSearch.toLowerCase()),
+                ).map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => { setSelectedProject(p.id); setShowProjectDropdown(false); setProjectSearch(''); toast.success(`Assigned to ${p.title}`); }}
+                    onClick={() => {
+                      setSelectedProject(p.id);
+                      setShowProjectDropdown(false);
+                      setProjectSearch('');
+                      toast.success(`Assigned to ${p.title}`);
+                    }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
                     style={{
-                      color: p.id === selectedProject ? 'var(--brand-light)' : 'var(--text-primary)',
-                      backgroundColor: p.id === selectedProject ? 'var(--brand-dim)' : 'transparent',
+                      color:
+                        p.id === selectedProject ? 'var(--brand-light)' : 'var(--text-primary)',
+                      backgroundColor:
+                        p.id === selectedProject ? 'var(--brand-dim)' : 'transparent',
                     }}
-                    onMouseEnter={(e) => { if (p.id !== selectedProject) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-                    onMouseLeave={(e) => { if (p.id !== selectedProject) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    onMouseEnter={(e) => {
+                      if (p.id !== selectedProject)
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (p.id !== selectedProject)
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                   >
-                    <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: p.color }}
+                    />
                     <span className="flex-1">{p.title}</span>
                     <span
                       className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
@@ -526,10 +639,14 @@ export default function ScriptPage() {
                 ))}
                 {/* Create new project */}
                 <div className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <UnavailableButton feature="projects.createFromScript" hideNote
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
+                  <UnavailableButton
+                    feature="projects.createFromScript"
+                    hideNote
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
                     style={{ color: 'var(--brand-light)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={12} />
@@ -541,11 +658,18 @@ export default function ScriptPage() {
           </div>
 
           {/* Auto-save indicator */}
-          <span className="ml-2 flex items-center gap-1 text-[11px]" style={{ color: saved ? 'var(--success, #4ade80)' : 'var(--text-tertiary)' }}>
+          <span
+            className="ml-2 flex items-center gap-1 text-[11px]"
+            style={{ color: saved ? 'var(--success, #4ade80)' : 'var(--text-tertiary)' }}
+          >
             {saved ? (
-              <><Check size={11} /> {'Saved \u2713'}</>
+              <>
+                <Check size={11} /> {'Saved \u2713'}
+              </>
             ) : isSaving ? (
-              <><Loader size={11} className="animate-spin" /> Saving...</>
+              <>
+                <Loader size={11} className="animate-spin" /> Saving...
+              </>
             ) : (
               'Unsaved changes...'
             )}
@@ -557,9 +681,17 @@ export default function ScriptPage() {
           {/* Export dropdown (SA-6) */}
           <div className="relative">
             <button
-              onClick={(e) => { e.stopPropagation(); setShowExportDropdown((p) => !p); setShowProjectDropdown(false); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowExportDropdown((p) => !p);
+                setShowProjectDropdown(false);
+              }}
               className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-80"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'var(--bg-surface)' }}
+              style={{
+                borderColor: 'var(--border)',
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-surface)',
+              }}
             >
               Export
               <ChevronDown size={12} />
@@ -578,7 +710,9 @@ export default function ScriptPage() {
                       onClick={() => handleExport(opt.label)}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
                       style={{ color: 'var(--text-primary)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <Icon size={13} style={{ color: 'var(--text-tertiary)' }} />
@@ -625,7 +759,10 @@ export default function ScriptPage() {
         {/* Row 1: Format + Tone */}
         <div className="mb-3 grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+            <label
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               Format
             </label>
             <select
@@ -639,12 +776,17 @@ export default function ScriptPage() {
               }}
             >
               {FORMATS.map((f) => (
-                <option key={f} value={f}>{f}</option>
+                <option key={f} value={f}>
+                  {f}
+                </option>
               ))}
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+            <label
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               Tone
             </label>
             <select
@@ -658,7 +800,9 @@ export default function ScriptPage() {
               }}
             >
               {TONES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           </div>
@@ -667,8 +811,12 @@ export default function ScriptPage() {
         {/* Row 2: Duration slider + Shot count slider + Aspect ratio toggle */}
         <div className="mb-3 grid grid-cols-[1fr_1fr_auto] gap-4 items-end">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
-              Target Duration: <span style={{ color: 'var(--brand-light)' }}>{targetDuration}s</span>
+            <label
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Target Duration:{' '}
+              <span style={{ color: 'var(--brand-light)' }}>{targetDuration}s</span>
             </label>
             <input
               type="range"
@@ -684,12 +832,19 @@ export default function ScriptPage() {
               className="w-full accent-[var(--brand)]"
               style={{ accentColor: 'var(--brand)' }}
             />
-            <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-              <span>15s</span><span>300s</span>
+            <div
+              className="flex justify-between text-[10px]"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <span>15s</span>
+              <span>300s</span>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+            <label
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               Target Shots: <span style={{ color: 'var(--brand-light)' }}>{targetShotCount}</span>
             </label>
             <input
@@ -706,12 +861,19 @@ export default function ScriptPage() {
               className="w-full"
               style={{ accentColor: 'var(--brand)' }}
             />
-            <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-              <span>3</span><span>30</span>
+            <div
+              className="flex justify-between text-[10px]"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <span>3</span>
+              <span>30</span>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+            <label
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               Aspect Ratio
             </label>
             <div
@@ -737,7 +899,10 @@ export default function ScriptPage() {
 
         {/* Row 3: Prompt textarea + char counter */}
         <div className="mb-3 flex flex-col gap-1">
-          <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+          <label
+            className="text-[11px] font-medium uppercase tracking-wide"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             Prompt
           </label>
           <div className="relative">
@@ -759,7 +924,9 @@ export default function ScriptPage() {
             />
             <span
               className="absolute bottom-2 right-3 text-[11px]"
-              style={{ color: prompt.length >= 950 ? 'var(--error, #f87171)' : 'var(--text-tertiary)' }}
+              style={{
+                color: prompt.length >= 950 ? 'var(--error, #f87171)' : 'var(--text-tertiary)',
+              }}
             >
               {prompt.length}/1000
             </span>
@@ -782,7 +949,6 @@ export default function ScriptPage() {
           MAIN CONTENT: Script (left) + Shots (right)
          ════════════════════════════════════════════════════════ */}
       <div className="flex flex-1 overflow-hidden">
-
         {/* ── Left Panel: Script Scenes + Character Detection ─── */}
         <div className="flex flex-1 flex-col overflow-y-auto p-5">
           <div className="mb-3 flex items-center justify-between">
@@ -821,26 +987,54 @@ export default function ScriptPage() {
                     borderColor: 'var(--border)',
                   }}
                 >
-                  <button onClick={() => moveScene(scene.id, -1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move up" aria-label="Move scene up"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  <button
+                    onClick={() => moveScene(scene.id, -1)}
+                    className="rounded p-1 transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title="Move up"
+                    aria-label="Move scene up"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <ArrowUp size={13} />
                   </button>
-                  <button onClick={() => moveScene(scene.id, 1)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Move down" aria-label="Move scene down"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  <button
+                    onClick={() => moveScene(scene.id, 1)}
+                    className="rounded p-1 transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title="Move down"
+                    aria-label="Move scene down"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <ArrowDown size={13} />
                   </button>
-                  <button onClick={() => addSceneAfter(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--text-secondary)' }} title="Add scene after" aria-label="Add scene after"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  <button
+                    onClick={() => addSceneAfter(scene.id)}
+                    className="rounded p-1 transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title="Add scene after"
+                    aria-label="Add scene after"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={13} />
                   </button>
-                  <button onClick={() => deleteScene(scene.id)} className="rounded p-1 transition-colors" style={{ color: 'var(--error, #f87171)' }} title="Delete scene" aria-label="Delete scene"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  <button
+                    onClick={() => deleteScene(scene.id)}
+                    className="rounded p-1 transition-colors"
+                    style={{ color: 'var(--error, #f87171)' }}
+                    title="Delete scene"
+                    aria-label="Delete scene"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Trash2 size={13} />
@@ -882,25 +1076,35 @@ export default function ScriptPage() {
 
                   {/* Dialogue lines */}
                   {scene.dialogue && scene.dialogue.length > 0 && (
-                    <div className="mb-2 flex flex-col gap-2 rounded-md border p-3" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
+                    <div
+                      className="mb-2 flex flex-col gap-2 rounded-md border p-3"
+                      style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}
+                    >
                       {scene.dialogue.map((d, dIdx) => (
                         <div key={dIdx} className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <input
                               value={d.characterName}
-                              onChange={(e) => updateDialogue(scene.id, dIdx, { characterName: e.target.value })}
+                              onChange={(e) =>
+                                updateDialogue(scene.id, dIdx, { characterName: e.target.value })
+                              }
                               className="w-32 bg-transparent text-xs font-bold uppercase outline-none"
                               style={{ color: 'var(--brand-light)' }}
                             />
                             {d.parenthetical && (
-                              <span className="text-[11px] italic" style={{ color: 'var(--text-tertiary)' }}>
+                              <span
+                                className="text-[11px] italic"
+                                style={{ color: 'var(--text-tertiary)' }}
+                              >
                                 ({d.parenthetical})
                               </span>
                             )}
                           </div>
                           <input
                             value={d.line}
-                            onChange={(e) => updateDialogue(scene.id, dIdx, { line: e.target.value })}
+                            onChange={(e) =>
+                              updateDialogue(scene.id, dIdx, { line: e.target.value })
+                            }
                             className="w-full bg-transparent text-sm outline-none"
                             style={{ color: 'var(--text-primary)' }}
                             placeholder="Dialogue line..."
@@ -915,7 +1119,9 @@ export default function ScriptPage() {
                     onClick={() => addDialogue(scene.id)}
                     className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors"
                     style={{ color: 'var(--brand-light)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand-dim)')}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--brand-dim)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={11} />
@@ -972,8 +1178,12 @@ export default function ScriptPage() {
                           onClick={() => toast.info(`Link ${char.name} to existing character`)}
                           className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors"
                           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor = 'transparent')
+                          }
                         >
                           <Link size={10} />
                           Link
@@ -981,7 +1191,9 @@ export default function ScriptPage() {
                         <button
                           onClick={() => {
                             setDetectedCharacters((prev) =>
-                              prev.map((c) => c.name === char.name ? { ...c, characterId: uid() } : c)
+                              prev.map((c) =>
+                                c.name === char.name ? { ...c, characterId: uid() } : c,
+                              ),
                             );
                             toast.success(`Created character: ${char.name}`);
                           }}
@@ -1047,7 +1259,10 @@ export default function ScriptPage() {
                       {shot.shotNumber}
                     </span>
                     <div className="flex flex-1 flex-col overflow-hidden">
-                      <span className="truncate text-[11px] leading-snug" style={{ color: 'var(--text-primary)' }}>
+                      <span
+                        className="truncate text-[11px] leading-snug"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {shot.description}
                       </span>
                       <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
@@ -1074,10 +1289,18 @@ export default function ScriptPage() {
                         transition={{ duration: 0.2, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="flex flex-col gap-2 border-t px-3 py-2.5" style={{ borderColor: 'var(--border)' }}>
+                        <div
+                          className="flex flex-col gap-2 border-t px-3 py-2.5"
+                          style={{ borderColor: 'var(--border)' }}
+                        >
                           {/* Camera type dropdown */}
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Camera</label>
+                            <label
+                              className="text-[10px] font-medium uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              Camera
+                            </label>
                             <select
                               value={shot.cameraType}
                               onChange={(e) => updateShot(shot.id, { cameraType: e.target.value })}
@@ -1089,17 +1312,26 @@ export default function ScriptPage() {
                               }}
                             >
                               {CAMERA_TYPES.map((ct) => (
-                                <option key={ct} value={ct}>{ct}</option>
+                                <option key={ct} value={ct}>
+                                  {ct}
+                                </option>
                               ))}
                             </select>
                           </div>
 
                           {/* Duration dropdown */}
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Duration (s)</label>
+                            <label
+                              className="text-[10px] font-medium uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              Duration (s)
+                            </label>
                             <select
                               value={shot.durationSeconds}
-                              onChange={(e) => updateShot(shot.id, { durationSeconds: Number(e.target.value) })}
+                              onChange={(e) =>
+                                updateShot(shot.id, { durationSeconds: Number(e.target.value) })
+                              }
                               className="rounded border px-2 py-1 text-[11px] outline-none"
                               style={{
                                 borderColor: 'var(--border)',
@@ -1108,14 +1340,21 @@ export default function ScriptPage() {
                               }}
                             >
                               {DURATION_OPTIONS.map((d) => (
-                                <option key={d} value={d}>{d}s</option>
+                                <option key={d} value={d}>
+                                  {d}s
+                                </option>
                               ))}
                             </select>
                           </div>
 
                           {/* Description textarea (2 rows) */}
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Description</label>
+                            <label
+                              className="text-[10px] font-medium uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              Description
+                            </label>
                             <textarea
                               value={shot.description}
                               onChange={(e) => updateShot(shot.id, { description: e.target.value })}
@@ -1131,15 +1370,25 @@ export default function ScriptPage() {
 
                           {/* Character chips with remove + add */}
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Characters</label>
+                            <label
+                              className="text-[10px] font-medium uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              Characters
+                            </label>
                             <div className="flex flex-wrap items-center gap-1">
                               {(shot.characterIds || []).map((cId) => {
-                                const charName = detectedCharacters.find((c) => c.characterId === cId)?.name || cId;
+                                const charName =
+                                  detectedCharacters.find((c) => c.characterId === cId)?.name ||
+                                  cId;
                                 return (
                                   <span
                                     key={cId}
                                     className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                                    style={{ backgroundColor: 'var(--brand-dim)', color: 'var(--brand-light)' }}
+                                    style={{
+                                      backgroundColor: 'var(--brand-dim)',
+                                      color: 'var(--brand-light)',
+                                    }}
                                   >
                                     {charName}
                                     <button
@@ -1156,9 +1405,16 @@ export default function ScriptPage() {
                               <button
                                 onClick={() => addCharacterToShot(shot.id)}
                                 className="inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors"
-                                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                style={{
+                                  borderColor: 'var(--border)',
+                                  color: 'var(--text-secondary)',
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.backgroundColor = 'transparent')
+                                }
                               >
                                 <Plus size={8} />
                                 Add
@@ -1168,7 +1424,12 @@ export default function ScriptPage() {
 
                           {/* Scene reference */}
                           <div className="flex flex-col gap-0.5">
-                            <label className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-tertiary)' }}>Scene</label>
+                            <label
+                              className="text-[10px] font-medium uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              Scene
+                            </label>
                             <select
                               value={shot.sceneId}
                               onChange={(e) => updateShot(shot.id, { sceneId: e.target.value })}
@@ -1180,10 +1441,15 @@ export default function ScriptPage() {
                               }}
                             >
                               {scenes.map((sc) => (
-                                <option key={sc.id} value={sc.id}>Scene {sc.sceneNumber}</option>
+                                <option key={sc.id} value={sc.id}>
+                                  Scene {sc.sceneNumber}
+                                </option>
                               ))}
                             </select>
-                            <span className="truncate text-[9px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <span
+                              className="truncate text-[9px]"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                               {sceneLabel}
                             </span>
                           </div>
@@ -1197,12 +1463,18 @@ export default function ScriptPage() {
           </div>
 
           {/* Footer: total duration + push to timeline */}
-          <div className="flex flex-col gap-2 border-t p-3" style={{ borderColor: 'var(--border)' }}>
+          <div
+            className="flex flex-col gap-2 border-t p-3"
+            style={{ borderColor: 'var(--border)' }}
+          >
             <div
               className="flex items-center justify-between rounded-md border px-3 py-2 text-xs"
               style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}
             >
-              <span className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+              <span
+                className="flex items-center gap-1.5"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 <Timer size={12} />
                 Total duration
               </span>
@@ -1246,7 +1518,10 @@ export default function ScriptPage() {
               style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
             >
               {/* Drawer header */}
-              <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+              <div
+                className="flex items-center justify-between border-b px-4 py-3"
+                style={{ borderColor: 'var(--border)' }}
+              >
                 <div className="flex items-center gap-2">
                   <Clock size={15} style={{ color: 'var(--brand-light)' }} />
                   <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -1277,7 +1552,10 @@ export default function ScriptPage() {
                     }}
                   >
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {version.label}
                       </span>
                       {idx === 0 ? (
@@ -1298,8 +1576,12 @@ export default function ScriptPage() {
                             borderColor: 'var(--border)',
                             color: 'var(--brand-light)',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor = 'transparent')
+                          }
                         >
                           Restore
                         </button>

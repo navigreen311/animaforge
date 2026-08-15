@@ -74,14 +74,11 @@ export default function TimelineToolbar({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   /* Close dropdown on outside click */
-  const handleOutsideClick = useCallback(
-    (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    },
-    [],
-  );
+  const handleOutsideClick = useCallback((e: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      setDropdownOpen(false);
+    }
+  }, []);
 
   useEffect(() => {
     document.addEventListener('mousedown', handleOutsideClick);
@@ -114,9 +111,7 @@ export default function TimelineToolbar({
         title={snapEnabled ? 'Snap: On' : 'Snap: Off'}
       >
         <Magnet size={14} />
-        <span style={styles.btnLabel}>
-          {snapEnabled ? 'Snap: On' : 'Snap: Off'}
-        </span>
+        <span style={styles.btnLabel}>{snapEnabled ? 'Snap: On' : 'Snap: Off'}</span>
       </button>
 
       {/* ── Zoom to fit ─────────────────────────────────── */}
@@ -197,10 +192,7 @@ export default function TimelineToolbar({
 
       {/* ── Add Track dropdown ──────────────────────────── */}
       <div ref={dropdownRef} style={styles.dropdownWrapper}>
-        <button
-          style={styles.addTrackBtn}
-          onClick={() => setDropdownOpen((o) => !o)}
-        >
+        <button style={styles.addTrackBtn} onClick={() => setDropdownOpen((o) => !o)}>
           <Plus size={14} />
           <span>Add Track</span>
           <ChevronDown size={12} />
@@ -272,7 +264,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   iconBtnActive: {
     color: 'var(--brand, var(--brand-purple, #a855f7))',
-    background: 'var(--brand-dim, color-mix(in srgb, var(--brand-purple, #a855f7) 10%, transparent))',
+    background:
+      'var(--brand-dim, color-mix(in srgb, var(--brand-purple, #a855f7) 10%, transparent))',
     borderColor: 'color-mix(in srgb, var(--brand, var(--brand-purple, #a855f7)) 25%, transparent)',
   },
 

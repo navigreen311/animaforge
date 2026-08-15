@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   FolderKanban,
   Film,
@@ -21,12 +21,12 @@ import {
   Settings,
   ChevronsLeft,
   ChevronsRight,
-} from "lucide-react";
+} from 'lucide-react';
 
-import NavSection from "./NavSection";
-import NavItem from "./NavItem";
-import CreditsWidget from "./CreditsWidget";
-import { useUIStore } from "@/store/useUIStore";
+import NavSection from './NavSection';
+import NavItem from './NavItem';
+import CreditsWidget from './CreditsWidget';
+import { useUIStore } from '@/store/useUIStore';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                         */
@@ -57,17 +57,17 @@ export default function Sidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={collapsed ? "collapsed" : "expanded"}
+      animate={collapsed ? 'collapsed' : 'expanded'}
       variants={sidebarVariants}
-      transition={{ type: "spring", stiffness: 340, damping: 32 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 32 }}
       style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflowX: "hidden",
-        overflowY: "auto",
-        backgroundColor: "var(--bg-surface)",
-        borderRight: "0.5px solid var(--border)",
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        backgroundColor: 'var(--bg-surface)',
+        borderRight: '0.5px solid var(--border)',
         flexShrink: 0,
         zIndex: 40,
       }}
@@ -75,12 +75,12 @@ export default function Sidebar() {
       {/* ---- Logo area ---- */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           gap: 10,
-          padding: collapsed ? "16px 0" : "16px 14px",
-          justifyContent: collapsed ? "center" : "flex-start",
-          position: "relative",
+          padding: collapsed ? '16px 0' : '16px 14px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          position: 'relative',
           flexShrink: 0,
         }}
       >
@@ -90,16 +90,16 @@ export default function Sidebar() {
             width: 28,
             height: 28,
             minWidth: 28,
-            borderRadius: "var(--radius-sm)",
-            background: "var(--brand)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--brand)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             fontSize: 13,
             fontWeight: 700,
-            color: "#fff",
-            letterSpacing: "-0.02em",
-            userSelect: "none",
+            color: '#fff',
+            letterSpacing: '-0.02em',
+            userSelect: 'none',
           }}
         >
           AF
@@ -117,9 +117,9 @@ export default function Sidebar() {
               style={{
                 fontSize: 15,
                 fontWeight: 600,
-                color: "var(--text-primary)",
-                whiteSpace: "nowrap",
-                letterSpacing: "-0.02em",
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                letterSpacing: '-0.02em',
               }}
             >
               AnimaForge
@@ -130,31 +130,31 @@ export default function Sidebar() {
         {/* Toggle button */}
         <button
           type="button"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={() => setCollapsed(!collapsed)}
           style={{
-            position: collapsed ? "relative" : "absolute",
+            position: collapsed ? 'relative' : 'absolute',
             right: collapsed ? undefined : 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             width: 22,
             height: 22,
-            borderRadius: "var(--radius-sm)",
-            border: "none",
-            background: "transparent",
-            color: "var(--text-tertiary)",
-            cursor: "pointer",
+            borderRadius: 'var(--radius-sm)',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text-tertiary)',
+            cursor: 'pointer',
             padding: 0,
-            transition: "color 0.15s, background 0.15s",
+            transition: 'color 0.15s, background 0.15s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "var(--text-primary)";
-            e.currentTarget.style.background = "var(--bg-hover)";
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.background = 'var(--bg-hover)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "var(--text-tertiary)";
-            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            e.currentTarget.style.background = 'transparent';
           }}
         >
           {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
@@ -165,12 +165,12 @@ export default function Sidebar() {
       <nav
         style={{
           flex: 1,
-          display: "flex",
-          flexDirection: "column",
+          display: 'flex',
+          flexDirection: 'column',
           gap: 2,
           paddingTop: 4,
-          overflowY: "auto",
-          overflowX: "hidden",
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         {/* WORKSPACE */}
@@ -179,14 +179,14 @@ export default function Sidebar() {
             href="/projects"
             icon={FolderKanban}
             label="Projects"
-            active={pathname === "/projects" || pathname.startsWith("/projects/")}
+            active={pathname === '/projects' || pathname.startsWith('/projects/')}
             collapsed={collapsed}
           />
           <NavItem
             href="/timeline"
             icon={Film}
             label="Timeline"
-            active={pathname.startsWith("/timeline")}
+            active={pathname.startsWith('/timeline')}
             collapsed={collapsed}
             badge="new"
           />
@@ -194,7 +194,7 @@ export default function Sidebar() {
             href="/calendar"
             icon={Calendar}
             label="Calendar"
-            active={pathname.startsWith("/calendar")}
+            active={pathname.startsWith('/calendar')}
             collapsed={collapsed}
             badge="new"
           />
@@ -202,7 +202,7 @@ export default function Sidebar() {
             href="/characters"
             icon={Users}
             label="Characters"
-            active={pathname.startsWith("/characters")}
+            active={pathname.startsWith('/characters')}
             collapsed={collapsed}
           />
         </NavSection>
@@ -213,28 +213,28 @@ export default function Sidebar() {
             href="/script"
             icon={FileText}
             label="Script AI"
-            active={pathname.startsWith("/script")}
+            active={pathname.startsWith('/script')}
             collapsed={collapsed}
           />
           <NavItem
             href="/style"
             icon={Palette}
             label="Style Studio"
-            active={pathname.startsWith("/style")}
+            active={pathname.startsWith('/style')}
             collapsed={collapsed}
           />
           <NavItem
             href="/avatar"
             icon={User}
             label="Avatar Studio"
-            active={pathname.startsWith("/avatar")}
+            active={pathname.startsWith('/avatar')}
             collapsed={collapsed}
           />
           <NavItem
             href="/audio"
             icon={Music}
             label="Audio Studio"
-            active={pathname.startsWith("/audio")}
+            active={pathname.startsWith('/audio')}
             collapsed={collapsed}
             badge="new"
           />
@@ -242,7 +242,7 @@ export default function Sidebar() {
             href="/live"
             icon={Radio}
             label="Live"
-            active={pathname.startsWith("/live")}
+            active={pathname.startsWith('/live')}
             collapsed={collapsed}
             badge="new"
           />
@@ -254,7 +254,7 @@ export default function Sidebar() {
             href="/assets"
             icon={Image}
             label="Asset Library"
-            active={pathname.startsWith("/assets")}
+            active={pathname.startsWith('/assets')}
             collapsed={collapsed}
             badge="new"
           />
@@ -262,7 +262,7 @@ export default function Sidebar() {
             href="/brand"
             icon={Brush}
             label="Brand Kit"
-            active={pathname.startsWith("/brand")}
+            active={pathname.startsWith('/brand')}
             collapsed={collapsed}
             badge="new"
           />
@@ -270,7 +270,7 @@ export default function Sidebar() {
             href="/analytics"
             icon={BarChart3}
             label="Analytics"
-            active={pathname.startsWith("/analytics")}
+            active={pathname.startsWith('/analytics')}
             collapsed={collapsed}
             badge="new"
           />
@@ -278,7 +278,7 @@ export default function Sidebar() {
             href="/piracy"
             icon={Shield}
             label="Content Protection"
-            active={pathname.startsWith("/piracy")}
+            active={pathname.startsWith('/piracy')}
             collapsed={collapsed}
             badge="new"
           />
@@ -290,7 +290,7 @@ export default function Sidebar() {
             href="/marketplace"
             icon={Store}
             label="Marketplace"
-            active={pathname.startsWith("/marketplace")}
+            active={pathname.startsWith('/marketplace')}
             collapsed={collapsed}
             badge="dot"
           />
@@ -298,7 +298,7 @@ export default function Sidebar() {
             href="/team"
             icon={UserPlus}
             label="Team"
-            active={pathname.startsWith("/team")}
+            active={pathname.startsWith('/team')}
             collapsed={collapsed}
             badge="new"
           />
@@ -309,21 +309,17 @@ export default function Sidebar() {
       <div
         style={{
           flexShrink: 0,
-          borderTop: "0.5px solid var(--border)",
+          borderTop: '0.5px solid var(--border)',
           paddingBottom: 8,
         }}
       >
-        <CreditsWidget
-          creditsUsed={4200}
-          creditsTotal={10000}
-          collapsed={collapsed}
-        />
+        <CreditsWidget creditsUsed={4200} creditsTotal={10000} collapsed={collapsed} />
 
         <NavItem
           href="/settings"
           icon={Settings}
           label="Settings"
-          active={pathname.startsWith("/settings")}
+          active={pathname.startsWith('/settings')}
           collapsed={collapsed}
           badge="new"
         />

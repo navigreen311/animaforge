@@ -9,12 +9,60 @@ export interface Region {
 }
 
 export const REGIONS: Region[] = [
-  { id: 'us-east-1', name: 'US East (N. Virginia)', city: 'Ashburn', country: 'USA', flag: '🇺🇸', endpoint: 'https://us-east.animaforge.com', status: 'operational' },
-  { id: 'us-west-2', name: 'US West (Oregon)', city: 'Portland', country: 'USA', flag: '🇺🇸', endpoint: 'https://us-west.animaforge.com', status: 'operational' },
-  { id: 'eu-west-1', name: 'EU West (Ireland)', city: 'Dublin', country: 'Ireland', flag: '🇮🇪', endpoint: 'https://eu-west.animaforge.com', status: 'operational' },
-  { id: 'eu-central-1', name: 'EU Central (Frankfurt)', city: 'Frankfurt', country: 'Germany', flag: '🇩🇪', endpoint: 'https://eu-central.animaforge.com', status: 'operational' },
-  { id: 'ap-southeast-1', name: 'Asia Pacific (Singapore)', city: 'Singapore', country: 'Singapore', flag: '🇸🇬', endpoint: 'https://ap-southeast.animaforge.com', status: 'operational' },
-  { id: 'ap-northeast-1', name: 'Asia Pacific (Tokyo)', city: 'Tokyo', country: 'Japan', flag: '🇯🇵', endpoint: 'https://ap-northeast.animaforge.com', status: 'operational' },
+  {
+    id: 'us-east-1',
+    name: 'US East (N. Virginia)',
+    city: 'Ashburn',
+    country: 'USA',
+    flag: '🇺🇸',
+    endpoint: 'https://us-east.animaforge.com',
+    status: 'operational',
+  },
+  {
+    id: 'us-west-2',
+    name: 'US West (Oregon)',
+    city: 'Portland',
+    country: 'USA',
+    flag: '🇺🇸',
+    endpoint: 'https://us-west.animaforge.com',
+    status: 'operational',
+  },
+  {
+    id: 'eu-west-1',
+    name: 'EU West (Ireland)',
+    city: 'Dublin',
+    country: 'Ireland',
+    flag: '🇮🇪',
+    endpoint: 'https://eu-west.animaforge.com',
+    status: 'operational',
+  },
+  {
+    id: 'eu-central-1',
+    name: 'EU Central (Frankfurt)',
+    city: 'Frankfurt',
+    country: 'Germany',
+    flag: '🇩🇪',
+    endpoint: 'https://eu-central.animaforge.com',
+    status: 'operational',
+  },
+  {
+    id: 'ap-southeast-1',
+    name: 'Asia Pacific (Singapore)',
+    city: 'Singapore',
+    country: 'Singapore',
+    flag: '🇸🇬',
+    endpoint: 'https://ap-southeast.animaforge.com',
+    status: 'operational',
+  },
+  {
+    id: 'ap-northeast-1',
+    name: 'Asia Pacific (Tokyo)',
+    city: 'Tokyo',
+    country: 'Japan',
+    flag: '🇯🇵',
+    endpoint: 'https://ap-northeast.animaforge.com',
+    status: 'operational',
+  },
 ];
 
 export function getRegionById(id: string): Region | undefined {
@@ -48,6 +96,8 @@ export async function pingRegion(region: Region): Promise<number> {
 }
 
 export async function detectFastestRegion(): Promise<{ region: Region; latency: number }[]> {
-  const results = await Promise.all(REGIONS.map(async (r) => ({ region: r, latency: await pingRegion(r) })));
+  const results = await Promise.all(
+    REGIONS.map(async (r) => ({ region: r, latency: await pingRegion(r) })),
+  );
   return results.sort((a, b) => a.latency - b.latency);
 }

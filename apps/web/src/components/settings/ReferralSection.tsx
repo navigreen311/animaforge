@@ -57,8 +57,8 @@ export default function ReferralSection() {
           color: 'var(--color-text-secondary, #a0a0b8)',
         }}
       >
-        You + your friend each get <strong>200 free credits</strong> when they
-        sign up with your link.
+        You + your friend each get <strong>200 free credits</strong> when they sign up with your
+        link.
       </p>
 
       {/* Referral link */}
@@ -92,9 +92,7 @@ export default function ReferralSection() {
           onClick={handleCopy}
           style={{
             padding: '8px 16px',
-            background: copied
-              ? 'var(--color-success, #22c55e)'
-              : 'var(--color-primary, #6366f1)',
+            background: copied ? 'var(--color-success, #22c55e)' : 'var(--color-primary, #6366f1)',
             color: '#ffffff',
             border: 'none',
             borderRadius: 'var(--radius-md, 8px)',

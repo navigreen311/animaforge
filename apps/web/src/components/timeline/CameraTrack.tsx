@@ -9,7 +9,15 @@ import { useState, useCallback, useRef } from 'react';
 export interface CameraMove {
   id: string;
   label: string;
-  motionType: 'Dolly In' | 'Dolly Out' | 'Pan L' | 'Pan R' | 'Tilt Up' | 'Tilt Down' | 'Static' | string;
+  motionType:
+    | 'Dolly In'
+    | 'Dolly Out'
+    | 'Pan L'
+    | 'Pan R'
+    | 'Tilt Up'
+    | 'Tilt Down'
+    | 'Static'
+    | string;
   leftPct: number;
   widthPct: number;
   properties?: string;
@@ -28,9 +36,30 @@ export interface CameraTrackProps {
 /* ------------------------------------------------------------------ */
 
 const DEFAULT_MOVES: CameraMove[] = [
-  { id: 'cam-1', label: 'Dolly In', motionType: 'Dolly In', leftPct: 2, widthPct: 20, properties: 'Speed: 1.2x | Ease: Cubic In-Out | Distance: 4m' },
-  { id: 'cam-2', label: 'Pan R', motionType: 'Pan R', leftPct: 30, widthPct: 25, properties: 'Speed: 0.8x | Angle: 90deg | Pivot: Center' },
-  { id: 'cam-3', label: 'Static', motionType: 'Static', leftPct: 70, widthPct: 24, properties: 'Locked | FOV: 50mm | No Motion' },
+  {
+    id: 'cam-1',
+    label: 'Dolly In',
+    motionType: 'Dolly In',
+    leftPct: 2,
+    widthPct: 20,
+    properties: 'Speed: 1.2x | Ease: Cubic In-Out | Distance: 4m',
+  },
+  {
+    id: 'cam-2',
+    label: 'Pan R',
+    motionType: 'Pan R',
+    leftPct: 30,
+    widthPct: 25,
+    properties: 'Speed: 0.8x | Angle: 90deg | Pivot: Center',
+  },
+  {
+    id: 'cam-3',
+    label: 'Static',
+    motionType: 'Static',
+    leftPct: 70,
+    widthPct: 24,
+    properties: 'Locked | FOV: 50mm | No Motion',
+  },
 ];
 
 const TRACK_HEIGHT = 36;

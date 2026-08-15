@@ -13,18 +13,78 @@ const SORT_ICONS: Record<string, React.ReactNode> = {
 };
 
 const MOCK_CARDS = [
-  { creator: 'Luna Ray', style: 'Neon Dreamscape', likes: 2431, gradient: 'linear-gradient(135deg, #7c3aed, #06b6d4)' },
-  { creator: 'Marco V.', style: 'Ghibli Soft', likes: 1897, gradient: 'linear-gradient(135deg, #34d399, #3b82f6)' },
-  { creator: 'Aria Chen', style: 'Cyberpunk 90s', likes: 3205, gradient: 'linear-gradient(135deg, #f43f5e, #7c3aed)' },
-  { creator: 'DevKnight', style: 'Pixel Noir', likes: 982, gradient: 'linear-gradient(135deg, #1e1e2e, #6366f1)' },
-  { creator: 'Suki T.', style: 'Anime Pastel', likes: 4120, gradient: 'linear-gradient(135deg, #f9a8d4, #a78bfa)' },
-  { creator: 'Omar J.', style: 'Desert Mirage', likes: 1543, gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
-  { creator: 'Zara Kim', style: 'Frozen Aether', likes: 2789, gradient: 'linear-gradient(135deg, #67e8f9, #818cf8)' },
-  { creator: 'Ravi P.', style: 'Bollywood Glow', likes: 1102, gradient: 'linear-gradient(135deg, #fbbf24, #f43f5e)' },
-  { creator: 'Ines M.', style: 'Watercolor Flow', likes: 876, gradient: 'linear-gradient(135deg, #a78bfa, #34d399)' },
-  { creator: 'TJ Banks', style: 'Retro Sci-Fi', likes: 2150, gradient: 'linear-gradient(135deg, #0ea5e9, #22d3ee)' },
-  { creator: 'Nadia L.', style: 'Dark Fantasy', likes: 3670, gradient: 'linear-gradient(135deg, #4c1d95, #991b1b)' },
-  { creator: 'Kai O.', style: 'Toon Blast', likes: 1455, gradient: 'linear-gradient(135deg, #10b981, #fbbf24)' },
+  {
+    creator: 'Luna Ray',
+    style: 'Neon Dreamscape',
+    likes: 2431,
+    gradient: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+  },
+  {
+    creator: 'Marco V.',
+    style: 'Ghibli Soft',
+    likes: 1897,
+    gradient: 'linear-gradient(135deg, #34d399, #3b82f6)',
+  },
+  {
+    creator: 'Aria Chen',
+    style: 'Cyberpunk 90s',
+    likes: 3205,
+    gradient: 'linear-gradient(135deg, #f43f5e, #7c3aed)',
+  },
+  {
+    creator: 'DevKnight',
+    style: 'Pixel Noir',
+    likes: 982,
+    gradient: 'linear-gradient(135deg, #1e1e2e, #6366f1)',
+  },
+  {
+    creator: 'Suki T.',
+    style: 'Anime Pastel',
+    likes: 4120,
+    gradient: 'linear-gradient(135deg, #f9a8d4, #a78bfa)',
+  },
+  {
+    creator: 'Omar J.',
+    style: 'Desert Mirage',
+    likes: 1543,
+    gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+  },
+  {
+    creator: 'Zara Kim',
+    style: 'Frozen Aether',
+    likes: 2789,
+    gradient: 'linear-gradient(135deg, #67e8f9, #818cf8)',
+  },
+  {
+    creator: 'Ravi P.',
+    style: 'Bollywood Glow',
+    likes: 1102,
+    gradient: 'linear-gradient(135deg, #fbbf24, #f43f5e)',
+  },
+  {
+    creator: 'Ines M.',
+    style: 'Watercolor Flow',
+    likes: 876,
+    gradient: 'linear-gradient(135deg, #a78bfa, #34d399)',
+  },
+  {
+    creator: 'TJ Banks',
+    style: 'Retro Sci-Fi',
+    likes: 2150,
+    gradient: 'linear-gradient(135deg, #0ea5e9, #22d3ee)',
+  },
+  {
+    creator: 'Nadia L.',
+    style: 'Dark Fantasy',
+    likes: 3670,
+    gradient: 'linear-gradient(135deg, #4c1d95, #991b1b)',
+  },
+  {
+    creator: 'Kai O.',
+    style: 'Toon Blast',
+    likes: 1455,
+    gradient: 'linear-gradient(135deg, #10b981, #fbbf24)',
+  },
 ];
 
 export default function ExplorePage() {
@@ -32,23 +92,58 @@ export default function ExplorePage() {
   const [activeSort, setActiveSort] = useState<string>('Trending');
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg-base)',
+        color: 'var(--text-primary)',
+        fontFamily: 'var(--font-sans)',
+      }}
+    >
       {/* Hero */}
       <section style={{ textAlign: 'center', padding: '64px 24px 40px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--brand-light)' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 16,
+            color: 'var(--brand-light)',
+          }}
+        >
           <Sparkles size={20} />
-          <span style={{ fontSize: 14, fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Explore</span>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Explore
+          </span>
         </div>
-        <h1 style={{ fontSize: 36, fontWeight: 600, marginBottom: 12 }}>
-          AnimaForge Explore
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 18, maxWidth: 540, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 36, fontWeight: 600, marginBottom: 12 }}>AnimaForge Explore</h1>
+        <p
+          style={{ color: 'var(--text-secondary)', fontSize: 18, maxWidth: 540, margin: '0 auto' }}
+        >
           See what creators are making
         </p>
       </section>
 
       {/* Filters + Sort */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: '0 24px 32px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
         {/* Filter tabs */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {FILTERS.map((f) => (
@@ -128,10 +223,22 @@ export default function ExplorePage() {
 
             <div style={{ padding: '14px 16px' }}>
               <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{card.style}</p>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>by {card.creator}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                by {card.creator}
+              </p>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)', fontSize: 13 }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    color: 'var(--text-secondary)',
+                    fontSize: 13,
+                  }}
+                >
                   <Heart size={14} />
                   {card.likes.toLocaleString()}
                 </span>

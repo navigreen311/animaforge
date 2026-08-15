@@ -45,7 +45,16 @@ const mockKeys: ApiKey[] = [
     id: '3',
     name: 'Development',
     key: 'af_sk_dev_z0a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5',
-    scopes: ['projects:read', 'projects:write', 'shots:read', 'shots:write', 'characters:read', 'characters:write', 'generate', 'governance'],
+    scopes: [
+      'projects:read',
+      'projects:write',
+      'shots:read',
+      'shots:write',
+      'characters:read',
+      'characters:write',
+      'generate',
+      'governance',
+    ],
     created: 'Jan 10, 2026',
     expires: 'Jan 10, 2027',
   },
@@ -64,8 +73,15 @@ export default function ApiKeysPage() {
       name: newKeyName || 'Untitled Key',
       key: `af_sk_${newKeyName.toLowerCase().replace(/\s+/g, '_')}_${Array.from({ length: 32 }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')}`,
       scopes: newKeyScopes,
-      created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      expires: new Date(Date.now() + parseInt(newKeyExpiration) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      created: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      expires: new Date(Date.now() + parseInt(newKeyExpiration) * 86400000).toLocaleDateString(
+        'en-US',
+        { month: 'short', day: 'numeric', year: 'numeric' },
+      ),
     };
     setKeys([newKey, ...keys]);
     setNewKeyName('');
@@ -80,7 +96,7 @@ export default function ApiKeysPage() {
 
   const toggleScope = (scope: string) => {
     setNewKeyScopes((prev) =>
-      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
     );
   };
 
@@ -109,12 +125,24 @@ export default function ApiKeysPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-800/80 border-b border-gray-700">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Key</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Scopes</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Expires</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Key
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Scopes
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Expires
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -135,12 +163,24 @@ export default function ApiKeysPage() {
         {keys.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
-              <svg className="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              <svg
+                className="w-7 h-7 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                />
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-300 mb-1">No API keys</h3>
-            <p className="text-sm text-gray-500 mb-6 max-w-sm">Create your first API key to start integrating with AnimaForge.</p>
+            <p className="text-sm text-gray-500 mb-6 max-w-sm">
+              Create your first API key to start integrating with AnimaForge.
+            </p>
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
@@ -201,8 +241,18 @@ export default function ApiKeysPage() {
                     }`}
                   >
                     {newKeyScopes.includes(scope.id) && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     )}
                   </div>
@@ -213,7 +263,10 @@ export default function ApiKeysPage() {
           </div>
 
           <div>
-            <label htmlFor="key-expiration" className="block text-sm font-medium text-gray-300 mb-1.5">
+            <label
+              htmlFor="key-expiration"
+              className="block text-sm font-medium text-gray-300 mb-1.5"
+            >
               Expiration
             </label>
             <select

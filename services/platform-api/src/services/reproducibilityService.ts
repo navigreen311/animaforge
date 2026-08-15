@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
-import { createHash } from "crypto";
+import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'crypto';
 
 // ── Types ───────────────────────────────────────────────────────────
 export interface Snapshot {
@@ -34,7 +34,7 @@ export const reproducibilityService = {
    */
   computeInputHash(params: Record<string, unknown>): string {
     const serialized = JSON.stringify(params, Object.keys(params).sort());
-    return createHash("sha256").update(serialized).digest("hex");
+    return createHash('sha256').update(serialized).digest('hex');
   },
 
   /**
@@ -45,7 +45,7 @@ export const reproducibilityService = {
     params: Record<string, unknown>,
     parentSnapshotId?: string,
   ): Promise<Snapshot> {
-    const modelId = (params.modelId as string) ?? "unknown";
+    const modelId = (params.modelId as string) ?? 'unknown';
     const inputHash = reproducibilityService.computeInputHash(params);
 
     const snapshot: Snapshot = {
@@ -103,10 +103,7 @@ export const reproducibilityService = {
     const b = snapshots.get(snapshotIdB);
     if (!a || !b) return undefined;
 
-    const allKeys = new Set([
-      ...Object.keys(a.parameters),
-      ...Object.keys(b.parameters),
-    ]);
+    const allKeys = new Set([...Object.keys(a.parameters), ...Object.keys(b.parameters)]);
 
     const differences: { key: string; valueA: unknown; valueB: unknown }[] = [];
 
@@ -130,9 +127,7 @@ export const reproducibilityService = {
    */
   async getJobLineage(jobId: string): Promise<Snapshot[]> {
     // Find all snapshots for this job
-    const jobSnapshots = Array.from(snapshots.values()).filter(
-      (s) => s.jobId === jobId,
-    );
+    const jobSnapshots = Array.from(snapshots.values()).filter((s) => s.jobId === jobId);
 
     if (jobSnapshots.length === 0) return [];
 
@@ -148,9 +143,7 @@ export const reproducibilityService = {
       if (visited.has(current.snapshotId)) break;
       visited.add(current.snapshotId);
       backtrack.unshift(current);
-      current = current.parentSnapshotId
-        ? snapshots.get(current.parentSnapshotId)
-        : undefined;
+      current = current.parentSnapshotId ? snapshots.get(current.parentSnapshotId) : undefined;
     }
 
     lineage.push(...backtrack);

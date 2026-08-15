@@ -140,10 +140,7 @@ async function readError(response: Response): Promise<string> {
   try {
     const body = await response.json();
     return (
-      body?.detail ??
-      body?.error?.message ??
-      body?.message ??
-      `Request failed (${response.status})`
+      body?.detail ?? body?.error?.message ?? body?.message ?? `Request failed (${response.status})`
     );
   } catch {
     return `Request failed (${response.status})`;
@@ -153,9 +150,7 @@ async function readError(response: Response): Promise<string> {
 /* ── Calls ──────────────────────────────────────────────────────────────── */
 
 /** Ask the AI API what it can actually do before offering to run a job. */
-export function fetchCapabilities(
-  context: AvatarRequestContext = {},
-): Promise<AvatarCapability> {
+export function fetchCapabilities(context: AvatarRequestContext = {}): Promise<AvatarCapability> {
   return send<AvatarCapability>(
     `${resolveAiBaseUrl(context)}/ai/v1/avatar/capabilities`,
     'GET',
@@ -258,24 +253,18 @@ export function describeCapability(capability: AvatarCapability | null): {
   return {
     tone: 'mock',
     headline: 'Preview mode — geometry is procedural',
-    detail:
-      capability.mock_notice ??
-      'Reference photographs are not analysed on this host.',
+    detail: capability.mock_notice ?? 'Reference photographs are not analysed on this host.',
   };
 }
 
 /** Stages that genuinely ran, for a progress display that does not overstate. */
 export function completedStepNames(job: AvatarJob | null): string[] {
   if (!job) return [];
-  return job.steps_completed
-    .filter((step) => step.status === 'completed')
-    .map((step) => step.name);
+  return job.steps_completed.filter((step) => step.status === 'completed').map((step) => step.name);
 }
 
 /** Stages that were skipped, paired with why. */
-export function skippedSteps(
-  job: AvatarJob | null,
-): { name: string; reason: string }[] {
+export function skippedSteps(job: AvatarJob | null): { name: string; reason: string }[] {
   if (!job) return [];
   return job.steps_completed
     .filter((step) => step.status === 'skipped')
@@ -291,9 +280,7 @@ export function skippedSteps(
  */
 export function identityScore(job: AvatarJob | null): number | null {
   if (!job) return null;
-  const validation = job.steps_completed.find(
-    (step) => step.name === 'quality_validation',
-  );
+  const validation = job.steps_completed.find((step) => step.name === 'quality_validation');
   const score = validation?.metrics?.identity_score;
   return typeof score === 'number' ? score : null;
 }

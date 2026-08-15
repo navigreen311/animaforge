@@ -105,17 +105,24 @@ export default function AnalyticsPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {STATS.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-gray-800 bg-gray-900 p-5"
-          >
+          <div key={stat.label} className="rounded-xl border border-gray-800 bg-gray-900 p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {stat.label}
               </span>
               <div className="p-2 rounded-lg bg-gray-800">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={stat.icon} />
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d={stat.icon}
+                  />
                 </svg>
               </div>
             </div>

@@ -30,7 +30,12 @@ const MOCK_DELIVERIES: DeliveryEntry[] = [
     duration: '142ms',
     request: {
       headers: { 'Content-Type': 'application/json', 'X-Webhook-Signature': 'sha256=abc123...' },
-      body: { event: 'job.complete', jobId: 'job_8a2f', status: 'completed', timestamp: '2026-04-09T14:32:00Z' },
+      body: {
+        event: 'job.complete',
+        jobId: 'job_8a2f',
+        status: 'completed',
+        timestamp: '2026-04-09T14:32:00Z',
+      },
     },
     response: { headers: { 'Content-Type': 'application/json' }, body: '{"received": true}' },
   },
@@ -43,7 +48,12 @@ const MOCK_DELIVERIES: DeliveryEntry[] = [
     duration: '98ms',
     request: {
       headers: { 'Content-Type': 'application/json', 'X-Webhook-Signature': 'sha256=def456...' },
-      body: { event: 'shot.approved', shotId: 'shot_3c9d', approvedBy: 'user_42', timestamp: '2026-04-09T13:15:43Z' },
+      body: {
+        event: 'shot.approved',
+        shotId: 'shot_3c9d',
+        approvedBy: 'user_42',
+        timestamp: '2026-04-09T13:15:43Z',
+      },
     },
     response: { headers: { 'Content-Type': 'application/json' }, body: '{"ok": true}' },
   },
@@ -56,7 +66,12 @@ const MOCK_DELIVERIES: DeliveryEntry[] = [
     duration: '3012ms',
     request: {
       headers: { 'Content-Type': 'application/json', 'X-Webhook-Signature': 'sha256=ghi789...' },
-      body: { event: 'job.complete', jobId: 'job_1b4e', status: 'completed', timestamp: '2026-04-09T11:02:18Z' },
+      body: {
+        event: 'job.complete',
+        jobId: 'job_1b4e',
+        status: 'completed',
+        timestamp: '2026-04-09T11:02:18Z',
+      },
     },
     response: { headers: { 'Content-Type': 'text/plain' }, body: 'Internal Server Error' },
   },
@@ -69,7 +84,12 @@ const MOCK_DELIVERIES: DeliveryEntry[] = [
     duration: '156ms',
     request: {
       headers: { 'Content-Type': 'application/json', 'X-Webhook-Signature': 'sha256=jkl012...' },
-      body: { event: 'job.complete', jobId: 'job_9d3a', status: 'completed', timestamp: '2026-04-08T22:45:32Z' },
+      body: {
+        event: 'job.complete',
+        jobId: 'job_9d3a',
+        status: 'completed',
+        timestamp: '2026-04-08T22:45:32Z',
+      },
     },
     response: { headers: { 'Content-Type': 'application/json' }, body: '{"received": true}' },
   },
@@ -82,7 +102,12 @@ const MOCK_DELIVERIES: DeliveryEntry[] = [
     duration: '30000ms',
     request: {
       headers: { 'Content-Type': 'application/json', 'X-Webhook-Signature': 'sha256=mno345...' },
-      body: { event: 'shot.approved', shotId: 'shot_7f2b', approvedBy: 'user_15', timestamp: '2026-04-08T18:11:06Z' },
+      body: {
+        event: 'shot.approved',
+        shotId: 'shot_7f2b',
+        approvedBy: 'user_15',
+        timestamp: '2026-04-08T18:11:06Z',
+      },
     },
     response: { headers: {}, body: 'Connection timed out' },
   },
@@ -103,7 +128,9 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
     <div>
       <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-primary)' }}>
         Delivery Logs
-        <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8, fontSize: 12 }}>
+        <span
+          style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8, fontSize: 12 }}
+        >
           ({webhookId})
         </span>
       </h3>
@@ -156,7 +183,13 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
             </span>
 
             {/* Time */}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+              }}
+            >
               {entry.time}
             </span>
 
@@ -189,7 +222,13 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
             </span>
 
             {/* Duration */}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+              }}
+            >
               {entry.duration}
             </span>
 
@@ -249,11 +288,22 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
             >
               {/* Request */}
               <div>
-                <h4 style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <h4
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    marginBottom: 8,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
                   Request
                 </h4>
                 <div style={{ marginBottom: 8 }}>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Headers</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                    Headers
+                  </p>
                   <pre
                     style={{
                       fontSize: 11,
@@ -271,7 +321,9 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
                   </pre>
                 </div>
                 <div>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Body</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                    Body
+                  </p>
                   <pre
                     style={{
                       fontSize: 11,
@@ -292,11 +344,22 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
 
               {/* Response */}
               <div>
-                <h4 style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <h4
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    marginBottom: 8,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
                   Response
                 </h4>
                 <div style={{ marginBottom: 8 }}>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Headers</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                    Headers
+                  </p>
                   <pre
                     style={{
                       fontSize: 11,
@@ -314,7 +377,9 @@ export default function WebhookDeliveryLogs({ webhookId }: Props) {
                   </pre>
                 </div>
                 <div>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Body</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                    Body
+                  </p>
                   <pre
                     style={{
                       fontSize: 11,

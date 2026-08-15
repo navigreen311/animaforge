@@ -1,5 +1,12 @@
 export { TimelineRoot } from './TimelineRoot';
-export type { TimelineRootProps, Shot, ShotStatus, AudioTrack, ToolMode, Collaborator } from './TimelineRoot';
+export type {
+  TimelineRootProps,
+  Shot,
+  ShotStatus,
+  AudioTrack,
+  ToolMode,
+  Collaborator,
+} from './TimelineRoot';
 export { TimelineToolbar } from './TimelineToolbar';
 export type { SnapMode, FrameRate } from './TimelineToolbar';
 export { TimelineViewport } from './TimelineViewport';

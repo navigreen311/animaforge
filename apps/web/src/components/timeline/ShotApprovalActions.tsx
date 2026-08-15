@@ -149,7 +149,10 @@ export function ShotApprovalActions({
       {/* Reject reason popover */}
       {showRejectInput && (
         <div className="flex flex-col gap-2 rounded border border-zinc-700 bg-zinc-800 p-3">
-          <label htmlFor="reject-reason" className="text-[10px] uppercase tracking-wider text-zinc-400">
+          <label
+            htmlFor="reject-reason"
+            className="text-[10px] uppercase tracking-wider text-zinc-400"
+          >
             Rejection reason
           </label>
           <textarea

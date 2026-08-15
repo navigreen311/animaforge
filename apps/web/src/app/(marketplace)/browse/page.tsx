@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useMarketplaceStore, type MarketplaceCategory, type MarketplaceItem } from '@/stores/marketplaceStore';
+import {
+  useMarketplaceStore,
+  type MarketplaceCategory,
+  type MarketplaceItem,
+} from '@/stores/marketplaceStore';
 import SearchBar from '@/components/marketplace/SearchBar';
 import ItemCard from '@/components/marketplace/ItemCard';
 import ItemDetail from '@/components/marketplace/ItemDetail';
@@ -41,9 +45,9 @@ export default function MarketplacePage() {
 
   // Show item detail view
   if (selectedItem) {
-    const related = items.filter(
-      (i) => i.category === selectedItem.category && i.id !== selectedItem.id,
-    ).slice(0, 3);
+    const related = items
+      .filter((i) => i.category === selectedItem.category && i.id !== selectedItem.id)
+      .slice(0, 3);
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ItemDetail
@@ -73,7 +77,10 @@ export default function MarketplacePage() {
         <section className="mb-12">
           <h2 className="mb-4 text-xl font-bold text-[var(--color-text)]">Featured</h2>
           <div className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-surface">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
+            <div
+              className="flex transition-transform duration-500"
+              style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+            >
               {featured.map((item) => (
                 <div
                   key={item.id}
@@ -83,8 +90,18 @@ export default function MarketplacePage() {
                   <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-2">
                     {/* Preview placeholder */}
                     <div className="aspect-video rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      <svg className="h-16 w-16 opacity-20 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      <svg
+                        className="h-16 w-16 opacity-20 text-[var(--color-text-muted)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                        />
                       </svg>
                     </div>
                     {/* Info */}
@@ -98,7 +115,9 @@ export default function MarketplacePage() {
                         <span className="text-xl font-bold text-[var(--color-text)]">
                           {item.price === 0 ? 'Free' : `$${item.price.toFixed(2)}`}
                         </span>
-                        <span className="text-sm text-[var(--color-text-muted)]">by {item.creatorName}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">
+                          by {item.creatorName}
+                        </span>
                       </div>
                     </div>
                   </div>

@@ -34,9 +34,7 @@ export default function TourPage() {
   return (
     <div className="w-full">
       <h1 className="mb-2 text-center text-3xl font-bold">Quick Tour</h1>
-      <p className="mb-10 text-center text-zinc-400">
-        See what you can do with AnimaForge.
-      </p>
+      <p className="mb-10 text-center text-zinc-400">See what you can do with AnimaForge.</p>
 
       <FeatureHighlight {...tourFeatures[currentFeature]} />
 

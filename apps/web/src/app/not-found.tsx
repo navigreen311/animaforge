@@ -40,7 +40,9 @@ export default function NotFound() {
         >
           A
         </div>
-        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>AnimaForge</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
+          AnimaForge
+        </span>
       </div>
 
       {/* 404 */}

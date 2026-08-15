@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useCallback } from "react";
-import { Search } from "lucide-react";
-import { useUIStore } from "@/store/useUIStore";
+import { useEffect, useRef, useCallback } from 'react';
+import { Search } from 'lucide-react';
+import { useUIStore } from '@/store/useUIStore';
 
 export default function GlobalSearch() {
   const searchModalOpen = useUIStore((s) => s.searchModalOpen);
@@ -11,13 +11,13 @@ export default function GlobalSearch() {
   /* ── Cmd+K global shortcut ── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchModalOpen(true);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [setSearchModalOpen]);
 
   return (
@@ -27,42 +27,39 @@ export default function GlobalSearch() {
         type="button"
         onClick={() => setSearchModalOpen(true)}
         style={{
-          display: "flex",
-          alignItems: "center",
-          background: "var(--bg-elevated)",
-          border: "0.5px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: "0 12px",
+          display: 'flex',
+          alignItems: 'center',
+          background: 'var(--bg-elevated)',
+          border: '0.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '0 12px',
           height: 32,
-          cursor: "pointer",
+          cursor: 'pointer',
           gap: 8,
-          outline: "none",
-          transition: "border-color 150ms ease",
+          outline: 'none',
+          transition: 'border-color 150ms ease',
         }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-brand)";
+          e.currentTarget.style.borderColor = 'var(--border-brand)';
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = "var(--border)";
+          e.currentTarget.style.borderColor = 'var(--border)';
         }}
         onMouseDown={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-brand)";
+          e.currentTarget.style.borderColor = 'var(--border-brand)';
         }}
         onMouseUp={(e) => {
-          e.currentTarget.style.borderColor = "var(--border)";
+          e.currentTarget.style.borderColor = 'var(--border)';
         }}
       >
-        <Search
-          size={14}
-          style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
-        />
+        <Search size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
 
         <span
           style={{
             fontSize: 11,
-            color: "var(--text-tertiary)",
-            whiteSpace: "nowrap",
-            userSelect: "none",
+            color: 'var(--text-tertiary)',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
           }}
         >
           Search shots, assets, characters…
@@ -70,16 +67,16 @@ export default function GlobalSearch() {
 
         <kbd
           style={{
-            marginLeft: "auto",
-            background: "var(--bg-overlay)",
-            border: "0.5px solid var(--border)",
+            marginLeft: 'auto',
+            background: 'var(--bg-overlay)',
+            border: '0.5px solid var(--border)',
             borderRadius: 4,
-            padding: "1px 6px",
+            padding: '1px 6px',
             fontSize: 9,
-            color: "var(--text-tertiary)",
-            fontFamily: "var(--font-mono)",
+            color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-mono)',
             lineHeight: 1.4,
-            userSelect: "none",
+            userSelect: 'none',
           }}
         >
           ⌘K
@@ -109,42 +106,39 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   /* ── Escape to close ── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
   /* ── Focus trap ── */
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key !== "Tab" || !modalRef.current) return;
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !modalRef.current) return;
 
-      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-        'input, button, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusable.length === 0) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'input, button, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
 
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
       }
-    },
-    []
-  );
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
 
   /* ── Overlay click ── */
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -161,26 +155,26 @@ function SearchModal({ onClose }: { onClose: () => void }) {
       onClick={handleOverlayClick}
       onKeyDown={handleKeyDown}
       style={{
-        position: "fixed",
+        position: 'fixed',
         inset: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: 'rgba(0,0,0,0.6)',
         zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <div
         ref={modalRef}
         style={{
-          background: "var(--bg-elevated)",
-          border: "0.5px solid var(--border-strong)",
-          borderRadius: "var(--radius-xl)",
+          background: 'var(--bg-elevated)',
+          border: '0.5px solid var(--border-strong)',
+          borderRadius: 'var(--radius-xl)',
           width: 480,
           maxHeight: 400,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
         {/* ── Search input ── */}
@@ -189,27 +183,27 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           type="text"
           placeholder="Search projects, shots, assets, characters…"
           style={{
-            width: "100%",
+            width: '100%',
             fontSize: 14,
-            color: "var(--text-primary)",
-            background: "transparent",
-            border: "none",
-            outline: "none",
+            color: 'var(--text-primary)',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
             padding: 16,
-            fontFamily: "inherit",
+            fontFamily: 'inherit',
           }}
         />
 
         {/* ── Results placeholder ── */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: 32,
             fontSize: 12,
-            color: "var(--text-tertiary)",
-            userSelect: "none",
+            color: 'var(--text-tertiary)',
+            userSelect: 'none',
           }}
         >
           No results yet

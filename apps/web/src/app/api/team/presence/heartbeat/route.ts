@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
     const { currentPage } = body as { currentPage: string };
 
     if (!currentPage) {
-      return NextResponse.json(
-        { error: 'currentPage is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'currentPage is required' }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -22,9 +19,6 @@ export async function POST(request: NextRequest) {
       recordedAt: new Date().toISOString(),
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

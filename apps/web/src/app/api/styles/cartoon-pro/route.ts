@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!projectId) {
-    return NextResponse.json(
-      { error: 'projectId is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
   }
 
   const appliedCount = shotIds?.length ?? 9;

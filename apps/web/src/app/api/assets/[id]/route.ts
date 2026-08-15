@@ -31,10 +31,7 @@ const MOCK_ASSET = {
 // GET /api/assets/:id
 // ---------------------------------------------------------------------------
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // In a real implementation we'd look up the asset by id
@@ -47,10 +44,7 @@ export async function GET(
 // PATCH /api/assets/:id
 // ---------------------------------------------------------------------------
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   let body: Record<string, unknown>;

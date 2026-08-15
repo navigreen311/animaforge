@@ -76,9 +76,33 @@ interface CommentMarker {
 const MARKER_COLORS = ['#eab308', '#ef4444', '#22c55e', '#3b82f6'];
 
 const INITIAL_MARKERS: CommentMarker[] = [
-  { id: 'mk-1', positionPct: 15, color: '#eab308', text: 'Note: Check pacing on intro', author: 'Sarah K.', timeAgo: '2h ago', resolved: false },
-  { id: 'mk-2', positionPct: 48, color: '#ef4444', text: 'Issue: Battle lighting too dark', author: 'James R.', timeAgo: '45m ago', resolved: false },
-  { id: 'mk-3', positionPct: 82, color: '#22c55e', text: 'Approved: Epilogue looks great', author: 'Mia L.', timeAgo: '10m ago', resolved: true },
+  {
+    id: 'mk-1',
+    positionPct: 15,
+    color: '#eab308',
+    text: 'Note: Check pacing on intro',
+    author: 'Sarah K.',
+    timeAgo: '2h ago',
+    resolved: false,
+  },
+  {
+    id: 'mk-2',
+    positionPct: 48,
+    color: '#ef4444',
+    text: 'Issue: Battle lighting too dark',
+    author: 'James R.',
+    timeAgo: '45m ago',
+    resolved: false,
+  },
+  {
+    id: 'mk-3',
+    positionPct: 82,
+    color: '#22c55e',
+    text: 'Approved: Epilogue looks great',
+    author: 'Mia L.',
+    timeAgo: '10m ago',
+    resolved: true,
+  },
 ];
 
 // ── Shared Styles ──────────────────────────────────────────────
@@ -195,7 +219,13 @@ function ShotStatusIcon({ status }: { status: ShotStatus }) {
         <span style={iconStyle}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="rgba(16,185,129,0.9)" strokeWidth="2" />
-            <path d="M8 12l3 3 5-5" stroke="rgba(16,185,129,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M8 12l3 3 5-5"
+              stroke="rgba(16,185,129,0.9)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </span>
       );
@@ -203,7 +233,12 @@ function ShotStatusIcon({ status }: { status: ShotStatus }) {
       return (
         <span style={iconStyle} className="shot-status-spin">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="rgba(124,58,237,0.9)" strokeWidth="2.5" strokeLinecap="round" />
+            <path
+              d="M12 2a10 10 0 0 1 10 10"
+              stroke="rgba(124,58,237,0.9)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
           </svg>
         </span>
       );
@@ -212,7 +247,13 @@ function ShotStatusIcon({ status }: { status: ShotStatus }) {
         <span style={iconStyle}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="rgba(59,130,246,0.9)" strokeWidth="2" />
-            <path d="M12 6v6l4 2" stroke="rgba(59,130,246,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M12 6v6l4 2"
+              stroke="rgba(59,130,246,0.9)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </span>
       );
@@ -221,7 +262,13 @@ function ShotStatusIcon({ status }: { status: ShotStatus }) {
         <span style={iconStyle}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="rgba(239,68,68,0.9)" strokeWidth="2" />
-            <path d="M15 9l-6 6M9 9l6 6" stroke="rgba(239,68,68,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M15 9l-6 6M9 9l6 6"
+              stroke="rgba(239,68,68,0.9)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </span>
       );
@@ -275,7 +322,9 @@ export default function TimelineTracks({
   const [editText, setEditText] = useState('');
 
   /* ── Add-marker context menu state ──────────────────────── */
-  const [addMarkerCtx, setAddMarkerCtx] = useState<{ x: number; y: number; pct: number } | null>(null);
+  const [addMarkerCtx, setAddMarkerCtx] = useState<{ x: number; y: number; pct: number } | null>(
+    null,
+  );
   const [addMarkerForm, setAddMarkerForm] = useState<{ pct: number } | null>(null);
   const [newMarkerColor, setNewMarkerColor] = useState(MARKER_COLORS[0]);
   const [newMarkerText, setNewMarkerText] = useState('');
@@ -447,7 +496,9 @@ export default function TimelineTracks({
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Color dot + comment text */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}
+                  >
                     <span
                       style={{
                         display: 'inline-block',
@@ -500,10 +551,7 @@ export default function TimelineTracks({
                   {/* Action buttons */}
                   {editingMarkerId !== marker.id && (
                     <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                      <button
-                        onClick={() => handleEditStart(marker)}
-                        style={markerActionBtnStyle}
-                      >
+                      <button onClick={() => handleEditStart(marker)} style={markerActionBtnStyle}>
                         Edit
                       </button>
                       <button
@@ -528,7 +576,9 @@ export default function TimelineTracks({
                   <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                     {marker.author} &middot; {marker.timeAgo}
                     {marker.resolved && (
-                      <span style={{ marginLeft: 6, color: '#22c55e', fontWeight: 500 }}>Resolved</span>
+                      <span style={{ marginLeft: 6, color: '#22c55e', fontWeight: 500 }}>
+                        Resolved
+                      </span>
                     )}
                   </div>
                 </div>
@@ -568,8 +618,12 @@ export default function TimelineTracks({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 + Add marker here
               </button>
@@ -791,9 +845,7 @@ export default function TimelineTracks({
                   opacity: selected ? 1 : 0.85,
                 }}
               >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {block.label}
-                </span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{block.label}</span>
               </div>
             );
           })}
@@ -841,9 +893,7 @@ export default function TimelineTracks({
                   opacity: selected ? 1 : 0.85,
                 }}
               >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {block.label}
-                </span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{block.label}</span>
               </div>
             );
           })}

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const body = (await request.json()) as {
     isPinned?: boolean;
     title?: string;
@@ -31,9 +28,6 @@ export async function PATCH(
   return NextResponse.json({ project: updatedProject });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   return NextResponse.json({ success: true, projectId: params.id });
 }

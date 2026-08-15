@@ -12,10 +12,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!text || !style) {
-    return NextResponse.json(
-      { error: 'text and style are required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'text and style are required' }, { status: 400 });
   }
 
   const track = {

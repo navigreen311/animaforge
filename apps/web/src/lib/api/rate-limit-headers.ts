@@ -1,7 +1,7 @@
 // Utility to add rate limit headers to API responses
 export function addRateLimitHeaders(
   headers: Headers,
-  info: { limit: number; remaining: number; reset: Date }
+  info: { limit: number; remaining: number; reset: Date },
 ) {
   headers.set('X-RateLimit-Limit', info.limit.toString());
   headers.set('X-RateLimit-Remaining', info.remaining.toString());
@@ -16,7 +16,7 @@ export function rateLimitExceededResponse(retryAfterSeconds: number): Response {
   headers.set('X-RateLimit-Remaining', '0');
   return new Response(
     JSON.stringify({ error: 'Rate limit exceeded', retryAfter: retryAfterSeconds }),
-    { status: 429, headers }
+    { status: 429, headers },
   );
 }
 

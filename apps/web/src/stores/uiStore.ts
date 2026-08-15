@@ -34,14 +34,11 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   theme: 'dark',
   notifications: [],
 
-  toggleSidebar: () =>
-    set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
-  pushModal: (modal) =>
-    set((state) => ({ modalStack: [...state.modalStack, modal] })),
+  pushModal: (modal) => set((state) => ({ modalStack: [...state.modalStack, modal] })),
 
-  popModal: () =>
-    set((state) => ({ modalStack: state.modalStack.slice(0, -1) })),
+  popModal: () => set((state) => ({ modalStack: state.modalStack.slice(0, -1) })),
 
   addNotification: (notification) =>
     set((state) => ({

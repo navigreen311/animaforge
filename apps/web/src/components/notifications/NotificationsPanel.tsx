@@ -46,16 +46,96 @@ interface Notification {
 /* ------------------------------------------------------------------ */
 
 const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', type: 'render_complete', title: 'Render complete', subtitle: 'Hero entrance shot — 1080p export', createdAt: '2026-04-09T09:45:00Z', read: false, actionLabel: 'View', actionHref: '/shots/s1' },
-  { id: 'n2', type: 'comment', title: 'New comment', subtitle: 'Alex: "Love the lighting in scene 3"', createdAt: '2026-04-09T09:20:00Z', read: false, actionLabel: 'Reply', actionHref: '/shots/s1' },
-  { id: 'n3', type: 'shot_approved', title: 'Shot approved', subtitle: 'Sunset fly-over was approved by Director', createdAt: '2026-04-09T08:00:00Z', read: false },
-  { id: 'n4', type: 'member_joined', title: 'New team member', subtitle: 'Sarah joined Midnight Fable', createdAt: '2026-04-08T16:30:00Z', read: true },
-  { id: 'n5', type: 'render_failed', title: 'Render failed', subtitle: 'Chase sequence — GPU timeout', createdAt: '2026-04-08T14:00:00Z', read: true, actionLabel: 'Retry', actionHref: '/renders' },
-  { id: 'n6', type: 'marketplace_sale', title: 'Marketplace sale', subtitle: 'Magic particle FX purchased for $12', createdAt: '2026-04-08T10:00:00Z', read: true },
-  { id: 'n7', type: 'credits_low', title: 'Credits running low', subtitle: 'Only 150 credits remaining', createdAt: '2026-04-07T09:00:00Z', read: true, actionLabel: 'Top up', actionHref: '/settings' },
-  { id: 'n8', type: 'export_ready', title: 'Export ready', subtitle: 'Product Launch Ad — MP4 download', createdAt: '2026-04-06T15:00:00Z', read: true, actionLabel: 'Download', actionHref: '/exports' },
-  { id: 'n9', type: 'render_complete', title: 'Render complete', subtitle: 'Close-up reaction — 4K export', createdAt: '2026-04-05T12:00:00Z', read: true },
-  { id: 'n10', type: 'comment', title: 'New comment', subtitle: 'Mike: "Can we adjust the timing?"', createdAt: '2026-04-04T18:00:00Z', read: true },
+  {
+    id: 'n1',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'Hero entrance shot — 1080p export',
+    createdAt: '2026-04-09T09:45:00Z',
+    read: false,
+    actionLabel: 'View',
+    actionHref: '/shots/s1',
+  },
+  {
+    id: 'n2',
+    type: 'comment',
+    title: 'New comment',
+    subtitle: 'Alex: "Love the lighting in scene 3"',
+    createdAt: '2026-04-09T09:20:00Z',
+    read: false,
+    actionLabel: 'Reply',
+    actionHref: '/shots/s1',
+  },
+  {
+    id: 'n3',
+    type: 'shot_approved',
+    title: 'Shot approved',
+    subtitle: 'Sunset fly-over was approved by Director',
+    createdAt: '2026-04-09T08:00:00Z',
+    read: false,
+  },
+  {
+    id: 'n4',
+    type: 'member_joined',
+    title: 'New team member',
+    subtitle: 'Sarah joined Midnight Fable',
+    createdAt: '2026-04-08T16:30:00Z',
+    read: true,
+  },
+  {
+    id: 'n5',
+    type: 'render_failed',
+    title: 'Render failed',
+    subtitle: 'Chase sequence — GPU timeout',
+    createdAt: '2026-04-08T14:00:00Z',
+    read: true,
+    actionLabel: 'Retry',
+    actionHref: '/renders',
+  },
+  {
+    id: 'n6',
+    type: 'marketplace_sale',
+    title: 'Marketplace sale',
+    subtitle: 'Magic particle FX purchased for $12',
+    createdAt: '2026-04-08T10:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n7',
+    type: 'credits_low',
+    title: 'Credits running low',
+    subtitle: 'Only 150 credits remaining',
+    createdAt: '2026-04-07T09:00:00Z',
+    read: true,
+    actionLabel: 'Top up',
+    actionHref: '/settings',
+  },
+  {
+    id: 'n8',
+    type: 'export_ready',
+    title: 'Export ready',
+    subtitle: 'Product Launch Ad — MP4 download',
+    createdAt: '2026-04-06T15:00:00Z',
+    read: true,
+    actionLabel: 'Download',
+    actionHref: '/exports',
+  },
+  {
+    id: 'n9',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'Close-up reaction — 4K export',
+    createdAt: '2026-04-05T12:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n10',
+    type: 'comment',
+    title: 'New comment',
+    subtitle: 'Mike: "Can we adjust the timing?"',
+    createdAt: '2026-04-04T18:00:00Z',
+    read: true,
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -275,7 +355,13 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
                             <Icon size={14} color={typeMeta.color} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 500,
+                                color: 'var(--text-primary)',
+                              }}
+                            >
                               {n.title}
                               {!n.read && (
                                 <span
@@ -291,11 +377,29 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
                                 />
                               )}
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                marginTop: 1,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
                               {n.subtitle}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{timeAgo(n.createdAt)}</span>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginTop: 4,
+                              }}
+                            >
+                              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                                {timeAgo(n.createdAt)}
+                              </span>
                               {n.actionLabel && n.actionHref && (
                                 <a
                                   href={n.actionHref}

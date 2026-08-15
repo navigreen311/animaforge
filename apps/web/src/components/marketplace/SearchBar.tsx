@@ -2,7 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/Input';
-import { useMarketplaceStore, type MarketplaceCategory, type PriceRange, type SortBy } from '@/stores/marketplaceStore';
+import {
+  useMarketplaceStore,
+  type MarketplaceCategory,
+  type PriceRange,
+  type SortBy,
+} from '@/stores/marketplaceStore';
 
 const CATEGORIES: { value: MarketplaceCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Categories' },

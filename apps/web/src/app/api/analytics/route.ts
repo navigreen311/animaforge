@@ -60,9 +60,7 @@ function generateRenderHistory(count: number) {
     });
   }
 
-  return rows.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 /* ------------------------------------------------------------------ */
@@ -119,7 +117,13 @@ export async function GET(request: NextRequest) {
 
   /* --- Top projects ------------------------------------------------ */
   const topProjects = [
-    { id: 'proj_001', title: 'Cyber Samurai: Origin', credits: 1850, renderCount: 312, shotCount: 48 },
+    {
+      id: 'proj_001',
+      title: 'Cyber Samurai: Origin',
+      credits: 1850,
+      renderCount: 312,
+      shotCount: 48,
+    },
     { id: 'proj_002', title: 'Neon Drift', credits: 1340, renderCount: 245, shotCount: 32 },
     { id: 'proj_003', title: 'Arcane Bloom', credits: 1010, renderCount: 290, shotCount: 40 },
   ];

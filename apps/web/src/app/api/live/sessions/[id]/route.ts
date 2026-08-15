@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const session = {
     id: params.id,
     userId: 'user_1',
@@ -24,14 +21,10 @@ export async function GET(
   return NextResponse.json({ session });
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const body = await request.json().catch(() => ({}));
   const action = body.action as 'start' | 'stop' | undefined;
-  const status =
-    action === 'start' ? 'live' : action === 'stop' ? 'offline' : 'idle';
+  const status = action === 'start' ? 'live' : action === 'stop' ? 'offline' : 'idle';
   return NextResponse.json({
     session: {
       id: params.id,

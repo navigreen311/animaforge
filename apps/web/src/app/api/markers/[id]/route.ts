@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const body = (await request.json()) as {
     isResolved?: boolean;
     text?: string;
@@ -24,9 +21,6 @@ export async function PATCH(
   return NextResponse.json({ marker: updatedMarker });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   return NextResponse.json({ success: true, markerId: params.id });
 }

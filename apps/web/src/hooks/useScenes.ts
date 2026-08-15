@@ -25,8 +25,7 @@ type UpdateSceneInput = Partial<Pick<Scene, 'name' | 'order'>> & { id: string };
 export function useScenes(projectId: string | undefined) {
   return useQuery({
     queryKey: sceneKeys.byProject(projectId!),
-    queryFn: () =>
-      apiClient.get<Scene[]>(`/api/v1/projects/${projectId}/scenes`),
+    queryFn: () => apiClient.get<Scene[]>(`/api/v1/projects/${projectId}/scenes`),
     enabled: !!projectId,
     staleTime: 30_000,
     refetchOnWindowFocus: true,

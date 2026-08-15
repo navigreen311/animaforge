@@ -23,7 +23,8 @@ interface Character {
 
 const mockProject = {
   name: 'Neon Odyssey',
-  description: 'A cyberpunk short film exploring the boundary between human consciousness and AI sentience in a rain-soaked megacity.',
+  description:
+    'A cyberpunk short film exploring the boundary between human consciousness and AI sentience in a rain-soaked megacity.',
   type: 'short-film' as const,
   aspectRatio: '16:9' as const,
   duration: 180,
@@ -39,9 +40,21 @@ const mockTeam: TeamMember[] = [
 ];
 
 const mockCharacters: Character[] = [
-  { id: 'c1', name: 'Kai', description: 'Rogue hacker with cybernetic left arm; wears a tattered grey hoodie' },
-  { id: 'c2', name: 'Nova', description: 'AI entity manifesting as flickering holographic silhouette, blue-white glow' },
-  { id: 'c3', name: 'Director Voss', description: 'Corporate antagonist, sharp suit, chrome eye implant' },
+  {
+    id: 'c1',
+    name: 'Kai',
+    description: 'Rogue hacker with cybernetic left arm; wears a tattered grey hoodie',
+  },
+  {
+    id: 'c2',
+    name: 'Nova',
+    description: 'AI entity manifesting as flickering holographic silhouette, blue-white glow',
+  },
+  {
+    id: 'c3',
+    name: 'Director Voss',
+    description: 'Corporate antagonist, sharp suit, chrome eye implant',
+  },
 ];
 
 const mockBrandKits = [
@@ -96,7 +109,9 @@ export default function SettingsPage() {
 
   // World Bible
   const [characters, setCharacters] = useState<Character[]>(mockCharacters);
-  const [worldRules, setWorldRules] = useState('Rain never stops. Neon signage is in Japanese and English. Tech level: 2087. No magic — all abilities are cybernetic.');
+  const [worldRules, setWorldRules] = useState(
+    'Rain never stops. Neon signage is in Japanese and English. Tech level: 2087. No magic — all abilities are cybernetic.',
+  );
   const [constraints, setConstraints] = useState<string[]>([
     'Kai always wears grey hoodie',
     'Nova never touches physical objects',
@@ -148,23 +163,32 @@ export default function SettingsPage() {
 
   const addCharacter = () => {
     if (!newCharName.trim()) return;
-    setCharacters((p) => [...p, { id: `c${Date.now()}`, name: newCharName.trim(), description: newCharDesc.trim() }]);
+    setCharacters((p) => [
+      ...p,
+      { id: `c${Date.now()}`, name: newCharName.trim(), description: newCharDesc.trim() },
+    ]);
     setNewCharName('');
     setNewCharDesc('');
   };
 
   const generateReviewLink = () => {
-    setReviewLink(`https://animaforge.app/review/${params.id}/tk_${Math.random().toString(36).slice(2, 10)}`);
+    setReviewLink(
+      `https://animaforge.app/review/${params.id}/tk_${Math.random().toString(36).slice(2, 10)}`,
+    );
     setReviewExpiry('Expires in 7 days');
   };
 
   /* Shared styles */
   const card = 'rounded-xl border border-gray-800 bg-gray-900 p-5';
   const label = 'block text-xs font-medium text-gray-400 mb-1.5';
-  const input = 'w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:border-violet-500 focus:outline-none';
-  const btnPrimary = 'rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-medium text-white transition-colors';
-  const btnSecondary = 'rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2 text-xs font-medium text-gray-300 transition-colors';
-  const btnDanger = 'rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-medium text-white transition-colors';
+  const input =
+    'w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:border-violet-500 focus:outline-none';
+  const btnPrimary =
+    'rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-medium text-white transition-colors';
+  const btnSecondary =
+    'rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2 text-xs font-medium text-gray-300 transition-colors';
+  const btnDanger =
+    'rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-medium text-white transition-colors';
 
   return (
     <div>
@@ -205,28 +229,50 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className={label}>Project Name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={input} />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={input}
+                />
               </div>
 
               <div>
                 <label className={label}>Description</label>
-                <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className={`${input} resize-none`} />
+                <textarea
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={`${input} resize-none`}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={label}>Project Type</label>
-                  <select value={projectType} onChange={(e) => setProjectType(e.target.value as ProjectType)} className={input}>
+                  <select
+                    value={projectType}
+                    onChange={(e) => setProjectType(e.target.value as ProjectType)}
+                    className={input}
+                  >
                     {PROJECT_TYPES.map((t) => (
-                      <option key={t} value={t}>{t.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+                      <option key={t} value={t}>
+                        {t.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className={label}>Aspect Ratio</label>
-                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value as AspectRatio)} className={input}>
+                  <select
+                    value={aspectRatio}
+                    onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
+                    className={input}
+                  >
                     {ASPECT_RATIOS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -255,13 +301,17 @@ export default function SettingsPage() {
                   <div className="w-24 h-14 rounded-lg border border-dashed border-gray-700 bg-gray-800 flex items-center justify-center text-gray-600 text-xs">
                     No image
                   </div>
-                  <button type="button" className={btnSecondary}>Upload</button>
+                  <button type="button" className={btnSecondary}>
+                    Upload
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <button type="button" className={btnPrimary}>Save Changes</button>
+          <button type="button" className={btnPrimary}>
+            Save Changes
+          </button>
         </div>
       )}
 
@@ -275,7 +325,10 @@ export default function SettingsPage() {
             <h2 className="text-sm font-semibold text-gray-200 mb-4">Characters</h2>
             <div className="space-y-3 mb-4">
               {characters.map((c) => (
-                <div key={c.id} className="flex items-start justify-between gap-3 p-3 rounded-lg bg-gray-800">
+                <div
+                  key={c.id}
+                  className="flex items-start justify-between gap-3 p-3 rounded-lg bg-gray-800"
+                >
                   <div>
                     <p className="text-sm font-medium text-gray-200">{c.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{c.description}</p>
@@ -286,23 +339,47 @@ export default function SettingsPage() {
                     className="text-gray-600 hover:text-red-400 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="text" placeholder="Name" value={newCharName} onChange={(e) => setNewCharName(e.target.value)} className={`${input} flex-shrink-0 w-32`} />
-              <input type="text" placeholder="Description" value={newCharDesc} onChange={(e) => setNewCharDesc(e.target.value)} className={`${input} flex-1`} />
-              <button type="button" onClick={addCharacter} className={btnSecondary}>+ Add</button>
+              <input
+                type="text"
+                placeholder="Name"
+                value={newCharName}
+                onChange={(e) => setNewCharName(e.target.value)}
+                className={`${input} flex-shrink-0 w-32`}
+              />
+              <input
+                type="text"
+                placeholder="Description"
+                value={newCharDesc}
+                onChange={(e) => setNewCharDesc(e.target.value)}
+                className={`${input} flex-1`}
+              />
+              <button type="button" onClick={addCharacter} className={btnSecondary}>
+                + Add
+              </button>
             </div>
           </div>
 
           {/* World Rules */}
           <div className={card}>
             <h2 className="text-sm font-semibold text-gray-200 mb-3">World Rules</h2>
-            <textarea rows={4} value={worldRules} onChange={(e) => setWorldRules(e.target.value)} className={`${input} resize-none`} />
+            <textarea
+              rows={4}
+              value={worldRules}
+              onChange={(e) => setWorldRules(e.target.value)}
+              className={`${input} resize-none`}
+            />
           </div>
 
           {/* Continuity Constraints */}
@@ -310,17 +387,45 @@ export default function SettingsPage() {
             <h2 className="text-sm font-semibold text-gray-200 mb-3">Continuity Constraints</h2>
             <div className="space-y-2 mb-3">
               {constraints.map((c, i) => (
-                <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-800 text-sm text-gray-300">
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-800 text-sm text-gray-300"
+                >
                   <span>{c}</span>
-                  <button type="button" onClick={() => setConstraints((p) => p.filter((_, idx) => idx !== i))} className="text-gray-600 hover:text-red-400">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  <button
+                    type="button"
+                    onClick={() => setConstraints((p) => p.filter((_, idx) => idx !== i))}
+                    className="text-gray-600 hover:text-red-400"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                 </div>
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="text" placeholder="Add constraint..." value={newConstraint} onChange={(e) => setNewConstraint(e.target.value)} className={`${input} flex-1`} onKeyDown={(e) => e.key === 'Enter' && addConstraint()} />
-              <button type="button" onClick={addConstraint} className={btnSecondary}>+ Add</button>
+              <input
+                type="text"
+                placeholder="Add constraint..."
+                value={newConstraint}
+                onChange={(e) => setNewConstraint(e.target.value)}
+                className={`${input} flex-1`}
+                onKeyDown={(e) => e.key === 'Enter' && addConstraint()}
+              />
+              <button type="button" onClick={addConstraint} className={btnSecondary}>
+                + Add
+              </button>
             </div>
           </div>
 
@@ -329,21 +434,51 @@ export default function SettingsPage() {
             <h2 className="text-sm font-semibold text-gray-200 mb-3">Forbidden Drift Rules</h2>
             <div className="space-y-2 mb-3">
               {forbiddenDrift.map((f, i) => (
-                <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-900/20 border border-red-800/30 text-sm text-red-300">
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-900/20 border border-red-800/30 text-sm text-red-300"
+                >
                   <span>{f}</span>
-                  <button type="button" onClick={() => setForbiddenDrift((p) => p.filter((_, idx) => idx !== i))} className="text-red-600 hover:text-red-400">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  <button
+                    type="button"
+                    onClick={() => setForbiddenDrift((p) => p.filter((_, idx) => idx !== i))}
+                    className="text-red-600 hover:text-red-400"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                 </div>
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="text" placeholder="Add forbidden rule..." value={newForbidden} onChange={(e) => setNewForbidden(e.target.value)} className={`${input} flex-1`} onKeyDown={(e) => e.key === 'Enter' && addForbidden()} />
-              <button type="button" onClick={addForbidden} className={btnSecondary}>+ Add</button>
+              <input
+                type="text"
+                placeholder="Add forbidden rule..."
+                value={newForbidden}
+                onChange={(e) => setNewForbidden(e.target.value)}
+                className={`${input} flex-1`}
+                onKeyDown={(e) => e.key === 'Enter' && addForbidden()}
+              />
+              <button type="button" onClick={addForbidden} className={btnSecondary}>
+                + Add
+              </button>
             </div>
           </div>
 
-          <button type="button" className={btnPrimary}>Save World Bible</button>
+          <button type="button" className={btnPrimary}>
+            Save World Bible
+          </button>
         </div>
       )}
 
@@ -355,7 +490,9 @@ export default function SettingsPage() {
           <div className={card}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-200">Team Members</h2>
-              <button type="button" className={btnSecondary}>+ Add Member</button>
+              <button type="button" className={btnSecondary}>
+                + Add Member
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -382,12 +519,22 @@ export default function SettingsPage() {
                       <td className="py-3">
                         <select
                           value={m.role}
-                          onChange={(e) => setTeam((p) => p.map((x) => x.id === m.id ? { ...x, role: e.target.value as TeamMember['role'] } : x))}
+                          onChange={(e) =>
+                            setTeam((p) =>
+                              p.map((x) =>
+                                x.id === m.id
+                                  ? { ...x, role: e.target.value as TeamMember['role'] }
+                                  : x,
+                              ),
+                            )
+                          }
                           className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-300 focus:outline-none"
                           disabled={m.role === 'owner'}
                         >
                           {ROLES.map((r) => (
-                            <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                            <option key={r} value={r}>
+                              {r.charAt(0).toUpperCase() + r.slice(1)}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -412,18 +559,42 @@ export default function SettingsPage() {
           {/* Review link */}
           <div className={card}>
             <h2 className="text-sm font-semibold text-gray-200 mb-3">Review Link</h2>
-            <p className="text-xs text-gray-500 mb-3">Generate a shareable link for external stakeholders to review the project.</p>
+            <p className="text-xs text-gray-500 mb-3">
+              Generate a shareable link for external stakeholders to review the project.
+            </p>
             {reviewLink ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <input type="text" readOnly value={reviewLink} className={`${input} flex-1 text-xs`} />
-                  <button type="button" onClick={() => navigator.clipboard?.writeText(reviewLink)} className={btnSecondary}>Copy</button>
-                  <button type="button" onClick={() => { setReviewLink(null); setReviewExpiry(null); }} className="rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-800/30 px-3 py-2 text-xs font-medium text-red-400 transition-colors">Revoke</button>
+                  <input
+                    type="text"
+                    readOnly
+                    value={reviewLink}
+                    className={`${input} flex-1 text-xs`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(reviewLink)}
+                    className={btnSecondary}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReviewLink(null);
+                      setReviewExpiry(null);
+                    }}
+                    className="rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-800/30 px-3 py-2 text-xs font-medium text-red-400 transition-colors"
+                  >
+                    Revoke
+                  </button>
                 </div>
                 <p className="text-[10px] text-gray-600">{reviewExpiry}</p>
               </div>
             ) : (
-              <button type="button" onClick={generateReviewLink} className={btnPrimary}>Generate Review Link</button>
+              <button type="button" onClick={generateReviewLink} className={btnPrimary}>
+                Generate Review Link
+              </button>
             )}
           </div>
         </div>
@@ -439,21 +610,39 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className={label}>Select Brand Kit</label>
-                <select value={selectedKit} onChange={(e) => setSelectedKit(e.target.value)} className={input}>
+                <select
+                  value={selectedKit}
+                  onChange={(e) => setSelectedKit(e.target.value)}
+                  className={input}
+                >
                   {mockBrandKits.map((k) => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div className="p-3 rounded-lg bg-gray-800 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                    />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{mockBrandKits.find((k) => k.id === selectedKit)?.name}</p>
+                  <p className="text-sm font-medium text-gray-200">
+                    {mockBrandKits.find((k) => k.id === selectedKit)?.name}
+                  </p>
                   <p className="text-[10px] text-gray-500">Currently applied</p>
                 </div>
               </div>
@@ -462,23 +651,36 @@ export default function SettingsPage() {
                 <h3 className="text-xs font-medium text-gray-400">Enforcement Toggles</h3>
                 {[
                   { label: 'Enforce brand colors', value: enforceColors, set: setEnforceColors },
-                  { label: 'Enforce typography', value: enforceTypography, set: setEnforceTypography },
+                  {
+                    label: 'Enforce typography',
+                    value: enforceTypography,
+                    set: setEnforceTypography,
+                  },
                   { label: 'Enforce logo placement', value: enforceLogo, set: setEnforceLogo },
                 ].map((toggle) => (
-                  <label key={toggle.label} className="flex items-center justify-between cursor-pointer">
+                  <label
+                    key={toggle.label}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
                     <span className="text-sm text-gray-300">{toggle.label}</span>
                     <button
                       type="button"
                       onClick={() => toggle.set(!toggle.value)}
                       className={`relative w-9 h-5 rounded-full transition-colors ${toggle.value ? 'bg-violet-600' : 'bg-gray-700'}`}
                     >
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${toggle.value ? 'translate-x-4' : ''}`} />
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${toggle.value ? 'translate-x-4' : ''}`}
+                      />
                     </button>
                   </label>
                 ))}
               </div>
 
-              <button type="button" onClick={() => setSelectedKit('')} className="rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-800/30 px-4 py-2 text-xs font-medium text-red-400 transition-colors">
+              <button
+                type="button"
+                onClick={() => setSelectedKit('')}
+                className="rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-800/30 px-4 py-2 text-xs font-medium text-red-400 transition-colors"
+              >
                 Remove Brand Kit
               </button>
             </div>
@@ -500,11 +702,21 @@ export default function SettingsPage() {
             {archiveConfirm ? (
               <div className="flex items-center gap-3">
                 <span className="text-xs text-red-400">Are you sure?</span>
-                <button type="button" className={btnDanger}>Yes, Archive</button>
-                <button type="button" onClick={() => setArchiveConfirm(false)} className={btnSecondary}>Cancel</button>
+                <button type="button" className={btnDanger}>
+                  Yes, Archive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArchiveConfirm(false)}
+                  className={btnSecondary}
+                >
+                  Cancel
+                </button>
               </div>
             ) : (
-              <button type="button" onClick={() => setArchiveConfirm(true)} className={btnDanger}>Archive Project</button>
+              <button type="button" onClick={() => setArchiveConfirm(true)} className={btnDanger}>
+                Archive Project
+              </button>
             )}
           </div>
 

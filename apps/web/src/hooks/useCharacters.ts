@@ -75,9 +75,7 @@ export function useCharacters(projectId: string | undefined) {
   /** Project characters narrowed to one style mode, or all of them. */
   const filterByStyleMode = useCallback(
     (mode: StyleMode | 'all') =>
-      mode === 'all'
-        ? projectCharacters
-        : projectCharacters.filter((c) => c.styleMode === mode),
+      mode === 'all' ? projectCharacters : projectCharacters.filter((c) => c.styleMode === mode),
     [projectCharacters],
   );
 

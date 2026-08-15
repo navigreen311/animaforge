@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface PlatformSpec {
   aspectRatio: string;
@@ -7,11 +7,11 @@ export interface PlatformSpec {
 }
 
 export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
-  youtube: { aspectRatio: "16:9", resolution: "1920x1080" },
-  tiktok: { aspectRatio: "9:16", resolution: "1080x1920", maxDuration: 180 },
-  instagram: { aspectRatio: "1:1", resolution: "1080x1080" },
-  instagram_reels: { aspectRatio: "4:5", resolution: "1080x1350" },
-  twitter: { aspectRatio: "16:9", resolution: "1280x720" },
+  youtube: { aspectRatio: '16:9', resolution: '1920x1080' },
+  tiktok: { aspectRatio: '9:16', resolution: '1080x1920', maxDuration: 180 },
+  instagram: { aspectRatio: '1:1', resolution: '1080x1080' },
+  instagram_reels: { aspectRatio: '4:5', resolution: '1080x1350' },
+  twitter: { aspectRatio: '16:9', resolution: '1280x720' },
 };
 
 export interface RepurposeResult {
@@ -37,10 +37,7 @@ export interface TrailerResult {
   shots_used: string[];
 }
 
-export function repurposeForPlatform(
-  videoUrl: string,
-  targetPlatform: string,
-): RepurposeResult {
+export function repurposeForPlatform(videoUrl: string, targetPlatform: string): RepurposeResult {
   const spec = PLATFORM_SPECS[targetPlatform];
   if (!spec) {
     const err = new Error(`Unsupported target platform: ${targetPlatform}`) as Error & {
@@ -48,7 +45,7 @@ export function repurposeForPlatform(
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_PLATFORM";
+    err.code = 'INVALID_PLATFORM';
     throw err;
   }
 
@@ -62,10 +59,7 @@ export function repurposeForPlatform(
   };
 }
 
-export function generateThumbnails(
-  videoUrl: string,
-  count: number = 3,
-): ThumbnailResult {
+export function generateThumbnails(videoUrl: string, count: number = 3): ThumbnailResult {
   const thumbnails = Array.from({ length: count }, (_, i) => ({
     url: `https://cdn.animaforge.io/thumbnails/${uuidv4().slice(0, 8)}.jpg`,
     timestamp_ms: Math.round(((i + 1) / (count + 1)) * 60000),
@@ -74,10 +68,7 @@ export function generateThumbnails(
   return { thumbnails };
 }
 
-export function generateSubtitles(
-  videoUrl: string,
-  language: string = "en",
-): SubtitleResult {
+export function generateSubtitles(videoUrl: string, language: string = 'en'): SubtitleResult {
   const id = uuidv4().slice(0, 8);
   return {
     srt: `1\n00:00:01,000 --> 00:00:04,000\n[Simulated ${language} subtitle line 1]\n\n2\n00:00:04,500 --> 00:00:08,000\n[Simulated ${language} subtitle line 2]\n`,
@@ -86,10 +77,7 @@ export function generateSubtitles(
   };
 }
 
-export function generateTrailer(
-  projectId: string,
-  duration: number = 30,
-): TrailerResult {
+export function generateTrailer(projectId: string, duration: number = 30): TrailerResult {
   const shotCount = Math.max(3, Math.floor(duration / 5));
   const shots_used = Array.from({ length: shotCount }, (_, i) => `shot_${i + 1}`);
 
@@ -99,9 +87,6 @@ export function generateTrailer(
   };
 }
 
-export function batchRepurpose(
-  videoUrl: string,
-  platforms: string[],
-): RepurposeResult[] {
+export function batchRepurpose(videoUrl: string, platforms: string[]): RepurposeResult[] {
   return platforms.map((platform) => repurposeForPlatform(videoUrl, platform));
 }

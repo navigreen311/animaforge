@@ -9,11 +9,7 @@ const stepMap: Record<string, number> = {
   '/onboarding/tour': 3,
 };
 
-export default function OnboardingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const currentStep = stepMap[pathname] ?? 1;
 

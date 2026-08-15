@@ -141,9 +141,7 @@ export function wardrobeStateToPayload(state: WardrobeState): WardrobePayload {
  * selection so an old record still shows its items rather than appearing
  * empty — which would look like data loss to the user.
  */
-export function wardrobePayloadToState(
-  stored: StoredWardrobe | undefined | null,
-): WardrobeState {
+export function wardrobePayloadToState(stored: StoredWardrobe | undefined | null): WardrobeState {
   if (!stored) return { selections: {}, presets: [] };
 
   if (Array.isArray(stored)) {
@@ -219,9 +217,7 @@ async function send<T>(
 async function readErrorMessage(response: Response): Promise<string> {
   try {
     const body = await response.json();
-    return (
-      body?.error?.message ?? body?.message ?? `Request failed (${response.status})`
-    );
+    return body?.error?.message ?? body?.message ?? `Request failed (${response.status})`;
   } catch {
     return `Request failed (${response.status})`;
   }
@@ -268,9 +264,7 @@ export function saveWardrobe(
 /* ── Internals ──────────────────────────────────────────────────────────── */
 
 function stripUndefined<T extends object>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, v]) => v !== undefined),
-  ) as Partial<T>;
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as Partial<T>;
 }
 
 function toPercent(value: unknown, fallback: number): number {

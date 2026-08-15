@@ -34,7 +34,7 @@ export async function generateMusic(params: MusicGenerationParams): Promise<Audi
   const response = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+      Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -77,7 +77,7 @@ export async function generateVoice(params: VoiceGenerationParams): Promise<Audi
     headers: {
       'xi-api-key': process.env.ELEVENLABS_API_KEY!,
       'Content-Type': 'application/json',
-      'Accept': 'audio/mpeg',
+      Accept: 'audio/mpeg',
     },
     body: JSON.stringify({
       text: params.text,
@@ -112,12 +112,9 @@ const MAX_POLL_ATTEMPTS = 150; // ~5 minutes
 
 async function waitForPrediction(predictionId: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
-    const response = await fetch(
-      `https://api.replicate.com/v1/predictions/${predictionId}`,
-      {
-        headers: { 'Authorization': `Bearer ${process.env.REPLICATE_API_TOKEN}` },
-      },
-    );
+    const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: { Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}` },
+    });
 
     if (!response.ok) throw new Error('Failed to poll music generation job');
 
@@ -125,7 +122,7 @@ async function waitForPrediction(predictionId: string): Promise<string> {
 
     if (prediction.status === 'succeeded') {
       const output = prediction.output;
-      return typeof output === 'string' ? output : output?.[0] ?? '';
+      return typeof output === 'string' ? output : (output?.[0] ?? '');
     }
 
     if (prediction.status === 'failed') {

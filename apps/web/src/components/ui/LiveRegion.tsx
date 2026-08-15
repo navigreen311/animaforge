@@ -13,10 +13,7 @@ interface LiveRegionProps {
  * Renders an invisible aria-live region that announces dynamic content
  * changes to screen readers.
  */
-export default function LiveRegion({
-  message,
-  politeness = 'polite',
-}: LiveRegionProps) {
+export default function LiveRegion({ message, politeness = 'polite' }: LiveRegionProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react';
 import { GitBranch, ChevronDown, AlertTriangle, Zap } from 'lucide-react';
-import DependencyGraph, {
-  MOCK_TASKS,
-  CRITICAL_PATH,
-} from '@/components/calendar/DependencyGraph';
+import DependencyGraph, { MOCK_TASKS, CRITICAL_PATH } from '@/components/calendar/DependencyGraph';
 
 const PROJECTS = ['Project Aurora', 'Project Nova', 'Short Film: Echoes'];
 
@@ -14,10 +11,7 @@ export default function DependenciesPage() {
 
   const criticalTasks = MOCK_TASKS.filter((t) => CRITICAL_PATH.has(t.id));
   const blockedTasks = MOCK_TASKS.filter((t) => t.status === 'blocked');
-  const totalCriticalDays = criticalTasks.reduce(
-    (s, t) => s + t.durationDays,
-    0
-  );
+  const totalCriticalDays = criticalTasks.reduce((s, t) => s + t.durationDays, 0);
 
   return (
     <div style={{ padding: 24 }}>
@@ -163,9 +157,7 @@ export default function DependenciesPage() {
                   <span>
                     {i + 1}. {t.name}
                   </span>
-                  <span style={{ color: 'var(--text-muted, #94a3b8)' }}>
-                    {t.durationDays}d
-                  </span>
+                  <span style={{ color: 'var(--text-muted, #94a3b8)' }}>{t.durationDays}d</span>
                 </li>
               ))}
             </ol>

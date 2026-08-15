@@ -107,8 +107,8 @@ export default function A11yTestPage() {
             1. AccessibleModal — focus trap + escape close
           </h2>
           <p style={pStyle}>
-            Opens a modal that traps Tab focus inside it and closes on Escape. Try
-            tabbing through the fields — focus will cycle inside the dialog.
+            Opens a modal that traps Tab focus inside it and closes on Escape. Try tabbing through
+            the fields — focus will cycle inside the dialog.
           </p>
           <button type="button" style={buttonStyle} onClick={() => setModalOpen(true)}>
             Open modal
@@ -120,13 +120,18 @@ export default function A11yTestPage() {
             title="Accessible Modal Demo"
           >
             <p style={{ ...pStyle, margin: '8px 0 12px' }}>
-              Press <kbd>Tab</kbd> to cycle through the buttons below. Press{' '}
-              <kbd>Esc</kbd> or click the backdrop to close.
+              Press <kbd>Tab</kbd> to cycle through the buttons below. Press <kbd>Esc</kbd> or click
+              the backdrop to close.
             </p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 type="button"
-                style={{ ...buttonStyle, background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
+                style={{
+                  ...buttonStyle,
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  border: '0.5px solid var(--border)',
+                }}
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
@@ -151,8 +156,8 @@ export default function A11yTestPage() {
             2. announce() — screen reader live region
           </h2>
           <p style={pStyle}>
-            Pushes a polite status message to the shared aria-live region. Screen
-            readers will read the message; the visible text below mirrors it.
+            Pushes a polite status message to the shared aria-live region. Screen readers will read
+            the message; the visible text below mirrors it.
           </p>
           <button type="button" style={buttonStyle} onClick={handleAnnounce}>
             Trigger announcement
@@ -178,8 +183,8 @@ export default function A11yTestPage() {
             3. VisuallyHidden — icon-only buttons
           </h2>
           <p style={pStyle}>
-            The bell button below has no visible text, but uses a VisuallyHidden span
-            so screen readers announce &ldquo;Notifications&rdquo;.
+            The bell button below has no visible text, but uses a VisuallyHidden span so screen
+            readers announce &ldquo;Notifications&rdquo;.
           </p>
           <button
             type="button"
@@ -197,10 +202,9 @@ export default function A11yTestPage() {
             4. Skip-to-content link
           </h2>
           <p style={pStyle}>
-            Reload this page and press <kbd>Tab</kbd> before clicking anywhere. The
-            first focusable element is the &ldquo;Skip to content&rdquo; link rendered
-            by the dashboard layout. Activating it jumps focus past the nav straight
-            to the main content area.
+            Reload this page and press <kbd>Tab</kbd> before clicking anywhere. The first focusable
+            element is the &ldquo;Skip to content&rdquo; link rendered by the dashboard layout.
+            Activating it jumps focus past the nav straight to the main content area.
           </p>
         </section>
       </div>

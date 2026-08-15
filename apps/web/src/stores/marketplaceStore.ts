@@ -4,11 +4,7 @@ import { create } from 'zustand';
 /*  Marketplace Types                                                  */
 /* ------------------------------------------------------------------ */
 
-export type MarketplaceCategory =
-  | 'style-packs'
-  | 'templates'
-  | 'characters'
-  | 'audio-packs';
+export type MarketplaceCategory = 'style-packs' | 'templates' | 'characters' | 'audio-packs';
 
 export type PriceRange = 'all' | 'free' | 'under5' | '5to20' | 'over20';
 
@@ -116,7 +112,8 @@ const MOCK_ITEMS: MarketplaceItem[] = [
   {
     id: 'mp-1',
     name: 'Cyberpunk Neon Style Pack',
-    description: 'High-fidelity cyberpunk neon visuals with glowing edges, rain-slicked streets, and holographic overlays.',
+    description:
+      'High-fidelity cyberpunk neon visuals with glowing edges, rain-slicked streets, and holographic overlays.',
     category: 'style-packs',
     price: 12.99,
     creatorId: 'u-1',
@@ -133,7 +130,8 @@ const MOCK_ITEMS: MarketplaceItem[] = [
   {
     id: 'mp-2',
     name: 'Studio Ghibli Inspired Template',
-    description: 'Soft watercolor backgrounds, expressive characters, and whimsical environments reminiscent of classic anime films.',
+    description:
+      'Soft watercolor backgrounds, expressive characters, and whimsical environments reminiscent of classic anime films.',
     category: 'templates',
     price: 0,
     creatorId: 'u-2',
@@ -150,7 +148,8 @@ const MOCK_ITEMS: MarketplaceItem[] = [
   {
     id: 'mp-3',
     name: 'Heroic Fantasy Character Pack',
-    description: 'A set of 20 ready-to-use fantasy characters: warriors, mages, rogues, and mythical creatures.',
+    description:
+      'A set of 20 ready-to-use fantasy characters: warriors, mages, rogues, and mythical creatures.',
     category: 'characters',
     price: 19.99,
     creatorId: 'u-3',
@@ -167,7 +166,8 @@ const MOCK_ITEMS: MarketplaceItem[] = [
   {
     id: 'mp-4',
     name: 'Cinematic Orchestral SFX',
-    description: 'Over 200 royalty-free orchestral hits, swells, and ambient soundscapes for cinematic productions.',
+    description:
+      'Over 200 royalty-free orchestral hits, swells, and ambient soundscapes for cinematic productions.',
     category: 'audio-packs',
     price: 24.99,
     creatorId: 'u-4',
@@ -201,7 +201,8 @@ const MOCK_ITEMS: MarketplaceItem[] = [
   {
     id: 'mp-6',
     name: 'Horror Scene Template',
-    description: 'Dark atmospheric templates with fog, shadows, and eerie lighting for horror productions.',
+    description:
+      'Dark atmospheric templates with fog, shadows, and eerie lighting for horror productions.',
     category: 'templates',
     price: 9.99,
     creatorId: 'u-6',
@@ -286,12 +287,15 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
     }
 
     if (merged.priceRange === 'free') filtered = filtered.filter((i) => i.price === 0);
-    else if (merged.priceRange === 'under5') filtered = filtered.filter((i) => i.price > 0 && i.price < 5);
-    else if (merged.priceRange === '5to20') filtered = filtered.filter((i) => i.price >= 5 && i.price <= 20);
+    else if (merged.priceRange === 'under5')
+      filtered = filtered.filter((i) => i.price > 0 && i.price < 5);
+    else if (merged.priceRange === '5to20')
+      filtered = filtered.filter((i) => i.price >= 5 && i.price <= 20);
     else if (merged.priceRange === 'over20') filtered = filtered.filter((i) => i.price > 20);
 
     if (merged.sortBy === 'newest') filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    else if (merged.sortBy === 'popular') filtered.sort((a, b) => b.downloadCount - a.downloadCount);
+    else if (merged.sortBy === 'popular')
+      filtered.sort((a, b) => b.downloadCount - a.downloadCount);
     else if (merged.sortBy === 'price-asc') filtered.sort((a, b) => a.price - b.price);
     else if (merged.sortBy === 'price-desc') filtered.sort((a, b) => b.price - a.price);
 
@@ -323,8 +327,7 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
     }));
   },
 
-  removeFromCart: (id) =>
-    set((state) => ({ cart: state.cart.filter((c) => c.itemId !== id) })),
+  removeFromCart: (id) => set((state) => ({ cart: state.cart.filter((c) => c.itemId !== id) })),
 
   clearCart: () => set({ cart: [] }),
 
@@ -344,7 +347,10 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
 
   fetchMyListings: () => {
     set({ isLoading: true });
-    setTimeout(() => set({ myListings: MOCK_LISTINGS, payoutHistory: MOCK_PAYOUTS, isLoading: false }), 300);
+    setTimeout(
+      () => set({ myListings: MOCK_LISTINGS, payoutHistory: MOCK_PAYOUTS, isLoading: false }),
+      300,
+    );
   },
 
   setFilters: (filters) => {

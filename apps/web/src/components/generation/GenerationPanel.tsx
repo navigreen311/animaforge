@@ -149,8 +149,7 @@ export function GenerationPanel({ shotId, sceneGraph }: GenerationPanelProps) {
       {balance !== null && (
         <div className="flex items-center justify-between rounded-lg bg-zinc-800/60 px-3 py-2">
           <span className="text-xs text-zinc-500">
-            This will cost {cost} {cost === 1 ? 'credit' : 'credits'}. You have{' '}
-            {balance} remaining.
+            This will cost {cost} {cost === 1 ? 'credit' : 'credits'}. You have {balance} remaining.
           </span>
         </div>
       )}
@@ -193,9 +192,7 @@ export function GenerationPanel({ shotId, sceneGraph }: GenerationPanelProps) {
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-zinc-500">
-              Elapsed: {formatElapsed(elapsed)}
-            </span>
+            <span className="text-[10px] text-zinc-500">Elapsed: {formatElapsed(elapsed)}</span>
             <button
               onClick={() => cancel()}
               className="rounded bg-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-300 transition hover:bg-red-600 hover:text-white"

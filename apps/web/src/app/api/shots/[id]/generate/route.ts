@@ -8,10 +8,7 @@ const TIER_ESTIMATES: Record<GenerateTier, number> = {
   premium: 120,
 };
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const { tier, sceneGraph } = (await request.json()) as {
     tier?: GenerateTier;
     sceneGraph?: unknown;
@@ -25,10 +22,7 @@ export async function POST(
   }
 
   if (!sceneGraph) {
-    return NextResponse.json(
-      { error: 'sceneGraph is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'sceneGraph is required' }, { status: 400 });
   }
 
   const jobId = `job_${Date.now()}`;

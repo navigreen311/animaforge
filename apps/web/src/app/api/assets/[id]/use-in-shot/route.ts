@@ -5,10 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Attach an asset to a shot (mock)
 // ---------------------------------------------------------------------------
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   let body: { shotId?: string; projectId?: string };

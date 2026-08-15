@@ -18,28 +18,26 @@ interface TimelineActions {
   togglePlay: () => void;
 }
 
-export const useTimelineStore = create<TimelineState & TimelineActions>(
-  (set) => ({
-    playhead: 0,
-    zoomLevel: 100,
-    trackVisibility: {},
-    selectedShotIds: [],
-    isPlaying: false,
+export const useTimelineStore = create<TimelineState & TimelineActions>((set) => ({
+  playhead: 0,
+  zoomLevel: 100,
+  trackVisibility: {},
+  selectedShotIds: [],
+  isPlaying: false,
 
-    setPlayhead: (time) => set({ playhead: time }),
-    setZoom: (level) => set({ zoomLevel: Math.max(10, Math.min(400, level)) }),
+  setPlayhead: (time) => set({ playhead: time }),
+  setZoom: (level) => set({ zoomLevel: Math.max(10, Math.min(400, level)) }),
 
-    toggleTrack: (trackId) =>
-      set((state) => ({
-        trackVisibility: {
-          ...state.trackVisibility,
-          [trackId]: !state.trackVisibility[trackId],
-        },
-      })),
+  toggleTrack: (trackId) =>
+    set((state) => ({
+      trackVisibility: {
+        ...state.trackVisibility,
+        [trackId]: !state.trackVisibility[trackId],
+      },
+    })),
 
-    setSelection: (ids) => set({ selectedShotIds: ids }),
-    play: () => set({ isPlaying: true }),
-    pause: () => set({ isPlaying: false }),
-    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
-  }),
-);
+  setSelection: (ids) => set({ selectedShotIds: ids }),
+  play: () => set({ isPlaying: true }),
+  pause: () => set({ isPlaying: false }),
+  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+}));

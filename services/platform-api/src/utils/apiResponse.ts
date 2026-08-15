@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Response } from 'express';
 
 interface SuccessPayload<T> {
   success: true;
@@ -18,12 +18,7 @@ export function success<T>(res: Response, data: T, statusCode = 200): void {
   res.status(statusCode).json(body);
 }
 
-export function error(
-  res: Response,
-  code: string,
-  message: string,
-  statusCode = 500
-): void {
+export function error(res: Response, code: string, message: string, statusCode = 500): void {
   const body: ErrorPayload = {
     success: false,
     error: { code, message },

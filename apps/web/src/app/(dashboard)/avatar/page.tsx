@@ -2,13 +2,54 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Upload, User, Check, Loader, Plus, X, Camera, AlertTriangle,
-  Sun, Glasses, ChevronDown, ChevronRight, Play, Pause, Download,
-  RotateCcw, Trash2, Edit3, FolderOpen, MoreHorizontal, Mic,
-  Volume2, SkipForward, Lock, Monitor, Film, Box, Smartphone,
-  Layers, Eye, Smile, Frown, Angry, Meh, HelpCircle,
-  Shirt, Footprints, Wind, Sparkles, Move, Sliders, Save,
-  CloudUpload, CheckCircle2, Circle, Music, FileVideo, Package,
+  Upload,
+  User,
+  Check,
+  Loader,
+  Plus,
+  X,
+  Camera,
+  AlertTriangle,
+  Sun,
+  Glasses,
+  ChevronDown,
+  ChevronRight,
+  Play,
+  Pause,
+  Download,
+  RotateCcw,
+  Trash2,
+  Edit3,
+  FolderOpen,
+  MoreHorizontal,
+  Mic,
+  Volume2,
+  SkipForward,
+  Lock,
+  Monitor,
+  Film,
+  Box,
+  Smartphone,
+  Layers,
+  Eye,
+  Smile,
+  Frown,
+  Angry,
+  Meh,
+  HelpCircle,
+  Shirt,
+  Footprints,
+  Wind,
+  Sparkles,
+  Move,
+  Sliders,
+  Save,
+  CloudUpload,
+  CheckCircle2,
+  Circle,
+  Music,
+  FileVideo,
+  Package,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
@@ -25,7 +66,15 @@ import {
 } from './avatarApi';
 
 // ── Types ────────────────────────────────────────────────────
-type PipelineStepId = 'upload' | 'detect' | 'reconstruct' | 'rig' | 'texture' | 'animate' | 'voice' | 'export';
+type PipelineStepId =
+  | 'upload'
+  | 'detect'
+  | 'reconstruct'
+  | 'rig'
+  | 'texture'
+  | 'animate'
+  | 'voice'
+  | 'export';
 type StepStatus = 'completed' | 'current' | 'future';
 type StyleMode = 'realistic' | 'anime' | 'cartoon' | 'cel-shaded' | 'pixel' | 'clay';
 type EditTab = 'appearance' | 'hair' | 'wardrobe' | 'expression' | 'animation';
@@ -78,10 +127,28 @@ const STYLE_MODES: { id: StyleMode; label: string; icon: string; desc: string }[
   { id: 'clay', label: 'Clay', icon: '🧱', desc: 'Claymation / stop-motion feel' },
 ];
 
-const SKIN_TONES = ['#FFDBB4', '#E8B98D', '#D08B5B', '#AE5D29', '#694D3D', '#3B2219', '#F5D7C3', '#C68642'];
+const SKIN_TONES = [
+  '#FFDBB4',
+  '#E8B98D',
+  '#D08B5B',
+  '#AE5D29',
+  '#694D3D',
+  '#3B2219',
+  '#F5D7C3',
+  '#C68642',
+];
 const BUILD_OPTIONS = ['Slim', 'Average', 'Athletic', 'Muscular', 'Heavy'];
 const HAIR_STYLES = ['Straight', 'Wavy', 'Curly', 'Coily', 'Buzz', 'Bald', 'Ponytail', 'Braids'];
-const HAIR_COLORS = ['#1a1a1a', '#4a3728', '#8B4513', '#D2691E', '#DAA520', '#CD853F', '#F5DEB3', '#C0C0C0'];
+const HAIR_COLORS = [
+  '#1a1a1a',
+  '#4a3728',
+  '#8B4513',
+  '#D2691E',
+  '#DAA520',
+  '#CD853F',
+  '#F5DEB3',
+  '#C0C0C0',
+];
 const FASHION_HAIR_COLORS = ['#FF0000', '#FF69B4', '#8A2BE2', '#00BFFF', '#00FF7F', '#FFD700'];
 const HAIR_TEXTURES = ['Smooth', 'Silky', 'Coarse', 'Frizzy'];
 const EMOTIONS: { id: string; label: string; emoji: string }[] = [
@@ -94,9 +161,25 @@ const EMOTIONS: { id: string; label: string; emoji: string }[] = [
   { id: 'disgusted', label: 'Disgusted', emoji: '🤢' },
   { id: 'thinking', label: 'Thinking', emoji: '🤔' },
 ];
-const FACS_UNITS = ['AU1 Inner Brow Raise', 'AU2 Outer Brow Raise', 'AU4 Brow Lowerer', 'AU5 Upper Lid Raise', 'AU6 Cheek Raise', 'AU7 Lid Tightener', 'AU12 Lip Corner Puller', 'AU25 Lips Part'];
+const FACS_UNITS = [
+  'AU1 Inner Brow Raise',
+  'AU2 Outer Brow Raise',
+  'AU4 Brow Lowerer',
+  'AU5 Upper Lid Raise',
+  'AU6 Cheek Raise',
+  'AU7 Lid Tightener',
+  'AU12 Lip Corner Puller',
+  'AU25 Lips Part',
+];
 const IDLE_STYLES = ['Subtle', 'Normal', 'Expressive'];
-const MOTION_PRESETS = ['Breathing', 'Idle Sway', 'Looking Around', 'Talking Gesture', 'Confident Stance', 'Relaxed'];
+const MOTION_PRESETS = [
+  'Breathing',
+  'Idle Sway',
+  'Looking Around',
+  'Talking Gesture',
+  'Confident Stance',
+  'Relaxed',
+];
 
 const EXPORT_FORMATS: { id: ExportFormat; label: string; desc: string; ext: string }[] = [
   { id: 'gltf', label: 'glTF 2.0', desc: 'Web & real-time engines', ext: '.glb' },
@@ -119,8 +202,24 @@ const VOICE_PRESETS = [
 ];
 
 const SAMPLE_AVATARS = [
-  { id: 'avatar-1', name: 'Luna Avatar', status: 'complete' as const, style: 'Realistic', quality: 92, gradient: 'linear-gradient(135deg, #10b981, #34d399)', thumbnailUrl: null as string | null },
-  { id: 'avatar-2', name: 'Dr. Echo Avatar', status: 'draft' as const, style: 'Anime', quality: 78, gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)', thumbnailUrl: null as string | null },
+  {
+    id: 'avatar-1',
+    name: 'Luna Avatar',
+    status: 'complete' as const,
+    style: 'Realistic',
+    quality: 92,
+    gradient: 'linear-gradient(135deg, #10b981, #34d399)',
+    thumbnailUrl: null as string | null,
+  },
+  {
+    id: 'avatar-2',
+    name: 'Dr. Echo Avatar',
+    status: 'draft' as const,
+    style: 'Anime',
+    quality: 78,
+    gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+    thumbnailUrl: null as string | null,
+  },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -137,7 +236,13 @@ function getQualityLabel(score: number): string {
   return 'Fair';
 }
 
-function QualityGauge({ score, status }: { score?: number; status?: 'idle' | 'processing' | 'complete' }) {
+function QualityGauge({
+  score,
+  status,
+}: {
+  score?: number;
+  status?: 'idle' | 'processing' | 'complete';
+}) {
   const r = 36;
   const c = 2 * Math.PI * r;
   const isComplete = status === 'complete' && score !== undefined;
@@ -147,7 +252,16 @@ function QualityGauge({ score, status }: { score?: number; status?: 'idle' | 'pr
     return (
       <svg width="88" height="88" viewBox="0 0 88 88">
         <circle cx="44" cy="44" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
-        <text x="44" y="40" textAnchor="middle" fill="var(--text-tertiary)" fontSize="18" fontWeight="700">--</text>
+        <text
+          x="44"
+          y="40"
+          textAnchor="middle"
+          fill="var(--text-tertiary)"
+          fontSize="18"
+          fontWeight="700"
+        >
+          --
+        </text>
         <text x="44" y="56" textAnchor="middle" fill="var(--text-tertiary)" fontSize="8">
           {isProcessing ? 'Calculating...' : 'Pending reconstruction'}
         </text>
@@ -161,48 +275,105 @@ function QualityGauge({ score, status }: { score?: number; status?: 'idle' | 'pr
     <svg width="88" height="88" viewBox="0 0 88 88">
       <circle cx="44" cy="44" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
       <circle
-        cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="6"
-        strokeDasharray={c} strokeDashoffset={offset}
-        strokeLinecap="round" transform="rotate(-90 44 44)"
+        cx="44"
+        cy="44"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="6"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform="rotate(-90 44 44)"
         style={{ transition: 'stroke-dashoffset 0.6s ease' }}
       />
-      <text x="44" y="36" textAnchor="middle" fill="var(--text-primary)" fontSize="16" fontWeight="700">{score}</text>
-      <text x="44" y="50" textAnchor="middle" fill="var(--text-tertiary)" fontSize="9">Quality</text>
-      <text x="44" y="62" textAnchor="middle" fill={color} fontSize="8" fontWeight="600">{getQualityLabel(score)}</text>
+      <text
+        x="44"
+        y="36"
+        textAnchor="middle"
+        fill="var(--text-primary)"
+        fontSize="16"
+        fontWeight="700"
+      >
+        {score}
+      </text>
+      <text x="44" y="50" textAnchor="middle" fill="var(--text-tertiary)" fontSize="9">
+        Quality
+      </text>
+      <text x="44" y="62" textAnchor="middle" fill={color} fontSize="8" fontWeight="600">
+        {getQualityLabel(score)}
+      </text>
     </svg>
   );
 }
 
-function SliderControl({ label, value, min, max, step, onChange, unit }: {
-  label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void; unit?: string;
+function SliderControl({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  unit,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number) => void;
+  unit?: string;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
         <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{value}{unit ?? ''}</span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+          {value}
+          {unit ?? ''}
+        </span>
       </div>
       <input
-        type="range" min={min} max={max} step={step ?? 1} value={value}
-        onChange={e => onChange(Number(e.target.value))}
+        type="range"
+        min={min}
+        max={max}
+        step={step ?? 1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
         style={{ width: '100%', accentColor: 'var(--brand)', cursor: 'pointer', height: 4 }}
       />
     </div>
   );
 }
 
-function SwatchRow({ colors, selected, onSelect, size }: {
-  colors: string[]; selected: string; onSelect: (c: string) => void; size?: number;
+function SwatchRow({
+  colors,
+  selected,
+  onSelect,
+  size,
+}: {
+  colors: string[];
+  selected: string;
+  onSelect: (c: string) => void;
+  size?: number;
 }) {
   const s = size ?? 24;
   return (
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-      {colors.map(c => (
+      {colors.map((c) => (
         <button
-          key={c} onClick={() => onSelect(c)}
+          key={c}
+          onClick={() => onSelect(c)}
           style={{
-            width: s, height: s, borderRadius: '50%', background: c, border: selected === c ? '2px solid #fff' : '2px solid transparent',
-            cursor: 'pointer', outline: selected === c ? '2px solid var(--brand)' : 'none', outlineOffset: 1, padding: 0,
+            width: s,
+            height: s,
+            borderRadius: '50%',
+            background: c,
+            border: selected === c ? '2px solid #fff' : '2px solid transparent',
+            cursor: 'pointer',
+            outline: selected === c ? '2px solid var(--brand)' : 'none',
+            outlineOffset: 1,
+            padding: 0,
           }}
         />
       ))}
@@ -212,18 +383,39 @@ function SwatchRow({ colors, selected, onSelect, size }: {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+    <span
+      style={{
+        fontSize: 10,
+        color: 'var(--text-tertiary)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        fontWeight: 600,
+      }}
+    >
       {children}
     </span>
   );
 }
 
-function Btn({ children, primary, small, disabled, onClick, style: sx }: {
-  children: React.ReactNode; primary?: boolean; small?: boolean; disabled?: boolean; onClick?: () => void; style?: React.CSSProperties;
+function Btn({
+  children,
+  primary,
+  small,
+  disabled,
+  onClick,
+  style: sx,
+}: {
+  children: React.ReactNode;
+  primary?: boolean;
+  small?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  style?: React.CSSProperties;
 }) {
   return (
     <button
-      onClick={onClick} disabled={disabled}
+      onClick={onClick}
+      disabled={disabled}
       style={{
         padding: small ? '5px 10px' : '8px 16px',
         fontSize: small ? 11 : 12,
@@ -291,7 +483,7 @@ export default function AvatarStudioPage() {
   const [selectedEmotion, setSelectedEmotion] = useState('neutral');
   const [showFACS, setShowFACS] = useState(false);
   const [facsValues, setFacsValues] = useState<Record<string, number>>(
-    Object.fromEntries(FACS_UNITS.map(u => [u, 0]))
+    Object.fromEntries(FACS_UNITS.map((u) => [u, 0])),
   );
 
   // Animation
@@ -357,7 +549,13 @@ export default function AvatarStudioPage() {
 
   // ── Processing auto-progression ────────────────────────────
   useEffect(() => {
-    const processingSteps: PipelineStepId[] = ['detect', 'reconstruct', 'rig', 'texture', 'animate'];
+    const processingSteps: PipelineStepId[] = [
+      'detect',
+      'reconstruct',
+      'rig',
+      'texture',
+      'animate',
+    ];
     const step = PIPELINE_STEPS[currentStepIndex];
     if (!step) return;
 
@@ -370,11 +568,11 @@ export default function AvatarStudioPage() {
     setProcessingElapsed(0);
 
     const interval = setInterval(() => {
-      setProcessingElapsed(prev => {
+      setProcessingElapsed((prev) => {
         const next = prev + 100;
         if (next >= dur) {
           clearInterval(interval);
-          setTimeout(() => setCurrentStepIndex(i => i + 1), 200);
+          setTimeout(() => setCurrentStepIndex((i) => i + 1), 200);
         }
         return Math.min(next, dur);
       });
@@ -392,49 +590,54 @@ export default function AvatarStudioPage() {
 
   // ── Delayed quality check (1.5s after upload) ─────────────
   useEffect(() => {
-    const unchecked = photos.filter(p => p.faceDetected === null);
+    const unchecked = photos.filter((p) => p.faceDetected === null);
     if (unchecked.length === 0) return;
 
     const timer = setTimeout(() => {
-      setPhotos(prev => prev.map(p =>
-        p.faceDetected === null
-          ? { ...p, faceDetected: Math.random() > 0.1, goodLighting: Math.random() > 0.25 }
-          : p
-      ));
+      setPhotos((prev) =>
+        prev.map((p) =>
+          p.faceDetected === null
+            ? { ...p, faceDetected: Math.random() > 0.1, goodLighting: Math.random() > 0.25 }
+            : p,
+        ),
+      );
     }, 1500);
     return () => clearTimeout(timer);
   }, [photos]);
 
   // ── File handling ──────────────────────────────────────────
-  const handleFiles = useCallback((files: FileList | null) => {
-    if (!files) return;
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSize = 10 * 1024 * 1024;
-    const newPhotos: UploadedPhoto[] = [];
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files) return;
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      const maxSize = 10 * 1024 * 1024;
+      const newPhotos: UploadedPhoto[] = [];
 
-    for (let i = 0; i < files.length && photos.length + newPhotos.length < 3; i++) {
-      const f = files[i];
-      if (!allowed.includes(f.type)) continue;
-      if (f.size > maxSize) continue;
-      newPhotos.push({
-        id: `photo-${Date.now()}-${i}`,
-        name: f.name,
-        size: f.size,
-        url: URL.createObjectURL(f),
-        faceDetected: null,
-        goodLighting: null,
-        lowResolution: f.size < 200 * 1024,
-        hasGlasses: Math.random() > 0.7,
-      });
-    }
-    setPhotos(prev => [...prev, ...newPhotos].slice(0, 3));
-  }, [photos.length]);
+      for (let i = 0; i < files.length && photos.length + newPhotos.length < 3; i++) {
+        const f = files[i];
+        if (!allowed.includes(f.type)) continue;
+        if (f.size > maxSize) continue;
+        newPhotos.push({
+          id: `photo-${Date.now()}-${i}`,
+          name: f.name,
+          size: f.size,
+          url: URL.createObjectURL(f),
+          faceDetected: null,
+          goodLighting: null,
+          lowResolution: f.size < 200 * 1024,
+          hasGlasses: Math.random() > 0.7,
+        });
+      }
+      setPhotos((prev) => [...prev, ...newPhotos].slice(0, 3));
+    },
+    [photos.length],
+  );
 
   const removePhoto = (id: string) => {
-    setPhotos(prev => {
-      const removed = prev.find(p => p.id === id);
+    setPhotos((prev) => {
+      const removed = prev.find((p) => p.id === id);
       if (removed) URL.revokeObjectURL(removed.url);
-      return prev.filter(p => p.id !== id);
+      return prev.filter((p) => p.id !== id);
     });
   };
 
@@ -469,9 +672,7 @@ export default function AvatarStudioPage() {
         setJob(result);
       })
       .catch((err: unknown) => {
-        setJobError(
-          err instanceof Error ? err.message : 'Reconstruction failed',
-        );
+        setJobError(err instanceof Error ? err.message : 'Reconstruction failed');
       })
       .finally(() => setJobRunning(false));
   };
@@ -485,14 +686,24 @@ export default function AvatarStudioPage() {
 
   // ── Render helpers ─────────────────────────────────────────
   const currentStep = PIPELINE_STEPS[currentStepIndex];
-  const isProcessing = ['detect', 'reconstruct', 'rig', 'texture', 'animate'].includes(currentStep?.id ?? '');
+  const isProcessing = ['detect', 'reconstruct', 'rig', 'texture', 'animate'].includes(
+    currentStep?.id ?? '',
+  );
   const editingUnlocked = currentStepIndex >= 6; // After animate completes
 
   // ── RENDER ─────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <main style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto', flex: 1 }}>
-
+      <main
+        style={{
+          padding: '20px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+          overflowY: 'auto',
+          flex: 1,
+        }}
+      >
         {/* ═══ HEADER ═══ */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -503,7 +714,16 @@ export default function AvatarStudioPage() {
               Create photorealistic digital humans from photos
             </p>
           </div>
-          <Btn primary onClick={() => { setCurrentStepIndex(0); setPhotos([]); setAvatarName(''); setConsentChecked(false); setPipelineComplete(false); }}>
+          <Btn
+            primary
+            onClick={() => {
+              setCurrentStepIndex(0);
+              setPhotos([]);
+              setAvatarName('');
+              setConsentChecked(false);
+              setPipelineComplete(false);
+            }}
+          >
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Plus size={14} /> New Avatar
             </span>
@@ -511,11 +731,22 @@ export default function AvatarStudioPage() {
         </div>
 
         {/* ═══ PIPELINE STEPPER ═══ */}
-        <div style={{
-          background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-          borderRadius: 'var(--radius-xl)', padding: '16px 20px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+        <div
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '0.5px solid var(--border)',
+            borderRadius: 'var(--radius-xl)',
+            padding: '16px 20px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              position: 'relative',
+            }}
+          >
             {PIPELINE_STEPS.map((step, index) => {
               const status = getStepStatus(index, currentStepIndex);
               return (
@@ -523,33 +754,71 @@ export default function AvatarStudioPage() {
                   key={step.id}
                   onClick={() => handleStepClick(index)}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    position: 'relative', flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    position: 'relative',
+                    flex: 1,
                     cursor: status === 'completed' ? 'pointer' : 'default',
                   }}
                 >
                   {index < PIPELINE_STEPS.length - 1 && (
-                    <div style={{
-                      position: 'absolute', top: 11, left: '50%', width: '100%', height: 2,
-                      background: status === 'completed' ? '#22c55e' : '#374151', zIndex: 0,
-                    }} />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 11,
+                        left: '50%',
+                        width: '100%',
+                        height: 2,
+                        background: status === 'completed' ? '#22c55e' : '#374151',
+                        zIndex: 0,
+                      }}
+                    />
                   )}
-                  <div style={{
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: status === 'completed' ? '#22c55e' : 'var(--bg-surface)',
-                    border: `2px solid ${status === 'completed' ? '#22c55e' : status === 'current' ? '#eab308' : '#374151'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 600, zIndex: 1, position: 'relative',
-                    color: status === 'completed' ? '#fff' : status === 'current' ? '#eab308' : '#6b7280',
-                    animation: status === 'current' ? 'pulse 2s ease-in-out infinite' : undefined,
-                  }}>
-                    {status === 'completed' ? <Check size={11} strokeWidth={3} /> : status === 'current' && isProcessing ? <Loader size={11} style={{ animation: 'spin 1.5s linear infinite' }} /> : index + 1}
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: status === 'completed' ? '#22c55e' : 'var(--bg-surface)',
+                      border: `2px solid ${status === 'completed' ? '#22c55e' : status === 'current' ? '#eab308' : '#374151'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      zIndex: 1,
+                      position: 'relative',
+                      color:
+                        status === 'completed'
+                          ? '#fff'
+                          : status === 'current'
+                            ? '#eab308'
+                            : '#6b7280',
+                      animation: status === 'current' ? 'pulse 2s ease-in-out infinite' : undefined,
+                    }}
+                  >
+                    {status === 'completed' ? (
+                      <Check size={11} strokeWidth={3} />
+                    ) : status === 'current' && isProcessing ? (
+                      <Loader size={11} style={{ animation: 'spin 1.5s linear infinite' }} />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
-                  <span style={{
-                    fontSize: 10, marginTop: 6,
-                    color: status === 'completed' ? '#22c55e' : status === 'current' ? '#eab308' : 'var(--text-tertiary)',
-                    fontWeight: status === 'current' ? 600 : 400,
-                  }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      marginTop: 6,
+                      color:
+                        status === 'completed'
+                          ? '#22c55e'
+                          : status === 'current'
+                            ? '#eab308'
+                            : 'var(--text-tertiary)',
+                      fontWeight: status === 'current' ? 600 : 400,
+                    }}
+                  >
                     {step.label}
                   </span>
                 </div>
@@ -559,20 +828,29 @@ export default function AvatarStudioPage() {
 
           {/* Overall pipeline progress bar */}
           <div style={{ marginTop: 10 }}>
-            <div style={{
-              width: '100%', height: 4, borderRadius: 2,
-              background: 'var(--border)', overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${(currentStepIndex / PIPELINE_STEPS.length) * 100}%`,
-                height: '100%', borderRadius: 2,
-                background: 'linear-gradient(90deg, #22c55e, var(--brand))',
-                transition: 'width 300ms ease',
-              }} />
+            <div
+              style={{
+                width: '100%',
+                height: 4,
+                borderRadius: 2,
+                background: 'var(--border)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${(currentStepIndex / PIPELINE_STEPS.length) * 100}%`,
+                  height: '100%',
+                  borderRadius: 2,
+                  background: 'linear-gradient(90deg, #22c55e, var(--brand))',
+                  transition: 'width 300ms ease',
+                }}
+              />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                Step {Math.min(currentStepIndex + 1, PIPELINE_STEPS.length)} of {PIPELINE_STEPS.length}
+                Step {Math.min(currentStepIndex + 1, PIPELINE_STEPS.length)} of{' '}
+                {PIPELINE_STEPS.length}
               </span>
               <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                 {Math.round((currentStepIndex / PIPELINE_STEPS.length) * 100)}%
@@ -585,30 +863,49 @@ export default function AvatarStudioPage() {
         <div style={{ display: 'flex', gap: 16 }}>
           {/* Left: Main panel */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
             {/* ── UPLOAD STEP ── */}
             {currentStep?.id === 'upload' && (
-              <div style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xl)', padding: 20,
-                display: 'flex', flexDirection: 'column', gap: 20,
-              }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                }}
+              >
                 {/* Drag-drop zone */}
                 <div
-                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
                   onDragLeave={() => setDragOver(false)}
-                  onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    handleFiles(e.dataTransfer.files);
+                  }}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     border: `2px dashed ${dragOver ? 'var(--brand)' : 'var(--border)'}`,
                     borderRadius: 'var(--radius-xl)',
                     background: dragOver ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                    padding: '40px 20px', display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', gap: 12, cursor: 'pointer',
+                    padding: '40px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12,
+                    cursor: 'pointer',
                     transition: 'all 200ms ease',
                   }}
                 >
-                  <Upload size={36} style={{ color: dragOver ? 'var(--brand-light)' : 'var(--text-tertiary)' }} />
+                  <Upload
+                    size={36}
+                    style={{ color: dragOver ? 'var(--brand-light)' : 'var(--text-tertiary)' }}
+                  />
                   <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>
                     Drag & drop 1-3 photos here
                   </span>
@@ -616,53 +913,111 @@ export default function AvatarStudioPage() {
                     JPG, PNG, or WEBP - Max 10MB each
                   </span>
                   <input
-                    ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.webp"
-                    multiple style={{ display: 'none' }}
-                    onChange={e => handleFiles(e.target.files)}
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleFiles(e.target.files)}
                   />
                 </div>
 
                 {/* Photo previews */}
                 {photos.length > 0 && (
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {photos.map(photo => (
-                      <div key={photo.id} style={{
-                        position: 'relative', width: 140, borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-surface)',
-                      }}>
+                    {photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        style={{
+                          position: 'relative',
+                          width: 140,
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border)',
+                          overflow: 'hidden',
+                          background: 'var(--bg-surface)',
+                        }}
+                      >
                         <img
-                          src={photo.url} alt={photo.name}
-                          style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }}
+                          src={photo.url}
+                          alt={photo.name}
+                          style={{
+                            width: '100%',
+                            height: 100,
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
                         />
                         <button
                           aria-label={`Remove photo ${photo.name}`}
-                          onClick={e => { e.stopPropagation(); removePhoto(photo.id); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePhoto(photo.id);
+                          }}
                           style={{
-                            position: 'absolute', top: 4, right: 4, width: 20, height: 20,
-                            borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none',
-                            color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', padding: 0,
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.7)',
+                            border: 'none',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
                           }}
                         >
                           <X size={12} />
                         </button>
-                        <div style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div
+                          style={{
+                            padding: '6px 8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: 'var(--text-secondary)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {photo.name}
                           </span>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {photo.faceDetected === null ? (
-                              <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>Analyzing...</span>
+                              <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>
+                                Analyzing...
+                              </span>
                             ) : (
                               <>
-                                <span style={{ fontSize: 9, color: photo.faceDetected ? '#22c55e' : '#ef4444' }}>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    color: photo.faceDetected ? '#22c55e' : '#ef4444',
+                                  }}
+                                >
                                   {photo.faceDetected ? 'Face detected ✓' : 'No face ✗'}
                                 </span>
-                                <span style={{ fontSize: 9, color: photo.goodLighting ? '#22c55e' : '#eab308' }}>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    color: photo.goodLighting ? '#22c55e' : '#eab308',
+                                  }}
+                                >
                                   {photo.goodLighting ? 'Good lighting ✓' : 'Low light ⚠'}
                                 </span>
                                 {photo.lowResolution && (
-                                  <span style={{ fontSize: 9, color: '#eab308' }}>Low resolution ⚠</span>
+                                  <span style={{ fontSize: 9, color: '#eab308' }}>
+                                    Low resolution ⚠
+                                  </span>
                                 )}
                                 {photo.hasGlasses && (
                                   <span style={{ fontSize: 9, color: '#eab308' }}>Glasses ⚠</span>
@@ -677,15 +1032,24 @@ export default function AvatarStudioPage() {
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         style={{
-                          width: 140, height: 130, borderRadius: 'var(--radius-md)',
-                          border: '2px dashed var(--border)', background: 'var(--bg-surface)',
-                          cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center', gap: 6,
+                          width: 140,
+                          height: 130,
+                          borderRadius: 'var(--radius-md)',
+                          border: '2px dashed var(--border)',
+                          background: 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
                           transition: 'border-color 150ms ease',
                         }}
                       >
                         <Plus size={20} style={{ color: 'var(--text-tertiary)' }} />
-                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Add Photo</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                          Add Photo
+                        </span>
                       </button>
                     )}
                   </div>
@@ -695,13 +1059,20 @@ export default function AvatarStudioPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <SectionLabel>Avatar Name</SectionLabel>
                   <input
-                    type="text" value={avatarName} onChange={e => setAvatarName(e.target.value)}
+                    type="text"
+                    value={avatarName}
+                    onChange={(e) => setAvatarName(e.target.value)}
                     placeholder="e.g. My Digital Twin"
                     aria-label="Avatar name"
                     style={{
-                      padding: '8px 12px', fontSize: 13, borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                      color: 'var(--text-primary)', outline: 'none', width: '100%',
+                      padding: '8px 12px',
+                      fontSize: 13,
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
+                      width: '100%',
                     }}
                   />
                 </div>
@@ -710,34 +1081,61 @@ export default function AvatarStudioPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <SectionLabel>Style Mode</SectionLabel>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                    {STYLE_MODES.map(mode => (
+                    {STYLE_MODES.map((mode) => (
                       <button
-                        key={mode.id} onClick={() => setStyleMode(mode.id)}
+                        key={mode.id}
+                        onClick={() => setStyleMode(mode.id)}
                         style={{
-                          padding: '12px 8px', borderRadius: 'var(--radius-md)',
-                          border: styleMode === mode.id ? '2px solid var(--brand-light)' : '1px solid var(--border)',
-                          background: styleMode === mode.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                          cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', gap: 6, transition: 'all 150ms ease',
+                          padding: '12px 8px',
+                          borderRadius: 'var(--radius-md)',
+                          border:
+                            styleMode === mode.id
+                              ? '2px solid var(--brand-light)'
+                              : '1px solid var(--border)',
+                          background:
+                            styleMode === mode.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 6,
+                          transition: 'all 150ms ease',
                         }}
                       >
                         <span style={{ fontSize: 20 }}>{mode.icon}</span>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{mode.label}</span>
-                        <span style={{ fontSize: 9, color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.3 }}>{mode.desc}</span>
+                        <span
+                          style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}
+                        >
+                          {mode.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--text-tertiary)',
+                            textAlign: 'center',
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {mode.desc}
+                        </span>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Consent checkbox */}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}
+                >
                   <input
-                    type="checkbox" checked={consentChecked} onChange={e => setConsentChecked(e.target.checked)}
+                    type="checkbox"
+                    checked={consentChecked}
+                    onChange={(e) => setConsentChecked(e.target.checked)}
                     style={{ marginTop: 2, accentColor: 'var(--brand)' }}
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    I confirm I have the right to use these images and consent to generating an AI avatar.
-                    The uploaded photos will be processed according to our privacy policy.
+                    I confirm I have the right to use these images and consent to generating an AI
+                    avatar. The uploaded photos will be processed according to our privacy policy.
                   </span>
                 </label>
 
@@ -745,27 +1143,49 @@ export default function AvatarStudioPage() {
                 {(() => {
                   const described = describeCapability(capability);
                   const palette: Record<string, { fg: string; bg: string; border: string }> = {
-                    ready: { fg: '#6ee7b7', bg: 'rgba(52,211,153,0.10)', border: 'rgba(52,211,153,0.3)' },
-                    mock: { fg: '#fbbf24', bg: 'rgba(234,179,8,0.10)', border: 'rgba(234,179,8,0.3)' },
-                    blocked: { fg: '#f87171', bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.3)' },
-                    unknown: { fg: 'var(--text-tertiary)', bg: 'var(--bg-surface)', border: 'var(--border)' },
+                    ready: {
+                      fg: '#6ee7b7',
+                      bg: 'rgba(52,211,153,0.10)',
+                      border: 'rgba(52,211,153,0.3)',
+                    },
+                    mock: {
+                      fg: '#fbbf24',
+                      bg: 'rgba(234,179,8,0.10)',
+                      border: 'rgba(234,179,8,0.3)',
+                    },
+                    blocked: {
+                      fg: '#f87171',
+                      bg: 'rgba(248,113,113,0.10)',
+                      border: 'rgba(248,113,113,0.3)',
+                    },
+                    unknown: {
+                      fg: 'var(--text-tertiary)',
+                      bg: 'var(--bg-surface)',
+                      border: 'var(--border)',
+                    },
                   };
                   const tone = palette[described.tone];
                   return (
                     <div
                       role="status"
                       style={{
-                        display: 'flex', flexDirection: 'column', gap: 4,
-                        padding: '10px 12px', marginBottom: 12,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                        padding: '10px 12px',
+                        marginBottom: 12,
                         borderRadius: 'var(--radius-md)',
-                        border: `1px solid ${tone.border}`, background: tone.bg,
+                        border: `1px solid ${tone.border}`,
+                        background: tone.bg,
                       }}
                     >
                       <span style={{ fontSize: 12, fontWeight: 600, color: tone.fg }}>
                         {described.headline}
                       </span>
                       {described.detail && (
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.45 }}>
+                        <span
+                          style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.45 }}
+                        >
                           {described.detail}
                         </span>
                       )}
@@ -777,11 +1197,16 @@ export default function AvatarStudioPage() {
                   <div
                     role="alert"
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '10px 12px', marginBottom: 12, fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '10px 12px',
+                      marginBottom: 12,
+                      fontSize: 12,
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid rgba(248,113,113,0.3)',
-                      background: 'rgba(248,113,113,0.10)', color: '#f87171',
+                      background: 'rgba(248,113,113,0.10)',
+                      color: '#f87171',
                     }}
                   >
                     <AlertTriangle size={13} /> {jobError}
@@ -790,24 +1215,35 @@ export default function AvatarStudioPage() {
 
                 {/* Start button */}
                 {(() => {
-                  const canStart = photos.length > 0 && consentChecked && avatarName.trim().length > 0;
+                  const canStart =
+                    photos.length > 0 && consentChecked && avatarName.trim().length > 0;
                   const missingParts: string[] = [];
                   if (photos.length === 0) missingParts.push('Upload at least one photo');
                   if (!avatarName.trim()) missingParts.push('Enter an avatar name');
                   if (!consentChecked) missingParts.push('Accept consent checkbox');
                   return (
                     <button
-                      title={canStart ? 'Start avatar reconstruction' : `Missing: ${missingParts.join(', ')}`}
+                      title={
+                        canStart
+                          ? 'Start avatar reconstruction'
+                          : `Missing: ${missingParts.join(', ')}`
+                      }
                       disabled={!canStart || jobRunning}
                       onClick={startReconstruction}
                       style={{
-                        padding: '8px 16px', fontSize: 12, fontWeight: 600,
-                        borderRadius: 'var(--radius-md)', border: 'none',
-                        background: 'var(--brand)', color: '#fff',
+                        padding: '8px 16px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-md)',
+                        border: 'none',
+                        background: 'var(--brand)',
+                        color: '#fff',
                         cursor: canStart ? 'pointer' : 'not-allowed',
                         opacity: canStart ? 1 : 0.45,
                         transition: 'all 150ms ease',
-                        display: 'flex', alignItems: 'center', gap: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
                       }}
                     >
                       <Sparkles size={14} />{' '}
@@ -820,21 +1256,42 @@ export default function AvatarStudioPage() {
 
             {/* ── PROCESSING STEPS ── */}
             {isProcessing && (
-              <div style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xl)', padding: 20,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-              }}>
-                <div style={{
-                  width: 300, height: 300, borderRadius: 'var(--radius-xl)',
-                  background: 'var(--bg-surface)', border: '2px dashed var(--border)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
-                }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 300,
+                    height: 300,
+                    borderRadius: 'var(--radius-xl)',
+                    background: 'var(--bg-surface)',
+                    border: '2px dashed var(--border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 12,
+                  }}
+                >
                   <User size={48} style={{ color: 'var(--text-tertiary)' }} />
-                  <Loader size={20} style={{ color: '#eab308', animation: 'spin 1.5s linear infinite' }} />
+                  <Loader
+                    size={20}
+                    style={{ color: '#eab308', animation: 'spin 1.5s linear infinite' }}
+                  />
                 </div>
 
-                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}
+                >
                   <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
                     {currentStep.label}...
                   </span>
@@ -849,16 +1306,24 @@ export default function AvatarStudioPage() {
 
                 {/* Progress bar */}
                 <div style={{ width: '100%', maxWidth: 400 }}>
-                  <div style={{
-                    width: '100%', height: 6, borderRadius: 3,
-                    background: 'var(--border)', overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${(processingElapsed / (PROCESSING_DURATIONS[currentStep.id] ?? 1)) * 100}%`,
-                      height: '100%', borderRadius: 3,
-                      background: 'linear-gradient(90deg, var(--brand), #eab308)',
-                      transition: 'width 100ms linear',
-                    }} />
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 6,
+                      borderRadius: 3,
+                      background: 'var(--border)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(processingElapsed / (PROCESSING_DURATIONS[currentStep.id] ?? 1)) * 100}%`,
+                        height: '100%',
+                        borderRadius: 3,
+                        background: 'linear-gradient(90deg, var(--brand), #eab308)',
+                        transition: 'width 100ms linear',
+                      }}
+                    />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
                     <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
@@ -874,54 +1339,90 @@ export default function AvatarStudioPage() {
 
             {/* ── EDITING TABS (after animate completes, also visible at voice/export) ── */}
             {editingUnlocked && (
-              <div style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xl)', overflow: 'hidden',
-              }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  overflow: 'hidden',
+                }}
+              >
                 {/* Tab bar */}
-                <div style={{
-                  display: 'flex', borderBottom: '1px solid var(--border)',
-                  background: 'var(--bg-surface)',
-                }}>
-                  {(['appearance', 'hair', 'wardrobe', 'expression', 'animation'] as EditTab[]).map(tab => (
-                    <button
-                      key={tab} onClick={() => setEditTab(tab)}
-                      style={{
-                        flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 600,
-                        background: editTab === tab ? 'var(--bg-elevated)' : 'transparent',
-                        color: editTab === tab ? 'var(--brand-light)' : 'var(--text-secondary)',
-                        border: 'none', borderBottom: editTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
-                        cursor: 'pointer', textTransform: 'capitalize', transition: 'all 150ms',
-                      }}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+                <div
+                  style={{
+                    display: 'flex',
+                    borderBottom: '1px solid var(--border)',
+                    background: 'var(--bg-surface)',
+                  }}
+                >
+                  {(['appearance', 'hair', 'wardrobe', 'expression', 'animation'] as EditTab[]).map(
+                    (tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setEditTab(tab)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: editTab === tab ? 'var(--bg-elevated)' : 'transparent',
+                          color: editTab === tab ? 'var(--brand-light)' : 'var(--text-secondary)',
+                          border: 'none',
+                          borderBottom:
+                            editTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ),
+                  )}
                 </div>
 
                 {/* Tab content */}
                 <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
                   {/* ── Appearance ── */}
                   {editTab === 'appearance' && (
                     <>
                       {/* Style modes */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <SectionLabel>Style Mode</SectionLabel>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                          {STYLE_MODES.map(mode => (
+                        <div
+                          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}
+                        >
+                          {STYLE_MODES.map((mode) => (
                             <button
-                              key={mode.id} onClick={() => setStyleMode(mode.id)}
+                              key={mode.id}
+                              onClick={() => setStyleMode(mode.id)}
                               style={{
-                                padding: '8px 6px', borderRadius: 'var(--radius-md)',
-                                border: styleMode === mode.id ? '2px solid var(--brand-light)' : '1px solid var(--border)',
-                                background: styleMode === mode.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                                cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', gap: 4, transition: 'all 150ms ease',
+                                padding: '8px 6px',
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  styleMode === mode.id
+                                    ? '2px solid var(--brand-light)'
+                                    : '1px solid var(--border)',
+                                background:
+                                  styleMode === mode.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 4,
+                                transition: 'all 150ms ease',
                               }}
                             >
                               <span style={{ fontSize: 16 }}>{mode.icon}</span>
-                              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>{mode.label}</span>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  color: 'var(--text-primary)',
+                                }}
+                              >
+                                {mode.label}
+                              </span>
                             </button>
                           ))}
                         </div>
@@ -929,45 +1430,118 @@ export default function AvatarStudioPage() {
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <SectionLabel>Skin Tone</SectionLabel>
-                        <SwatchRow colors={SKIN_TONES} selected={skinTone} onSelect={setSkinTone} size={28} />
+                        <SwatchRow
+                          colors={SKIN_TONES}
+                          selected={skinTone}
+                          onSelect={setSkinTone}
+                          size={28}
+                        />
                       </div>
                       <SliderControl label="Age" value={age} min={18} max={80} onChange={setAge} />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Build</SectionLabel>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {BUILD_OPTIONS.map(b => (
-                            <button key={b} onClick={() => setBuild(b)} style={{
-                              padding: '5px 10px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                              border: build === b ? '1px solid var(--brand)' : '1px solid var(--border)',
-                              background: build === b ? 'var(--brand-dim)' : 'transparent',
-                              color: build === b ? 'var(--brand-light)' : 'var(--text-secondary)',
-                              cursor: 'pointer',
-                            }}>{b}</button>
+                          {BUILD_OPTIONS.map((b) => (
+                            <button
+                              key={b}
+                              onClick={() => setBuild(b)}
+                              style={{
+                                padding: '5px 10px',
+                                fontSize: 11,
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  build === b
+                                    ? '1px solid var(--brand)'
+                                    : '1px solid var(--border)',
+                                background: build === b ? 'var(--brand-dim)' : 'transparent',
+                                color: build === b ? 'var(--brand-light)' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {b}
+                            </button>
                           ))}
                         </div>
                       </div>
-                      <SliderControl label="Height" value={height} min={140} max={210} onChange={setHeight} unit="cm" />
-                      <SliderControl label="Gender Presentation" value={genderSlider} min={0} max={100} onChange={setGenderSlider} />
+                      <SliderControl
+                        label="Height"
+                        value={height}
+                        min={140}
+                        max={210}
+                        onChange={setHeight}
+                        unit="cm"
+                      />
+                      <SliderControl
+                        label="Gender Presentation"
+                        value={genderSlider}
+                        min={0}
+                        max={100}
+                        onChange={setGenderSlider}
+                      />
 
                       {/* Advanced facial features */}
                       <button
                         onClick={() => setShowAdvancedFace(!showAdvancedFace)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 6, background: 'none',
-                          border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
-                          fontSize: 11, fontWeight: 600, padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: 0,
                         }}
                       >
                         {showAdvancedFace ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         Advanced Facial Features
                       </button>
                       {showAdvancedFace && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 8 }}>
-                          <SliderControl label="Jaw Width" value={jawWidth} min={0} max={100} onChange={setJawWidth} />
-                          <SliderControl label="Cheek Height" value={cheekHeight} min={0} max={100} onChange={setCheekHeight} />
-                          <SliderControl label="Nose Width" value={noseWidth} min={0} max={100} onChange={setNoseWidth} />
-                          <SliderControl label="Eye Size" value={eyeSize} min={0} max={100} onChange={setEyeSize} />
-                          <SliderControl label="Lip Fullness" value={lipFullness} min={0} max={100} onChange={setLipFullness} />
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                            paddingLeft: 8,
+                          }}
+                        >
+                          <SliderControl
+                            label="Jaw Width"
+                            value={jawWidth}
+                            min={0}
+                            max={100}
+                            onChange={setJawWidth}
+                          />
+                          <SliderControl
+                            label="Cheek Height"
+                            value={cheekHeight}
+                            min={0}
+                            max={100}
+                            onChange={setCheekHeight}
+                          />
+                          <SliderControl
+                            label="Nose Width"
+                            value={noseWidth}
+                            min={0}
+                            max={100}
+                            onChange={setNoseWidth}
+                          />
+                          <SliderControl
+                            label="Eye Size"
+                            value={eyeSize}
+                            min={0}
+                            max={100}
+                            onChange={setEyeSize}
+                          />
+                          <SliderControl
+                            label="Lip Fullness"
+                            value={lipFullness}
+                            min={0}
+                            max={100}
+                            onChange={setLipFullness}
+                          />
                         </div>
                       )}
                     </>
@@ -978,52 +1552,119 @@ export default function AvatarStudioPage() {
                     <>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <SectionLabel>Style</SectionLabel>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                          {HAIR_STYLES.map(s => (
-                            <button key={s} onClick={() => setHairStyle(s)} style={{
-                              padding: '8px 6px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                              border: hairStyle === s ? '1px solid var(--brand)' : '1px solid var(--border)',
-                              background: hairStyle === s ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                              color: hairStyle === s ? 'var(--brand-light)' : 'var(--text-secondary)',
-                              cursor: 'pointer', textAlign: 'center',
-                            }}>{s}</button>
+                        <div
+                          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}
+                        >
+                          {HAIR_STYLES.map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => setHairStyle(s)}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: 11,
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  hairStyle === s
+                                    ? '1px solid var(--brand)'
+                                    : '1px solid var(--border)',
+                                background:
+                                  hairStyle === s ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                                color:
+                                  hairStyle === s ? 'var(--brand-light)' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {s}
+                            </button>
                           ))}
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Natural Colors</SectionLabel>
-                        <SwatchRow colors={HAIR_COLORS} selected={hairColor} onSelect={setHairColor} />
+                        <SwatchRow
+                          colors={HAIR_COLORS}
+                          selected={hairColor}
+                          onSelect={setHairColor}
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Fashion Colors</SectionLabel>
-                        <SwatchRow colors={FASHION_HAIR_COLORS} selected={hairColor} onSelect={setHairColor} />
+                        <SwatchRow
+                          colors={FASHION_HAIR_COLORS}
+                          selected={hairColor}
+                          onSelect={setHairColor}
+                        />
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <SectionLabel>Custom</SectionLabel>
                         <input
-                          type="color" value={hairColor} onChange={e => setHairColor(e.target.value)}
-                          style={{ width: 28, height: 28, border: 'none', cursor: 'pointer', background: 'none' }}
+                          type="color"
+                          value={hairColor}
+                          onChange={(e) => setHairColor(e.target.value)}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: 'none',
+                          }}
                         />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Texture</SectionLabel>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {HAIR_TEXTURES.map(t => (
-                            <button key={t} onClick={() => setHairTexture(t)} style={{
-                              padding: '5px 10px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                              border: hairTexture === t ? '1px solid var(--brand)' : '1px solid var(--border)',
-                              background: hairTexture === t ? 'var(--brand-dim)' : 'transparent',
-                              color: hairTexture === t ? 'var(--brand-light)' : 'var(--text-secondary)',
-                              cursor: 'pointer',
-                            }}>{t}</button>
+                          {HAIR_TEXTURES.map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setHairTexture(t)}
+                              style={{
+                                padding: '5px 10px',
+                                fontSize: 11,
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  hairTexture === t
+                                    ? '1px solid var(--brand)'
+                                    : '1px solid var(--border)',
+                                background: hairTexture === t ? 'var(--brand-dim)' : 'transparent',
+                                color:
+                                  hairTexture === t
+                                    ? 'var(--brand-light)'
+                                    : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {t}
+                            </button>
                           ))}
                         </div>
                       </div>
-                      <SliderControl label="Length" value={hairLength} min={0} max={100} onChange={setHairLength} />
-                      <SliderControl label="Volume" value={hairVolume} min={0} max={100} onChange={setHairVolume} />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={facialHair} onChange={e => setFacialHair(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Facial Hair</span>
+                      <SliderControl
+                        label="Length"
+                        value={hairLength}
+                        min={0}
+                        max={100}
+                        onChange={setHairLength}
+                      />
+                      <SliderControl
+                        label="Volume"
+                        value={hairVolume}
+                        min={0}
+                        max={100}
+                        onChange={setHairVolume}
+                      />
+                      <label
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={facialHair}
+                          onChange={(e) => setFacialHair(e.target.checked)}
+                          style={{ accentColor: 'var(--brand)' }}
+                        />
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          Facial Hair
+                        </span>
                       </label>
                     </>
                   )}
@@ -1031,25 +1672,67 @@ export default function AvatarStudioPage() {
                   {/* ── Wardrobe ── */}
                   {editTab === 'wardrobe' && (
                     <>
-                      <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
-                        {(['top', 'bottom', 'outerwear', 'shoes', 'accessories'] as WardrobeCategory[]).map(cat => (
-                          <button key={cat} onClick={() => setWardrobeCategory(cat)} style={{
-                            padding: '4px 10px', fontSize: 10, fontWeight: 600, borderRadius: 'var(--radius-md)',
-                            border: wardrobeCategory === cat ? '1px solid var(--brand)' : '1px solid var(--border)',
-                            background: wardrobeCategory === cat ? 'var(--brand-dim)' : 'transparent',
-                            color: wardrobeCategory === cat ? 'var(--brand-light)' : 'var(--text-secondary)',
-                            cursor: 'pointer', textTransform: 'capitalize',
-                          }}>{cat}</button>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 6,
+                          borderBottom: '1px solid var(--border)',
+                          paddingBottom: 8,
+                        }}
+                      >
+                        {(
+                          [
+                            'top',
+                            'bottom',
+                            'outerwear',
+                            'shoes',
+                            'accessories',
+                          ] as WardrobeCategory[]
+                        ).map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => setWardrobeCategory(cat)}
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              borderRadius: 'var(--radius-md)',
+                              border:
+                                wardrobeCategory === cat
+                                  ? '1px solid var(--brand)'
+                                  : '1px solid var(--border)',
+                              background:
+                                wardrobeCategory === cat ? 'var(--brand-dim)' : 'transparent',
+                              color:
+                                wardrobeCategory === cat
+                                  ? 'var(--brand-light)'
+                                  : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {cat}
+                          </button>
                         ))}
                       </div>
                       {/* Item grid placeholder */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                      <div
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}
+                      >
                         {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} style={{
-                            height: 70, borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)',
-                            border: '1px solid var(--border)', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', cursor: 'pointer',
-                          }}>
+                          <div
+                            key={i}
+                            style={{
+                              height: 70,
+                              borderRadius: 'var(--radius-md)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                            }}
+                          >
                             <Shirt size={18} style={{ color: 'var(--text-tertiary)' }} />
                           </div>
                         ))}
@@ -1057,37 +1740,79 @@ export default function AvatarStudioPage() {
                       <div style={{ display: 'flex', gap: 16 }}>
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                           <SectionLabel>Fabric</SectionLabel>
-                          <select value={fabricType} onChange={e => setFabricType(e.target.value)} style={{
-                            padding: '6px 8px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                            color: 'var(--text-primary)', outline: 'none',
-                          }}>
-                            {['Cotton', 'Silk', 'Denim', 'Leather', 'Wool', 'Synthetic'].map(f => (
-                              <option key={f} value={f}>{f}</option>
-                            ))}
+                          <select
+                            value={fabricType}
+                            onChange={(e) => setFabricType(e.target.value)}
+                            style={{
+                              padding: '6px 8px',
+                              fontSize: 11,
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-surface)',
+                              color: 'var(--text-primary)',
+                              outline: 'none',
+                            }}
+                          >
+                            {['Cotton', 'Silk', 'Denim', 'Leather', 'Wool', 'Synthetic'].map(
+                              (f) => (
+                                <option key={f} value={f}>
+                                  {f}
+                                </option>
+                              ),
+                            )}
                           </select>
                         </div>
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                           <SectionLabel>Pattern</SectionLabel>
-                          <select value={patternType} onChange={e => setPatternType(e.target.value)} style={{
-                            padding: '6px 8px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                            color: 'var(--text-primary)', outline: 'none',
-                          }}>
-                            {['Solid', 'Striped', 'Plaid', 'Floral', 'Camo', 'Polka Dot'].map(p => (
-                              <option key={p} value={p}>{p}</option>
-                            ))}
+                          <select
+                            value={patternType}
+                            onChange={(e) => setPatternType(e.target.value)}
+                            style={{
+                              padding: '6px 8px',
+                              fontSize: 11,
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-surface)',
+                              color: 'var(--text-primary)',
+                              outline: 'none',
+                            }}
+                          >
+                            {['Solid', 'Striped', 'Plaid', 'Floral', 'Camo', 'Polka Dot'].map(
+                              (p) => (
+                                <option key={p} value={p}>
+                                  {p}
+                                </option>
+                              ),
+                            )}
                           </select>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <SectionLabel>Color</SectionLabel>
-                        <input type="color" value={outfitColor} onChange={e => setOutfitColor(e.target.value)}
-                          style={{ width: 28, height: 28, border: 'none', cursor: 'pointer', background: 'none' }} />
+                        <input
+                          type="color"
+                          value={outfitColor}
+                          onChange={(e) => setOutfitColor(e.target.value)}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: 'none',
+                          }}
+                        />
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <Btn small><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Save size={12} /> Save Outfit</span></Btn>
-                        <Btn small><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><FolderOpen size={12} /> Load Outfit</span></Btn>
+                        <Btn small>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Save size={12} /> Save Outfit
+                          </span>
+                        </Btn>
+                        <Btn small>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <FolderOpen size={12} /> Load Outfit
+                          </span>
+                        </Btn>
                       </div>
                     </>
                   )}
@@ -1095,40 +1820,89 @@ export default function AvatarStudioPage() {
                   {/* ── Expression ── */}
                   {editTab === 'expression' && (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                        {EMOTIONS.map(em => (
-                          <button key={em.id} onClick={() => setSelectedEmotion(em.id)} style={{
-                            padding: '12px 8px', borderRadius: 'var(--radius-md)',
-                            border: selectedEmotion === em.id ? '2px solid var(--brand-light)' : '1px solid var(--border)',
-                            background: selectedEmotion === em.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                            cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', gap: 6, transition: 'all 150ms',
-                          }}>
+                      <div
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}
+                      >
+                        {EMOTIONS.map((em) => (
+                          <button
+                            key={em.id}
+                            onClick={() => setSelectedEmotion(em.id)}
+                            style={{
+                              padding: '12px 8px',
+                              borderRadius: 'var(--radius-md)',
+                              border:
+                                selectedEmotion === em.id
+                                  ? '2px solid var(--brand-light)'
+                                  : '1px solid var(--border)',
+                              background:
+                                selectedEmotion === em.id
+                                  ? 'var(--brand-dim)'
+                                  : 'var(--bg-surface)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 6,
+                              transition: 'all 150ms',
+                            }}
+                          >
                             <span style={{ fontSize: 24 }}>{em.emoji}</span>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>{em.label}</span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {em.label}
+                            </span>
                           </button>
                         ))}
                       </div>
-                      <SliderControl label="Intensity" value={emotionIntensity} min={0} max={100} onChange={setEmotionIntensity} unit="%" />
+                      <SliderControl
+                        label="Intensity"
+                        value={emotionIntensity}
+                        min={0}
+                        max={100}
+                        onChange={setEmotionIntensity}
+                        unit="%"
+                      />
 
                       <button
                         onClick={() => setShowFACS(!showFACS)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 6, background: 'none',
-                          border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
-                          fontSize: 11, fontWeight: 600, padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: 0,
                         }}
                       >
                         {showFACS ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         FACS Action Units
                       </button>
                       {showFACS && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 8 }}>
-                          {FACS_UNITS.map(unit => (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                            paddingLeft: 8,
+                          }}
+                        >
+                          {FACS_UNITS.map((unit) => (
                             <SliderControl
-                              key={unit} label={unit}
-                              value={facsValues[unit] ?? 0} min={0} max={100}
-                              onChange={v => setFacsValues(prev => ({ ...prev, [unit]: v }))}
+                              key={unit}
+                              label={unit}
+                              value={facsValues[unit] ?? 0}
+                              min={0}
+                              max={100}
+                              onChange={(v) => setFacsValues((prev) => ({ ...prev, [unit]: v }))}
                             />
                           ))}
                         </div>
@@ -1142,14 +1916,26 @@ export default function AvatarStudioPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Idle Style</SectionLabel>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {IDLE_STYLES.map(s => (
-                            <button key={s} onClick={() => setIdleStyle(s)} style={{
-                              padding: '6px 14px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                              border: idleStyle === s ? '1px solid var(--brand)' : '1px solid var(--border)',
-                              background: idleStyle === s ? 'var(--brand-dim)' : 'transparent',
-                              color: idleStyle === s ? 'var(--brand-light)' : 'var(--text-secondary)',
-                              cursor: 'pointer',
-                            }}>{s}</button>
+                          {IDLE_STYLES.map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => setIdleStyle(s)}
+                              style={{
+                                padding: '6px 14px',
+                                fontSize: 11,
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  idleStyle === s
+                                    ? '1px solid var(--brand)'
+                                    : '1px solid var(--border)',
+                                background: idleStyle === s ? 'var(--brand-dim)' : 'transparent',
+                                color:
+                                  idleStyle === s ? 'var(--brand-light)' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {s}
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -1157,50 +1943,138 @@ export default function AvatarStudioPage() {
                       {/* Toggle + slider combos */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={breathingEnabled} onChange={e => setBreathingEnabled(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Breathing</span>
+                          <label
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginBottom: 6,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={breathingEnabled}
+                              onChange={(e) => setBreathingEnabled(e.target.checked)}
+                              style={{ accentColor: 'var(--brand)' }}
+                            />
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                              Breathing
+                            </span>
                           </label>
                           {breathingEnabled && (
-                            <SliderControl label="Intensity" value={breathingIntensity} min={0} max={100} onChange={setBreathingIntensity} />
+                            <SliderControl
+                              label="Intensity"
+                              value={breathingIntensity}
+                              min={0}
+                              max={100}
+                              onChange={setBreathingIntensity}
+                            />
                           )}
                         </div>
                         <div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={swayEnabled} onChange={e => setSwayEnabled(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Body Sway</span>
+                          <label
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginBottom: 6,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={swayEnabled}
+                              onChange={(e) => setSwayEnabled(e.target.checked)}
+                              style={{ accentColor: 'var(--brand)' }}
+                            />
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                              Body Sway
+                            </span>
                           </label>
                           {swayEnabled && (
-                            <SliderControl label="Intensity" value={swayIntensity} min={0} max={100} onChange={setSwayIntensity} />
+                            <SliderControl
+                              label="Intensity"
+                              value={swayIntensity}
+                              min={0}
+                              max={100}
+                              onChange={setSwayIntensity}
+                            />
                           )}
                         </div>
                         <div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={eyeMovement} onChange={e => setEyeMovement(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Eye Movement</span>
+                          <label
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginBottom: 6,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={eyeMovement}
+                              onChange={(e) => setEyeMovement(e.target.checked)}
+                              style={{ accentColor: 'var(--brand)' }}
+                            />
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                              Eye Movement
+                            </span>
                           </label>
                           {eyeMovement && (
-                            <SliderControl label="Frequency" value={eyeFrequency} min={0} max={100} onChange={setEyeFrequency} />
+                            <SliderControl
+                              label="Frequency"
+                              value={eyeFrequency}
+                              min={0}
+                              max={100}
+                              onChange={setEyeFrequency}
+                            />
                           )}
                         </div>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <SectionLabel>Motion Presets</SectionLabel>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                          {MOTION_PRESETS.map(p => (
-                            <button key={p} onClick={() => setSelectedPreset(p)} style={{
-                              padding: '8px 6px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                              border: selectedPreset === p ? '1px solid var(--brand)' : '1px solid var(--border)',
-                              background: selectedPreset === p ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                              color: selectedPreset === p ? 'var(--brand-light)' : 'var(--text-secondary)',
-                              cursor: 'pointer', textAlign: 'center',
-                            }}>{p}</button>
+                        <div
+                          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}
+                        >
+                          {MOTION_PRESETS.map((p) => (
+                            <button
+                              key={p}
+                              onClick={() => setSelectedPreset(p)}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: 11,
+                                borderRadius: 'var(--radius-md)',
+                                border:
+                                  selectedPreset === p
+                                    ? '1px solid var(--brand)'
+                                    : '1px solid var(--border)',
+                                background:
+                                  selectedPreset === p ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                                color:
+                                  selectedPreset === p
+                                    ? 'var(--brand-light)'
+                                    : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {p}
+                            </button>
                           ))}
                         </div>
                       </div>
 
-                      <SliderControl label="Animation Speed" value={animationSpeed} min={0} max={100} onChange={setAnimationSpeed} unit="%" />
+                      <SliderControl
+                        label="Animation Speed"
+                        value={animationSpeed}
+                        min={0}
+                        max={100}
+                        onChange={setAnimationSpeed}
+                        unit="%"
+                      />
 
                       {/* Continue to voice */}
                       <Btn primary onClick={() => setCurrentStepIndex(6)}>
@@ -1216,33 +2090,77 @@ export default function AvatarStudioPage() {
 
             {/* ── VOICE STEP ── */}
             {currentStep?.id === 'voice' && (
-              <div style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xl)', padding: 20,
-                display: 'flex', flexDirection: 'column', gap: 16,
-              }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Mic size={18} style={{ color: 'var(--brand-light)' }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Voice Pairing</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Voice Pairing
+                  </span>
                 </div>
 
                 {/* Existing voices */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <SectionLabel>Select Existing Voice</SectionLabel>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {VOICE_PRESETS.map(v => (
-                      <button key={v.id} onClick={() => { setSelectedVoice(v.id); setVoiceUpload(false); }} style={{
-                        padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                        border: selectedVoice === v.id ? '2px solid var(--brand)' : '1px solid var(--border)',
-                        background: selectedVoice === v.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                        cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        transition: 'all 150ms',
-                      }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{v.name}</span>
-                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{v.desc}</span>
+                    {VOICE_PRESETS.map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => {
+                          setSelectedVoice(v.id);
+                          setVoiceUpload(false);
+                        }}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: 'var(--radius-md)',
+                          border:
+                            selectedVoice === v.id
+                              ? '2px solid var(--brand)'
+                              : '1px solid var(--border)',
+                          background:
+                            selectedVoice === v.id ? 'var(--brand-dim)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            gap: 2,
+                          }}
+                        >
+                          <span
+                            style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}
+                          >
+                            {v.name}
+                          </span>
+                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                            {v.desc}
+                          </span>
                         </div>
-                        <Volume2 size={14} style={{ color: selectedVoice === v.id ? 'var(--brand-light)' : 'var(--text-tertiary)' }} />
+                        <Volume2
+                          size={14}
+                          style={{
+                            color:
+                              selectedVoice === v.id
+                                ? 'var(--brand-light)'
+                                : 'var(--text-tertiary)',
+                          }}
+                        />
                       </button>
                     ))}
                   </div>
@@ -1255,16 +2173,32 @@ export default function AvatarStudioPage() {
                   <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                 </div>
                 <button
-                  onClick={() => { setVoiceUpload(true); setSelectedVoice(null); }}
+                  onClick={() => {
+                    setVoiceUpload(true);
+                    setSelectedVoice(null);
+                  }}
                   style={{
-                    padding: '14px', borderRadius: 'var(--radius-md)',
+                    padding: '14px',
+                    borderRadius: 'var(--radius-md)',
                     border: voiceUpload ? '2px solid var(--brand)' : '2px dashed var(--border)',
                     background: voiceUpload ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
                   }}
                 >
-                  <CloudUpload size={16} style={{ color: voiceUpload ? 'var(--brand-light)' : 'var(--text-tertiary)' }} />
-                  <span style={{ fontSize: 12, color: voiceUpload ? 'var(--brand-light)' : 'var(--text-secondary)' }}>
+                  <CloudUpload
+                    size={16}
+                    style={{ color: voiceUpload ? 'var(--brand-light)' : 'var(--text-tertiary)' }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: voiceUpload ? 'var(--brand-light)' : 'var(--text-secondary)',
+                    }}
+                  >
                     Upload Voice Sample
                   </span>
                 </button>
@@ -1273,30 +2207,47 @@ export default function AvatarStudioPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <SectionLabel>Voice Name</SectionLabel>
                   <input
-                    type="text" value={voiceName} onChange={e => setVoiceName(e.target.value)}
+                    type="text"
+                    value={voiceName}
+                    onChange={(e) => setVoiceName(e.target.value)}
                     placeholder="e.g. My Voice Clone"
                     style={{
-                      padding: '8px 12px', fontSize: 13, borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                      color: 'var(--text-primary)', outline: 'none',
+                      padding: '8px 12px',
+                      fontSize: 13,
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
                     }}
                   />
                 </div>
 
                 {/* V+A identity lock */}
-                <div style={{
-                  padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                  background: 'rgba(124, 58, 237, 0.08)', border: '1px solid var(--brand-border)',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(124, 58, 237, 0.08)',
+                    border: '1px solid var(--brand-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                >
                   <Lock size={14} style={{ color: 'var(--brand-light)', flexShrink: 0 }} />
                   <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    Voice + Avatar identity lock: Once paired, this voice will be cryptographically linked to this avatar for content provenance.
+                    Voice + Avatar identity lock: Once paired, this voice will be cryptographically
+                    linked to this avatar for content provenance.
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <Btn primary disabled={!selectedVoice && !voiceUpload} onClick={() => setCurrentStepIndex(7)}>
+                  <Btn
+                    primary
+                    disabled={!selectedVoice && !voiceUpload}
+                    onClick={() => setCurrentStepIndex(7)}
+                  >
                     <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <Lock size={12} /> Pair Voice & Continue
                     </span>
@@ -1304,8 +2255,12 @@ export default function AvatarStudioPage() {
                   <button
                     onClick={() => setCurrentStepIndex(7)}
                     style={{
-                      background: 'none', border: 'none', color: 'var(--text-tertiary)',
-                      fontSize: 12, cursor: 'pointer', textDecoration: 'underline',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-tertiary)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
                     }}
                   >
                     Skip
@@ -1316,71 +2271,139 @@ export default function AvatarStudioPage() {
 
             {/* ── EXPORT STEP ── */}
             {currentStep?.id === 'export' && (
-              <div style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xl)', padding: 20,
-                display: 'flex', flexDirection: 'column', gap: 16,
-              }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Download size={18} style={{ color: 'var(--brand-light)' }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Export Formats</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Export Formats
+                  </span>
                 </div>
 
                 {/* Format cards 2x3 grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  {EXPORT_FORMATS.map(fmt => {
+                  {EXPORT_FORMATS.map((fmt) => {
                     const isSelected = selectedFormats.has(fmt.id);
                     return (
                       <div
                         key={fmt.id}
                         style={{
-                          padding: '14px 12px', borderRadius: 'var(--radius-md)',
+                          padding: '14px 12px',
+                          borderRadius: 'var(--radius-md)',
                           border: isSelected ? '2px solid var(--brand)' : '1px solid var(--border)',
                           background: isSelected ? 'var(--brand-dim)' : 'var(--bg-surface)',
-                          display: 'flex', flexDirection: 'column', gap: 6,
-                          alignItems: 'flex-start', transition: 'all 150ms',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6,
+                          alignItems: 'flex-start',
+                          transition: 'all 150ms',
                         }}
                       >
                         <div
                           onClick={() => {
-                            setSelectedFormats(prev => {
+                            setSelectedFormats((prev) => {
                               const next = new Set(prev);
                               if (next.has(fmt.id)) next.delete(fmt.id);
                               else next.add(fmt.id);
                               return next;
                             });
                           }}
-                          style={{ cursor: 'pointer', width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}
+                          style={{
+                            cursor: 'pointer',
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6,
+                          }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt.label}</span>
-                            {isSelected && <CheckCircle2 size={14} style={{ color: 'var(--brand-light)' }} />}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              width: '100%',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {fmt.label}
+                            </span>
+                            {isSelected && (
+                              <CheckCircle2 size={14} style={{ color: 'var(--brand-light)' }} />
+                            )}
                           </div>
-                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{fmt.desc}</span>
-                          <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{fmt.ext}</span>
+                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                            {fmt.desc}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 9,
+                              color: 'var(--text-tertiary)',
+                              fontFamily: 'monospace',
+                            }}
+                          >
+                            {fmt.ext}
+                          </span>
                         </div>
                         <button
                           onClick={() => {
                             if (downloadingFormats.has(fmt.id)) return;
-                            setDownloadingFormats(prev => { const n = new Set(prev); n.add(fmt.id); return n; });
+                            setDownloadingFormats((prev) => {
+                              const n = new Set(prev);
+                              n.add(fmt.id);
+                              return n;
+                            });
                             setTimeout(() => {
-                              setDownloadingFormats(prev => { const n = new Set(prev); n.delete(fmt.id); return n; });
+                              setDownloadingFormats((prev) => {
+                                const n = new Set(prev);
+                                n.delete(fmt.id);
+                                return n;
+                              });
                             }, 2000);
                           }}
                           disabled={downloadingFormats.has(fmt.id)}
                           style={{
-                            marginTop: 2, padding: '5px 10px', fontSize: 10, fontWeight: 600,
-                            borderRadius: 'var(--radius-md)', border: 'none',
+                            marginTop: 2,
+                            padding: '5px 10px',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            borderRadius: 'var(--radius-md)',
+                            border: 'none',
                             background: downloadingFormats.has(fmt.id) ? '#374151' : 'var(--brand)',
-                            color: '#fff', cursor: downloadingFormats.has(fmt.id) ? 'wait' : 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4, width: '100%',
-                            justifyContent: 'center', transition: 'all 150ms ease',
+                            color: '#fff',
+                            cursor: downloadingFormats.has(fmt.id) ? 'wait' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            width: '100%',
+                            justifyContent: 'center',
+                            transition: 'all 150ms ease',
                           }}
                         >
                           {downloadingFormats.has(fmt.id) ? (
-                            <><Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> Downloading...</>
+                            <>
+                              <Loader size={10} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                              Downloading...
+                            </>
                           ) : (
-                            <><Download size={10} /> Download</>
+                            <>
+                              <Download size={10} /> Download
+                            </>
                           )}
                         </button>
                       </div>
@@ -1390,41 +2413,85 @@ export default function AvatarStudioPage() {
 
                 {/* MP4 options (show when MP4 selected) */}
                 {selectedFormats.has('mp4') && (
-                  <div style={{
-                    padding: 14, borderRadius: 'var(--radius-md)',
-                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                    display: 'flex', flexDirection: 'column', gap: 12,
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>MP4 Options</span>
+                  <div
+                    style={{
+                      padding: 14,
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                      MP4 Options
+                    </span>
                     <div style={{ display: 'flex', gap: 16 }}>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <SectionLabel>Resolution</SectionLabel>
-                        <select value={mp4Resolution} onChange={e => setMp4Resolution(e.target.value)} style={{
-                          padding: '6px 8px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--border)', background: 'var(--bg-elevated)',
-                          color: 'var(--text-primary)', outline: 'none',
-                        }}>
-                          {MP4_RESOLUTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                        <select
+                          value={mp4Resolution}
+                          onChange={(e) => setMp4Resolution(e.target.value)}
+                          style={{
+                            padding: '6px 8px',
+                            fontSize: 11,
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text-primary)',
+                            outline: 'none',
+                          }}
+                        >
+                          {MP4_RESOLUTIONS.map((r) => (
+                            <option key={r} value={r}>
+                              {r}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <SectionLabel>Duration</SectionLabel>
-                        <select value={mp4Duration} onChange={e => setMp4Duration(e.target.value)} style={{
-                          padding: '6px 8px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--border)', background: 'var(--bg-elevated)',
-                          color: 'var(--text-primary)', outline: 'none',
-                        }}>
-                          {MP4_DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <select
+                          value={mp4Duration}
+                          onChange={(e) => setMp4Duration(e.target.value)}
+                          style={{
+                            padding: '6px 8px',
+                            fontSize: 11,
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text-primary)',
+                            outline: 'none',
+                          }}
+                        >
+                          {MP4_DURATIONS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <SectionLabel>Background</SectionLabel>
-                        <select value={mp4Background} onChange={e => setMp4Background(e.target.value)} style={{
-                          padding: '6px 8px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--border)', background: 'var(--bg-elevated)',
-                          color: 'var(--text-primary)', outline: 'none',
-                        }}>
-                          {MP4_BACKGROUNDS.map(b => <option key={b} value={b}>{b}</option>)}
+                        <select
+                          value={mp4Background}
+                          onChange={(e) => setMp4Background(e.target.value)}
+                          style={{
+                            padding: '6px 8px',
+                            fontSize: 11,
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text-primary)',
+                            outline: 'none',
+                          }}
+                        >
+                          {MP4_BACKGROUNDS.map((b) => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -1439,20 +2506,34 @@ export default function AvatarStudioPage() {
                     setTimeout(() => setDownloadingAll(false), 2000);
                   }}
                   style={{
-                    padding: '10px 16px', fontSize: 13, fontWeight: 600,
-                    borderRadius: 'var(--radius-md)', border: 'none',
-                    background: (selectedFormats.size === 0 || downloadingAll) ? '#374151' : 'var(--brand)',
+                    padding: '10px 16px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background:
+                      selectedFormats.size === 0 || downloadingAll ? '#374151' : 'var(--brand)',
                     color: '#fff',
-                    cursor: (selectedFormats.size === 0 || downloadingAll) ? 'not-allowed' : 'pointer',
+                    cursor:
+                      selectedFormats.size === 0 || downloadingAll ? 'not-allowed' : 'pointer',
                     opacity: selectedFormats.size === 0 ? 0.45 : 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    width: '100%', transition: 'all 150ms ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    width: '100%',
+                    transition: 'all 150ms ease',
                   }}
                 >
                   {downloadingAll ? (
-                    <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Preparing ZIP...</>
+                    <>
+                      <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                      Preparing ZIP...
+                    </>
                   ) : (
-                    <><Package size={14} /> Download All ZIP</>
+                    <>
+                      <Package size={14} /> Download All ZIP
+                    </>
                   )}
                 </button>
               </div>
@@ -1460,11 +2541,20 @@ export default function AvatarStudioPage() {
           </div>
 
           {/* ═══ PROPERTIES PANEL (RIGHT 280px) ═══ */}
-          <div style={{
-            width: 280, flexShrink: 0, background: 'var(--bg-elevated)',
-            border: '0.5px solid var(--border)', borderRadius: 'var(--radius-xl)',
-            padding: 16, display: 'flex', flexDirection: 'column', gap: 14, alignSelf: 'flex-start',
-          }}>
+          <div
+            style={{
+              width: 280,
+              flexShrink: 0,
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              alignSelf: 'flex-start',
+            }}
+          >
             <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               Properties
             </h2>
@@ -1473,11 +2563,18 @@ export default function AvatarStudioPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <SectionLabel>Name</SectionLabel>
               <input
-                type="text" value={avatarName || 'Untitled Avatar'} onChange={e => setAvatarName(e.target.value)}
+                type="text"
+                value={avatarName || 'Untitled Avatar'}
+                onChange={(e) => setAvatarName(e.target.value)}
                 style={{
-                  padding: '6px 8px', fontSize: 12, borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)', outline: 'none', fontWeight: 500,
+                  padding: '6px 8px',
+                  fontSize: 12,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  fontWeight: 500,
                 }}
               />
             </div>
@@ -1486,14 +2583,23 @@ export default function AvatarStudioPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <SectionLabel>Style</SectionLabel>
               <select
-                value={styleMode} onChange={e => setStyleMode(e.target.value as StyleMode)}
+                value={styleMode}
+                onChange={(e) => setStyleMode(e.target.value as StyleMode)}
                 style={{
-                  padding: '6px 8px', fontSize: 12, borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)', outline: 'none',
+                  padding: '6px 8px',
+                  fontSize: 12,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
                 }}
               >
-                {STYLE_MODES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                {STYLE_MODES.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -1501,10 +2607,14 @@ export default function AvatarStudioPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <SectionLabel>Consent</SectionLabel>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: consentChecked ? '#22c55e' : '#ef4444',
-                }} />
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: consentChecked ? '#22c55e' : '#ef4444',
+                  }}
+                />
                 <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                   {consentChecked ? 'Verified' : 'Not confirmed'}
                 </span>
@@ -1515,7 +2625,15 @@ export default function AvatarStudioPage() {
                 Scoring needs a face-recognition model the service reports as
                 unavailable, in which case this says so rather than showing a
                 number nothing measured. */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '4px 0' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 0',
+              }}
+            >
               {(() => {
                 const score = identityScore(job);
                 if (score !== null) {
@@ -1528,10 +2646,24 @@ export default function AvatarStudioPage() {
                 }
                 return (
                   <div style={{ textAlign: 'center', padding: '8px 4px' }}>
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        margin: 0,
+                        fontWeight: 500,
+                      }}
+                    >
                       Identity score not measured
                     </p>
-                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                    <p
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        margin: '4px 0 0',
+                        lineHeight: 1.4,
+                      }}
+                    >
                       {job
                         ? 'No face-recognition model is configured on the inference host.'
                         : 'Run a reconstruction to populate this.'}
@@ -1545,10 +2677,17 @@ export default function AvatarStudioPage() {
             {job && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <SectionLabel>Last run</SectionLabel>
-                <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5 }}>
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text-tertiary)',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
                   Engine: {job.engine}
-                  {job.is_mock ? ' (procedural preview)' : ''} · {job.steps_summary.completed ?? 0} of{' '}
-                  {job.steps_completed.length} stages ran
+                  {job.is_mock ? ' (procedural preview)' : ''} · {job.steps_summary.completed ?? 0}{' '}
+                  of {job.steps_completed.length} stages ran
                 </p>
                 {skippedSteps(job).map((step) => (
                   <p
@@ -1572,18 +2711,31 @@ export default function AvatarStudioPage() {
                       {status === 'completed' ? (
                         <CheckCircle2 size={12} style={{ color: '#22c55e', flexShrink: 0 }} />
                       ) : status === 'current' ? (
-                        <div style={{
-                          width: 12, height: 12, borderRadius: '50%', border: '2px solid #eab308',
-                          animation: 'pulse 2s ease-in-out infinite', flexShrink: 0,
-                        }} />
+                        <div
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            border: '2px solid #eab308',
+                            animation: 'pulse 2s ease-in-out infinite',
+                            flexShrink: 0,
+                          }}
+                        />
                       ) : (
                         <Circle size={12} style={{ color: '#4b5563', flexShrink: 0 }} />
                       )}
-                      <span style={{
-                        fontSize: 10,
-                        color: status === 'completed' ? '#22c55e' : status === 'current' ? '#eab308' : 'var(--text-tertiary)',
-                        fontWeight: status === 'current' ? 600 : 400,
-                      }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color:
+                            status === 'completed'
+                              ? '#22c55e'
+                              : status === 'current'
+                                ? '#eab308'
+                                : 'var(--text-tertiary)',
+                          fontWeight: status === 'current' ? 600 : 400,
+                        }}
+                      >
                         {step.label}
                       </span>
                     </div>
@@ -1593,30 +2745,68 @@ export default function AvatarStudioPage() {
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                borderTop: '1px solid var(--border)',
+                paddingTop: 12,
+              }}
+            >
               <SectionLabel>Actions</SectionLabel>
-              <button style={{
-                padding: '7px 10px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                width: '100%', textAlign: 'left',
-              }}>
+              <button
+                style={{
+                  padding: '7px 10px',
+                  fontSize: 11,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
                 <RotateCcw size={12} /> Regenerate Texture
               </button>
-              <button style={{
-                padding: '7px 10px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                width: '100%', textAlign: 'left',
-              }}>
+              <button
+                style={{
+                  padding: '7px 10px',
+                  fontSize: 11,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
                 <Layers size={12} /> Re-rig
               </button>
-              <button style={{
-                padding: '7px 10px', fontSize: 11, borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)',
-                color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                width: '100%', textAlign: 'left',
-              }}>
+              <button
+                style={{
+                  padding: '7px 10px',
+                  fontSize: 11,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.08)',
+                  color: '#f87171',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
                 <Trash2 size={12} /> Delete Avatar
               </button>
             </div>
@@ -1625,17 +2815,26 @@ export default function AvatarStudioPage() {
 
         {/* ═══ RECENT AVATARS ═══ */}
         <div>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 10px' }}>
+          <h2
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              margin: '0 0 10px',
+            }}
+          >
             Recent Avatars
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-            {SAMPLE_AVATARS.map(avatar => (
+            {SAMPLE_AVATARS.map((avatar) => (
               <div
                 key={avatar.id}
                 className="avatar-card"
                 onClick={() => {
                   setAvatarName(avatar.name);
-                  setStyleMode(STYLE_MODES.find(m => m.label === avatar.style)?.id ?? 'realistic');
+                  setStyleMode(
+                    STYLE_MODES.find((m) => m.label === avatar.style)?.id ?? 'realistic',
+                  );
                   setConsentChecked(true);
                   if (avatar.status === 'complete') {
                     setCurrentStepIndex(7);
@@ -1646,66 +2845,158 @@ export default function AvatarStudioPage() {
                   }
                 }}
                 style={{
-                  background: 'var(--bg-elevated)', border: '0.5px solid var(--border)',
-                  borderRadius: 'var(--radius-xl)', overflow: 'hidden',
-                  cursor: 'pointer', transition: 'border-color 150ms ease', position: 'relative',
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'border-color 150ms ease',
+                  position: 'relative',
                 }}
               >
-                <div style={{
-                  height: 80, background: avatar.gradient,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-                }}>
+                <div
+                  style={{
+                    height: 80,
+                    background: avatar.gradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                  }}
+                >
                   {avatar.thumbnailUrl ? (
-                    <img src={avatar.thumbnailUrl} alt={avatar.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img
+                      src={avatar.thumbnailUrl}
+                      alt={avatar.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                   ) : (
                     <User size={28} style={{ color: 'rgba(255,255,255,0.6)' }} />
                   )}
 
                   {/* Hover actions overlay */}
-                  <div className="avatar-hover-actions" style={{
-                    position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    opacity: 0, transition: 'opacity 200ms ease',
-                  }}>
-                    <button title="Edit" aria-label="Edit" style={{
-                      width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
-                      border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                    }}><Edit3 size={13} /></button>
-                    <button title="Use in Project" aria-label="Use in Project" style={{
-                      width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
-                      border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                    }}><FolderOpen size={13} /></button>
-                    <button title="Export" aria-label="Export" style={{
-                      width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
-                      border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                    }}><Download size={13} /></button>
-                    <button title="More" aria-label="More options" style={{
-                      width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
-                      border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                    }}><MoreHorizontal size={13} /></button>
+                  <div
+                    className="avatar-hover-actions"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      opacity: 0,
+                      transition: 'opacity 200ms ease',
+                    }}
+                  >
+                    <button
+                      title="Edit"
+                      aria-label="Edit"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
+                      title="Use in Project"
+                      aria-label="Use in Project"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <FolderOpen size={13} />
+                    </button>
+                    <button
+                      title="Export"
+                      aria-label="Export"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <Download size={13} />
+                    </button>
+                    <button
+                      title="More"
+                      aria-label="More options"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <MoreHorizontal size={13} />
+                    </button>
                   </div>
                 </div>
 
-                <div style={{
-                  padding: '10px 14px 12px', display: 'flex',
-                  alignItems: 'center', justifyContent: 'space-between',
-                }}>
+                <div
+                  style={{
+                    padding: '10px 14px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                       {avatar.name}
                     </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{avatar.style}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                      {avatar.style}
+                    </span>
                   </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 500,
-                    color: avatar.status === 'complete' ? '#22c55e' : '#eab308',
-                    background: avatar.status === 'complete' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)',
-                    padding: '2px 8px', borderRadius: 'var(--radius-md)',
-                  }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: avatar.status === 'complete' ? '#22c55e' : '#eab308',
+                      background:
+                        avatar.status === 'complete'
+                          ? 'rgba(34,197,94,0.1)'
+                          : 'rgba(234,179,8,0.1)',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
                     {avatar.status === 'complete' ? 'Complete' : 'Draft'}
                   </span>
                 </div>

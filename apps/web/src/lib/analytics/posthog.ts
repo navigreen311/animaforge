@@ -11,10 +11,13 @@ export function initAnalytics() {
 
 export const track = {
   projectCreated: (projectType: string) => trackEvent('project_created', { type: projectType }),
-  shotGenerated: (tier: string, duration: number) => trackEvent('shot_generated', { tier, duration }),
+  shotGenerated: (tier: string, duration: number) =>
+    trackEvent('shot_generated', { tier, duration }),
   shotApproved: (projectId: string) => trackEvent('shot_approved', { project_id: projectId }),
-  styleApplied: (styleId: string, source: string) => trackEvent('style_applied', { style_id: styleId, source }),
-  exportCompleted: (format: string, shotCount: number) => trackEvent('export_completed', { format, shot_count: shotCount }),
+  styleApplied: (styleId: string, source: string) =>
+    trackEvent('style_applied', { style_id: styleId, source }),
+  exportCompleted: (format: string, shotCount: number) =>
+    trackEvent('export_completed', { format, shot_count: shotCount }),
   planUpgraded: (from: string, to: string) => trackEvent('plan_upgraded', { from, to }),
   onboardingCompleted: (template: string) => trackEvent('onboarding_completed', { template }),
   pageView: (path: string) => trackEvent('$pageview', { path }),

@@ -1,4 +1,4 @@
-type LogLevel = "debug" | "info" | "warn" | "error";
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -10,7 +10,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 class Logger {
   private level: number;
 
-  constructor(level: LogLevel = "info") {
+  constructor(level: LogLevel = 'info') {
     this.level = LOG_LEVELS[level];
   }
 
@@ -29,29 +29,27 @@ class Logger {
 
   debug(message: string, meta?: unknown): void {
     if (this.level <= LOG_LEVELS.debug) {
-      console.debug(this.formatMessage("debug", message, meta));
+      console.debug(this.formatMessage('debug', message, meta));
     }
   }
 
   info(message: string, meta?: unknown): void {
     if (this.level <= LOG_LEVELS.info) {
-      console.info(this.formatMessage("info", message, meta));
+      console.info(this.formatMessage('info', message, meta));
     }
   }
 
   warn(message: string, meta?: unknown): void {
     if (this.level <= LOG_LEVELS.warn) {
-      console.warn(this.formatMessage("warn", message, meta));
+      console.warn(this.formatMessage('warn', message, meta));
     }
   }
 
   error(message: string, meta?: unknown): void {
     if (this.level <= LOG_LEVELS.error) {
-      console.error(this.formatMessage("error", message, meta));
+      console.error(this.formatMessage('error', message, meta));
     }
   }
 }
 
-export const logger = new Logger(
-  (process.env.LOG_LEVEL as LogLevel) || "info"
-);
+export const logger = new Logger((process.env.LOG_LEVEL as LogLevel) || 'info');

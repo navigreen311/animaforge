@@ -1,10 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 // ─── Types ──────────────────────────────────────────────────
 
 export interface WorldRule {
   id: string;
-  type: "physics" | "social" | "magic" | "technology";
+  type: 'physics' | 'social' | 'magic' | 'technology';
   description: string;
   scope: string;
   exceptions: string[];
@@ -116,12 +116,12 @@ export async function createWorldBible(
 ): Promise<WorldBible> {
   const existing = getBible(projectId);
   if (existing) {
-    const err = new Error("World Bible already exists for this project") as Error & {
+    const err = new Error('World Bible already exists for this project') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 409;
-    err.code = "CONFLICT";
+    err.code = 'CONFLICT';
     throw err;
   }
 
@@ -151,22 +151,22 @@ export async function updateSection(
 ): Promise<WorldBible> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
   const validSections: (keyof WorldBibleSections)[] = [
-    "characters",
-    "world_rules",
-    "locations",
-    "timeline",
-    "relationships",
-    "constraints",
+    'characters',
+    'world_rules',
+    'locations',
+    'timeline',
+    'relationships',
+    'constraints',
   ];
 
   if (!validSections.includes(section)) {
@@ -175,7 +175,7 @@ export async function updateSection(
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_SECTION";
+    err.code = 'INVALID_SECTION';
     throw err;
   }
 
@@ -184,17 +184,15 @@ export async function updateSection(
   return bible;
 }
 
-export async function validateConsistency(
-  projectId: string,
-): Promise<ConsistencyResult> {
+export async function validateConsistency(projectId: string): Promise<ConsistencyResult> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -205,15 +203,15 @@ export async function validateConsistency(
   for (const rel of relationships) {
     if (!characters[rel.character1]) {
       conflicts.push({
-        section: "relationships",
-        rule: "character_exists",
+        section: 'relationships',
+        rule: 'character_exists',
         violation: `Character "${rel.character1}" in relationship not found in characters`,
       });
     }
     if (!characters[rel.character2]) {
       conflicts.push({
-        section: "relationships",
-        rule: "character_exists",
+        section: 'relationships',
+        rule: 'character_exists',
         violation: `Character "${rel.character2}" in relationship not found in characters`,
       });
     }
@@ -224,16 +222,16 @@ export async function validateConsistency(
     for (const charName of event.involvedCharacters) {
       if (!characters[charName]) {
         conflicts.push({
-          section: "timeline",
-          rule: "character_exists",
+          section: 'timeline',
+          rule: 'character_exists',
           violation: `Timeline event "${event.description}" references unknown character "${charName}"`,
         });
       }
     }
     if (event.location && !locations[event.location]) {
       conflicts.push({
-        section: "timeline",
-        rule: "location_exists",
+        section: 'timeline',
+        rule: 'location_exists',
         violation: `Timeline event "${event.description}" references unknown location "${event.location}"`,
       });
     }
@@ -241,14 +239,10 @@ export async function validateConsistency(
 
   // Check world rule scopes reference valid locations
   for (const [, rule] of Object.entries(world_rules)) {
-    if (
-      rule.scope !== "global" &&
-      rule.scope !== "all" &&
-      !locations[rule.scope]
-    ) {
+    if (rule.scope !== 'global' && rule.scope !== 'all' && !locations[rule.scope]) {
       conflicts.push({
-        section: "world_rules",
-        rule: "scope_valid",
+        section: 'world_rules',
+        rule: 'scope_valid',
         violation: `Rule "${rule.description}" scoped to unknown location "${rule.scope}"`,
       });
     }
@@ -266,12 +260,12 @@ export async function enforceConstraints(
 ): Promise<EnforceResult> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -288,15 +282,13 @@ export async function enforceConstraints(
       (keyword) => keyword.length > 4 && contentStr.includes(keyword),
     );
 
-    if (rule.type === "physics" && newContent.type === "scene") {
+    if (rule.type === 'physics' && newContent.type === 'scene') {
       if (violatesRule) {
-        const isException = rule.exceptions.some((exc) =>
-          contentStr.includes(exc.toLowerCase()),
-        );
+        const isException = rule.exceptions.some((exc) => contentStr.includes(exc.toLowerCase()));
         if (!isException) {
           violations.push(`Potential violation of physics rule: ${rule.description}`);
           suggestions.push(
-            `Review scene against rule: "${rule.description}". Exceptions: ${rule.exceptions.join(", ") || "none"}`,
+            `Review scene against rule: "${rule.description}". Exceptions: ${rule.exceptions.join(', ') || 'none'}`,
           );
         }
       }
@@ -309,28 +301,20 @@ export async function enforceConstraints(
       const char = characters[charName];
       if (char) {
         for (const constraint of char.constraints) {
-          violations.push(
-            `Character "${charName}" has constraint: ${constraint}`,
-          );
-          suggestions.push(
-            `Ensure "${charName}" adheres to constraint: ${constraint}`,
-          );
+          violations.push(`Character "${charName}" has constraint: ${constraint}`);
+          suggestions.push(`Ensure "${charName}" adheres to constraint: ${constraint}`);
         }
       }
     }
   }
 
   // Check location constraints
-  if (newContent.data.location && typeof newContent.data.location === "string") {
+  if (newContent.data.location && typeof newContent.data.location === 'string') {
     const loc = locations[newContent.data.location];
     if (loc) {
       for (const constraint of loc.constraints) {
-        violations.push(
-          `Location "${newContent.data.location}" has constraint: ${constraint}`,
-        );
-        suggestions.push(
-          `Ensure scene at "${newContent.data.location}" respects: ${constraint}`,
-        );
+        violations.push(`Location "${newContent.data.location}" has constraint: ${constraint}`);
+        suggestions.push(`Ensure scene at "${newContent.data.location}" respects: ${constraint}`);
       }
     }
   }
@@ -356,12 +340,12 @@ export async function generateFromDescription(
 ): Promise<ExtractedContent> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -381,9 +365,7 @@ export async function generateFromDescription(
     /([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)\s+(?:is a (?:city|town|village|kingdom|realm|forest|mountain|land))/g,
   ];
 
-  const rulePatterns = [
-    /(?:rule|law|constraint|forbidden|must|cannot|always|never)[:\s]+(.+)/gi,
-  ];
+  const rulePatterns = [/(?:rule|law|constraint|forbidden|must|cannot|always|never)[:\s]+(.+)/gi];
 
   for (const sentence of sentences) {
     const trimmed = sentence.trim();
@@ -423,8 +405,22 @@ export async function generateFromDescription(
   if (characters.length === 0 && locations.length === 0) {
     const properNouns = description.match(/\b[A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)*/g) || [];
     const commonWords = new Set([
-      "The", "This", "That", "There", "They", "Their", "These", "Those",
-      "When", "Where", "What", "Which", "While", "With", "Would", "Will",
+      'The',
+      'This',
+      'That',
+      'There',
+      'They',
+      'Their',
+      'These',
+      'Those',
+      'When',
+      'Where',
+      'What',
+      'Which',
+      'While',
+      'With',
+      'Would',
+      'Will',
     ]);
     for (const noun of properNouns) {
       if (!commonWords.has(noun) && !characters.includes(noun)) {
@@ -448,12 +444,12 @@ export async function getCharacterProfile(
 ): Promise<Record<string, unknown> | undefined> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -469,7 +465,7 @@ export async function getCharacterProfile(
   );
 
   const applicableRules = Object.values(bible.sections.world_rules).filter(
-    (rule) => rule.scope === "global" || rule.scope === "all",
+    (rule) => rule.scope === 'global' || rule.scope === 'all',
   );
 
   return {
@@ -486,24 +482,22 @@ export async function getLocationDetails(
 ): Promise<Record<string, unknown> | undefined> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
   const loc = bible.sections.locations[locationName];
   if (!loc) return undefined;
 
-  const eventsAtLocation = bible.sections.timeline.filter(
-    (e) => e.location === locationName,
-  );
+  const eventsAtLocation = bible.sections.timeline.filter((e) => e.location === locationName);
 
   const scopedRules = Object.values(bible.sections.world_rules).filter(
-    (rule) => rule.scope === locationName || rule.scope === "global" || rule.scope === "all",
+    (rule) => rule.scope === locationName || rule.scope === 'global' || rule.scope === 'all',
   );
 
   return {
@@ -513,29 +507,26 @@ export async function getLocationDetails(
   };
 }
 
-export async function addRule(
-  projectId: string,
-  rule: Omit<WorldRule, "id">,
-): Promise<WorldRule> {
+export async function addRule(projectId: string, rule: Omit<WorldRule, 'id'>): Promise<WorldRule> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
-  const validTypes = ["physics", "social", "magic", "technology"] as const;
+  const validTypes = ['physics', 'social', 'magic', 'technology'] as const;
   if (!validTypes.includes(rule.type as (typeof validTypes)[number])) {
     const err = new Error(`Invalid rule type: ${rule.type}`) as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_INPUT";
+    err.code = 'INVALID_INPUT';
     throw err;
   }
 
@@ -561,12 +552,12 @@ export async function checkSceneAgainstBible(
 ): Promise<{ valid: boolean; violations: string[] }> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
@@ -584,15 +575,11 @@ export async function checkSceneAgainstBible(
   // Check location exists
   if (sceneGraph.location) {
     if (!bible.sections.locations[sceneGraph.location]) {
-      violations.push(
-        `Unknown location "${sceneGraph.location}" not in World Bible`,
-      );
+      violations.push(`Unknown location "${sceneGraph.location}" not in World Bible`);
     } else {
       const loc = bible.sections.locations[sceneGraph.location];
       for (const constraint of loc.constraints) {
-        violations.push(
-          `Location constraint at "${sceneGraph.location}": ${constraint}`,
-        );
+        violations.push(`Location constraint at "${sceneGraph.location}": ${constraint}`);
       }
     }
   }
@@ -617,63 +604,63 @@ export async function checkSceneAgainstBible(
 
 export async function exportBible(
   projectId: string,
-  format: "json" | "markdown" | "pdf",
+  format: 'json' | 'markdown' | 'pdf',
 ): Promise<{ format: string; content: string }> {
   const bible = getBible(projectId);
   if (!bible) {
-    const err = new Error("World Bible not found") as Error & {
+    const err = new Error('World Bible not found') as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 404;
-    err.code = "NOT_FOUND";
+    err.code = 'NOT_FOUND';
     throw err;
   }
 
-  if (format === "json") {
+  if (format === 'json') {
     return {
-      format: "json",
+      format: 'json',
       content: JSON.stringify(bible, null, 2),
     };
   }
 
-  if (format === "markdown" || format === "pdf") {
+  if (format === 'markdown' || format === 'pdf') {
     let md = `# World Bible: Project ${bible.projectId}\n\n`;
 
-    md += "## Characters\n\n";
+    md += '## Characters\n\n';
     for (const [name, char] of Object.entries(bible.sections.characters)) {
       md += `### ${name}\n`;
       md += `- **Role:** ${char.role}\n`;
-      md += `- **Traits:** ${char.traits.join(", ")}\n`;
+      md += `- **Traits:** ${char.traits.join(', ')}\n`;
       md += `- **Backstory:** ${char.backstory}\n\n`;
     }
 
-    md += "## Locations\n\n";
+    md += '## Locations\n\n';
     for (const [name, loc] of Object.entries(bible.sections.locations)) {
       md += `### ${name}\n`;
       md += `- **Description:** ${loc.description}\n`;
-      md += `- **Features:** ${loc.features.join(", ")}\n\n`;
+      md += `- **Features:** ${loc.features.join(', ')}\n\n`;
     }
 
-    md += "## World Rules\n\n";
+    md += '## World Rules\n\n';
     for (const [, rule] of Object.entries(bible.sections.world_rules)) {
       md += `- **[${rule.type}]** ${rule.description} (Scope: ${rule.scope})\n`;
     }
-    md += "\n";
+    md += '\n';
 
-    md += "## Timeline\n\n";
+    md += '## Timeline\n\n';
     for (const event of bible.sections.timeline) {
       md += `- **${event.timestamp}:** ${event.description}\n`;
     }
-    md += "\n";
+    md += '\n';
 
-    md += "## Relationships\n\n";
+    md += '## Relationships\n\n';
     for (const rel of bible.sections.relationships) {
       md += `- ${rel.character1} <-> ${rel.character2}: ${rel.type} -- ${rel.description}\n`;
     }
 
     return {
-      format: format === "pdf" ? "pdf-ready-markdown" : "markdown",
+      format: format === 'pdf' ? 'pdf-ready-markdown' : 'markdown',
       content: md,
     };
   }
@@ -683,6 +670,6 @@ export async function exportBible(
     code?: string;
   };
   err.statusCode = 400;
-  err.code = "INVALID_FORMAT";
+  err.code = 'INVALID_FORMAT';
   throw err;
 }

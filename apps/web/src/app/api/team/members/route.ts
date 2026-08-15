@@ -41,9 +41,7 @@ const MOCK_MEMBERS = [
     status: 'away',
     joinedAt: '2025-08-10T09:15:00Z',
     credits: { used: 560, limit: 2000 },
-    projects: [
-      { id: 'proj_002', name: 'Neon Drift', role: 'editor' },
-    ],
+    projects: [{ id: 'proj_002', name: 'Neon Drift', role: 'editor' }],
   },
   {
     id: 'mem_004',

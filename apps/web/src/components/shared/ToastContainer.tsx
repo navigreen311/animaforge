@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Toast, type ToastItem } from "./Toast";
+import { Toast, type ToastItem } from './Toast';
 
 interface ToastContainerProps {
   toasts: ToastItem[];

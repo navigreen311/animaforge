@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!genre || !mood) {
-    return NextResponse.json(
-      { error: 'genre and mood are required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'genre and mood are required' }, { status: 400 });
   }
 
   const trackDuration = duration ?? 30;

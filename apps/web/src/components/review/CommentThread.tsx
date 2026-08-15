@@ -61,16 +61,19 @@ export default function CommentThread({ shotId, onClose }: CommentThreadProps) {
     <div className="flex flex-col h-full rounded-xl border border-gray-800 bg-gray-900">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-200">
-          Comments &mdash; Shot {shotId}
-        </h3>
+        <h3 className="text-sm font-semibold text-gray-200">Comments &mdash; Shot {shotId}</h3>
         <button
           type="button"
           onClick={onClose}
           className="text-gray-500 hover:text-gray-300 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -79,7 +82,9 @@ export default function CommentThread({ shotId, onClose }: CommentThreadProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {comments.map((c) => (
           <div key={c.id} className="flex gap-3">
-            <div className={`w-7 h-7 rounded-full ${c.user.avatarColor} flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white`}>
+            <div
+              className={`w-7 h-7 rounded-full ${c.user.avatarColor} flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white`}
+            >
               {c.user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">

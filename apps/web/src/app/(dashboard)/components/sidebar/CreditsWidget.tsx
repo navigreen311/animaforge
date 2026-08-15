@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface CreditsWidgetProps {
   creditsUsed: number;
@@ -7,7 +7,7 @@ interface CreditsWidgetProps {
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString("en-US");
+  return n.toLocaleString('en-US');
 }
 
 export default function CreditsWidget({
@@ -18,17 +18,17 @@ export default function CreditsWidget({
   const percentage = creditsTotal > 0 ? (creditsUsed / creditsTotal) * 100 : 0;
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
   const isLow = creditsUsed > creditsTotal * 0.8;
-  const fillColor = isLow ? "#ef4444" : "var(--brand)";
+  const fillColor = isLow ? '#ef4444' : 'var(--brand)';
 
   if (collapsed) {
     return (
       <div
         style={{
-          padding: "12px",
-          margin: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          padding: '12px',
+          margin: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <svg
@@ -68,19 +68,19 @@ export default function CreditsWidget({
   return (
     <div
       style={{
-        padding: "12px",
-        margin: "8px",
-        borderRadius: "var(--radius-md)",
-        backgroundColor: "var(--bg-elevated)",
-        border: "0.5px solid var(--border)",
+        padding: '12px',
+        margin: '8px',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--bg-elevated)',
+        border: '0.5px solid var(--border)',
       }}
     >
       <span
         style={{
-          display: "block",
-          fontSize: "9px",
-          color: "var(--text-tertiary)",
-          marginBottom: "6px",
+          display: 'block',
+          fontSize: '9px',
+          color: 'var(--text-tertiary)',
+          marginBottom: '6px',
         }}
       >
         Credits this month
@@ -93,35 +93,35 @@ export default function CreditsWidget({
         aria-valuemin={0}
         aria-valuemax={creditsTotal}
         style={{
-          height: "4px",
-          borderRadius: "2px",
-          backgroundColor: "var(--progress-track)",
-          overflow: "hidden",
-          marginBottom: "6px",
+          height: '4px',
+          borderRadius: '2px',
+          backgroundColor: 'var(--progress-track)',
+          overflow: 'hidden',
+          marginBottom: '6px',
         }}
       >
         <div
           style={{
-            height: "100%",
+            height: '100%',
             width: `${clampedPercentage}%`,
-            borderRadius: "2px",
+            borderRadius: '2px',
             backgroundColor: fillColor,
-            transition: "width 0.3s ease, background-color 0.3s ease",
+            transition: 'width 0.3s ease, background-color 0.3s ease',
           }}
         />
       </div>
 
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <span
           style={{
-            fontSize: "11px",
-            color: "var(--text-secondary)",
+            fontSize: '11px',
+            color: 'var(--text-secondary)',
           }}
         >
           {formatNumber(creditsUsed)} / {formatNumber(creditsTotal)}
@@ -130,8 +130,8 @@ export default function CreditsWidget({
         {isLow && (
           <span
             style={{
-              fontSize: "10px",
-              color: "#ef4444",
+              fontSize: '10px',
+              color: '#ef4444',
               fontWeight: 500,
             }}
           >
@@ -143,17 +143,17 @@ export default function CreditsWidget({
       <a
         href="/upgrade"
         style={{
-          display: "inline-block",
-          marginTop: "8px",
-          fontSize: "10px",
-          color: "var(--brand)",
-          textDecoration: "none",
+          display: 'inline-block',
+          marginTop: '8px',
+          fontSize: '10px',
+          color: 'var(--brand)',
+          textDecoration: 'none',
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline";
+          (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none";
+          (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none';
         }}
       >
         Upgrade

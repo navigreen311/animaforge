@@ -95,10 +95,7 @@ function buildMockActivity(memberId: string) {
 /*  GET /api/team/members/[id]/activity                               */
 /*  Return recent activity for a team member                          */
 /* ------------------------------------------------------------------ */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   const activities = buildMockActivity(id);

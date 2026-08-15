@@ -42,19 +42,13 @@ function getMockAvatar(id: string): AvatarDetail {
   };
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const avatar = getMockAvatar(id);
   return NextResponse.json({ avatar });
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const body = await request.json();
 
@@ -84,10 +78,7 @@ export async function PATCH(
   return NextResponse.json({ avatar });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   // In production this would delete the avatar resource
   void params.id;
   return NextResponse.json({ success: true });

@@ -17,9 +17,7 @@ export function trapFocus(container: HTMLElement): () => void {
   function handler(e: KeyboardEvent) {
     if (e.key !== 'Tab') return;
 
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(FOCUSABLE),
-    );
+    const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
     if (focusable.length === 0) return;
 
     const first = focusable[0];

@@ -117,33 +117,21 @@ const MOCK_STYLES: Record<string, Record<string, unknown>> = {
   },
 };
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const style = MOCK_STYLES[params.id];
 
   if (!style) {
-    return NextResponse.json(
-      { error: 'Style not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Style not found' }, { status: 404 });
   }
 
   return NextResponse.json({ style });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const style = MOCK_STYLES[params.id];
 
   if (!style) {
-    return NextResponse.json(
-      { error: 'Style not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Style not found' }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

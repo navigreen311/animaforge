@@ -43,7 +43,7 @@ function generateBurndownData(): BurndownPoint[] {
     if (i <= CURRENT_DAY) {
       // Slightly behind planned in early days, caught up mid-sprint
       const drift = Math.sin(i / 3) * 1.5 + (i < 7 ? 1.2 : -0.3);
-      actual = Math.max(0, Math.round((START_TASKS - (START_TASKS * i) / DAYS) + drift));
+      actual = Math.max(0, Math.round(START_TASKS - (START_TASKS * i) / DAYS + drift));
     }
 
     data.push({
@@ -67,8 +67,7 @@ export default function MilestoneBurndown() {
   const prevPoint = MOCK_DATA[CURRENT_DAY - 1];
 
   const stats = useMemo(() => {
-    const tasksDone =
-      START_TASKS - (currentPoint.actual ?? START_TASKS);
+    const tasksDone = START_TASKS - (currentPoint.actual ?? START_TASKS);
     const velocity = tasksDone / CURRENT_DAY;
     const remaining = currentPoint.actual ?? 0;
     const daysToComplete = velocity > 0 ? Math.ceil(remaining / velocity) : Infinity;
@@ -104,17 +103,9 @@ export default function MilestoneBurndown() {
     >
       <div style={{ width: '100%', height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={MOCK_DATA}
-            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
-          >
+          <LineChart data={MOCK_DATA} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
             <CartesianGrid stroke="var(--border, #26263a)" strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              stroke="var(--text-muted, #94a3b8)"
-              fontSize={11}
-              interval={3}
-            />
+            <XAxis dataKey="date" stroke="var(--text-muted, #94a3b8)" fontSize={11} interval={3} />
             <YAxis
               stroke="var(--text-muted, #94a3b8)"
               fontSize={11}
@@ -184,9 +175,7 @@ export default function MilestoneBurndown() {
           style={{
             padding: 12,
             borderRadius: 8,
-            background: stats.onTrack
-              ? 'rgba(34,197,94,0.1)'
-              : 'rgba(239,68,68,0.1)',
+            background: stats.onTrack ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
             border: `1px solid ${stats.onTrack ? '#22c55e' : '#ef4444'}`,
           }}
         >

@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { projectService } from "../services/projectService.js";
+import type { Request, Response } from 'express';
+import { projectService } from '../services/projectService.js';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -7,8 +7,8 @@ import {
   brandKitSchema,
   styleLockSchema,
   listQuerySchema,
-} from "../models/projectSchemas.js";
-import * as apiResponse from "../utils/apiResponse.js";
+} from '../models/projectSchemas.js';
+import * as apiResponse from '../utils/apiResponse.js';
 
 export const projectController = {
   create(req: Request, res: Response): void {
@@ -27,7 +27,7 @@ export const projectController = {
     const { id } = req.params;
     const project = projectService.getById(id);
     if (!project) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, project);
@@ -38,7 +38,7 @@ export const projectController = {
     const input = updateProjectSchema.parse(req.body);
     const project = projectService.update(id, input);
     if (!project) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, project);
@@ -48,7 +48,7 @@ export const projectController = {
     const { id } = req.params;
     const deleted = projectService.softDelete(id);
     if (!deleted) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, { deleted: true });
@@ -59,7 +59,7 @@ export const projectController = {
     const data = worldBibleSchema.parse(req.body);
     const project = projectService.updateWorldBible(id, data);
     if (!project) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, project);
@@ -70,7 +70,7 @@ export const projectController = {
     const data = brandKitSchema.parse(req.body);
     const project = projectService.updateBrandKit(id, data);
     if (!project) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, project);
@@ -81,7 +81,7 @@ export const projectController = {
     const data = styleLockSchema.parse(req.body);
     const project = projectService.updateStyleLock(id, data);
     if (!project) {
-      apiResponse.error(res, "NOT_FOUND", "Project not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Project not found', 404);
       return;
     }
     apiResponse.success(res, project);

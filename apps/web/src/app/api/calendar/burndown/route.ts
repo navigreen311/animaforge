@@ -12,9 +12,7 @@ export async function GET(request: NextRequest) {
       totalTasks - Math.round((totalTasks / (days - 1)) * i * (0.85 + Math.random() * 0.3)),
     );
     return {
-      date: new Date(Date.now() - (days - 1 - i) * 86400_000)
-        .toISOString()
-        .slice(0, 10),
+      date: new Date(Date.now() - (days - 1 - i) * 86400_000).toISOString().slice(0, 10),
       ideal: Math.round(ideal),
       actual,
     };

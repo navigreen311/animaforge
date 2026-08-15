@@ -7,22 +7,8 @@
  * locally — no backend wiring yet. Integrates with the Asset Library page.
  */
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type DragEvent,
-} from 'react';
-import {
-  Upload,
-  X,
-  File as FileIcon,
-  Check,
-  Loader2,
-  ChevronDown,
-} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
+import { Upload, X, File as FileIcon, Check, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -192,23 +178,17 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       if (item.status === 'done') return;
       // Mark as uploading
       setTimeout(() => {
-        setQueue((prev) =>
-          prev.map((q) => (q.id === item.id ? { ...q, status: 'uploading' } : q)),
-        );
+        setQueue((prev) => prev.map((q) => (q.id === item.id ? { ...q, status: 'uploading' } : q)));
 
         let tick = 0;
         const interval = setInterval(() => {
           tick += 1;
           const pct = Math.min(100, tick * 5);
-          setQueue((prev) =>
-            prev.map((q) => (q.id === item.id ? { ...q, progress: pct } : q)),
-          );
+          setQueue((prev) => prev.map((q) => (q.id === item.id ? { ...q, progress: pct } : q)));
           if (pct >= 100) {
             clearInterval(interval);
             setQueue((prev) =>
-              prev.map((q) =>
-                q.id === item.id ? { ...q, status: 'done', progress: 100 } : q,
-              ),
+              prev.map((q) => (q.id === item.id ? { ...q, status: 'done', progress: 100 } : q)),
             );
             completed += 1;
             if (completed >= total) {
@@ -321,9 +301,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
             role="button"
             tabIndex={0}
             style={{
-              border: isDragging
-                ? '1.5px dashed var(--brand)'
-                : '1.5px dashed var(--border)',
+              border: isDragging ? '1.5px dashed var(--brand)' : '1.5px dashed var(--border)',
               borderRadius: 'var(--radius-lg)',
               background: isDragging ? 'var(--brand-dim)' : 'var(--bg-base)',
               padding: '28px 20px',
@@ -555,8 +533,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                           style={{
                             width: `${item.progress}%`,
                             height: '100%',
-                            background:
-                              item.status === 'done' ? '#22c55e' : 'var(--brand)',
+                            background: item.status === 'done' ? '#22c55e' : 'var(--brand)',
                             transition: 'width 120ms linear',
                           }}
                         />
@@ -655,10 +632,8 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
             disabled={pendingCount === 0 || uploading}
             onClick={startUpload}
             style={{
-              background:
-                pendingCount === 0 || uploading ? 'var(--bg-hover)' : 'var(--brand)',
-              color:
-                pendingCount === 0 || uploading ? 'var(--text-tertiary)' : '#ffffff',
+              background: pendingCount === 0 || uploading ? 'var(--bg-hover)' : 'var(--brand)',
+              color: pendingCount === 0 || uploading ? 'var(--text-tertiary)' : '#ffffff',
               border: 'none',
               padding: '6px 14px',
               borderRadius: 'var(--radius-md)',

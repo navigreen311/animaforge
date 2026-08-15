@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import {
-  ChevronDown,
-  ChevronRight,
-  Users,
-  Lightbulb,
-  Clock,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, Lightbulb, Clock } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -110,9 +104,7 @@ const MOCK_TEAM: TeamMember[] = [
     workloadPct: 33,
     hoursThisWeek: 13,
     capacityHours: 40,
-    tasks: [
-      { id: 'f1', name: 'Scene Blocking', hoursThisWeek: 13, dueDate: '2026-04-20' },
-    ],
+    tasks: [{ id: 'f1', name: 'Scene Blocking', hoursThisWeek: 13, dueDate: '2026-04-20' }],
   },
 ];
 
@@ -384,10 +376,7 @@ export default function TeamAssignmentPanel() {
                 color: 'var(--text, #f1f5f9)',
               }}
             >
-              <Clock
-                size={14}
-                style={{ marginRight: 6, verticalAlign: 'middle' }}
-              />
+              <Clock size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
               {stats.totalHours}h
             </div>
           </div>
@@ -432,9 +421,8 @@ export default function TeamAssignmentPanel() {
               lineHeight: 1.5,
             }}
           >
-            <strong>Suggested rebalancing:</strong> Move 8h of Alice&apos;s
-            review work to Frank Wu (33% capacity) to reduce director overload
-            and unblock layout finalization.
+            <strong>Suggested rebalancing:</strong> Move 8h of Alice&apos;s review work to Frank Wu
+            (33% capacity) to reduce director overload and unblock layout finalization.
           </div>
         </div>
       </footer>

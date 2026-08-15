@@ -2,17 +2,14 @@ function ProjectCardSkeleton() {
   return (
     <div
       style={{
-        background: "var(--bg-elevated)",
-        border: "0.5px solid var(--border)",
-        borderRadius: "var(--radius-xl)",
-        overflow: "hidden",
+        background: 'var(--bg-elevated)',
+        border: '0.5px solid var(--border)',
+        borderRadius: 'var(--radius-xl)',
+        overflow: 'hidden',
       }}
     >
       {/* Thumbnail */}
-      <div
-        className="animate-pulse"
-        style={{ height: 100, background: "var(--bg-overlay)" }}
-      />
+      <div className="animate-pulse" style={{ height: 100, background: 'var(--bg-overlay)' }} />
 
       {/* Body */}
       <div style={{ padding: 12 }}>
@@ -21,9 +18,9 @@ function ProjectCardSkeleton() {
           className="animate-pulse"
           style={{
             height: 16,
-            width: "75%",
-            background: "var(--bg-overlay)",
-            borderRadius: "var(--radius-xl, 4px)",
+            width: '75%',
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--radius-xl, 4px)',
           }}
         />
 
@@ -32,9 +29,9 @@ function ProjectCardSkeleton() {
           className="animate-pulse"
           style={{
             height: 12,
-            width: "100%",
-            background: "var(--bg-overlay)",
-            borderRadius: "var(--radius-xl, 4px)",
+            width: '100%',
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--radius-xl, 4px)',
             marginTop: 6,
           }}
         />
@@ -44,9 +41,9 @@ function ProjectCardSkeleton() {
           className="animate-pulse"
           style={{
             height: 12,
-            width: "50%",
-            background: "var(--bg-overlay)",
-            borderRadius: "var(--radius-xl, 4px)",
+            width: '50%',
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--radius-xl, 4px)',
             marginTop: 4,
           }}
         />
@@ -56,9 +53,9 @@ function ProjectCardSkeleton() {
           className="animate-pulse"
           style={{
             height: 3,
-            width: "100%",
-            background: "var(--bg-overlay)",
-            borderRadius: "var(--radius-xl, 4px)",
+            width: '100%',
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--radius-xl, 4px)',
             marginTop: 10,
           }}
         />
@@ -68,9 +65,9 @@ function ProjectCardSkeleton() {
           className="animate-pulse"
           style={{
             height: 12,
-            width: "66.666%",
-            background: "var(--bg-overlay)",
-            borderRadius: "var(--radius-xl, 4px)",
+            width: '66.666%',
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--radius-xl, 4px)',
             marginTop: 8,
           }}
         />
@@ -78,14 +75,14 @@ function ProjectCardSkeleton() {
         {/* Bottom row */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginTop: 10,
           }}
         >
           {/* Avatar circles (overlapping) */}
-          <div style={{ display: "flex" }}>
+          <div style={{ display: 'flex' }}>
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -93,8 +90,8 @@ function ProjectCardSkeleton() {
                 style={{
                   width: 18,
                   height: 18,
-                  borderRadius: "50%",
-                  background: "var(--bg-overlay)",
+                  borderRadius: '50%',
+                  background: 'var(--bg-overlay)',
                   marginLeft: i === 0 ? 0 : -6,
                 }}
               />
@@ -107,8 +104,8 @@ function ProjectCardSkeleton() {
             style={{
               height: 12,
               width: 64,
-              background: "var(--bg-overlay)",
-              borderRadius: "var(--radius-xl, 4px)",
+              background: 'var(--bg-overlay)',
+              borderRadius: 'var(--radius-xl, 4px)',
             }}
           />
         </div>

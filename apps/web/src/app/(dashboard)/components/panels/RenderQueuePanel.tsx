@@ -108,10 +108,7 @@ function SkeletonRow() {
           className="rounded-full"
           style={{ width: 6, height: 6, background: 'var(--text-tertiary)' }}
         />
-        <div
-          className="flex-1 rounded"
-          style={{ height: 10, background: 'var(--bg-overlay)' }}
-        />
+        <div className="flex-1 rounded" style={{ height: 10, background: 'var(--bg-overlay)' }} />
         <div
           className="rounded"
           style={{ width: 40, height: 12, background: 'var(--bg-overlay)' }}
@@ -135,13 +132,7 @@ function SkeletonRow() {
 /*  Job row                                                            */
 /* ------------------------------------------------------------------ */
 
-function JobRow({
-  job,
-  onCancel,
-}: {
-  job: RenderJob;
-  onCancel: (id: string) => void;
-}) {
+function JobRow({ job, onCancel }: { job: RenderJob; onCancel: (id: string) => void }) {
   const isRunning = job.status === 'running';
   const isQueued = job.status === 'queued';
   const showBar = isRunning || isQueued;
@@ -193,9 +184,7 @@ function JobRow({
           style={{
             width: 6,
             height: 6,
-            background: isRunning
-              ? 'var(--status-generating-text)'
-              : 'var(--text-tertiary)',
+            background: isRunning ? 'var(--status-generating-text)' : 'var(--text-tertiary)',
           }}
         />
 
@@ -203,10 +192,7 @@ function JobRow({
         <JobTypeIcon type={(job as any).type} />
 
         {/* Job name */}
-        <span
-          className="flex-1 truncate"
-          style={{ fontSize: 11, color: 'var(--text-primary)' }}
-        >
+        <span className="flex-1 truncate" style={{ fontSize: 11, color: 'var(--text-primary)' }}>
           Shot {job.shotNumber} &mdash; {job.projectTitle}
         </span>
 
@@ -267,10 +253,7 @@ function JobRow({
 
           {/* ETA countdown */}
           {eta != null && (
-            <span
-              className="shrink-0"
-              style={{ fontSize: 10, color: 'var(--text-tertiary)' }}
-            >
+            <span className="shrink-0" style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
               {eta}
             </span>
           )}
@@ -293,9 +276,7 @@ export function RenderQueuePanel({ jobs, loading }: RenderQueuePanelProps) {
   }, []);
 
   const visibleJobs = jobs.filter((j) => !hiddenIds.has(j.id));
-  const activeJobs = visibleJobs.filter(
-    (j) => j.status === 'running' || j.status === 'queued',
-  );
+  const activeJobs = visibleJobs.filter((j) => j.status === 'running' || j.status === 'queued');
 
   return (
     <div
@@ -333,7 +314,13 @@ export function RenderQueuePanel({ jobs, loading }: RenderQueuePanelProps) {
         {/* Right: view all */}
         <button
           className="hover:underline"
-          style={{ fontSize: 10, color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{
+            fontSize: 10,
+            color: 'var(--brand)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           View all
         </button>

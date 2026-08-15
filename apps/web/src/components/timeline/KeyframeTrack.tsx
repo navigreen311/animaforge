@@ -106,15 +106,12 @@ export function KeyframeTrack({
   );
 
   /* Click diamond */
-  const handleDiamondClick = useCallback(
-    (e: React.MouseEvent, id: string, type: string) => {
-      e.stopPropagation();
-      setSelectedId((prev) => (prev === id ? null : id));
-      setActivePopover((prev) => (prev === id ? null : id));
-      console.log('[KeyframeTrack] Selected keyframe:', id, type);
-    },
-    [],
-  );
+  const handleDiamondClick = useCallback((e: React.MouseEvent, id: string, type: string) => {
+    e.stopPropagation();
+    setSelectedId((prev) => (prev === id ? null : id));
+    setActivePopover((prev) => (prev === id ? null : id));
+    console.log('[KeyframeTrack] Selected keyframe:', id, type);
+  }, []);
 
   /* Drag to move keyframe (scale mode only) */
   const handleDragStart = useCallback(
@@ -177,9 +174,9 @@ export function KeyframeTrack({
                 key={kf.id}
                 data-keyframe-id={kf.id}
                 className={
-                  'absolute cursor-grab select-none'
-                  + (isDragging ? ' cursor-grabbing opacity-70' : '')
-                  + (isSelected ? ' z-10' : '')
+                  'absolute cursor-grab select-none' +
+                  (isDragging ? ' cursor-grabbing opacity-70' : '') +
+                  (isSelected ? ' z-10' : '')
                 }
                 style={{
                   left: x - DIAMOND_SIZE / 2,
@@ -284,9 +281,7 @@ export function KeyframeTrack({
                   transform: 'rotate(45deg)',
                   backgroundColor: '#f59e0b',
                   border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.3)',
-                  boxShadow: isSelected
-                    ? '0 0 8px #f59e0b'
-                    : '0 1px 2px rgba(0,0,0,0.2)',
+                  boxShadow: isSelected ? '0 0 8px #f59e0b' : '0 1px 2px rgba(0,0,0,0.2)',
                   cursor: 'pointer',
                   transition: 'box-shadow 120ms ease',
                 }}
@@ -312,8 +307,7 @@ export function KeyframeTrack({
                     zIndex: 50,
                   }}
                 >
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Keyframe:</span>{' '}
-                  {kf.type}
+                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Keyframe:</span> {kf.type}
                 </div>
               )}
             </div>

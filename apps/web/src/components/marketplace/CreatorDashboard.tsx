@@ -48,7 +48,9 @@ export default function CreatorDashboard() {
         <Card>
           <CardContent className="py-6 text-center">
             <p className="text-sm text-[var(--color-text-muted)]">Total Sales</p>
-            <p className="mt-1 text-3xl font-bold text-[var(--color-text)]">{totalSales.toLocaleString()}</p>
+            <p className="mt-1 text-3xl font-bold text-[var(--color-text)]">
+              {totalSales.toLocaleString()}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -72,7 +74,9 @@ export default function CreatorDashboard() {
                 <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">Category</th>
                 <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">Price</th>
                 <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">Sales</th>
-                <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">Revenue (70%)</th>
+                <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">
+                  Revenue (70%)
+                </th>
                 <th className="px-6 py-3 font-medium text-[var(--color-text-muted)]">Status</th>
               </tr>
             </thead>
@@ -91,15 +95,22 @@ export default function CreatorDashboard() {
                 </tr>
               ) : (
                 myListings.map((listing) => (
-                  <tr key={listing.id} className="border-b border-[var(--color-border)] last:border-0">
-                    <td className="px-6 py-4 font-medium text-[var(--color-text)]">{listing.name}</td>
+                  <tr
+                    key={listing.id}
+                    className="border-b border-[var(--color-border)] last:border-0"
+                  >
+                    <td className="px-6 py-4 font-medium text-[var(--color-text)]">
+                      {listing.name}
+                    </td>
                     <td className="px-6 py-4 text-[var(--color-text-muted)] capitalize">
                       {listing.category.replace('-', ' ')}
                     </td>
                     <td className="px-6 py-4 text-[var(--color-text)]">
                       {listing.price === 0 ? 'Free' : `$${listing.price.toFixed(2)}`}
                     </td>
-                    <td className="px-6 py-4 text-[var(--color-text)]">{listing.sales.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[var(--color-text)]">
+                      {listing.sales.toLocaleString()}
+                    </td>
                     <td className="px-6 py-4 text-emerald-400">
                       ${(listing.revenue * 0.7).toFixed(2)}
                     </td>
@@ -141,7 +152,10 @@ export default function CreatorDashboard() {
                 </tr>
               ) : (
                 payoutHistory.map((payout) => (
-                  <tr key={payout.id} className="border-b border-[var(--color-border)] last:border-0">
+                  <tr
+                    key={payout.id}
+                    className="border-b border-[var(--color-border)] last:border-0"
+                  >
                     <td className="px-6 py-4 text-[var(--color-text)]">
                       {new Date(payout.date).toLocaleDateString()}
                     </td>
@@ -149,7 +163,9 @@ export default function CreatorDashboard() {
                       ${payout.amount.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-sm font-medium capitalize ${PAYOUT_STATUS_STYLES[payout.status] ?? ''}`}>
+                      <span
+                        className={`text-sm font-medium capitalize ${PAYOUT_STATUS_STYLES[payout.status] ?? ''}`}
+                      >
                         {payout.status}
                       </span>
                     </td>

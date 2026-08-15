@@ -6,12 +6,7 @@
 export type GenerationTier = 'draft' | 'standard' | 'premium';
 
 /** Lifecycle status of a shot within the pipeline. */
-export type ShotStatus =
-  | 'draft'
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'generating';
+export type ShotStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'generating';
 
 /** Pipeline stage labels surfaced in the UI during generation. */
 export type GenerationStage =

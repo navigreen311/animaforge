@@ -72,8 +72,18 @@ export default function DeveloperPortalPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 bg-gray-800/50 border border-gray-700 rounded-xl">
             <div className="w-10 h-10 rounded-lg bg-violet-900/50 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              <svg
+                className="w-5 h-5 text-violet-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-gray-200 mb-1">1. Create an API Key</h3>
@@ -87,19 +97,40 @@ export default function DeveloperPortalPage() {
           </div>
           <div className="p-5 bg-gray-800/50 border border-gray-700 rounded-xl">
             <div className="w-10 h-10 rounded-lg bg-violet-900/50 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              <svg
+                className="w-5 h-5 text-violet-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-gray-200 mb-1">2. Make Your First Call</h3>
             <p className="text-xs text-gray-500">
-              Use the API key in an <code className="text-violet-400">Authorization</code> header and create a project.
+              Use the API key in an <code className="text-violet-400">Authorization</code> header
+              and create a project.
             </p>
           </div>
           <div className="p-5 bg-gray-800/50 border border-gray-700 rounded-xl">
             <div className="w-10 h-10 rounded-lg bg-violet-900/50 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="w-5 h-5 text-violet-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-gray-200 mb-1">3. Generate Content</h3>
@@ -135,7 +166,9 @@ export default function DeveloperPortalPage() {
               href="/docs"
               className="flex items-center gap-3 p-3 bg-gray-800/30 border border-gray-700/50 rounded-lg hover:bg-gray-800/60 transition-colors"
             >
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${methodColors[ep.method]}`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${methodColors[ep.method]}`}
+              >
                 {ep.method}
               </span>
               <code className="text-sm font-mono text-gray-300">{ep.path}</code>

@@ -8,13 +8,7 @@ interface RoleCardProps {
   onClick: () => void;
 }
 
-export default function RoleCard({
-  icon,
-  title,
-  description,
-  selected,
-  onClick,
-}: RoleCardProps) {
+export default function RoleCard({ icon, title, description, selected, onClick }: RoleCardProps) {
   return (
     <button
       onClick={onClick}

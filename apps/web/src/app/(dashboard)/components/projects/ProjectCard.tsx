@@ -4,7 +4,18 @@ import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Share2, MoreHorizontal, Pin, Copy, Layers, PinOff, Archive, Trash2, PenLine } from 'lucide-react';
+import {
+  Play,
+  Share2,
+  MoreHorizontal,
+  Pin,
+  Copy,
+  Layers,
+  PinOff,
+  Archive,
+  Trash2,
+  PenLine,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { Project } from '@/lib/types';
 import {
@@ -63,8 +74,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         : 'var(--brand)';
 
   /* ---- Thumbnail background ---- */
-  const thumbnailBackground =
-    project.thumbnailGradient || getTypeGradient(project.projectType);
+  const thumbnailBackground = project.thumbnailGradient || getTypeGradient(project.projectType);
 
   /* ---- Visible / overflow team members ---- */
   const visibleMembers = project.teamMembers.slice(0, MAX_VISIBLE_AVATARS);
@@ -98,17 +108,14 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
     setShowDropdown((prev) => !prev);
   }, []);
 
-  const handleTogglePin = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsPinned((prev) => {
-        const next = !prev;
-        toast.success(next ? 'Project pinned' : 'Project unpinned');
-        return next;
-      });
-    },
-    [],
-  );
+  const handleTogglePin = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPinned((prev) => {
+      const next = !prev;
+      toast.success(next ? 'Project pinned' : 'Project unpinned');
+      return next;
+    });
+  }, []);
 
   const handleDropdownAction = useCallback(
     (action: string) => (e: React.MouseEvent) => {
@@ -277,10 +284,7 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
               : 'rgba(0,0,0,0.6)';
           }}
         >
-          <Pin
-            size={14}
-            fill={isPinned ? 'currentColor' : 'none'}
-          />
+          <Pin size={14} fill={isPinned ? 'currentColor' : 'none'} />
         </button>
 
         {/* Status badge — top-right */}
@@ -318,23 +322,14 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
             transition: 'opacity 150ms',
           }}
         >
-          <ThumbnailActionButton
-            label="Open timeline"
-            onClick={handlePlay}
-          >
+          <ThumbnailActionButton label="Open timeline" onClick={handlePlay}>
             <Play size={13} />
           </ThumbnailActionButton>
-          <ThumbnailActionButton
-            label="Share review link"
-            onClick={handleCopyReviewLink}
-          >
+          <ThumbnailActionButton label="Share review link" onClick={handleCopyReviewLink}>
             <Share2 size={13} />
           </ThumbnailActionButton>
           <div style={{ position: 'relative' }}>
-            <ThumbnailActionButton
-              label="More options"
-              onClick={handleToggleDropdown}
-            >
+            <ThumbnailActionButton label="More options" onClick={handleToggleDropdown}>
               <MoreHorizontal size={13} />
             </ThumbnailActionButton>
 

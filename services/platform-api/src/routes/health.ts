@@ -1,11 +1,11 @@
-import { Router } from "express";
-import { config } from "../config/index.js";
+import { Router } from 'express';
+import { config } from '../config/index.js';
 
 const router = Router();
 
-router.get("/health", (_req, res) => {
+router.get('/health', (_req, res) => {
   res.status(200).json({
-    status: "ok",
+    status: 'ok',
     version: config.version,
     timestamp: new Date().toISOString(),
   });

@@ -19,9 +19,18 @@ interface TypographyEditorProps {
 }
 
 const FONT_OPTIONS = [
-  'Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Poppins',
-  'Lato', 'Raleway', 'Playfair Display', 'Merriweather',
-  'Source Code Pro', 'JetBrains Mono', 'Space Grotesk',
+  'Inter',
+  'Roboto',
+  'Open Sans',
+  'Montserrat',
+  'Poppins',
+  'Lato',
+  'Raleway',
+  'Playfair Display',
+  'Merriweather',
+  'Source Code Pro',
+  'JetBrains Mono',
+  'Space Grotesk',
 ];
 
 const DEFAULT_SIZES: TypographySize[] = [
@@ -133,9 +142,10 @@ export default function TypographyEditor({ typography, onChange }: TypographyEdi
             <p
               className="text-gray-100 leading-tight truncate"
               style={{
-                fontFamily: size.label.startsWith('H') || size.label === 'Display'
-                  ? typography.headingFont
-                  : typography.bodyFont,
+                fontFamily:
+                  size.label.startsWith('H') || size.label === 'Display'
+                    ? typography.headingFont
+                    : typography.bodyFont,
                 fontSize: `${size.value}px`,
               }}
             >

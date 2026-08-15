@@ -62,9 +62,7 @@ export default function UserMenu() {
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 py-1">
           <div className="px-4 py-3 border-b border-gray-700">
-            <p className="text-sm font-medium text-gray-200 truncate">
-              {user.displayName}
-            </p>
+            <p className="text-sm font-medium text-gray-200 truncate">{user.displayName}</p>
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
             <span
               className={`inline-block mt-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-full ${tierInfo.className}`}

@@ -15,10 +15,26 @@ import SaveIndicator, { type SaveStatus } from './SaveIndicator';
 /* ── Constants ──────────────────────────────────────────────── */
 
 const HAIRSTYLES = [
-  'Short Crop', 'Buzz Cut', 'Curly Bob', 'Long Straight', 'Side Swept',
-  'Top Knot', 'Afro', 'Box Braids', 'Locs', 'Undercut',
-  'Ponytail', 'Pixie', 'Mohawk', 'Shag', 'Cornrows',
-  'French Braid', 'Dreadlocks', 'Crew Cut', 'Fade', 'Messy Bun',
+  'Short Crop',
+  'Buzz Cut',
+  'Curly Bob',
+  'Long Straight',
+  'Side Swept',
+  'Top Knot',
+  'Afro',
+  'Box Braids',
+  'Locs',
+  'Undercut',
+  'Ponytail',
+  'Pixie',
+  'Mohawk',
+  'Shag',
+  'Cornrows',
+  'French Braid',
+  'Dreadlocks',
+  'Crew Cut',
+  'Fade',
+  'Messy Bun',
 ] as const;
 
 const NATURAL_COLORS = [
@@ -43,7 +59,14 @@ const FASHION_COLORS = [
 
 const TEXTURES = ['Straight', 'Wavy', 'Curly', 'Coiled'] as const;
 
-const FACIAL_HAIR_STYLES = ['None', 'Stubble', 'Short Beard', 'Full Beard', 'Mustache', 'Goatee'] as const;
+const FACIAL_HAIR_STYLES = [
+  'None',
+  'Stubble',
+  'Short Beard',
+  'Full Beard',
+  'Mustache',
+  'Goatee',
+] as const;
 
 const ACCESSORIES = ['None', 'Clips', 'Headband', 'Cap', 'Beanie', 'Hijab', 'Other'] as const;
 
@@ -147,11 +170,7 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <SaveIndicator
-        status={status}
-        errorMessage={errorMessage}
-        persisted={Boolean(characterId)}
-      />
+      <SaveIndicator status={status} errorMessage={errorMessage} persisted={Boolean(characterId)} />
 
       {/* ── Style Grid (4x5) ─────────────────────────────────── */}
       <div>
@@ -201,7 +220,10 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
                 height: 32,
                 borderRadius: '50%',
                 backgroundColor: c.hex,
-                border: state.color === c.hex ? '3px solid var(--brand-light)' : '2px solid var(--border)',
+                border:
+                  state.color === c.hex
+                    ? '3px solid var(--brand-light)'
+                    : '2px solid var(--border)',
                 cursor: 'pointer',
                 transition: 'border-color 0.15s',
               }}
@@ -223,7 +245,10 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
                 height: 32,
                 borderRadius: '50%',
                 backgroundColor: c.hex,
-                border: state.color === c.hex ? '3px solid var(--brand-light)' : '2px solid var(--border)',
+                border:
+                  state.color === c.hex
+                    ? '3px solid var(--brand-light)'
+                    : '2px solid var(--border)',
                 cursor: 'pointer',
                 transition: 'border-color 0.15s',
               }}
@@ -354,7 +379,16 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
 
         {/* Texture segmented */}
         <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>Texture</p>
-        <div style={{ display: 'flex', gap: 4, backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 3, marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 4,
+            backgroundColor: 'var(--bg-surface)',
+            borderRadius: 'var(--radius-md)',
+            padding: 3,
+            marginBottom: 16,
+          }}
+        >
           {TEXTURES.map((t) => (
             <button
               key={t}
@@ -378,7 +412,9 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
         </div>
 
         {/* Length slider */}
-        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Length: {state.length}%</p>
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+          Length: {state.length}%
+        </p>
         <input
           type="range"
           min={0}
@@ -389,7 +425,9 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
         />
 
         {/* Volume slider */}
-        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Volume: {state.volume}%</p>
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+          Volume: {state.volume}%
+        </p>
         <input
           type="range"
           min={0}
@@ -400,7 +438,9 @@ export default function HairTab({ characterId, token }: HairTabProps = {}) {
         />
 
         {/* Shine slider */}
-        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>Shine: {state.shine}%</p>
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+          Shine: {state.shine}%
+        </p>
         <input
           type="range"
           min={0}

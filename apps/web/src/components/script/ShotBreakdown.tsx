@@ -85,23 +85,15 @@ export function ShotBreakdown({
                 <Fragment key={shot.id}>
                   <tr
                     className="cursor-pointer bg-zinc-900 transition hover:bg-zinc-800/50"
-                    onClick={() =>
-                      setExpandedShot(isExpanded ? null : shot.id)
-                    }
+                    onClick={() => setExpandedShot(isExpanded ? null : shot.id)}
                   >
-                    <td className="px-4 py-3 font-mono text-zinc-300">
-                      {shot.number}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-zinc-300">{shot.number}</td>
                     <td className="max-w-[200px] truncate px-4 py-3 text-zinc-300">
                       {shot.description}
                     </td>
                     <td className="px-4 py-3 text-zinc-400">{shot.duration}</td>
-                    <td className="px-4 py-3 text-zinc-400">
-                      {shot.cameraAngle}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-400">
-                      {shot.cameraMovement}
-                    </td>
+                    <td className="px-4 py-3 text-zinc-400">{shot.cameraAngle}</td>
+                    <td className="px-4 py-3 text-zinc-400">{shot.cameraMovement}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={(e) => {
@@ -133,4 +125,3 @@ export function ShotBreakdown({
     </div>
   );
 }
-

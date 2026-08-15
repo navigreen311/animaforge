@@ -43,7 +43,9 @@ export default function EndpointDoc({
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/50 transition-colors"
       >
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${methodColors[method]}`}>
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold border ${methodColors[method]}`}
+        >
           {method}
         </span>
         <code className="text-sm font-mono text-gray-200">{path}</code>
@@ -64,19 +66,25 @@ export default function EndpointDoc({
 
           {requestExample && (
             <div>
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Request Body</h4>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Request Body
+              </h4>
               <CodeBlock code={requestExample} language="json" title="application/json" />
             </div>
           )}
 
           <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Response</h4>
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Response
+            </h4>
             <CodeBlock code={responseExample} language="json" title="200 OK" />
           </div>
 
           {tryItOut && (
             <div className="pt-2 border-t border-gray-800">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Try It Out</h4>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Try It Out
+              </h4>
               {requestExample && (
                 <textarea
                   value={requestBody}

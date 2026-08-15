@@ -4,17 +4,11 @@ import { MOCK_CHARACTERS } from '@/lib/mockData';
 const VALID_FORMATS = ['gltf', 'fbx', 'usd', 'bvh', 'arkit'] as const;
 type ExportFormat = (typeof VALID_FORMATS)[number];
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const character = MOCK_CHARACTERS.find((c) => c.id === params.id);
 
   if (!character) {
-    return NextResponse.json(
-      { error: 'Character not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Character not found' }, { status: 404 });
   }
 
   const { searchParams } = request.nextUrl;

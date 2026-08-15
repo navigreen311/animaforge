@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { X, Layers, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { X, Layers, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 interface Take {
   id: string;
   number: number;
-  tier: "preview" | "standard" | "final";
+  tier: 'preview' | 'standard' | 'final';
   timeAgo: string;
   quality: number;
   thumbnailUrl?: string;
@@ -29,23 +29,20 @@ interface TakesDrawerProps {
 /*  Tier badge styles                                                  */
 /* ------------------------------------------------------------------ */
 
-const TIER_STYLES: Record<
-  Take["tier"],
-  { background: string; color: string; border?: string }
-> = {
+const TIER_STYLES: Record<Take['tier'], { background: string; color: string; border?: string }> = {
   preview: {
-    background: "var(--status-draft-bg, rgba(255,255,255,0.06))",
-    color: "var(--status-draft-text, var(--text-tertiary))",
-    border: "0.5px solid var(--status-draft-border, transparent)",
+    background: 'var(--status-draft-bg, rgba(255,255,255,0.06))',
+    color: 'var(--status-draft-text, var(--text-tertiary))',
+    border: '0.5px solid var(--status-draft-border, transparent)',
   },
   standard: {
-    background: "var(--brand-dim, rgba(99,102,241,0.15))",
-    color: "var(--brand-light, var(--brand))",
+    background: 'var(--brand-dim, rgba(99,102,241,0.15))',
+    color: 'var(--brand-light, var(--brand))',
   },
   final: {
-    background: "var(--status-complete-bg, rgba(34,197,94,0.12))",
-    color: "var(--status-complete-text, #4ade80)",
-    border: "0.5px solid var(--status-complete-border, transparent)",
+    background: 'var(--status-complete-bg, rgba(34,197,94,0.12))',
+    color: 'var(--status-complete-text, #4ade80)',
+    border: '0.5px solid var(--status-complete-border, transparent)',
   },
 };
 
@@ -55,26 +52,26 @@ const TIER_STYLES: Record<
 
 const MOCK_TAKES: Take[] = [
   {
-    id: "take-3",
+    id: 'take-3',
     number: 3,
-    tier: "standard",
-    timeAgo: "2 min ago",
+    tier: 'standard',
+    timeAgo: '2 min ago',
     quality: 82,
     thumbnailUrl: undefined,
   },
   {
-    id: "take-2",
+    id: 'take-2',
     number: 2,
-    tier: "preview",
-    timeAgo: "1 hour ago",
+    tier: 'preview',
+    timeAgo: '1 hour ago',
     quality: 68,
     thumbnailUrl: undefined,
   },
   {
-    id: "take-1",
+    id: 'take-1',
     number: 1,
-    tier: "preview",
-    timeAgo: "3 hours ago",
+    tier: 'preview',
+    timeAgo: '3 hours ago',
     quality: 54,
     thumbnailUrl: undefined,
   },
@@ -93,14 +90,9 @@ const drawerVariants = {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function TakesDrawer({
-  isOpen,
-  onClose,
-  shotId,
-  shotNumber,
-}: TakesDrawerProps) {
+export default function TakesDrawer({ isOpen, onClose, shotId, shotNumber }: TakesDrawerProps) {
   const [takes, setTakes] = useState<Take[]>(MOCK_TAKES);
-  const [activeTakeId, setActiveTakeId] = useState<string>("take-3");
+  const [activeTakeId, setActiveTakeId] = useState<string>('take-3');
   const [hoveredTakeId, setHoveredTakeId] = useState<string | null>(null);
 
   /* ---- Handlers ---- */
@@ -117,15 +109,15 @@ export default function TakesDrawer({
   }
 
   function handleGenerateNew() {
-    toast("Generating new take...");
+    toast('Generating new take...');
   }
 
   /* ---- Quality color helper ---- */
 
   function qualityColor(q: number): string {
-    if (q >= 80) return "var(--status-complete-text, #4ade80)";
-    if (q >= 60) return "var(--status-warning-text, #facc15)";
-    return "var(--status-error-text, #f87171)";
+    if (q >= 80) return 'var(--status-complete-text, #4ade80)';
+    if (q >= 60) return 'var(--status-warning-text, #facc15)';
+    return 'var(--status-error-text, #f87171)';
   }
 
   /* ---- Render ---- */
@@ -139,49 +131,45 @@ export default function TakesDrawer({
           initial="hidden"
           animate="visible"
           exit="hidden"
-          transition={{ type: "spring", stiffness: 340, damping: 32 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 32 }}
           style={{
-            position: "fixed",
+            position: 'fixed',
             top: 0,
             right: 0,
             width: 280,
-            height: "100%",
+            height: '100%',
             zIndex: 50,
-            backgroundColor: "var(--bg-elevated)",
-            borderLeft: "0.5px solid var(--border)",
-            display: "flex",
-            flexDirection: "column",
+            backgroundColor: 'var(--bg-elevated)',
+            borderLeft: '0.5px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           {/* ---- Header ---- */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "14px 12px 10px",
-              borderBottom: "0.5px solid var(--border)",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 12px 10px',
+              borderBottom: '0.5px solid var(--border)',
               flexShrink: 0,
             }}
           >
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
+                display: 'flex',
+                alignItems: 'center',
                 gap: 6,
               }}
             >
-              <Layers
-                size={14}
-                strokeWidth={1.8}
-                style={{ color: "var(--text-secondary)" }}
-              />
+              <Layers size={14} strokeWidth={1.8} style={{ color: 'var(--text-secondary)' }} />
               <span
                 style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.01em",
+                  color: 'var(--text-primary)',
+                  letterSpacing: '-0.01em',
                 }}
               >
                 Shot {shotNumber} — All Takes
@@ -193,26 +181,26 @@ export default function TakesDrawer({
               aria-label="Close takes drawer"
               onClick={onClose}
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 width: 24,
                 height: 24,
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                background: "transparent",
-                color: "var(--text-tertiary)",
-                cursor: "pointer",
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-tertiary)',
+                cursor: 'pointer',
                 padding: 0,
-                transition: "color 0.15s, background 0.15s",
+                transition: 'color 0.15s, background 0.15s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text-primary)";
-                e.currentTarget.style.background = "var(--bg-hover)";
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.background = 'var(--bg-hover)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+                e.currentTarget.style.background = 'transparent';
               }}
             >
               <X size={14} />
@@ -223,34 +211,34 @@ export default function TakesDrawer({
           <div
             style={{
               flex: 1,
-              overflowY: "auto",
-              padding: "10px 10px 0",
+              overflowY: 'auto',
+              padding: '10px 10px 0',
             }}
           >
             {takes.length === 0 ? (
               /* ---- Empty state ---- */
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "40px 16px",
-                  textAlign: "center",
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '40px 16px',
+                  textAlign: 'center',
                 }}
               >
                 <Layers
                   size={28}
                   strokeWidth={1.4}
                   style={{
-                    color: "var(--text-quaternary)",
+                    color: 'var(--text-quaternary)',
                     marginBottom: 12,
                   }}
                 />
                 <span
                   style={{
                     fontSize: 12,
-                    color: "var(--text-tertiary)",
+                    color: 'var(--text-tertiary)',
                     lineHeight: 1.5,
                   }}
                 >
@@ -270,7 +258,7 @@ export default function TakesDrawer({
                     tabIndex={0}
                     onClick={() => handleSetActive(take)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         handleSetActive(take);
                       }
@@ -278,18 +266,16 @@ export default function TakesDrawer({
                     onMouseEnter={() => setHoveredTakeId(take.id)}
                     onMouseLeave={() => setHoveredTakeId(null)}
                     style={{
-                      display: "flex",
+                      display: 'flex',
                       gap: 8,
                       padding: 8,
                       marginBottom: 6,
-                      backgroundColor: "var(--bg-surface)",
-                      border: isActive
-                        ? "1px solid var(--brand)"
-                        : "1px solid var(--border)",
-                      borderRadius: "var(--radius-md)",
-                      cursor: "pointer",
-                      position: "relative",
-                      transition: "border-color 0.15s",
+                      backgroundColor: 'var(--bg-surface)',
+                      border: isActive ? '1px solid var(--brand)' : '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'border-color 0.15s',
                     }}
                   >
                     {/* ---- Thumbnail placeholder ---- */}
@@ -299,12 +285,12 @@ export default function TakesDrawer({
                         height: 34,
                         minWidth: 60,
                         borderRadius: 4,
-                        backgroundColor: "var(--bg-overlay)",
+                        backgroundColor: 'var(--bg-overlay)',
                         backgroundImage: take.thumbnailUrl
                           ? `url(${take.thumbnailUrl})`
                           : undefined,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
                       }}
                     />
 
@@ -313,16 +299,16 @@ export default function TakesDrawer({
                       style={{
                         flex: 1,
                         minWidth: 0,
-                        display: "flex",
-                        flexDirection: "column",
+                        display: 'flex',
+                        flexDirection: 'column',
                         gap: 3,
                       }}
                     >
                       {/* Row 1: Take number + Active badge */}
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
+                          display: 'flex',
+                          alignItems: 'center',
                           gap: 5,
                         }}
                       >
@@ -330,7 +316,7 @@ export default function TakesDrawer({
                           style={{
                             fontSize: 11,
                             fontWeight: 600,
-                            color: "var(--text-primary)",
+                            color: 'var(--text-primary)',
                           }}
                         >
                           Take {take.number}
@@ -341,13 +327,12 @@ export default function TakesDrawer({
                             style={{
                               fontSize: 9,
                               fontWeight: 600,
-                              padding: "1px 5px",
-                              borderRadius: "var(--radius-sm)",
-                              background:
-                                "var(--brand-dim, rgba(99,102,241,0.15))",
-                              color: "var(--brand-light, var(--brand))",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.04em",
+                              padding: '1px 5px',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--brand-dim, rgba(99,102,241,0.15))',
+                              color: 'var(--brand-light, var(--brand))',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
                             }}
                           >
                             Active
@@ -358,8 +343,8 @@ export default function TakesDrawer({
                       {/* Row 2: Tier badge + timeAgo */}
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
+                          display: 'flex',
+                          alignItems: 'center',
                           gap: 5,
                         }}
                       >
@@ -367,12 +352,12 @@ export default function TakesDrawer({
                           style={{
                             fontSize: 9,
                             fontWeight: 500,
-                            padding: "1px 5px",
-                            borderRadius: "var(--radius-sm)",
+                            padding: '1px 5px',
+                            borderRadius: 'var(--radius-sm)',
                             background: tierStyle.background,
                             color: tierStyle.color,
-                            border: tierStyle.border ?? "none",
-                            textTransform: "capitalize",
+                            border: tierStyle.border ?? 'none',
+                            textTransform: 'capitalize',
                           }}
                         >
                           {take.tier}
@@ -380,7 +365,7 @@ export default function TakesDrawer({
                         <span
                           style={{
                             fontSize: 10,
-                            color: "var(--text-quaternary)",
+                            color: 'var(--text-quaternary)',
                           }}
                         >
                           {take.timeAgo}
@@ -409,31 +394,30 @@ export default function TakesDrawer({
                           handleDelete(take);
                         }}
                         style={{
-                          position: "absolute",
+                          position: 'absolute',
                           top: 6,
                           right: 6,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           width: 20,
                           height: 20,
-                          borderRadius: "var(--radius-sm)",
-                          border: "none",
-                          background: "var(--bg-hover)",
-                          color: "var(--text-tertiary)",
-                          cursor: "pointer",
+                          borderRadius: 'var(--radius-sm)',
+                          border: 'none',
+                          background: 'var(--bg-hover)',
+                          color: 'var(--text-tertiary)',
+                          cursor: 'pointer',
                           padding: 0,
-                          transition: "color 0.15s, background 0.15s",
+                          transition: 'color 0.15s, background 0.15s',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.color =
-                            "var(--status-error-text, #f87171)";
+                          e.currentTarget.style.color = 'var(--status-error-text, #f87171)';
                           e.currentTarget.style.background =
-                            "var(--status-error-bg, rgba(248,113,113,0.1))";
+                            'var(--status-error-bg, rgba(248,113,113,0.1))';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--text-tertiary)";
-                          e.currentTarget.style.background = "var(--bg-hover)";
+                          e.currentTarget.style.color = 'var(--text-tertiary)';
+                          e.currentTarget.style.background = 'var(--bg-hover)';
                         }}
                       >
                         <Trash2 size={12} strokeWidth={1.8} />
@@ -449,34 +433,34 @@ export default function TakesDrawer({
           <div
             style={{
               flexShrink: 0,
-              padding: "10px 10px 14px",
-              borderTop: "0.5px solid var(--border)",
+              padding: '10px 10px 14px',
+              borderTop: '0.5px solid var(--border)',
             }}
           >
             <button
               type="button"
               onClick={handleGenerateNew}
               style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 gap: 6,
                 height: 34,
-                borderRadius: "var(--radius-md)",
-                border: "none",
-                backgroundColor: "var(--brand)",
-                color: "#fff",
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                backgroundColor: 'var(--brand)',
+                color: '#fff',
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: "pointer",
-                transition: "opacity 0.15s",
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = "0.85";
+                e.currentTarget.style.opacity = '0.85';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.opacity = '1';
               }}
             >
               <Plus size={14} strokeWidth={2} />

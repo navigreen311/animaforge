@@ -27,9 +27,7 @@ export function ScriptOutput({ lines, onRegenerate, isGenerating }: ScriptOutput
   if (lines.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-700 p-8">
-        <p className="text-sm text-zinc-600">
-          Generated script will appear here...
-        </p>
+        <p className="text-sm text-zinc-600">Generated script will appear here...</p>
       </div>
     );
   }
@@ -62,10 +60,7 @@ export function ScriptOutput({ lines, onRegenerate, isGenerating }: ScriptOutput
       <div className="rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden">
         <div className="max-h-[480px] overflow-y-auto">
           {lines.map((line, idx) => (
-            <div
-              key={idx}
-              className="flex border-b border-zinc-800/50 last:border-b-0"
-            >
+            <div key={idx} className="flex border-b border-zinc-800/50 last:border-b-0">
               {/* Line Number */}
               <span className="flex w-10 shrink-0 items-start justify-end pr-3 pt-2 text-xs text-zinc-600 select-none">
                 {idx + 1}
@@ -82,9 +77,7 @@ export function ScriptOutput({ lines, onRegenerate, isGenerating }: ScriptOutput
                   <span className="text-sm text-zinc-200">{line.text}</span>
                 )}
                 {line.type === 'action' && (
-                  <span className="text-sm italic text-zinc-500">
-                    {line.text}
-                  </span>
+                  <span className="text-sm italic text-zinc-500">{line.text}</span>
                 )}
                 {line.type === 'direction' && (
                   <span className="text-sm font-medium uppercase text-amber-400/80">

@@ -4,7 +4,8 @@ import { sanitizeObject, generateRequestId, generateCSRFToken } from '@animaforg
 // Input sanitization middleware
 export function sanitizeMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.body && typeof req.body === 'object') req.body = sanitizeObject(req.body);
-  if (req.query && typeof req.query === 'object') req.query = sanitizeObject(req.query as any) as any;
+  if (req.query && typeof req.query === 'object')
+    req.query = sanitizeObject(req.query as any) as any;
   next();
 }
 

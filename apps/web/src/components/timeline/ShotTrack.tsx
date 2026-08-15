@@ -68,29 +68,27 @@ export function ShotTrack({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragSourceIndex = useRef<number | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
-    visible: false, x: 0, y: 0, shotId: '',
+    visible: false,
+    x: 0,
+    y: 0,
+    shotId: '',
   });
 
-  const allSelected = selectedShotIds.length > 0
-    ? selectedShotIds
-    : selectedShotId ? [selectedShotId] : [];
+  const allSelected =
+    selectedShotIds.length > 0 ? selectedShotIds : selectedShotId ? [selectedShotId] : [];
 
   /* ---- Drag & Drop for reorder ---- */
-  const handleDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      dragSourceIndex.current = index;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(index));
-    }, [],
-  );
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    dragSourceIndex.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  }, []);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      setDragOverIndex(index);
-    }, [],
-  );
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>, toIndex: number) => {
@@ -101,7 +99,8 @@ export function ShotTrack({
       if (fromIndex !== null && fromIndex !== toIndex && onReorderShots) {
         onReorderShots(fromIndex, toIndex);
       }
-    }, [onReorderShots],
+    },
+    [onReorderShots],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -117,22 +116,23 @@ export function ShotTrack({
       } else {
         onSelectShot(shotId);
       }
-    }, [onSelectShot, onMultiSelectShot],
+    },
+    [onSelectShot, onMultiSelectShot],
   );
 
   /* ---- Double-click to open shot inspector ---- */
   const handleDoubleClick = useCallback(
-    (shotId: string) => { onOpenInspector?.(shotId); },
+    (shotId: string) => {
+      onOpenInspector?.(shotId);
+    },
     [onOpenInspector],
   );
 
   /* ---- Right-click context menu ---- */
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent, shotId: string) => {
-      e.preventDefault();
-      setContextMenu({ visible: true, x: e.clientX, y: e.clientY, shotId });
-    }, [],
-  );
+  const handleContextMenu = useCallback((e: React.MouseEvent, shotId: string) => {
+    e.preventDefault();
+    setContextMenu({ visible: true, x: e.clientX, y: e.clientY, shotId });
+  }, []);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, visible: false }));
@@ -142,15 +142,33 @@ export function ShotTrack({
     (action: string) => {
       const { shotId } = contextMenu;
       switch (action) {
-        case 'edit': onEditShot?.(shotId); break;
-        case 'duplicate': onDuplicateShot?.(shotId); break;
-        case 'delete': onDeleteShot?.(shotId); break;
-        case 'generate': onGenerateShot?.(shotId); break;
-        case 'approve': onApproveShot?.(shotId); break;
+        case 'edit':
+          onEditShot?.(shotId);
+          break;
+        case 'duplicate':
+          onDuplicateShot?.(shotId);
+          break;
+        case 'delete':
+          onDeleteShot?.(shotId);
+          break;
+        case 'generate':
+          onGenerateShot?.(shotId);
+          break;
+        case 'approve':
+          onApproveShot?.(shotId);
+          break;
       }
       closeContextMenu();
     },
-    [contextMenu, onEditShot, onDuplicateShot, onDeleteShot, onGenerateShot, onApproveShot, closeContextMenu],
+    [
+      contextMenu,
+      onEditShot,
+      onDuplicateShot,
+      onDeleteShot,
+      onGenerateShot,
+      onApproveShot,
+      closeContextMenu,
+    ],
   );
 
   const menuItems = [

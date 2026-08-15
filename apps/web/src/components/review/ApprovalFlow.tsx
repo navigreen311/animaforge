@@ -21,7 +21,13 @@ function stepIndex(step: ApprovalStep): number {
   return STEPS.findIndex((s) => s.key === step);
 }
 
-export default function ApprovalFlow({ currentStep, approver, approvedAt, onLock, onUnlock }: ApprovalFlowProps) {
+export default function ApprovalFlow({
+  currentStep,
+  approver,
+  approvedAt,
+  onLock,
+  onUnlock,
+}: ApprovalFlowProps) {
   const activeIdx = stepIndex(currentStep);
 
   return (
@@ -38,22 +44,20 @@ export default function ApprovalFlow({ currentStep, approver, approvedAt, onLock
           const dotColor = isCompleted
             ? 'bg-green-500'
             : isCurrent
-            ? 'bg-violet-500 ring-2 ring-violet-500/30'
-            : 'bg-gray-700';
+              ? 'bg-violet-500 ring-2 ring-violet-500/30'
+              : 'bg-gray-700';
           const labelColor = isCompleted
             ? 'text-green-400'
             : isCurrent
-            ? 'text-violet-400'
-            : 'text-gray-600';
+              ? 'text-violet-400'
+              : 'text-gray-600';
           const lineColor = isCompleted ? 'bg-green-500' : 'bg-gray-700';
 
           return (
             <div key={step.key} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center">
                 <div className={`w-3.5 h-3.5 rounded-full ${dotColor} transition-all`} />
-                <span className={`text-[10px] mt-1.5 font-medium ${labelColor}`}>
-                  {step.label}
-                </span>
+                <span className={`text-[10px] mt-1.5 font-medium ${labelColor}`}>{step.label}</span>
               </div>
               {i < STEPS.length - 1 && (
                 <div className={`flex-1 h-0.5 ${lineColor} mx-2 mt-[-14px]`} />
@@ -71,9 +75,7 @@ export default function ApprovalFlow({ currentStep, approver, approvedAt, onLock
           </div>
           <div>
             <span className="text-gray-300 font-medium">{approver}</span>
-            {approvedAt && (
-              <span className="text-gray-600 ml-2">approved {approvedAt}</span>
-            )}
+            {approvedAt && <span className="text-gray-600 ml-2">approved {approvedAt}</span>}
           </div>
         </div>
       )}

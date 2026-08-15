@@ -18,7 +18,11 @@ type SonicSlot = 'introUrl' | 'outroUrl' | 'transitionUrl';
 const SLOTS: { key: SonicSlot; label: string; description: string }[] = [
   { key: 'introUrl', label: 'Intro Sound', description: 'Played at the start of every video' },
   { key: 'outroUrl', label: 'Outro Sound', description: 'Played at the end of every video' },
-  { key: 'transitionUrl', label: 'Transition Sound', description: 'Played between scenes or segments' },
+  {
+    key: 'transitionUrl',
+    label: 'Transition Sound',
+    description: 'Played between scenes or segments',
+  },
 ];
 
 function AudioSlot({
@@ -82,9 +86,7 @@ function AudioSlot({
             type="button"
             onClick={togglePlayback}
             className={`flex items-center justify-center h-10 w-10 rounded-full transition-colors ${
-              playing
-                ? 'bg-violet-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              playing ? 'bg-violet-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
           >
             {playing ? (
@@ -112,12 +114,7 @@ function AudioSlot({
               ))}
             </div>
           </div>
-          <audio
-            ref={audioRef}
-            src={url}
-            onEnded={() => setPlaying(false)}
-            preload="metadata"
-          />
+          <audio ref={audioRef} src={url} onEnded={() => setPlaying(false)} preload="metadata" />
         </div>
       ) : (
         <button
@@ -129,13 +126,7 @@ function AudioSlot({
         </button>
       )}
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="audio/*"
-        className="hidden"
-        onChange={handleFile}
-      />
+      <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={handleFile} />
     </div>
   );
 }

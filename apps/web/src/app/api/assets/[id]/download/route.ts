@@ -5,17 +5,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // Return a mock presigned download URL for a single asset
 // ---------------------------------------------------------------------------
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   if (!id) {
-    return NextResponse.json(
-      { error: 'Asset id is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Asset id is required' }, { status: 400 });
   }
 
   return NextResponse.json({
