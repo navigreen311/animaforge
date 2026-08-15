@@ -98,7 +98,8 @@ jobs:
           failed=""
           for svc in platform-api auth billing realtime workers gateway export \
                      notification search analytics \
-                     governance/c2pa governance/watermark piracy; do
+                     governance/c2pa governance/consent governance/moderation \
+                     governance/watermark piracy; do
             if [ -f "services/$svc/tsconfig.json" ]; then
               echo "::group::Type checking services/$svc"
               if ( cd "services/$svc" && npx tsc --noEmit ); then
@@ -530,17 +531,15 @@ jobs:
       # Every job above still RUNS and still shows its own red/green tick on the
       # PR. This step decides only what blocks merge.
       #
-      # Four jobs are deliberately non-blocking. NONE of them is broken by a
+      # Three jobs are deliberately non-blocking. NONE of them is broken by a
       # change in flight — every one has been failing invisibly since PR #16,
       # because `npm ci` died before them and nobody could see the output. Each
       # has an owner and a tracking issue; put it back in the blocking list the
       # moment its backlog is clear, and do not let this list shrink further.
       #
-      #   lint       — repo has no formatting history: 575/703 files fail
-      #                `prettier --check`. That reformat is a ~600-file diff that
+      #   lint       — repo has no formatting history: 561 files fail
+      #                `prettier --check`. That reformat is a ~560-file diff that
       #                would conflict with every open PR, so it lands alone.  #18
-      #   type-check — 26 pre-existing tsc errors in apps/web, all outside the
-      #                infra/UI track's file ownership.                        #19
       #   test-api   — 35 of 117 platform-api tests fail on response-shape
       #                mismatches in services/platform-api/src.                #21
       #   test-e2e   — Playwright boots the Next dev server; never verified to
@@ -558,6 +557,7 @@ jobs:
             fi
           }
           check test-frontend "${{ needs.test-frontend.result }}"
+          check type-check    "${{ needs.type-check.result }}"
           check terraform     "${{ needs.terraform.result }}"
           check test-governance "${{ needs.test-governance.result }}"
           check security-scan "${{ needs.security-scan.result }}"
@@ -568,7 +568,7 @@ jobs:
             echo "| Job | Result | Blocks merge |"
             echo "|---|---|---|"
             echo "| lint | ${{ needs.lint.result }} | no — #18 |"
-            echo "| type-check | ${{ needs.type-check.result }} | no — #19 |"
+            echo "| type-check | ${{ needs.type-check.result }} | **yes** |"
             echo "| test-frontend | ${{ needs.test-frontend.result }} | **yes** |"
             echo "| terraform | ${{ needs.terraform.result }} | **yes** |"
             echo "| test-governance | ${{ needs.test-governance.result }} | **yes** |"
