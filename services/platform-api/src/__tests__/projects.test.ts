@@ -156,7 +156,7 @@ describe('Projects CRUD', () => {
   it('excludes soft-deleted projects from list', async () => {
     const { project } = await seedProject({ title: 'Will Delete' });
     await seedProject({ title: 'Will Keep' });
-    projectService.softDelete(project.id);
+    await projectService.softDelete(project.id);
 
     const res = await request(app).get('/api/v1/projects').set(AUTH);
 

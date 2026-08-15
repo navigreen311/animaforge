@@ -6,6 +6,7 @@ import assetsRouter from '../routes/assets.js';
 import { clearCharacters } from '../services/characterService.js';
 import { clearAssets } from '../services/assetService.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { resetFixtures, seedStubOwner } from './fixtures/factories.js';
 
 const app = express();
 app.use(express.json());
@@ -34,9 +35,13 @@ const validAsset = {
   metadata: { width: 1920, height: 1080 },
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetFixtures();
   clearCharacters();
   clearAssets();
+  // characterController and assetController both attribute writes to
+  // STUB_OWNER_ID, a non-null FK to users (#73).
+  await seedStubOwner();
 });
 
 // ─── CHARACTER TESTS ────────────────────────────────────────

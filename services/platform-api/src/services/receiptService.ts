@@ -46,6 +46,35 @@ const VALID_ACTIONS: ReceiptAction[] = [
   'consent_revoked',
 ];
 
+/**
+ * Map a `receipts` row to the interface.
+ *
+ * Every read below has a Postgres branch because `createReceipt` already had
+ * one: with a database configured, receipts were written to Postgres and read
+ * back from the in-memory map, so a user's own receipt list was always empty.
+ * The bug is invisible without a database, which is why the suite only caught
+ * it once test-api ran against real Postgres.
+ */
+function rowToReceipt(row: {
+  receiptId: string;
+  userId: string;
+  action: string;
+  createdAt: Date;
+  details: unknown;
+  status: string;
+  projectId: string | null;
+}): Receipt {
+  return {
+    receiptId: row.receiptId,
+    userId: row.userId,
+    action: row.action as ReceiptAction,
+    timestamp: row.createdAt.toISOString(),
+    details: (row.details ?? {}) as Record<string, unknown>,
+    status: row.status as Receipt['status'],
+    projectId: row.projectId ?? undefined,
+  };
+}
+
 export const receiptService = {
   /**
    * Create a new receipt for a user action.
@@ -70,6 +99,11 @@ export const receiptService = {
             // JsonNull | InputJsonValue, which Record<string, unknown> is not.
             details: details as Prisma.InputJsonValue,
             status: 'confirmed',
+            // The in-memory branch lifts projectId out of details; the Postgres
+            // branch did not, leaving project_id NULL and making
+            // getReceiptsByProject return nothing for a receipt that clearly
+            // had one.
+            projectId: (details.projectId as string | undefined) ?? null,
           },
         });
         if (row) {
@@ -110,6 +144,19 @@ export const receiptService = {
     page: number = 1,
     limit: number = 20,
   ): Promise<{ receipts: Receipt[]; total: number; page: number; limit: number }> {
+    if (await isDatabaseReachable()) {
+      const [rows, total] = await Promise.all([
+        requirePrisma().receipt.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        requirePrisma().receipt.count({ where: { userId } }),
+      ]);
+      return { receipts: rows.map(rowToReceipt), total, page, limit };
+    }
+
     const userReceipts = Array.from(receipts.values())
       .filter((r) => r.userId === userId)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -125,6 +172,10 @@ export const receiptService = {
    * Get a single receipt by ID.
    */
   async getReceipt(receiptId: string): Promise<Receipt | undefined> {
+    if (await isDatabaseReachable()) {
+      const row = await requirePrisma().receipt.findUnique({ where: { receiptId } });
+      return row ? rowToReceipt(row) : undefined;
+    }
     return receipts.get(receiptId);
   },
 
@@ -132,6 +183,13 @@ export const receiptService = {
    * Get all receipts for a given project.
    */
   async getReceiptsByProject(projectId: string): Promise<Receipt[]> {
+    if (await isDatabaseReachable()) {
+      const rows = await requirePrisma().receipt.findMany({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+      });
+      return rows.map(rowToReceipt);
+    }
     return Array.from(receipts.values())
       .filter((r) => r.projectId === projectId)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -141,7 +199,9 @@ export const receiptService = {
    * Generate a summary of user activity for a given period.
    */
   async generateSummary(userId: string, period: string = 'all'): Promise<ReceiptSummary> {
-    let userReceipts = Array.from(receipts.values()).filter((r) => r.userId === userId);
+    let userReceipts = (await isDatabaseReachable())
+      ? (await requirePrisma().receipt.findMany({ where: { userId } })).map(rowToReceipt)
+      : Array.from(receipts.values()).filter((r) => r.userId === userId);
 
     // Filter by period if not "all"
     if (period !== 'all') {

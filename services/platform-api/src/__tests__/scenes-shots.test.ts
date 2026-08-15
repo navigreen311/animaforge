@@ -42,7 +42,8 @@ const VALID_SCENE_GRAPH = {
 const VALID_SHOT_BODY = {
   sceneGraph: VALID_SCENE_GRAPH,
   prompt: 'A hero walks toward the camera in a misty forest',
-  styleRef: 'cinematic-dark',
+  // A style pack id: the column is a @db.Uuid FK, not a slug.
+  styleRef: '33333333-3333-4333-8333-000000000001',
   characterRefs: ['22222222-2222-4222-8222-000000000001', '22222222-2222-4222-8222-000000000002'],
   durationMs: 3000,
   aspectRatio: '16:9',
@@ -242,7 +243,7 @@ describe('Shot Approval & Lock Flow', () => {
   });
 
   it('rejects updates to locked shots', async () => {
-    shotService.lock(shotId);
+    await shotService.lock(shotId);
 
     const res = await request(app)
       .put(`/api/v1/shots/${shotId}`)
@@ -254,7 +255,7 @@ describe('Shot Approval & Lock Flow', () => {
   });
 
   it('rejects deletion of locked shots', async () => {
-    shotService.lock(shotId);
+    await shotService.lock(shotId);
 
     const res = await request(app).delete(`/api/v1/shots/${shotId}`).set(AUTH);
 

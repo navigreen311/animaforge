@@ -68,9 +68,22 @@ export async function seedUser(
 /** The user the auth-token helper in each suite claims to be. */
 export const TEST_USER_ID = '00000000-0000-4000-8000-000000000001';
 
+/**
+ * The hardcoded owner that assetController and characterController attribute
+ * every write to. Until a real auth subject replaces it, any suite that creates
+ * a character or an asset needs this row to exist or the insert violates
+ * `characters_owner_id_fkey`.
+ */
+export const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
+
 /** Seed the caller identity the suites' bearer tokens assert. */
 export function seedTestUser(): Promise<string> {
   return seedUser({ id: TEST_USER_ID, email: 'test@animaforge.io', role: 'editor' });
+}
+
+/** Seed the controllers' stub owner. */
+export function seedStubOwner(): Promise<string> {
+  return seedUser({ id: STUB_OWNER_ID, email: 'stub-owner@animaforge.test', role: 'editor' });
 }
 
 /* ------------------------------------------------------------------ */
@@ -156,26 +169,35 @@ export async function seedShot(
 /**
  * Clear state between tests.
  *
- * In memory mode this empties the service stores. In Postgres mode it deletes
- * the rows the factories create, child-first so foreign keys stay satisfied —
- * truncating the whole database would race other suites running in the same
- * job.
+ * The per-service `_clear()` helpers only empty the in-memory maps. Once
+ * DATABASE_URL is set the services write to Postgres instead, so those helpers
+ * clear a store nothing is reading and rows accumulate across tests — which is
+ * why "expected 2, got 20" appeared only in the Postgres run. This clears both.
+ *
+ * Deletion is ordered child-first so foreign keys stay satisfied: users are
+ * last because characters, assets and projects all reference them.
  */
 export async function resetFixtures(): Promise<void> {
   projectService.resetStore();
   sceneService._clear();
   shotService._clear();
 
-  if (await isDatabaseReachable()) {
-    const prisma = requirePrisma();
-    // Child-first: shots reference scenes and projects, scenes reference
-    // projects, projects reference users.
-    await prisma.shot.deleteMany({});
-    await prisma.scene.deleteMany({});
-    await prisma.project.deleteMany({});
-    await prisma.user.deleteMany({
-      where: { email: { in: ['test@animaforge.io'] } },
-    });
-    await prisma.user.deleteMany({ where: { email: { contains: '@animaforge.test' } } });
-  }
+  if (!(await isDatabaseReachable())) return;
+
+  const prisma = requirePrisma();
+  // Order matters. shots -> scenes -> projects -> users, with the tables that
+  // reference users directly cleared before users.
+  await prisma.shotTake.deleteMany({});
+  await prisma.shot.deleteMany({});
+  await prisma.scene.deleteMany({});
+  await prisma.generationJob.deleteMany({});
+  await prisma.project.deleteMany({});
+  await prisma.asset.deleteMany({});
+  await prisma.character.deleteMany({});
+  await prisma.receipt.deleteMany({});
+  await prisma.user.deleteMany({
+    where: {
+      OR: [{ email: { contains: '@animaforge.test' } }, { email: { in: ['test@animaforge.io'] } }],
+    },
+  });
 }

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { isDatabaseReachable, requirePrisma } from '../db.js';
+import { isUuid } from '../utils/uuid.js';
 import type { Scene, CreateSceneInput, UpdateSceneInput } from '../models/sceneSchemas.js';
 
 // In-memory fallback store
@@ -7,7 +8,7 @@ const scenes = new Map<string, Scene>();
 
 export const sceneService = {
   async create(projectId: string, input: CreateSceneInput): Promise<Scene> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(projectId)) {
       return requirePrisma().scene.create({
         data: {
           projectId,
@@ -35,7 +36,7 @@ export const sceneService = {
   },
 
   async listByProject(projectId: string): Promise<Scene[]> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(projectId)) {
       const results = await requirePrisma().scene.findMany({
         where: { projectId },
         orderBy: { order: 'asc' },
@@ -53,7 +54,7 @@ export const sceneService = {
   },
 
   async getById(id: string): Promise<Scene | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const scene = await requirePrisma().scene.findUnique({
         where: { id },
         include: {
@@ -69,7 +70,7 @@ export const sceneService = {
   },
 
   async update(id: string, input: UpdateSceneInput): Promise<Scene | undefined> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().scene.findUnique({ where: { id } });
       if (!existing) return undefined;
 
@@ -95,7 +96,7 @@ export const sceneService = {
   },
 
   async delete(id: string): Promise<boolean> {
-    if (await isDatabaseReachable()) {
+    if ((await isDatabaseReachable()) && isUuid(id)) {
       const existing = await requirePrisma().scene.findUnique({ where: { id } });
       if (!existing) return false;
 

@@ -13,6 +13,7 @@ import express from 'express';
 import charactersRouter from '../routes/characters.js';
 import { clearCharacters } from '../services/characterService.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { resetFixtures, seedStubOwner } from './fixtures/factories.js';
 
 const app = express();
 app.use(express.json());
@@ -81,8 +82,12 @@ async function readCharacter(id: string) {
   return res.body.data;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetFixtures();
   clearCharacters();
+  // characterController attributes every write to STUB_OWNER_ID, which is a
+  // non-null FK to users. Without the row, every create is a 500 (#73).
+  await seedStubOwner();
 });
 
 // ─── HAIR ───────────────────────────────────────────────────────────────────
