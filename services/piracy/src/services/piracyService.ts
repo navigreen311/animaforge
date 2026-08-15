@@ -323,7 +323,7 @@ async function recordMatch(input: {
     evidence,
   };
 
-  const persisted = await tryPrisma(() =>
+  const persisted = await tryPrisma<{ id: string }>(() =>
     prisma!.piracyMatch.create({
       data: {
         outputId: best.fingerprint.outputId,

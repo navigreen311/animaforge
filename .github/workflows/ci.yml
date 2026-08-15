@@ -59,6 +59,17 @@ jobs:
 
       - run: npm ci
 
+      # Without this, @prisma/client resolves to the ungenerated stub whose
+      # models are all `{}`, so every service that touches the database
+      # type-checks against types that do not describe the schema. This job was
+      # therefore not checking what production compiles against.
+      - name: Generate Prisma client
+        run: npx prisma generate --schema packages/db/prisma/schema.prisma
+        env:
+          # generate only reads the schema, but the datasource block requires
+          # the variable to be set for the config to parse.
+          DATABASE_URL: postgresql://unused:unused@localhost:5432/unused
+
       # apps/web has 26 pre-existing errors (#19) and used to abort this job
       # before the service loop below ever ran — so adding services here would
       # have changed nothing. Both steps now run and the gate at the end

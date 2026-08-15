@@ -238,13 +238,36 @@ export async function registerFingerprint(
   return record;
 }
 
+/**
+ * Shape of a `fingerprints` row, declared locally rather than imported from
+ * @prisma/client. This service is designed to run without a database at all,
+ * so it must also compile without a generated Prisma client — which is exactly
+ * the situation in CI.
+ */
+interface FingerprintRow {
+  id: string;
+  outputId: string;
+  userId: string | null;
+  mediaType: string;
+  algorithm: string;
+  phash: string;
+  ahash: string | null;
+  dhash: string | null;
+  frameHashes: string[];
+  durationMs: number | null;
+  width: number | null;
+  height: number | null;
+  sourceSha256: string | null;
+  createdAt: Date;
+}
+
 async function allFingerprints(): Promise<FingerprintRecord[]> {
   try {
     if (isPrismaAvailable()) {
-      const rows = await prisma!.fingerprint.findMany({
+      const rows = (await prisma!.fingerprint.findMany({
         orderBy: { createdAt: 'desc' },
         take: Number(process.env.FINGERPRINT_SEARCH_LIMIT ?? 5000),
-      });
+      })) as unknown as FingerprintRow[];
       if (rows.length > 0) {
         return rows.map((row) => ({
           id: row.id,
