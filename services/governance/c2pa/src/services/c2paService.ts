@@ -163,7 +163,35 @@ async function persist(entry: StoredManifestEntry): Promise<void> {
   }
 }
 
-function rowToEntry(row: Record<string, any>): StoredManifestEntry {
+/**
+ * Shape of a `c2pa_manifests` row. Declared locally rather than imported from
+ * @prisma/client so this service still compiles when the client has not been
+ * generated, which is the same reason every query here sits in a try/catch.
+ */
+interface C2paManifestRow {
+  outputId: string;
+  jobId: string;
+  projectId: string | null;
+  userIdHash: string | null;
+  assetUrl: string | null;
+  assetPath: string | null;
+  assetSha256: string | null;
+  signedAssetSha256: string | null;
+  format: string;
+  manifestLabel: string | null;
+  signatureAlg: string | null;
+  certSerialNumber: string | null;
+  certIssuer: string | null;
+  timestampedAt: Date | null;
+  signed: boolean;
+  embedded: boolean;
+  mode: string;
+  degradedReason: string | null;
+  manifestJson: unknown;
+  createdAt: Date;
+}
+
+function rowToEntry(row: C2paManifestRow): StoredManifestEntry {
   const manifest = (row.manifestJson ?? {}) as ManifestDefinition;
   const generation = manifest.assertions?.find((a) => a.label === 'com.animaforge.generation')
     ?.data as Record<string, unknown> | undefined;
@@ -205,7 +233,7 @@ async function findByOutputId(outputId: string): Promise<StoredManifestEntry | n
       const row = await prisma!.c2PAManifest.findUnique({
         where: { outputId },
       });
-      if (row) return rowToEntry(row as Record<string, any>);
+      if (row) return rowToEntry(row as unknown as C2paManifestRow);
     }
   } catch {
     // fall through
@@ -221,7 +249,7 @@ async function findByDigest(sha256: string): Promise<StoredManifestEntry | null>
         where: { OR: [{ signedAssetSha256: sha256 }, { assetSha256: sha256 }] },
         orderBy: { createdAt: 'desc' },
       });
-      if (row) return rowToEntry(row as Record<string, any>);
+      if (row) return rowToEntry(row as unknown as C2paManifestRow);
     }
   } catch {
     // fall through
@@ -237,7 +265,7 @@ export async function getManifestByJobId(jobId: string): Promise<StoredManifestE
         where: { jobId },
         orderBy: { createdAt: 'desc' },
       });
-      if (row) return rowToEntry(row as Record<string, any>);
+      if (row) return rowToEntry(row as unknown as C2paManifestRow);
     }
   } catch {
     // fall through
