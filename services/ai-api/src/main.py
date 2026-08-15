@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config.settings import settings
+from src.middleware.engine_labelling import EngineLabellingMiddleware
 from src.routes.audio import router as audio_router
 from src.routes.avatar import router as avatar_router
 from src.routes.capabilities import router as capabilities_router
@@ -42,6 +43,9 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+# Ahead of CORS so it wraps the handler response, not the preflight.
+app.add_middleware(EngineLabellingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
