@@ -24,9 +24,17 @@ spec:
         - key: nvidia.com/gpu
           operator: Exists
           effect: NoSchedule
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: style-worker
           image: animaforge/style-worker:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: WORKER_TYPE
               value: "style"

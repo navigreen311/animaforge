@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: c2pa-signer
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: c2pa-signer
           image: animaforge/c2pa-signer:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8011
               name: http

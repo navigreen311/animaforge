@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: watermark
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: watermark
           image: animaforge/watermark:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8012
               name: http

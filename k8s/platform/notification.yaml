@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: notification
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: notification
           image: animaforge/notification:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3004
               name: http

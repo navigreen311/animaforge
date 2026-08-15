@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: billing
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: billing
           image: animaforge/billing:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3003
               name: http

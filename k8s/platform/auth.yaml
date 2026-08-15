@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: auth
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: auth
           image: animaforge/auth:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3002
               name: http
