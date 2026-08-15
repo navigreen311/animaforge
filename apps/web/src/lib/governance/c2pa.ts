@@ -19,18 +19,18 @@
 
 export type VerificationStatus =
   /** A manifest was found in the asset and the library validated it. */
-  | "valid"
+  | 'valid'
   /** A manifest was found but failed validation — treat the asset as suspect. */
-  | "invalid"
+  | 'invalid'
   /** The asset carries no C2PA manifest at all. */
-  | "absent"
+  | 'absent'
   /** We know of this output but could not check any signature. */
-  | "unverified"
+  | 'unverified'
   /** No record and nothing to check. */
-  | "not_found";
+  | 'not_found';
 
 /** How a provenance record came to exist. */
-export type ProvenanceMode = "c2pa-embedded" | "unsigned-record" | "degraded";
+export type ProvenanceMode = 'c2pa-embedded' | 'unsigned-record' | 'degraded';
 
 export interface SignatureSummary {
   algorithm: string | null;
@@ -107,15 +107,10 @@ export function isUnavailable<T>(value: Maybe<T>): value is ServiceUnavailable {
 /*  Endpoints                                                          */
 /* ------------------------------------------------------------------ */
 
-export const C2PA_SERVICE_URL = process.env.NEXT_PUBLIC_C2PA_SERVICE_URL ?? "";
-export const PIRACY_SERVICE_URL =
-  process.env.NEXT_PUBLIC_PIRACY_SERVICE_URL ?? "";
+export const C2PA_SERVICE_URL = process.env.NEXT_PUBLIC_C2PA_SERVICE_URL ?? '';
+export const PIRACY_SERVICE_URL = process.env.NEXT_PUBLIC_PIRACY_SERVICE_URL ?? '';
 
-async function getJson<T>(
-  base: string,
-  path: string,
-  envVar: string,
-): Promise<Maybe<T>> {
+async function getJson<T>(base: string, path: string, envVar: string): Promise<Maybe<T>> {
   if (!base) {
     return {
       unavailable: true,
@@ -123,9 +118,9 @@ async function getJson<T>(
     };
   }
   try {
-    const response = await fetch(`${base.replace(/\/$/, "")}${path}`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
+    const response = await fetch(`${base.replace(/\/$/, '')}${path}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
     });
     if (!response.ok && response.status !== 404) {
       return {
@@ -145,21 +140,19 @@ async function getJson<T>(
 }
 
 /** Fetch the verification result for a published output id. */
-export function fetchVerification(
-  outputId: string,
-): Promise<Maybe<VerificationResult>> {
+export function fetchVerification(outputId: string): Promise<Maybe<VerificationResult>> {
   return getJson<VerificationResult>(
     C2PA_SERVICE_URL,
     `/governance/c2pa/verify/${encodeURIComponent(outputId)}`,
-    "NEXT_PUBLIC_C2PA_SERVICE_URL",
+    'NEXT_PUBLIC_C2PA_SERVICE_URL',
   );
 }
 
 export function fetchC2paCapabilities(): Promise<Maybe<C2paCapabilities>> {
   return getJson<C2paCapabilities>(
     C2PA_SERVICE_URL,
-    "/governance/c2pa/capabilities",
-    "NEXT_PUBLIC_C2PA_SERVICE_URL",
+    '/governance/c2pa/capabilities',
+    'NEXT_PUBLIC_C2PA_SERVICE_URL',
   );
 }
 
@@ -190,8 +183,8 @@ export interface PiracyCapabilities {
 export function fetchPiracyCapabilities(): Promise<Maybe<PiracyCapabilities>> {
   return getJson<PiracyCapabilities>(
     PIRACY_SERVICE_URL,
-    "/piracy/capabilities",
-    "NEXT_PUBLIC_PIRACY_SERVICE_URL",
+    '/piracy/capabilities',
+    'NEXT_PUBLIC_PIRACY_SERVICE_URL',
   );
 }
 
@@ -202,7 +195,7 @@ export function fetchPiracyCapabilities(): Promise<Maybe<PiracyCapabilities>> {
 export interface StatusPresentation {
   headline: string;
   detail: string;
-  tone: "verified" | "warning" | "danger" | "neutral";
+  tone: 'verified' | 'warning' | 'danger' | 'neutral';
 }
 
 /**
@@ -213,56 +206,51 @@ export interface StatusPresentation {
  */
 export function presentStatus(result: VerificationResult): StatusPresentation {
   switch (result.status) {
-    case "valid":
+    case 'valid':
       return {
-        headline: "Cryptographically verified",
+        headline: 'Cryptographically verified',
         detail:
-          "A C2PA manifest is embedded in this asset and its signature was validated against its certificate chain.",
-        tone: "verified",
+          'A C2PA manifest is embedded in this asset and its signature was validated against its certificate chain.',
+        tone: 'verified',
       };
-    case "invalid":
+    case 'invalid':
       return {
-        headline: "Verification failed",
-        detail:
-          result.reason ??
-          "A C2PA manifest is present but did not pass validation. The asset may have been altered since it was signed.",
-        tone: "danger",
-      };
-    case "absent":
-      return {
-        headline: "No provenance data",
-        detail:
-          "This asset carries no C2PA manifest. It may have been stripped by re-encoding or the asset may not be from AnimaForge.",
-        tone: "warning",
-      };
-    case "unverified":
-      return {
-        headline: "Recorded, not verified",
+        headline: 'Verification failed',
         detail:
           result.reason ??
-          "AnimaForge holds a provenance record for this output, but no signature was checked. This is not proof of authenticity.",
-        tone: "warning",
+          'A C2PA manifest is present but did not pass validation. The asset may have been altered since it was signed.',
+        tone: 'danger',
       };
-    case "not_found":
+    case 'absent':
+      return {
+        headline: 'No provenance data',
+        detail:
+          'This asset carries no C2PA manifest. It may have been stripped by re-encoding or the asset may not be from AnimaForge.',
+        tone: 'warning',
+      };
+    case 'unverified':
+      return {
+        headline: 'Recorded, not verified',
+        detail:
+          result.reason ??
+          'AnimaForge holds a provenance record for this output, but no signature was checked. This is not proof of authenticity.',
+        tone: 'warning',
+      };
+    case 'not_found':
     default:
       return {
-        headline: "Not found",
-        detail: "No AnimaForge provenance record exists for this identifier.",
-        tone: "neutral",
+        headline: 'Not found',
+        detail: 'No AnimaForge provenance record exists for this identifier.',
+        tone: 'neutral',
       };
   }
 }
 
 /** Compute an input hash for client-side display. Deterministic, key-sorted. */
-export async function createInputHash(
-  inputParams: Record<string, unknown>,
-): Promise<string> {
+export async function createInputHash(inputParams: Record<string, unknown>): Promise<string> {
   const sorted = JSON.stringify(inputParams, Object.keys(inputParams).sort());
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(sorted),
-  );
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sorted));
   return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }

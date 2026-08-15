@@ -17,15 +17,9 @@
  * attacks are the job of perceptual fingerprinting, not of this watermark.
  */
 
-import { Jimp } from "jimp";
-import { BLOCK, dct8x8, idct8x8 } from "./dct";
-import {
-  PAYLOAD_BITS,
-  blockOrder,
-  decodePayload,
-  encodePayload,
-  seedFromHex,
-} from "./payload";
+import { Jimp } from 'jimp';
+import { BLOCK, dct8x8, idct8x8 } from './dct';
+import { PAYLOAD_BITS, blockOrder, decodePayload, encodePayload, seedFromHex } from './payload';
 
 /** Coefficient pair. (1,2)/(2,1) sits low enough to survive aggressive
  *  quantisation but high enough to stay perceptually invisible. */
@@ -55,7 +49,7 @@ export interface RgbaFrame {
 export class WatermarkCapacityError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "WatermarkCapacityError";
+    this.name = 'WatermarkCapacityError';
   }
 }
 
@@ -132,10 +126,7 @@ export function embedIntoFrame(
 
       for (let x = 0; x < BLOCK; x++) {
         for (let y = 0; y < BLOCK; y++) {
-          block[x * BLOCK + y] = lumaAt(
-            data,
-            ((originY + x) * width + (originX + y)) * 4,
-          );
+          block[x * BLOCK + y] = lumaAt(data, ((originY + x) * width + (originX + y)) * 4);
         }
       }
 
@@ -178,14 +169,11 @@ export interface FrameExtraction {
 }
 
 /** Read the payload back out of an RGBA frame. */
-export function extractFromFrame(
-  frame: RgbaFrame,
-  seedHex: string,
-): FrameExtraction {
+export function extractFromFrame(frame: RgbaFrame, seedHex: string): FrameExtraction {
   const { width, height, data } = frame;
   const g = grid(width, height);
   if (g.perBit < MIN_BLOCKS_PER_BIT) {
-    return { valid: false, keyHex: "", agreement: 0 };
+    return { valid: false, keyHex: '', agreement: 0 };
   }
   const order = blockOrder(g.total, seedFromHex(seedHex));
   const block = new Float64Array(64);
@@ -202,10 +190,7 @@ export function extractFromFrame(
       const originY = Math.floor(blockIndex / g.blocksX) * BLOCK;
       for (let x = 0; x < BLOCK; x++) {
         for (let y = 0; y < BLOCK; y++) {
-          block[x * BLOCK + y] = lumaAt(
-            data,
-            ((originY + x) * width + (originX + y)) * 4,
-          );
+          block[x * BLOCK + y] = lumaAt(data, ((originY + x) * width + (originX + y)) * 4);
         }
       }
       dct8x8(block, coef);
@@ -277,7 +262,7 @@ export async function embedIntoImage(
   seedHex: string,
   options: {
     strength?: number;
-    outputMimeType?: "image/png" | "image/jpeg";
+    outputMimeType?: 'image/png' | 'image/jpeg';
     quality?: number;
   } = {},
 ): Promise<EmbedImageResult> {
@@ -285,11 +270,11 @@ export async function embedIntoImage(
   const original = Buffer.from(frame.data);
   embedIntoFrame(frame, keyHex, seedHex, options.strength ?? DEFAULT_STRENGTH);
 
-  const mime = options.outputMimeType ?? "image/png";
+  const mime = options.outputMimeType ?? 'image/png';
   const out =
-    mime === "image/jpeg"
-      ? await image.getBuffer("image/jpeg", { quality: options.quality ?? 92 })
-      : await image.getBuffer("image/png");
+    mime === 'image/jpeg'
+      ? await image.getBuffer('image/jpeg', { quality: options.quality ?? 92 })
+      : await image.getBuffer('image/png');
 
   return {
     buffer: Buffer.from(out),
@@ -300,10 +285,7 @@ export async function embedIntoImage(
 }
 
 /** Read a watermark back out of an encoded still image. */
-export async function extractFromImage(
-  buffer: Buffer,
-  seedHex: string,
-): Promise<FrameExtraction> {
+export async function extractFromImage(buffer: Buffer, seedHex: string): Promise<FrameExtraction> {
   const { frame } = await readFrame(buffer);
   return extractFromFrame(frame, seedHex);
 }

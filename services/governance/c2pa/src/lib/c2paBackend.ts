@@ -25,8 +25,8 @@
  * timestamp authority. `C2PA_TSA_URL` selects it.
  */
 
-import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
+import { createHash } from 'node:crypto';
+import { promises as fs } from 'node:fs';
 
 /* ------------------------------------------------------------------ */
 /*  Lazy library load                                                  */
@@ -84,7 +84,7 @@ function loadLibrary(): C2paModule | null {
     // Required lazily so a missing native binding degrades the service instead
     // of preventing it from booting at all.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    libModule = require("c2pa-node") as C2paModule;
+    libModule = require('c2pa-node') as C2paModule;
     libError = null;
   } catch (err) {
     libModule = null;
@@ -104,7 +104,7 @@ export function resetBackend(): void {
 /*  Credentials                                                        */
 /* ------------------------------------------------------------------ */
 
-export const DEFAULT_TSA_URL = "http://timestamp.digicert.com";
+export const DEFAULT_TSA_URL = 'http://timestamp.digicert.com';
 
 function tsaUrl(): string {
   return process.env.C2PA_TSA_URL ?? DEFAULT_TSA_URL;
@@ -116,7 +116,7 @@ function tsaUrl(): string {
  */
 async function readPem(value: string | undefined): Promise<Buffer | null> {
   if (!value) return null;
-  if (value.includes("-----BEGIN")) return Buffer.from(value, "utf8");
+  if (value.includes('-----BEGIN')) return Buffer.from(value, 'utf8');
   try {
     return await fs.readFile(value);
   } catch {
@@ -159,23 +159,22 @@ async function resolveCredentials(): Promise<{
   if (!certRaw || !keyRaw) {
     return {
       credentials: null,
-      error:
-        "C2PA_SIGNING_CERT and C2PA_PRIVATE_KEY must both be set; only one is present",
+      error: 'C2PA_SIGNING_CERT and C2PA_PRIVATE_KEY must both be set; only one is present',
     };
   }
   const certificate = await readPem(certRaw);
   const privateKey = await readPem(keyRaw);
   if (!certificate) {
-    return { credentials: null, error: "C2PA_SIGNING_CERT could not be read" };
+    return { credentials: null, error: 'C2PA_SIGNING_CERT could not be read' };
   }
   if (!privateKey) {
-    return { credentials: null, error: "C2PA_PRIVATE_KEY could not be read" };
+    return { credentials: null, error: 'C2PA_PRIVATE_KEY could not be read' };
   }
   return {
     credentials: {
       certificate,
       privateKey,
-      algorithm: (process.env.C2PA_SIGNING_ALGORITHM ?? "es256").toLowerCase(),
+      algorithm: (process.env.C2PA_SIGNING_ALGORITHM ?? 'es256').toLowerCase(),
       tsaUrl: tsaUrl(),
     },
     error: null,
@@ -189,14 +188,14 @@ export async function backendStatus(): Promise<BackendStatus> {
 
   if (!lib) {
     reasons.push(
-      `c2pa-node native binding unavailable (${libError ?? "unknown error"}) — ` +
-        "manifests cannot be signed, embedded or cryptographically verified",
+      `c2pa-node native binding unavailable (${libError ?? 'unknown error'}) — ` +
+        'manifests cannot be signed, embedded or cryptographically verified',
     );
   }
   if (!credentials) {
     reasons.push(
       error ??
-        "no signing credentials: set C2PA_SIGNING_CERT and C2PA_PRIVATE_KEY to enable real signing",
+        'no signing credentials: set C2PA_SIGNING_CERT and C2PA_PRIVATE_KEY to enable real signing',
     );
   }
 
@@ -206,7 +205,7 @@ export async function backendStatus(): Promise<BackendStatus> {
     credentialsPresent: credentials !== null,
     credentialsError: error,
     tsaUrl: tsaUrl(),
-    algorithm: credentials?.algorithm ?? "es256",
+    algorithm: credentials?.algorithm ?? 'es256',
     canSign: lib !== null && credentials !== null,
     canVerify: lib !== null,
     degradedReasons: reasons,
@@ -218,7 +217,7 @@ export async function backendStatus(): Promise<BackendStatus> {
 /* ------------------------------------------------------------------ */
 
 /** Buffer signing is limited to these types by c2pa-node; others need a path. */
-const BUFFER_SIGNABLE = new Set(["image/jpeg", "image/png"]);
+const BUFFER_SIGNABLE = new Set(['image/jpeg', 'image/png']);
 
 export interface SignAssetInput {
   buffer?: Buffer;
@@ -241,8 +240,8 @@ export interface SignAssetResult {
 export class C2paUnavailableError extends Error {
   readonly reasons: string[];
   constructor(reasons: string[]) {
-    super(`C2PA signing is unavailable: ${reasons.join("; ")}`);
-    this.name = "C2paUnavailableError";
+    super(`C2PA signing is unavailable: ${reasons.join('; ')}`);
+    this.name = 'C2paUnavailableError';
     this.reasons = reasons;
   }
 }
@@ -262,20 +261,18 @@ export async function signAndEmbed(
   const { credentials, error } = await resolveCredentials();
   if (!lib || !credentials) {
     const reasons: string[] = [];
-    if (!lib) reasons.push(libError ?? "c2pa-node unavailable");
-    if (!credentials)
-      reasons.push(error ?? "signing credentials not configured");
+    if (!lib) reasons.push(libError ?? 'c2pa-node unavailable');
+    if (!credentials) reasons.push(error ?? 'signing credentials not configured');
     throw new C2paUnavailableError(reasons);
   }
 
   const { createC2pa, ManifestBuilder, SigningAlgorithm } = lib;
   const algorithm =
-    Object.values(SigningAlgorithm).find((a) => a === credentials.algorithm) ??
-    "es256";
+    Object.values(SigningAlgorithm).find((a) => a === credentials.algorithm) ?? 'es256';
 
   const c2pa = createC2pa({
     signer: {
-      type: "local",
+      type: 'local',
       certificate: credentials.certificate,
       privateKey: credentials.privateKey,
       algorithm,
@@ -285,14 +282,13 @@ export async function signAndEmbed(
   });
 
   const builder = new ManifestBuilder(manifestDefinition, {
-    vendor: "animaforge",
+    vendor: 'animaforge',
   });
 
-  const useBuffer =
-    asset.buffer !== undefined && BUFFER_SIGNABLE.has(asset.mimeType);
+  const useBuffer = asset.buffer !== undefined && BUFFER_SIGNABLE.has(asset.mimeType);
   if (!useBuffer && !asset.path) {
     throw new Error(
-      `signing ${asset.mimeType} requires asset_path — only ${[...BUFFER_SIGNABLE].join(", ")} can be signed from memory`,
+      `signing ${asset.mimeType} requires asset_path — only ${[...BUFFER_SIGNABLE].join(', ')} can be signed from memory`,
     );
   }
 
@@ -320,9 +316,7 @@ export async function signAndEmbed(
     options: { embed: true, outputPath: asset.outputPath ?? asset.path },
   });
   const signedPath = signedAsset.path ?? asset.outputPath ?? asset.path ?? null;
-  const store = signedPath
-    ? await c2pa.read({ path: signedPath, mimeType: asset.mimeType })
-    : null;
+  const store = signedPath ? await c2pa.read({ path: signedPath, mimeType: asset.mimeType }) : null;
   return {
     buffer: null,
     path: signedPath,
@@ -336,7 +330,7 @@ export async function signAndEmbed(
 /*  Verification                                                       */
 /* ------------------------------------------------------------------ */
 
-export type VerificationStatus = "valid" | "invalid" | "absent" | "unverified";
+export type VerificationStatus = 'valid' | 'invalid' | 'absent' | 'unverified';
 
 export interface VerificationResult {
   status: VerificationStatus;
@@ -357,7 +351,7 @@ export interface VerificationResult {
 }
 
 const UNVERIFIED = (reason: string): VerificationResult => ({
-  status: "unverified",
+  status: 'unverified',
   cryptographicallyVerified: false,
   store: null,
   validationStatus: [],
@@ -375,8 +369,8 @@ export async function verifyAsset(asset: {
   const lib = loadLibrary();
   if (!lib) {
     return UNVERIFIED(
-      `c2pa-node native binding unavailable (${libError ?? "unknown error"}); ` +
-        "the manifest could not be checked",
+      `c2pa-node native binding unavailable (${libError ?? 'unknown error'}); ` +
+        'the manifest could not be checked',
     );
   }
 
@@ -391,7 +385,7 @@ export async function verifyAsset(asset: {
         });
   } catch (err) {
     return {
-      status: "invalid",
+      status: 'invalid',
       cryptographicallyVerified: false,
       store: null,
       validationStatus: [],
@@ -403,23 +397,23 @@ export async function verifyAsset(asset: {
 
   if (!store || !store.active_manifest) {
     return {
-      status: "absent",
+      status: 'absent',
       cryptographicallyVerified: false,
       store,
       validationStatus: store?.validation_status ?? [],
       manifestLabel: null,
       signatureInfo: null,
-      reason: "no C2PA manifest is embedded in this asset",
+      reason: 'no C2PA manifest is embedded in this asset',
     };
   }
 
   const failures = (store.validation_status ?? []).filter(
-    (s) => typeof s.code === "string" && !s.code.endsWith(".informational"),
+    (s) => typeof s.code === 'string' && !s.code.endsWith('.informational'),
   );
 
   if (failures.length > 0) {
     return {
-      status: "invalid",
+      status: 'invalid',
       cryptographicallyVerified: false,
       store,
       validationStatus: store.validation_status ?? [],
@@ -428,12 +422,12 @@ export async function verifyAsset(asset: {
       reason: failures
         .map((f) => f.explanation ?? f.code)
         .filter(Boolean)
-        .join("; "),
+        .join('; '),
     };
   }
 
   return {
-    status: "valid",
+    status: 'valid',
     cryptographicallyVerified: true,
     store,
     validationStatus: store.validation_status ?? [],
@@ -445,5 +439,5 @@ export async function verifyAsset(asset: {
 
 /** SHA-256 of asset bytes — binds a stored record to the exact file it describes. */
 export function assetDigest(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
+  return createHash('sha256').update(buffer).digest('hex');
 }

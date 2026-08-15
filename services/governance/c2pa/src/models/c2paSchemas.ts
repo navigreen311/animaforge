@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /** Asset bytes may arrive inline (small stills) or as a path (video, large stills). */
 const AssetFields = {
@@ -26,7 +26,7 @@ export type SignRequest = z.infer<typeof SignRequestSchema>;
 export const VerifyAssetRequestSchema = z
   .object(AssetFields)
   .refine((v) => v.asset_base64 || v.asset_path, {
-    message: "asset_base64 or asset_path is required",
+    message: 'asset_base64 or asset_path is required',
   });
 
 export type VerifyAssetRequest = z.infer<typeof VerifyAssetRequestSchema>;
@@ -34,11 +34,11 @@ export type VerifyAssetRequest = z.infer<typeof VerifyAssetRequestSchema>;
 /** How a provenance record came to exist. */
 export type ProvenanceMode =
   /** A real COSE-signed C2PA manifest was embedded into the asset bytes. */
-  | "c2pa-embedded"
+  | 'c2pa-embedded'
   /** Credentials are present but no asset was supplied, so nothing was signed. */
-  | "unsigned-record"
+  | 'unsigned-record'
   /** No usable signer: the record is metadata only and carries no cryptographic weight. */
-  | "degraded";
+  | 'degraded';
 
 export interface SignatureSummary {
   algorithm: string | null;
@@ -87,12 +87,7 @@ export interface SignResponse extends StoredManifestEntry {
   warning?: string;
 }
 
-export type VerificationStatus =
-  | "valid"
-  | "invalid"
-  | "absent"
-  | "unverified"
-  | "not_found";
+export type VerificationStatus = 'valid' | 'invalid' | 'absent' | 'unverified' | 'not_found';
 
 export interface VerifyResponse {
   status: VerificationStatus;

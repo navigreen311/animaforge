@@ -165,14 +165,62 @@ const MOCK_SCANNERS: Scanner[] = [
 ];
 
 const MOCK_ACTIVITY: ActivityEntry[] = [
-  { id: 'a1', icon: AlertTriangle, iconColor: '#fbbf24', text: 'Match found on youtube.com/watch?v=xK8f2JqLm9n', time: '5m ago' },
-  { id: 'a2', icon: FileText, iconColor: '#f87171', text: 'DMCA filed for match #1247', time: '15m ago' },
-  { id: 'a3', icon: ShieldCheck, iconColor: '#34d399', text: 'Watermark verified for output af_001', time: '1h ago' },
-  { id: 'a4', icon: Search, iconColor: '#a78bfa', text: 'Scan completed for TikTok (0 new matches)', time: '2h ago' },
-  { id: 'a5', icon: AlertTriangle, iconColor: '#fbbf24', text: 'Match found on tiktok.com/@user123/video/7284920193842', time: '2h ago' },
-  { id: 'a6', icon: Check, iconColor: '#34d399', text: 'Match #1243 marked as authorized by creator', time: '3h ago' },
-  { id: 'a7', icon: ShieldAlert, iconColor: '#f87171', text: 'Reddit scanner rate limited — retrying in 8m', time: '4h ago' },
-  { id: 'a8', icon: FileText, iconColor: '#f87171', text: 'DMCA filed for match #1241 on Twitter', time: '6h ago' },
+  {
+    id: 'a1',
+    icon: AlertTriangle,
+    iconColor: '#fbbf24',
+    text: 'Match found on youtube.com/watch?v=xK8f2JqLm9n',
+    time: '5m ago',
+  },
+  {
+    id: 'a2',
+    icon: FileText,
+    iconColor: '#f87171',
+    text: 'DMCA filed for match #1247',
+    time: '15m ago',
+  },
+  {
+    id: 'a3',
+    icon: ShieldCheck,
+    iconColor: '#34d399',
+    text: 'Watermark verified for output af_001',
+    time: '1h ago',
+  },
+  {
+    id: 'a4',
+    icon: Search,
+    iconColor: '#a78bfa',
+    text: 'Scan completed for TikTok (0 new matches)',
+    time: '2h ago',
+  },
+  {
+    id: 'a5',
+    icon: AlertTriangle,
+    iconColor: '#fbbf24',
+    text: 'Match found on tiktok.com/@user123/video/7284920193842',
+    time: '2h ago',
+  },
+  {
+    id: 'a6',
+    icon: Check,
+    iconColor: '#34d399',
+    text: 'Match #1243 marked as authorized by creator',
+    time: '3h ago',
+  },
+  {
+    id: 'a7',
+    icon: ShieldAlert,
+    iconColor: '#f87171',
+    text: 'Reddit scanner rate limited — retrying in 8m',
+    time: '4h ago',
+  },
+  {
+    id: 'a8',
+    icon: FileText,
+    iconColor: '#f87171',
+    text: 'DMCA filed for match #1241 on Twitter',
+    time: '6h ago',
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -187,7 +235,13 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'settings', label: 'Settings' },
 ];
 
-const SCAN_FREQUENCIES = ['Every 5 minutes', 'Every 15 minutes', 'Every hour', 'Every 6 hours', 'Daily'];
+const SCAN_FREQUENCIES = [
+  'Every 5 minutes',
+  'Every 15 minutes',
+  'Every hour',
+  'Every 6 hours',
+  'Daily',
+];
 
 /* ------------------------------------------------------------------ */
 /*  Evidence badges                                                    */
@@ -206,7 +260,10 @@ const badgeStyle: React.CSSProperties = {
 function WatermarkBadge({ state }: { state: boolean | null }) {
   if (state === true) {
     return (
-      <span style={{ ...badgeStyle, color: '#34d399' }} title="An invisible watermark was recovered from the media itself.">
+      <span
+        style={{ ...badgeStyle, color: '#34d399' }}
+        title="An invisible watermark was recovered from the media itself."
+      >
         <ShieldCheck size={11} />
         Watermark recovered
       </span>
@@ -214,14 +271,20 @@ function WatermarkBadge({ state }: { state: boolean | null }) {
   }
   if (state === false) {
     return (
-      <span style={{ ...badgeStyle, color: 'var(--text-tertiary)' }} title="The media was analysed and no AnimaForge watermark was recovered.">
+      <span
+        style={{ ...badgeStyle, color: 'var(--text-tertiary)' }}
+        title="The media was analysed and no AnimaForge watermark was recovered."
+      >
         <ShieldAlert size={11} />
         No watermark found
       </span>
     );
   }
   return (
-    <span style={{ ...badgeStyle, color: '#fbbf24' }} title="The watermark service was not reachable or not configured, so no check was performed. This is not evidence either way.">
+    <span
+      style={{ ...badgeStyle, color: '#fbbf24' }}
+      title="The watermark service was not reachable or not configured, so no check was performed. This is not evidence either way."
+    >
       <ShieldQuestion size={11} />
       Watermark not checked
     </span>
@@ -295,8 +358,8 @@ function CapabilityBanner() {
         }}
       >
         <ShieldCheck size={13} />
-        Protection pipeline fully operational — discovery, fingerprinting and watermark
-        detection are all configured.
+        Protection pipeline fully operational — discovery, fingerprinting and watermark detection
+        are all configured.
       </div>
     );
   }
@@ -341,7 +404,8 @@ export default function PiracyPage() {
 
   const filteredMatches = useMemo(() => {
     if (activeTab === 'all') return MOCK_MATCHES;
-    if (activeTab === 'investigating') return MOCK_MATCHES.filter((m) => m.status === 'investigating');
+    if (activeTab === 'investigating')
+      return MOCK_MATCHES.filter((m) => m.status === 'investigating');
     if (activeTab === 'filed') return MOCK_MATCHES.filter((m) => m.status === 'filed');
     if (activeTab === 'resolved') return MOCK_MATCHES.filter((m) => m.status === 'resolved');
     return [];
@@ -584,7 +648,9 @@ export default function PiracyPage() {
         </div>
 
         {/* Right sidebar — Active Scanners */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 0 }}>
+        <aside
+          style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 0 }}
+        >
           <div
             style={{
               border: '0.5px solid var(--border)',
@@ -825,7 +891,9 @@ function MatchCard({ match }: { match: PiracyMatch }) {
 
       {/* Details */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+        >
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
             {match.originalOutput}
           </div>
@@ -843,7 +911,10 @@ function MatchCard({ match }: { match: PiracyMatch }) {
           }}
         >
           <span>
-            Detected on <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{match.platform}</span>
+            Detected on{' '}
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+              {match.platform}
+            </span>
           </span>
           <span>•</span>
           <a
@@ -875,7 +946,9 @@ function MatchCard({ match }: { match: PiracyMatch }) {
 
         {/* Match strength */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 78 }}>Match strength</div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 78 }}>
+            Match strength
+          </div>
           <div
             style={{
               flex: 1,
@@ -894,13 +967,15 @@ function MatchCard({ match }: { match: PiracyMatch }) {
                   match.matchStrength >= 90
                     ? '#f87171'
                     : match.matchStrength >= 80
-                    ? '#fbbf24'
-                    : '#60a5fa',
+                      ? '#fbbf24'
+                      : '#60a5fa',
                 transition: 'width 200ms',
               }}
             />
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', minWidth: 32 }}>
+          <div
+            style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', minWidth: 32 }}
+          >
             {match.matchStrength}%
           </div>
         </div>
@@ -927,9 +1002,21 @@ function ActionButton({
   variant: 'primary' | 'danger' | 'ghost';
 }) {
   const styles: Record<typeof variant, { bg: string; color: string; border: string }> = {
-    primary: { bg: 'var(--brand-dim)', color: 'var(--text-brand)', border: '0.5px solid var(--brand-border)' },
-    danger: { bg: 'rgba(248, 113, 113, 0.1)', color: '#f87171', border: '0.5px solid rgba(248, 113, 113, 0.3)' },
-    ghost: { bg: 'transparent', color: 'var(--text-secondary)', border: '0.5px solid var(--border)' },
+    primary: {
+      bg: 'var(--brand-dim)',
+      color: 'var(--text-brand)',
+      border: '0.5px solid var(--brand-border)',
+    },
+    danger: {
+      bg: 'rgba(248, 113, 113, 0.1)',
+      color: '#f87171',
+      border: '0.5px solid rgba(248, 113, 113, 0.3)',
+    },
+    ghost: {
+      bg: 'transparent',
+      color: 'var(--text-secondary)',
+      border: '0.5px solid var(--border)',
+    },
   };
   const s = styles[variant];
 
@@ -998,7 +1085,14 @@ function ScannerCard({ scanner }: { scanner: Scanner }) {
         padding: '10px 12px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 4,
+        }}
+      >
         <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
           {scanner.platform} Scanner
         </div>
@@ -1026,7 +1120,9 @@ function ScannerCard({ scanner }: { scanner: Scanner }) {
         </span>
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-        {isRateLimited && scanner.retryIn ? `Retry in ${scanner.retryIn}` : `Last scan: ${scanner.lastScan}`}
+        {isRateLimited && scanner.retryIn
+          ? `Retry in ${scanner.retryIn}`
+          : `Last scan: ${scanner.lastScan}`}
       </div>
     </div>
   );
@@ -1120,7 +1216,9 @@ function SettingRow({
     >
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</div>
-        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{description}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+          {description}
+        </div>
       </div>
       <div
         style={{

@@ -6,13 +6,13 @@
  * endpoint rather than assumed.
  */
 
-import { execFile, spawn } from "node:child_process";
-import { promisify } from "node:util";
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-export const FFMPEG_BIN = process.env.FFMPEG_PATH ?? "ffmpeg";
-export const FFPROBE_BIN = process.env.FFPROBE_PATH ?? "ffprobe";
+export const FFMPEG_BIN = process.env.FFMPEG_PATH ?? 'ffmpeg';
+export const FFPROBE_BIN = process.env.FFPROBE_PATH ?? 'ffprobe';
 
 export interface FfmpegStatus {
   available: boolean;
@@ -28,11 +28,11 @@ let cached: FfmpegStatus | null = null;
 export async function ffmpegStatus(force = false): Promise<FfmpegStatus> {
   if (cached && !force) return cached;
   try {
-    const { stdout } = await execFileAsync(FFMPEG_BIN, ["-version"], {
+    const { stdout } = await execFileAsync(FFMPEG_BIN, ['-version'], {
       timeout: 10_000,
     });
-    const version = stdout.split("\n")[0]?.trim() ?? null;
-    await execFileAsync(FFPROBE_BIN, ["-version"], { timeout: 10_000 });
+    const version = stdout.split('\n')[0]?.trim() ?? null;
+    await execFileAsync(FFPROBE_BIN, ['-version'], { timeout: 10_000 });
     cached = {
       available: true,
       ffmpegPath: FFMPEG_BIN,
@@ -65,14 +65,14 @@ export async function probeVideo(path: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(
     FFPROBE_BIN,
     [
-      "-v",
-      "error",
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=width,height,avg_frame_rate,codec_name,pix_fmt:format=duration",
-      "-of",
-      "json",
+      '-v',
+      'error',
+      '-select_streams',
+      'v:0',
+      '-show_entries',
+      'stream=width,height,avg_frame_rate,codec_name,pix_fmt:format=duration',
+      '-of',
+      'json',
       path,
     ],
     { timeout: 60_000, maxBuffer: 8 * 1024 * 1024 },
@@ -91,14 +91,14 @@ export async function probeVideo(path: string): Promise<VideoInfo> {
   if (!stream?.width || !stream?.height) {
     throw new Error(`ffprobe found no video stream in ${path}`);
   }
-  const [num, den] = (stream.avg_frame_rate ?? "0/1").split("/").map(Number);
+  const [num, den] = (stream.avg_frame_rate ?? '0/1').split('/').map(Number);
   return {
     width: stream.width,
     height: stream.height,
     durationSeconds: Number(parsed.format?.duration ?? 0),
     frameRate: den ? num / den : 0,
-    codec: stream.codec_name ?? "unknown",
-    pixelFormat: stream.pix_fmt ?? "unknown",
+    codec: stream.codec_name ?? 'unknown',
+    pixelFormat: stream.pix_fmt ?? 'unknown',
   };
 }
 
@@ -135,28 +135,28 @@ function decodeSingleFrame(
     const child = spawn(
       FFMPEG_BIN,
       [
-        "-v",
-        "error",
-        "-ss",
+        '-v',
+        'error',
+        '-ss',
         atSeconds.toFixed(3),
-        "-i",
+        '-i',
         path,
-        "-frames:v",
-        "1",
-        "-f",
-        "rawvideo",
-        "-pix_fmt",
-        "rgba",
-        "-",
+        '-frames:v',
+        '1',
+        '-f',
+        'rawvideo',
+        '-pix_fmt',
+        'rgba',
+        '-',
       ],
-      { stdio: ["ignore", "pipe", "pipe"] },
+      { stdio: ['ignore', 'pipe', 'pipe'] },
     );
     const chunks: Buffer[] = [];
     const errChunks: Buffer[] = [];
-    child.stdout.on("data", (c: Buffer) => chunks.push(c));
-    child.stderr.on("data", (c: Buffer) => errChunks.push(c));
-    child.on("error", reject);
-    child.on("close", (code) => {
+    child.stdout.on('data', (c: Buffer) => chunks.push(c));
+    child.stderr.on('data', (c: Buffer) => errChunks.push(c));
+    child.on('error', reject);
+    child.on('close', (code) => {
       const expected = info.width * info.height * 4;
       const buf = Buffer.concat(chunks);
       if (code !== 0 && buf.length < expected) {
@@ -191,44 +191,44 @@ export async function transformVideoFrames(
 
   const decoder = spawn(
     FFMPEG_BIN,
-    ["-v", "error", "-i", inputPath, "-f", "rawvideo", "-pix_fmt", "rgba", "-"],
-    { stdio: ["ignore", "pipe", "pipe"] },
+    ['-v', 'error', '-i', inputPath, '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
   const encoder = spawn(
     FFMPEG_BIN,
     [
-      "-v",
-      "error",
-      "-y",
-      "-f",
-      "rawvideo",
-      "-pix_fmt",
-      "rgba",
-      "-s",
+      '-v',
+      'error',
+      '-y',
+      '-f',
+      'rawvideo',
+      '-pix_fmt',
+      'rgba',
+      '-s',
       `${info.width}x${info.height}`,
-      "-r",
+      '-r',
       String(info.frameRate > 0 ? info.frameRate : 25),
-      "-i",
-      "-",
-      "-an",
-      "-c:v",
-      "libx264",
-      "-preset",
-      options.preset ?? "medium",
-      "-crf",
+      '-i',
+      '-',
+      '-an',
+      '-c:v',
+      'libx264',
+      '-preset',
+      options.preset ?? 'medium',
+      '-crf',
       String(options.crf ?? 16),
-      "-pix_fmt",
-      "yuv420p",
+      '-pix_fmt',
+      'yuv420p',
       outputPath,
     ],
-    { stdio: ["pipe", "ignore", "pipe"] },
+    { stdio: ['pipe', 'ignore', 'pipe'] },
   );
 
   const encoderErr: Buffer[] = [];
-  encoder.stderr.on("data", (c: Buffer) => encoderErr.push(c));
+  encoder.stderr.on('data', (c: Buffer) => encoderErr.push(c));
   const decoderErr: Buffer[] = [];
-  decoder.stderr.on("data", (c: Buffer) => decoderErr.push(c));
+  decoder.stderr.on('data', (c: Buffer) => decoderErr.push(c));
 
   let pending: Buffer<ArrayBufferLike> = Buffer.alloc(0);
   let frameIndex = 0;
@@ -245,7 +245,7 @@ export async function transformVideoFrames(
       }
     };
 
-    decoder.stdout.on("data", (chunk: Buffer) => {
+    decoder.stdout.on('data', (chunk: Buffer) => {
       pending = pending.length ? Buffer.concat([pending, chunk]) : chunk;
       while (pending.length >= frameBytes) {
         const frame = Buffer.from(pending.subarray(0, frameBytes));
@@ -260,35 +260,33 @@ export async function transformVideoFrames(
         }
         if (!encoder.stdin.write(frame)) {
           decoder.stdout.pause();
-          encoder.stdin.once("drain", () => decoder.stdout.resume());
+          encoder.stdin.once('drain', () => decoder.stdout.resume());
         }
       }
     });
 
-    decoder.on("error", fail);
-    encoder.on("error", fail);
-    encoder.stdin.on("error", fail);
+    decoder.on('error', fail);
+    encoder.on('error', fail);
+    encoder.stdin.on('error', fail);
 
-    decoder.on("close", (code) => {
+    decoder.on('close', (code) => {
       decoderClosed = true;
       if (code !== 0 && !failed) {
         fail(
           new Error(
-            `ffmpeg decode failed (${code}): ` +
-              Buffer.concat(decoderErr).toString().slice(0, 400),
+            `ffmpeg decode failed (${code}): ` + Buffer.concat(decoderErr).toString().slice(0, 400),
           ),
         );
       }
       encoder.stdin.end();
     });
 
-    encoder.on("close", (code) => {
+    encoder.on('close', (code) => {
       encoderClosed = true;
       if (code !== 0 && !failed) {
         fail(
           new Error(
-            `ffmpeg encode failed (${code}): ` +
-              Buffer.concat(encoderErr).toString().slice(0, 400),
+            `ffmpeg encode failed (${code}): ` + Buffer.concat(encoderErr).toString().slice(0, 400),
           ),
         );
         return;

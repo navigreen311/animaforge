@@ -7,28 +7,28 @@
  * looking up a URL.
  */
 
-import crypto from "crypto";
-import { promises as fs } from "node:fs";
-import { v4 as uuidv4 } from "uuid";
-import { prisma, isPrismaAvailable } from "../db";
+import crypto from 'crypto';
+import { promises as fs } from 'node:fs';
+import { v4 as uuidv4 } from 'uuid';
+import { prisma, isPrismaAvailable } from '../db';
 import {
   DEFAULT_STRENGTH,
   MIN_DIMENSION,
   WatermarkCapacityError,
   embedIntoImage,
   extractFromImage,
-} from "../lib/imageWatermark";
-import { ffmpegStatus } from "../lib/ffmpeg";
-import { embedIntoVideo, extractFromVideo } from "../lib/videoWatermark";
-import { keyFromIdentifier, KEY_HEX_LENGTH } from "../lib/payload";
-import { trustmarkStatus, trustmarkRequested } from "../lib/trustmark";
+} from '../lib/imageWatermark';
+import { ffmpegStatus } from '../lib/ffmpeg';
+import { embedIntoVideo, extractFromVideo } from '../lib/videoWatermark';
+import { keyFromIdentifier, KEY_HEX_LENGTH } from '../lib/payload';
+import { trustmarkStatus, trustmarkRequested } from '../lib/trustmark';
 
 /* ------------------------------------------------------------------ */
 /*  Configuration                                                      */
 /* ------------------------------------------------------------------ */
 
 /** Algorithm identifier written to every record. */
-export const ALGORITHM = "dct-pair-v1";
+export const ALGORITHM = 'dct-pair-v1';
 
 /**
  * Keying material for block placement. Rotating it makes previously embedded
@@ -36,7 +36,7 @@ export const ALGORITHM = "dct-pair-v1";
  * the seed it was written with and detection tries all known seeds.
  */
 export function currentSeed(): string {
-  return process.env.WATERMARK_SEED ?? "animaforge-default-watermark-seed";
+  return process.env.WATERMARK_SEED ?? 'animaforge-default-watermark-seed';
 }
 
 function configuredStrength(): number {
@@ -46,19 +46,17 @@ function configuredStrength(): number {
 
 /** Remote fetching is opt-in: an unrestricted fetcher is an SSRF pivot. */
 function remoteFetchAllowed(): boolean {
-  return process.env.WATERMARK_ALLOW_REMOTE_FETCH === "true";
+  return process.env.WATERMARK_ALLOW_REMOTE_FETCH === 'true';
 }
 
-const MAX_REMOTE_BYTES = Number(
-  process.env.WATERMARK_MAX_REMOTE_BYTES ?? 64 * 1024 * 1024,
-);
+const MAX_REMOTE_BYTES = Number(process.env.WATERMARK_MAX_REMOTE_BYTES ?? 64 * 1024 * 1024);
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type MediaType = "image" | "video";
-export type EmbedMode = "embedded" | "registered-only";
+export type MediaType = 'image' | 'video';
+export type EmbedMode = 'embedded' | 'registered-only';
 
 export interface WatermarkRecord {
   watermark_id: string;
@@ -109,11 +107,11 @@ export interface DetectionResult {
   watermark_id: string | null;
   /** How the answer was reached — never "we found the URL in our database". */
   method:
-    | "pixel-extraction"
-    | "video-frame-extraction"
-    | "no-asset-supplied"
-    | "unsupported-media"
-    | "extraction-failed";
+    | 'pixel-extraction'
+    | 'video-frame-extraction'
+    | 'no-asset-supplied'
+    | 'unsupported-media'
+    | 'extraction-failed';
   /**
    * Signal agreement in [0,1] from the majority vote. Reported for
    * transparency; the CRC, not this number, decides `detected`.
@@ -160,7 +158,7 @@ async function persist(record: WatermarkRecord): Promise<void> {
         algorithm: record.algorithm,
         strength: record.strength,
         seed: record.seed,
-        mediaType: record.media_type ?? "unknown",
+        mediaType: record.media_type ?? 'unknown',
         mode: record.mode,
         sourceSha256: record.source_sha256,
         markedSha256: record.marked_sha256,
@@ -175,14 +173,12 @@ async function persist(record: WatermarkRecord): Promise<void> {
   }
 }
 
-async function lookupByPayload(
-  payloadHex: string,
-): Promise<WatermarkRecord | null> {
+async function lookupByPayload(payloadHex: string): Promise<WatermarkRecord | null> {
   try {
     if (isPrismaAvailable()) {
       const row = await prisma!.watermark.findFirst({
         where: { payloadHex },
-        orderBy: { embeddedAt: "desc" },
+        orderBy: { embeddedAt: 'desc' },
       });
       if (row) {
         return {
@@ -217,7 +213,7 @@ async function knownSeeds(): Promise<string[]> {
   try {
     if (isPrismaAvailable()) {
       const rows = await prisma!.watermark.findMany({
-        distinct: ["seed"],
+        distinct: ['seed'],
         select: { seed: true },
         take: 16,
       });
@@ -234,24 +230,24 @@ async function knownSeeds(): Promise<string[]> {
 /* ------------------------------------------------------------------ */
 
 function sha256(buffer: Buffer): string {
-  return crypto.createHash("sha256").update(buffer).digest("hex");
+  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 export function mediaTypeOf(mimeType: string | undefined): MediaType | null {
   if (!mimeType) return null;
-  if (mimeType.startsWith("image/")) return "image";
-  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
   return null;
 }
 
 async function fetchRemote(url: string): Promise<Buffer> {
   if (!remoteFetchAllowed()) {
     throw new Error(
-      "remote asset fetching is disabled (set WATERMARK_ALLOW_REMOTE_FETCH=true to enable)",
+      'remote asset fetching is disabled (set WATERMARK_ALLOW_REMOTE_FETCH=true to enable)',
     );
   }
   const parsed = new URL(url);
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new Error(`unsupported protocol ${parsed.protocol}`);
   }
   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
@@ -274,18 +270,17 @@ interface LoadedAsset {
 
 async function loadAsset(input: AssetInput): Promise<LoadedAsset | null> {
   if (input.asset_base64) {
-    const buffer = Buffer.from(input.asset_base64, "base64");
+    const buffer = Buffer.from(input.asset_base64, 'base64');
     return {
       buffer,
       path: null,
       mimeType: input.mime_type,
-      mediaType: mediaTypeOf(input.mime_type) ?? "image",
+      mediaType: mediaTypeOf(input.mime_type) ?? 'image',
     };
   }
   if (input.asset_path) {
-    const mediaType =
-      mediaTypeOf(input.mime_type) ?? guessFromPath(input.asset_path);
-    if (mediaType === "video") {
+    const mediaType = mediaTypeOf(input.mime_type) ?? guessFromPath(input.asset_path);
+    if (mediaType === 'video') {
       return {
         buffer: null,
         path: input.asset_path,
@@ -313,13 +308,11 @@ async function loadAsset(input: AssetInput): Promise<LoadedAsset | null> {
 }
 
 function guessFromPath(p: string): MediaType | null {
-  const ext = p.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
-  if (
-    ["png", "jpg", "jpeg", "webp", "bmp", "gif", "tif", "tiff"].includes(ext)
-  ) {
-    return "image";
+  const ext = p.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  if (['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tif', 'tiff'].includes(ext)) {
+    return 'image';
   }
-  if (["mp4", "mov", "mkv", "webm", "avi", "m4v"].includes(ext)) return "video";
+  if (['mp4', 'mov', 'mkv', 'webm', 'avi', 'm4v'].includes(ext)) return 'video';
   return null;
 }
 
@@ -334,12 +327,10 @@ export async function embedWatermark(
   asset: AssetInput = {},
 ): Promise<EmbedResult> {
   const watermark_id = uuidv4();
-  const payload_hex = keyFromIdentifier(watermark_id.replace(/-/g, ""));
+  const payload_hex = keyFromIdentifier(watermark_id.replace(/-/g, ''));
   const seed = currentSeed();
   const strength = configuredStrength();
-  const watermarked_url = output_url
-    ? `${output_url}?wm=${watermark_id}`
-    : null;
+  const watermarked_url = output_url ? `${output_url}?wm=${watermark_id}` : null;
 
   const loaded = await loadAsset(asset);
 
@@ -356,7 +347,7 @@ export async function embedWatermark(
       strength,
       seed,
       media_type: null,
-      mode: "registered-only",
+      mode: 'registered-only',
       source_sha256: null,
       marked_sha256: null,
       embedded_at: new Date().toISOString(),
@@ -366,24 +357,22 @@ export async function embedWatermark(
       watermark_id,
       watermarked_url,
       embedded: false,
-      mode: "registered-only",
+      mode: 'registered-only',
       algorithm: ALGORITHM,
       media_type: null,
       warning:
-        "No asset bytes were supplied, so no watermark was embedded. This record " +
-        "is a registration only and is NOT detectable in the media. Supply " +
-        "asset_base64, asset_path or asset_url to embed a real watermark.",
+        'No asset bytes were supplied, so no watermark was embedded. This record ' +
+        'is a registration only and is NOT detectable in the media. Supply ' +
+        'asset_base64, asset_path or asset_url to embed a real watermark.',
     };
   }
 
-  if (loaded.mediaType === "video") {
+  if (loaded.mediaType === 'video') {
     if (!loaded.path) {
-      throw new Error(
-        "video watermarking requires asset_path (streaming from disk)",
-      );
+      throw new Error('video watermarking requires asset_path (streaming from disk)');
     }
     if (!asset.output_path) {
-      throw new Error("video watermarking requires output_path");
+      throw new Error('video watermarking requires output_path');
     }
     const { framesProcessed, info } = await embedIntoVideo(
       loaded.path,
@@ -407,8 +396,8 @@ export async function embedWatermark(
       algorithm: ALGORITHM,
       strength,
       seed,
-      media_type: "video",
-      mode: "embedded",
+      media_type: 'video',
+      mode: 'embedded',
       source_sha256: sha256(await fs.readFile(loaded.path)),
       marked_sha256: sha256(markedBytes),
       embedded_at: new Date().toISOString(),
@@ -418,22 +407,21 @@ export async function embedWatermark(
       watermark_id,
       watermarked_url,
       embedded: true,
-      mode: "embedded",
+      mode: 'embedded',
       algorithm: ALGORITHM,
-      media_type: "video",
+      media_type: 'video',
       output_path: asset.output_path,
       frames_processed: framesProcessed,
     };
   }
 
-  if (loaded.mediaType !== "image" || !loaded.buffer) {
+  if (loaded.mediaType !== 'image' || !loaded.buffer) {
     throw new Error(
-      `unsupported media type "${loaded.mimeType ?? "unknown"}" — only image/* and video/* can be watermarked`,
+      `unsupported media type "${loaded.mimeType ?? 'unknown'}" — only image/* and video/* can be watermarked`,
     );
   }
 
-  const outputMimeType =
-    asset.mime_type === "image/jpeg" ? "image/jpeg" : "image/png";
+  const outputMimeType = asset.mime_type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
   const result = await embedIntoImage(loaded.buffer, payload_hex, seed, {
     strength,
     outputMimeType,
@@ -454,8 +442,8 @@ export async function embedWatermark(
     algorithm: ALGORITHM,
     strength,
     seed,
-    media_type: "image",
-    mode: "embedded",
+    media_type: 'image',
+    mode: 'embedded',
     source_sha256: sha256(loaded.buffer),
     marked_sha256: sha256(result.buffer),
     embedded_at: new Date().toISOString(),
@@ -466,16 +454,16 @@ export async function embedWatermark(
     watermark_id,
     watermarked_url,
     embedded: true,
-    mode: "embedded",
+    mode: 'embedded',
     algorithm: ALGORITHM,
-    media_type: "image",
+    media_type: 'image',
     psnr: result.psnr,
   };
   if (asset.output_path) {
     await fs.writeFile(asset.output_path, result.buffer);
     embedResult.output_path = asset.output_path;
   } else {
-    embedResult.asset_base64 = result.buffer.toString("base64");
+    embedResult.asset_base64 = result.buffer.toString('base64');
   }
   return embedResult;
 }
@@ -484,7 +472,7 @@ export async function embedWatermark(
 /*  Detection                                                          */
 /* ------------------------------------------------------------------ */
 
-const NOT_DETECTED: Omit<DetectionResult, "method" | "reason"> = {
+const NOT_DETECTED: Omit<DetectionResult, 'method' | 'reason'> = {
   detected: false,
   watermark_id: null,
   confidence: 0,
@@ -493,16 +481,14 @@ const NOT_DETECTED: Omit<DetectionResult, "method" | "reason"> = {
   unregistered: false,
 };
 
-export async function detectWatermark(
-  asset: AssetInput,
-): Promise<DetectionResult> {
+export async function detectWatermark(asset: AssetInput): Promise<DetectionResult> {
   let loaded: LoadedAsset | null;
   try {
     loaded = await loadAsset(asset);
   } catch (err) {
     return {
       ...NOT_DETECTED,
-      method: "extraction-failed",
+      method: 'extraction-failed',
       reason: err instanceof Error ? err.message : String(err),
     };
   }
@@ -510,46 +496,41 @@ export async function detectWatermark(
   if (!loaded) {
     return {
       ...NOT_DETECTED,
-      method: "no-asset-supplied",
+      method: 'no-asset-supplied',
       reason:
-        "Watermark detection requires the media itself. A URL alone proves nothing: " +
-        "supply asset_base64, asset_path, or asset_url (with WATERMARK_ALLOW_REMOTE_FETCH=true).",
+        'Watermark detection requires the media itself. A URL alone proves nothing: ' +
+        'supply asset_base64, asset_path, or asset_url (with WATERMARK_ALLOW_REMOTE_FETCH=true).',
     };
   }
 
   const seeds = await knownSeeds();
 
   try {
-    if (loaded.mediaType === "video") {
+    if (loaded.mediaType === 'video') {
       if (!loaded.path) {
         return {
           ...NOT_DETECTED,
-          method: "unsupported-media",
-          reason: "video detection requires asset_path",
+          method: 'unsupported-media',
+          reason: 'video detection requires asset_path',
         };
       }
       for (const seed of seeds) {
         const found = await extractFromVideo(loaded.path, seed);
         if (found.valid) {
-          return await resolveMatch(
-            found.keyHex,
-            found.agreement,
-            "video-frame-extraction",
-            {
-              frames_sampled: found.framesSampled,
-              frames_recovered: found.framesRecovered,
-            },
-          );
+          return await resolveMatch(found.keyHex, found.agreement, 'video-frame-extraction', {
+            frames_sampled: found.framesSampled,
+            frames_recovered: found.framesRecovered,
+          });
         }
       }
-      return { ...NOT_DETECTED, method: "video-frame-extraction" };
+      return { ...NOT_DETECTED, method: 'video-frame-extraction' };
     }
 
-    if (loaded.mediaType !== "image" || !loaded.buffer) {
+    if (loaded.mediaType !== 'image' || !loaded.buffer) {
       return {
         ...NOT_DETECTED,
-        method: "unsupported-media",
-        reason: `cannot extract from media type "${loaded.mimeType ?? "unknown"}"`,
+        method: 'unsupported-media',
+        reason: `cannot extract from media type "${loaded.mimeType ?? 'unknown'}"`,
       };
     }
 
@@ -558,30 +539,25 @@ export async function detectWatermark(
       const found = await extractFromImage(loaded.buffer, seed);
       bestAgreement = Math.max(bestAgreement, found.agreement);
       if (found.valid) {
-        return await resolveMatch(
-          found.keyHex,
-          found.agreement,
-          "pixel-extraction",
-          {},
-        );
+        return await resolveMatch(found.keyHex, found.agreement, 'pixel-extraction', {});
       }
     }
     return {
       ...NOT_DETECTED,
-      method: "pixel-extraction",
+      method: 'pixel-extraction',
       confidence: bestAgreement,
     };
   } catch (err) {
     if (err instanceof WatermarkCapacityError) {
       return {
         ...NOT_DETECTED,
-        method: "unsupported-media",
+        method: 'unsupported-media',
         reason: `${err.message} (minimum ${MIN_DIMENSION}x${MIN_DIMENSION})`,
       };
     }
     return {
       ...NOT_DETECTED,
-      method: "extraction-failed",
+      method: 'extraction-failed',
       reason: err instanceof Error ? err.message : String(err),
     };
   }
@@ -590,7 +566,7 @@ export async function detectWatermark(
 async function resolveMatch(
   payloadHex: string,
   agreement: number,
-  method: DetectionResult["method"],
+  method: DetectionResult['method'],
   extra: Record<string, unknown>,
 ): Promise<DetectionResult> {
   const record = await lookupByPayload(payloadHex);
@@ -605,7 +581,7 @@ async function resolveMatch(
       payload_hex: payloadHex,
       metadata: null,
       unregistered: true,
-      reason: "payload recovered but no matching watermark record was found",
+      reason: 'payload recovered but no matching watermark record was found',
     };
   }
   return {
@@ -661,22 +637,20 @@ export async function getCapabilities(): Promise<WatermarkCapabilities> {
   const reasons: string[] = [];
 
   if (!ffmpeg.available) {
-    reasons.push("ffmpeg not found — video watermarking is unavailable");
+    reasons.push('ffmpeg not found — video watermarking is unavailable');
   }
   if (tm.requested && !tm.available) {
     reasons.push(
-      `WATERMARK_ENGINE=trustmark but TrustMark is not importable (${tm.error ?? "unknown error"}); using ${ALGORITHM}`,
+      `WATERMARK_ENGINE=trustmark but TrustMark is not importable (${tm.error ?? 'unknown error'}); using ${ALGORITHM}`,
     );
   }
   if (!isPrismaAvailable()) {
-    reasons.push(
-      "no database connection — watermark records are in-memory only",
-    );
+    reasons.push('no database connection — watermark records are in-memory only');
   }
 
   return {
-    service: "watermark",
-    engine: tm.available ? "trustmark" : ALGORITHM,
+    service: 'watermark',
+    engine: tm.available ? 'trustmark' : ALGORITHM,
     image_watermarking: {
       available: true,
       algorithm: ALGORITHM,
@@ -684,7 +658,7 @@ export async function getCapabilities(): Promise<WatermarkCapabilities> {
     },
     video_watermarking: {
       available: ffmpeg.available,
-      requires: "ffmpeg + ffprobe on PATH (or FFMPEG_PATH / FFPROBE_PATH)",
+      requires: 'ffmpeg + ffprobe on PATH (or FFMPEG_PATH / FFPROBE_PATH)',
       detail: ffmpeg.available ? ffmpeg.version : ffmpeg.error,
     },
     trustmark: {

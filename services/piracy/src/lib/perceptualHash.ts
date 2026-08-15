@@ -8,8 +8,8 @@
  * so matching becomes a Hamming-distance search rather than an equality lookup.
  */
 
-import { Jimp } from "jimp";
-import { dctSquare } from "./dct";
+import { Jimp } from 'jimp';
+import { dctSquare } from './dct';
 
 /** Working resolution for the DCT hash. 32x32 keeps the low-frequency plane
  *  stable while discarding the detail that compression destroys first. */
@@ -34,7 +34,7 @@ export interface RgbaFrame {
 }
 
 function toHex(bits: readonly number[]): string {
-  let hex = "";
+  let hex = '';
   for (let i = 0; i < bits.length; i += 4) {
     let nibble = 0;
     for (let b = 0; b < 4; b++) nibble = (nibble << 1) | (bits[i + b] ?? 0);
@@ -50,11 +50,7 @@ function median(values: readonly number[]): number {
 }
 
 /** Box-filter downscale of an RGBA frame to an n x m luma matrix. */
-function toLumaMatrix(
-  frame: RgbaFrame,
-  outWidth: number,
-  outHeight: number,
-): Float64Array {
+function toLumaMatrix(frame: RgbaFrame, outWidth: number, outHeight: number): Float64Array {
   const { width, height, data } = frame;
   const out = new Float64Array(outWidth * outHeight);
   const cellW = width / outWidth;
@@ -128,9 +124,7 @@ export function hashFrame(frame: RgbaFrame): PerceptualHashes {
 }
 
 /** Decode an encoded still image and hash it. */
-export async function hashImageBuffer(
-  buffer: Buffer,
-): Promise<PerceptualHashes> {
+export async function hashImageBuffer(buffer: Buffer): Promise<PerceptualHashes> {
   const image = await Jimp.read(buffer);
   return hashFrame({
     width: image.bitmap.width,
@@ -168,10 +162,7 @@ export function hammingDistance(a: string, b: string): number {
 }
 
 /** Map a Hamming distance to a 0..1 similarity over the full hash width. */
-export function similarityFromDistance(
-  distance: number,
-  bits = HASH_BITS,
-): number {
+export function similarityFromDistance(distance: number, bits = HASH_BITS): number {
   return Number(Math.max(0, 1 - distance / bits).toFixed(4));
 }
 
@@ -181,10 +172,7 @@ export function similarityFromDistance(
  * Compared frame-by-frame over the shorter sequence and averaged, so a clip cut
  * from a longer original still scores close on the frames they share.
  */
-export function sequenceDistance(
-  a: readonly string[],
-  b: readonly string[],
-): number {
+export function sequenceDistance(a: readonly string[], b: readonly string[]): number {
   if (a.length === 0 || b.length === 0) return HASH_BITS;
   const n = Math.min(a.length, b.length);
   let total = 0;

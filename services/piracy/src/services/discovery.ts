@@ -40,29 +40,28 @@ export interface SearchCapability {
 }
 
 function provider(): string {
-  return (process.env.PIRACY_SEARCH_PROVIDER ?? "none").toLowerCase();
+  return (process.env.PIRACY_SEARCH_PROVIDER ?? 'none').toLowerCase();
 }
 
 export function searchCapability(): SearchCapability {
   const name = provider();
-  if (name === "none") {
+  if (name === 'none') {
     return {
-      provider: "none",
+      provider: 'none',
       configured: false,
       endpoint: null,
       detail:
-        "No search provider configured. Web scanning cannot discover candidate URLs; " +
-        "set PIRACY_SEARCH_PROVIDER=http, PIRACY_SEARCH_ENDPOINT and PIRACY_SEARCH_API_KEY.",
+        'No search provider configured. Web scanning cannot discover candidate URLs; ' +
+        'set PIRACY_SEARCH_PROVIDER=http, PIRACY_SEARCH_ENDPOINT and PIRACY_SEARCH_API_KEY.',
     };
   }
   const endpoint = process.env.PIRACY_SEARCH_ENDPOINT ?? null;
-  if (name === "http" && !endpoint) {
+  if (name === 'http' && !endpoint) {
     return {
-      provider: "http",
+      provider: 'http',
       configured: false,
       endpoint: null,
-      detail:
-        "PIRACY_SEARCH_PROVIDER=http but PIRACY_SEARCH_ENDPOINT is not set",
+      detail: 'PIRACY_SEARCH_PROVIDER=http but PIRACY_SEARCH_ENDPOINT is not set',
     };
   }
   return { provider: name, configured: true, endpoint, detail: null };
@@ -85,13 +84,13 @@ export async function discoverCandidates(
 
   try {
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
     const apiKey = process.env.PIRACY_SEARCH_API_KEY;
     if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
     const response = await fetch(capability.endpoint as string, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify({ query, platform, limit }),
       signal: AbortSignal.timeout(30_000),
@@ -113,7 +112,7 @@ export async function discoverCandidates(
       }>;
     };
     const candidates: Candidate[] = (payload.results ?? [])
-      .filter((r): r is { url: string } & typeof r => typeof r.url === "string")
+      .filter((r): r is { url: string } & typeof r => typeof r.url === 'string')
       .map((r) => ({
         url: r.url,
         title: r.title,
@@ -131,9 +130,7 @@ export async function discoverCandidates(
       candidates: [],
       provider: capability.provider,
       degraded: true,
-      reason: `search provider request failed: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
+      reason: `search provider request failed: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }

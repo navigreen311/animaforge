@@ -6,31 +6,22 @@
  * betting on one. Requires ffmpeg; callers must check `ffmpegStatus()` first.
  */
 
-import {
-  ffmpegStatus,
-  probeVideo,
-  sampleFramesRgba,
-  transformVideoFrames,
-} from "./ffmpeg";
-import type { VideoInfo } from "./ffmpeg";
-import {
-  canCarryPayload,
-  embedIntoFrame,
-  extractFromFrame,
-} from "./imageWatermark";
-import { DEFAULT_STRENGTH } from "./imageWatermark";
+import { ffmpegStatus, probeVideo, sampleFramesRgba, transformVideoFrames } from './ffmpeg';
+import type { VideoInfo } from './ffmpeg';
+import { canCarryPayload, embedIntoFrame, extractFromFrame } from './imageWatermark';
+import { DEFAULT_STRENGTH } from './imageWatermark';
 
 export class FfmpegUnavailableError extends Error {
   constructor(detail: string) {
     super(`ffmpeg is not available: ${detail}`);
-    this.name = "FfmpegUnavailableError";
+    this.name = 'FfmpegUnavailableError';
   }
 }
 
 async function requireFfmpeg(): Promise<void> {
   const status = await ffmpegStatus();
   if (!status.available) {
-    throw new FfmpegUnavailableError(status.error ?? "binary not found");
+    throw new FfmpegUnavailableError(status.error ?? 'binary not found');
   }
 }
 
@@ -113,7 +104,7 @@ export async function extractFromVideo(
     tally.set(result.keyHex, entry);
   }
 
-  let bestKey = "";
+  let bestKey = '';
   let best = { count: 0, agreement: 0 };
   for (const [key, entry] of tally) {
     if (entry.count > best.count) {
@@ -125,9 +116,7 @@ export async function extractFromVideo(
   return {
     valid: best.count > 0,
     keyHex: bestKey,
-    agreement: Number(
-      (frames.length ? agreementSum / frames.length : 0).toFixed(4),
-    ),
+    agreement: Number((frames.length ? agreementSum / frames.length : 0).toFixed(4)),
     framesSampled: frames.length,
     framesRecovered: best.count,
   };

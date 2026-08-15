@@ -33,7 +33,7 @@ export function watermarkCapability(): WatermarkCapability {
     url,
     detail: url
       ? null
-      : "WATERMARK_SERVICE_URL is not set; piracy scans cannot check for watermarks",
+      : 'WATERMARK_SERVICE_URL is not set; piracy scans cannot check for watermarks',
   };
 }
 
@@ -49,27 +49,24 @@ export async function detectWatermarkInAsset(asset: {
       present: null,
       watermarkId: null,
       confidence: 0,
-      method: "not-configured",
+      method: 'not-configured',
       reason: watermarkCapability().detail,
     };
   }
 
   try {
-    const response = await fetch(
-      `${url.replace(/\/$/, "")}/governance/watermark/detect`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(asset),
-        signal: AbortSignal.timeout(120_000),
-      },
-    );
+    const response = await fetch(`${url.replace(/\/$/, '')}/governance/watermark/detect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(asset),
+      signal: AbortSignal.timeout(120_000),
+    });
     if (!response.ok) {
       return {
         present: null,
         watermarkId: null,
         confidence: 0,
-        method: "request-failed",
+        method: 'request-failed',
         reason: `watermark service returned HTTP ${response.status}`,
       };
     }
@@ -84,7 +81,7 @@ export async function detectWatermarkInAsset(asset: {
       present: payload.detected ?? false,
       watermarkId: payload.watermark_id ?? null,
       confidence: payload.confidence ?? 0,
-      method: payload.method ?? "unknown",
+      method: payload.method ?? 'unknown',
       reason: payload.reason ?? null,
     };
   } catch (err) {
@@ -92,7 +89,7 @@ export async function detectWatermarkInAsset(asset: {
       present: null,
       watermarkId: null,
       confidence: 0,
-      method: "request-failed",
+      method: 'request-failed',
       reason: err instanceof Error ? err.message : String(err),
     };
   }

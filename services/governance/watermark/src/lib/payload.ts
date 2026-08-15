@@ -32,9 +32,9 @@ export function crc16(bits: readonly number[]): number {
 
 /** Normalise an arbitrary hex string to exactly KEY_HEX_LENGTH characters. */
 export function normaliseKeyHex(hex: string): string {
-  const clean = hex.replace(/[^0-9a-f]/gi, "").toLowerCase();
+  const clean = hex.replace(/[^0-9a-f]/gi, '').toLowerCase();
   if (clean.length >= KEY_HEX_LENGTH) return clean.slice(0, KEY_HEX_LENGTH);
-  return clean.padStart(KEY_HEX_LENGTH, "0");
+  return clean.padStart(KEY_HEX_LENGTH, '0');
 }
 
 /** Derive the 48-bit watermark key from a UUID (or any hex-ish identifier). */
@@ -52,7 +52,7 @@ function hexToBits(hex: string, bitCount: number): number[] {
 }
 
 function bitsToHex(bits: readonly number[]): string {
-  let hex = "";
+  let hex = '';
   for (let i = 0; i < bits.length; i += 4) {
     let nibble = 0;
     for (let b = 0; b < 4; b++) nibble = (nibble << 1) | (bits[i + b] ?? 0);
@@ -78,7 +78,7 @@ export interface DecodedPayload {
 
 /** Recover a key from 64 extracted bits, rejecting it unless the CRC matches. */
 export function decodePayload(bits: readonly number[]): DecodedPayload {
-  if (bits.length < PAYLOAD_BITS) return { valid: false, keyHex: "" };
+  if (bits.length < PAYLOAD_BITS) return { valid: false, keyHex: '' };
   const keyBits = bits.slice(0, KEY_BITS);
   let crc = 0;
   for (let i = KEY_BITS; i < PAYLOAD_BITS; i++) crc = (crc << 1) | bits[i];

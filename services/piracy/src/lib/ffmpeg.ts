@@ -6,13 +6,13 @@
  * being papered over.
  */
 
-import { execFile, spawn } from "node:child_process";
-import { promisify } from "node:util";
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-export const FFMPEG_BIN = process.env.FFMPEG_PATH ?? "ffmpeg";
-export const FFPROBE_BIN = process.env.FFPROBE_PATH ?? "ffprobe";
+export const FFMPEG_BIN = process.env.FFMPEG_PATH ?? 'ffmpeg';
+export const FFPROBE_BIN = process.env.FFPROBE_PATH ?? 'ffprobe';
 
 export interface FfmpegStatus {
   available: boolean;
@@ -25,13 +25,13 @@ let cached: FfmpegStatus | null = null;
 export async function ffmpegStatus(force = false): Promise<FfmpegStatus> {
   if (cached && !force) return cached;
   try {
-    const { stdout } = await execFileAsync(FFMPEG_BIN, ["-version"], {
+    const { stdout } = await execFileAsync(FFMPEG_BIN, ['-version'], {
       timeout: 10_000,
     });
-    await execFileAsync(FFPROBE_BIN, ["-version"], { timeout: 10_000 });
+    await execFileAsync(FFPROBE_BIN, ['-version'], { timeout: 10_000 });
     cached = {
       available: true,
-      version: stdout.split("\n")[0]?.trim() ?? null,
+      version: stdout.split('\n')[0]?.trim() ?? null,
       error: null,
     };
   } catch (err) {
@@ -54,14 +54,14 @@ export async function probeVideo(path: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(
     FFPROBE_BIN,
     [
-      "-v",
-      "error",
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=width,height:format=duration",
-      "-of",
-      "json",
+      '-v',
+      'error',
+      '-select_streams',
+      'v:0',
+      '-show_entries',
+      'stream=width,height:format=duration',
+      '-of',
+      'json',
       path,
     ],
     { timeout: 60_000, maxBuffer: 8 * 1024 * 1024 },
@@ -81,45 +81,37 @@ export async function probeVideo(path: string): Promise<VideoInfo> {
   };
 }
 
-function decodeFrame(
-  path: string,
-  atSeconds: number,
-  info: VideoInfo,
-): Promise<Buffer | null> {
+function decodeFrame(path: string, atSeconds: number, info: VideoInfo): Promise<Buffer | null> {
   return new Promise((resolve, reject) => {
     const child = spawn(
       FFMPEG_BIN,
       [
-        "-v",
-        "error",
-        "-ss",
+        '-v',
+        'error',
+        '-ss',
         atSeconds.toFixed(3),
-        "-i",
+        '-i',
         path,
-        "-frames:v",
-        "1",
-        "-f",
-        "rawvideo",
-        "-pix_fmt",
-        "rgba",
-        "-",
+        '-frames:v',
+        '1',
+        '-f',
+        'rawvideo',
+        '-pix_fmt',
+        'rgba',
+        '-',
       ],
-      { stdio: ["ignore", "pipe", "pipe"] },
+      { stdio: ['ignore', 'pipe', 'pipe'] },
     );
     const chunks: Buffer[] = [];
     const errs: Buffer[] = [];
-    child.stdout.on("data", (c: Buffer) => chunks.push(c));
-    child.stderr.on("data", (c: Buffer) => errs.push(c));
-    child.on("error", reject);
-    child.on("close", (code) => {
+    child.stdout.on('data', (c: Buffer) => chunks.push(c));
+    child.stderr.on('data', (c: Buffer) => errs.push(c));
+    child.on('error', reject);
+    child.on('close', (code) => {
       const expected = info.width * info.height * 4;
       const buf = Buffer.concat(chunks);
       if (code !== 0 && buf.length < expected) {
-        reject(
-          new Error(
-            `ffmpeg exited ${code}: ${Buffer.concat(errs).toString().slice(0, 300)}`,
-          ),
-        );
+        reject(new Error(`ffmpeg exited ${code}: ${Buffer.concat(errs).toString().slice(0, 300)}`));
         return;
       }
       resolve(buf.length >= expected ? buf.subarray(0, expected) : null);

@@ -18,12 +18,12 @@
  * The first run downloads model weights to the TrustMark cache directory.
  */
 
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-export const TRUSTMARK_PYTHON = process.env.TRUSTMARK_PYTHON ?? "python3";
+export const TRUSTMARK_PYTHON = process.env.TRUSTMARK_PYTHON ?? 'python3';
 
 export interface TrustmarkStatus {
   /** Operator asked for TrustMark via WATERMARK_ENGINE. */
@@ -36,19 +36,19 @@ export interface TrustmarkStatus {
 }
 
 const PROBE = [
-  "-c",
-  "import json,sys\n" +
-    "try:\n" +
-    "    import trustmark\n" +
+  '-c',
+  'import json,sys\n' +
+    'try:\n' +
+    '    import trustmark\n' +
     "    print(json.dumps({'ok': True, 'version': getattr(trustmark, '__version__', 'unknown')}))\n" +
-    "except Exception as exc:\n" +
+    'except Exception as exc:\n' +
     "    print(json.dumps({'ok': False, 'error': f'{type(exc).__name__}: {exc}'}))\n",
 ];
 
 let cached: TrustmarkStatus | null = null;
 
 export function trustmarkRequested(): boolean {
-  return (process.env.WATERMARK_ENGINE ?? "").toLowerCase() === "trustmark";
+  return (process.env.WATERMARK_ENGINE ?? '').toLowerCase() === 'trustmark';
 }
 
 /** Probe for a usable TrustMark install. Never throws. */
@@ -79,9 +79,9 @@ export async function trustmarkStatus(force = false): Promise<TrustmarkStatus> {
     cached = {
       requested,
       available: parsed.ok,
-      version: parsed.ok ? (parsed.version ?? "unknown") : null,
+      version: parsed.ok ? (parsed.version ?? 'unknown') : null,
       pythonPath: TRUSTMARK_PYTHON,
-      error: parsed.ok ? null : (parsed.error ?? "import failed"),
+      error: parsed.ok ? null : (parsed.error ?? 'import failed'),
     };
   } catch (err) {
     cached = {

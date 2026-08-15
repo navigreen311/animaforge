@@ -1,28 +1,28 @@
-import { v4 as uuidv4 } from "uuid";
-import { prisma, isPrismaAvailable } from "../db";
+import { v4 as uuidv4 } from 'uuid';
+import { prisma, isPrismaAvailable } from '../db';
 import {
   MATCH_THRESHOLD,
   clearFingerprints,
   getFingerprintCapabilities,
   matchAsset,
   registerFingerprint,
-} from "./fingerprintService";
-import type { AssetInput, FingerprintMatch } from "./fingerprintService";
-import { discoverCandidates, searchCapability } from "./discovery";
-import { detectWatermarkInAsset, watermarkCapability } from "./watermarkClient";
+} from './fingerprintService';
+import type { AssetInput, FingerprintMatch } from './fingerprintService';
+import { discoverCandidates, searchCapability } from './discovery';
+import { detectWatermarkInAsset, watermarkCapability } from './watermarkClient';
 
-export type AlertStatus = "new" | "dmca_sent" | "ignored" | "monitoring";
-export type ActionType = "dmca" | "ignore" | "monitor";
-export type ScanFrequency = "hourly" | "daily" | "weekly";
+export type AlertStatus = 'new' | 'dmca_sent' | 'ignored' | 'monitoring';
+export type ActionType = 'dmca' | 'ignore' | 'monitor';
+export type ScanFrequency = 'hourly' | 'daily' | 'weekly';
 
 export const PLATFORMS = [
-  "youtube",
-  "tiktok",
-  "instagram",
-  "twitter",
-  "facebook",
-  "vimeo",
-  "dailymotion",
+  'youtube',
+  'tiktok',
+  'instagram',
+  'twitter',
+  'facebook',
+  'vimeo',
+  'dailymotion',
 ] as const;
 
 export type Platform = (typeof PLATFORMS)[number];
@@ -47,7 +47,7 @@ export interface ScanMatch {
   query: string;
   detectedAt: string;
   /** How this match was established — never left implicit. */
-  match_method: "perceptual-hash" | "watermark";
+  match_method: 'perceptual-hash' | 'watermark';
   hamming_distance: number | null;
   fingerprint_id: string | null;
   output_id: string | null;
@@ -178,19 +178,15 @@ export function registerBatch(
     userId?: string;
   }>,
 ): RegisteredContent[] {
-  return outputs.map((o) =>
-    registerContent(o.outputId, o.watermarkId, o.metadata ?? {}, o.userId),
-  );
+  return outputs.map((o) => registerContent(o.outputId, o.watermarkId, o.metadata ?? {}, o.userId));
 }
 
 /* ──────────── Scanning ──────────── */
 
-const MAX_CANDIDATE_BYTES = Number(
-  process.env.PIRACY_MAX_CANDIDATE_BYTES ?? 64 * 1024 * 1024,
-);
+const MAX_CANDIDATE_BYTES = Number(process.env.PIRACY_MAX_CANDIDATE_BYTES ?? 64 * 1024 * 1024);
 
 function remoteFetchAllowed(): boolean {
-  return process.env.PIRACY_ALLOW_REMOTE_FETCH === "true";
+  return process.env.PIRACY_ALLOW_REMOTE_FETCH === 'true';
 }
 
 async function fetchCandidateMedia(
@@ -198,15 +194,14 @@ async function fetchCandidateMedia(
 ): Promise<{ buffer: Buffer; mimeType: string } | null> {
   if (!remoteFetchAllowed()) return null;
   const parsed = new URL(url);
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
   const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
   if (!response.ok) return null;
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.length > MAX_CANDIDATE_BYTES) return null;
   return {
     buffer,
-    mimeType:
-      response.headers.get("content-type")?.split(";")[0] ?? "image/jpeg",
+    mimeType: response.headers.get('content-type')?.split(';')[0] ?? 'image/jpeg',
   };
 }
 
@@ -220,10 +215,7 @@ async function fetchCandidateMedia(
  * Whatever cannot run is reported in `reasons`; nothing is invented to fill
  * the gap.
  */
-export async function scanPlatform(
-  query: string,
-  platform: string,
-): Promise<ScanResult> {
+export async function scanPlatform(query: string, platform: string): Promise<ScanResult> {
   totalScans++;
 
   const reasons: string[] = [];
@@ -232,7 +224,7 @@ export async function scanPlatform(
 
   if (!remoteFetchAllowed()) {
     reasons.push(
-      "PIRACY_ALLOW_REMOTE_FETCH is not enabled; candidate media cannot be downloaded for fingerprint comparison",
+      'PIRACY_ALLOW_REMOTE_FETCH is not enabled; candidate media cannot be downloaded for fingerprint comparison',
     );
   }
 
@@ -253,7 +245,7 @@ export async function scanPlatform(
     if (!media) continue;
 
     const asset: AssetInput = {
-      asset_base64: media.buffer.toString("base64"),
+      asset_base64: media.buffer.toString('base64'),
       mime_type: media.mimeType,
     };
 
@@ -323,7 +315,7 @@ async function recordMatch(input: {
     watermark_detected: watermark.present,
     query,
     detectedAt: new Date().toISOString(),
-    match_method: "perceptual-hash",
+    match_method: 'perceptual-hash',
     hamming_distance: Math.round(best.distance),
     fingerprint_id: best.fingerprint.id,
     output_id: best.fingerprint.outputId,
@@ -335,14 +327,14 @@ async function recordMatch(input: {
     prisma!.piracyMatch.create({
       data: {
         outputId: best.fingerprint.outputId,
-        userId: best.fingerprint.userId ?? "unknown",
+        userId: best.fingerprint.userId ?? 'unknown',
         platform,
         matchUrl: url,
         matchStrength: best.similarity,
         watermarkFound: watermark.present === true,
-        status: "pending",
+        status: 'pending',
         fingerprintId: best.fingerprint.id,
-        matchMethod: "perceptual-hash",
+        matchMethod: 'perceptual-hash',
         hammingDistance: Math.round(best.distance),
         watermarkId: watermark.watermarkId,
         evidence: evidence as object,
@@ -357,7 +349,7 @@ async function recordMatch(input: {
     url: match.url,
     platform: match.platform,
     confidence: match.confidence,
-    status: "new",
+    status: 'new',
     createdAt: new Date().toISOString(),
     actionTakenAt: null,
     dmcaNotice: null,
@@ -395,10 +387,7 @@ export async function matchSuppliedAsset(
 
 /* ──────────── Scheduled / automated scanning ──────────── */
 
-export function scheduleScan(
-  contentId: string,
-  frequency: ScanFrequency,
-): ScheduledScan {
+export function scheduleScan(contentId: string, frequency: ScanFrequency): ScheduledScan {
   const now = new Date();
   const intervalMs: Record<ScanFrequency, number> = {
     hourly: 60 * 60 * 1000,
@@ -458,8 +447,7 @@ export function calculateMatchConfidence(
     const durWeight = 0.25;
     weights += durWeight;
     const ratio =
-      Math.min(source.duration, detected.duration) /
-      Math.max(source.duration, detected.duration);
+      Math.min(source.duration, detected.duration) / Math.max(source.duration, detected.duration);
     score += ratio * durWeight;
   }
 
@@ -477,10 +465,7 @@ export function calculateMatchConfidence(
     const srcWords = new Set(source.title.toLowerCase().split(/\s+/));
     const detWords = detected.title.toLowerCase().split(/\s+/);
     const overlap = detWords.filter((w) => srcWords.has(w)).length;
-    const similarity =
-      detWords.length > 0
-        ? overlap / Math.max(srcWords.size, detWords.length)
-        : 0;
+    const similarity = detWords.length > 0 ? overlap / Math.max(srcWords.size, detWords.length) : 0;
     score += similarity * titleWeight;
   }
 
@@ -524,178 +509,174 @@ export async function detectWatermark(
 
 /* ──────────── DMCA / Legal templates ──────────── */
 
-const DMCA_TEMPLATES: Record<
-  string,
-  (url: string, confidence: number) => string
-> = {
+const DMCA_TEMPLATES: Record<string, (url: string, confidence: number) => string> = {
   youtube: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — YouTube",
-      "================================",
-      "",
+      'DMCA TAKEDOWN NOTICE — YouTube',
+      '================================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear YouTube Copyright Team,",
-      "",
-      "I am writing to report content hosted on your platform that infringes upon",
-      "copyrighted material registered with AnimaForge Content Protection.",
-      "",
-      "Pursuant to 17 U.S.C. § 512(c), I request immediate removal of the infringing content.",
-      "The original content is registered and watermarked in our system.",
-      "",
-      "I have a good faith belief that the use of the material is not authorized by the",
-      "copyright owner, its agent, or the law.",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear YouTube Copyright Team,',
+      '',
+      'I am writing to report content hosted on your platform that infringes upon',
+      'copyrighted material registered with AnimaForge Content Protection.',
+      '',
+      'Pursuant to 17 U.S.C. § 512(c), I request immediate removal of the infringing content.',
+      'The original content is registered and watermarked in our system.',
+      '',
+      'I have a good faith belief that the use of the material is not authorized by the',
+      'copyright owner, its agent, or the law.',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   tiktok: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — TikTok",
-      "===============================",
-      "",
+      'DMCA TAKEDOWN NOTICE — TikTok',
+      '===============================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear TikTok Intellectual Property Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear TikTok Intellectual Property Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   instagram: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — Instagram",
-      "==================================",
-      "",
+      'DMCA TAKEDOWN NOTICE — Instagram',
+      '==================================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear Instagram/Meta Intellectual Property Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear Instagram/Meta Intellectual Property Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   twitter: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — X (Twitter)",
-      "====================================",
-      "",
+      'DMCA TAKEDOWN NOTICE — X (Twitter)',
+      '====================================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear X/Twitter Copyright Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear X/Twitter Copyright Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   facebook: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — Facebook",
-      "=================================",
-      "",
+      'DMCA TAKEDOWN NOTICE — Facebook',
+      '=================================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear Facebook/Meta Intellectual Property Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear Facebook/Meta Intellectual Property Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   vimeo: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — Vimeo",
-      "==============================",
-      "",
+      'DMCA TAKEDOWN NOTICE — Vimeo',
+      '==============================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear Vimeo Copyright Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear Vimeo Copyright Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   dailymotion: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE — Dailymotion",
-      "====================================",
-      "",
+      'DMCA TAKEDOWN NOTICE — Dailymotion',
+      '====================================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "Dear Dailymotion Copyright Team,",
-      "",
-      "Content at the above URL infringes upon copyrighted material protected by AnimaForge.",
-      "Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'Dear Dailymotion Copyright Team,',
+      '',
+      'Content at the above URL infringes upon copyrighted material protected by AnimaForge.',
+      'Please remove or disable access to this content under the DMCA (17 U.S.C. § 512).',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 
   default: (url, confidence) =>
     [
-      "DMCA TAKEDOWN NOTICE",
-      "====================",
-      "",
+      'DMCA TAKEDOWN NOTICE',
+      '====================',
+      '',
       `Date: ${new Date().toISOString()}`,
       `Infringing URL: ${url}`,
       `Match Confidence: ${(confidence * 100).toFixed(0)}%`,
-      "",
-      "To Whom It May Concern,",
-      "",
-      "I am writing to notify you that content hosted at the above URL infringes upon",
-      "copyrighted material owned by the content creator registered with AnimaForge.",
-      "",
-      "This letter is a formal notification under the Digital Millennium Copyright Act (DMCA).",
-      "I request that you immediately remove or disable access to the infringing material.",
-      "",
-      "Sincerely,",
-      "AnimaForge Content Protection System",
-    ].join("\n"),
+      '',
+      'To Whom It May Concern,',
+      '',
+      'I am writing to notify you that content hosted at the above URL infringes upon',
+      'copyrighted material owned by the content creator registered with AnimaForge.',
+      '',
+      'This letter is a formal notification under the Digital Millennium Copyright Act (DMCA).',
+      'I request that you immediately remove or disable access to the infringing material.',
+      '',
+      'Sincerely,',
+      'AnimaForge Content Protection System',
+    ].join('\n'),
 };
 
 export function getDMCATemplate(platform: string): string {
-  const templateFn = DMCA_TEMPLATES[platform] ?? DMCA_TEMPLATES["default"];
-  return templateFn("<URL>", 0);
+  const templateFn = DMCA_TEMPLATES[platform] ?? DMCA_TEMPLATES['default'];
+  return templateFn('<URL>', 0);
 }
 
 export function generateDMCA(matchId: string): string {
   const alert = Array.from(alerts.values()).find((a) => a.matchId === matchId);
   if (!alert) throw new Error(`No alert found for match ${matchId}`);
 
-  const templateFn =
-    DMCA_TEMPLATES[alert.platform] ?? DMCA_TEMPLATES["default"];
+  const templateFn = DMCA_TEMPLATES[alert.platform] ?? DMCA_TEMPLATES['default'];
   const notice = templateFn(alert.url, alert.confidence);
 
-  alert.status = "dmca_sent";
+  alert.status = 'dmca_sent';
   alert.actionTakenAt = new Date().toISOString();
   alert.dmcaNotice = notice;
 
@@ -706,21 +687,18 @@ export function generateDMCA(matchId: string): string {
   return notice;
 }
 
-async function persistDMCANotice(
-  alert: PiracyAlert,
-  notice: string,
-): Promise<void> {
+async function persistDMCANotice(alert: PiracyAlert, notice: string): Promise<void> {
   await tryPrisma(async () => {
     await prisma!.piracyMatch.update({
       where: { id: alert.matchId },
-      data: { status: "dmca_sent", reviewedAt: new Date() },
+      data: { status: 'dmca_sent', reviewedAt: new Date() },
     });
     return prisma!.dMCANotice.create({
       data: {
         matchId: alert.matchId,
-        userId: (alert as { userId?: string }).userId ?? "unknown",
+        userId: (alert as { userId?: string }).userId ?? 'unknown',
         platform: alert.platform,
-        status: "draft",
+        status: 'draft',
         body: notice,
         metadata: { url: alert.url, confidence: alert.confidence },
       },
@@ -743,15 +721,15 @@ export function updateAlertAction(id: string, action: ActionType): PiracyAlert {
   if (!alert) throw new Error(`Alert ${id} not found`);
 
   const statusMap: Record<ActionType, AlertStatus> = {
-    dmca: "dmca_sent",
-    ignore: "ignored",
-    monitor: "monitoring",
+    dmca: 'dmca_sent',
+    ignore: 'ignored',
+    monitor: 'monitoring',
   };
 
   alert.status = statusMap[action];
   alert.actionTakenAt = new Date().toISOString();
 
-  if (action === "dmca") {
+  if (action === 'dmca') {
     alert.dmcaNotice = generateDMCA(alert.matchId);
   }
 
@@ -762,15 +740,14 @@ export function updateAlertAction(id: string, action: ActionType): PiracyAlert {
 
 export function getDashboard(): DashboardStats {
   const allAlerts = Array.from(alerts.values());
-  const dmcaSent = allAlerts.filter((a) => a.status === "dmca_sent").length;
+  const dmcaSent = allAlerts.filter((a) => a.status === 'dmca_sent').length;
 
   return {
     total_registered: registeredContent.size,
     total_scans: totalScans,
     matches_found: totalMatches,
     dmca_sent: dmcaSent,
-    takedown_rate:
-      totalMatches > 0 ? parseFloat((dmcaSent / totalMatches).toFixed(2)) : 0,
+    takedown_rate: totalMatches > 0 ? parseFloat((dmcaSent / totalMatches).toFixed(2)) : 0,
   };
 }
 
@@ -797,9 +774,7 @@ export function getProtectionStats(userId: string): ProtectionStats {
   // Matches and takedowns from alerts
   const allAlerts = Array.from(alerts.values());
   const matchesFound = allAlerts.length;
-  const takedownSuccess = allAlerts.filter(
-    (a) => a.status === "dmca_sent",
-  ).length;
+  const takedownSuccess = allAlerts.filter((a) => a.status === 'dmca_sent').length;
 
   return {
     contentProtected,
@@ -844,19 +819,17 @@ export async function getCapabilities(): Promise<PiracyCapabilities> {
   if (!discovery.configured && discovery.detail) reasons.push(discovery.detail);
   if (!watermark.configured && watermark.detail) reasons.push(watermark.detail);
   if (!remoteFetchAllowed()) {
-    reasons.push(
-      "PIRACY_ALLOW_REMOTE_FETCH is not enabled; scans cannot download candidate media",
-    );
+    reasons.push('PIRACY_ALLOW_REMOTE_FETCH is not enabled; scans cannot download candidate media');
   }
   if (!fingerprinting.video_fingerprinting.available) {
-    reasons.push("ffmpeg not found — video fingerprinting is unavailable");
+    reasons.push('ffmpeg not found — video fingerprinting is unavailable');
   }
   if (!isPrismaAvailable()) {
-    reasons.push("no database connection — matches are in-memory only");
+    reasons.push('no database connection — matches are in-memory only');
   }
 
   return {
-    service: "piracy-monitoring",
+    service: 'piracy-monitoring',
     fingerprinting,
     discovery,
     watermark_service: watermark,

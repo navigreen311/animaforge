@@ -7,10 +7,10 @@
  * match at distance 3 and a match at distance 12 are not the same claim.
  */
 
-import crypto from "crypto";
-import { promises as fs } from "node:fs";
-import { prisma, isPrismaAvailable } from "../db";
-import { ffmpegStatus, sampleFrames } from "../lib/ffmpeg";
+import crypto from 'crypto';
+import { promises as fs } from 'node:fs';
+import { prisma, isPrismaAvailable } from '../db';
+import { ffmpegStatus, sampleFrames } from '../lib/ffmpeg';
 import {
   HASH_BITS,
   hammingDistance,
@@ -18,16 +18,14 @@ import {
   hashImageBuffer,
   sequenceDistance,
   similarityFromDistance,
-} from "../lib/perceptualHash";
+} from '../lib/perceptualHash';
 
-export const IMAGE_ALGORITHM = "phash-dct64";
-export const VIDEO_ALGORITHM = "phash-dct64-seq";
+export const IMAGE_ALGORITHM = 'phash-dct64';
+export const VIDEO_ALGORITHM = 'phash-dct64-seq';
 
 /** Frames sampled per video. More frames cost decode time and buy resilience
  *  against a pirate re-cutting the timeline. */
-export const VIDEO_FRAME_SAMPLES = Number(
-  process.env.FINGERPRINT_VIDEO_SAMPLES ?? 9,
-);
+export const VIDEO_FRAME_SAMPLES = Number(process.env.FINGERPRINT_VIDEO_SAMPLES ?? 9);
 
 /**
  * Maximum Hamming distance (out of 64 bits) still treated as a match.
@@ -37,12 +35,10 @@ export const VIDEO_FRAME_SAMPLES = Number(
  * Crops and rotations are therefore NOT reliably caught — that is a real limit
  * of a global perceptual hash, documented rather than hidden.
  */
-export const MATCH_THRESHOLD = Number(
-  process.env.FINGERPRINT_MATCH_THRESHOLD ?? 10,
-);
+export const MATCH_THRESHOLD = Number(process.env.FINGERPRINT_MATCH_THRESHOLD ?? 10);
 
-export type MediaType = "image" | "video";
-export type MatchConfidence = "high" | "medium" | "low";
+export type MediaType = 'image' | 'video';
+export type MatchConfidence = 'high' | 'medium' | 'low';
 
 export interface FingerprintRecord {
   id: string;
@@ -88,7 +84,7 @@ export function clearFingerprints(): void {
 }
 
 function sha256(buffer: Buffer): string {
-  return crypto.createHash("sha256").update(buffer).digest("hex");
+  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 /* ------------------------------------------------------------------ */
@@ -111,45 +107,37 @@ export interface ComputedFingerprint {
 export class UnsupportedMediaError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "UnsupportedMediaError";
+    this.name = 'UnsupportedMediaError';
   }
 }
 
 function mediaTypeOf(input: AssetInput): MediaType {
-  if (input.mime_type?.startsWith("video/")) return "video";
-  if (input.mime_type?.startsWith("image/")) return "image";
-  const ext =
-    input.asset_path?.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
-  if (["mp4", "mov", "mkv", "webm", "avi", "m4v"].includes(ext)) return "video";
-  return "image";
+  if (input.mime_type?.startsWith('video/')) return 'video';
+  if (input.mime_type?.startsWith('image/')) return 'image';
+  const ext = input.asset_path?.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  if (['mp4', 'mov', 'mkv', 'webm', 'avi', 'm4v'].includes(ext)) return 'video';
+  return 'image';
 }
 
 /** Compute a fingerprint from supplied media. Throws if the media cannot be read. */
-export async function computeFingerprint(
-  input: AssetInput,
-): Promise<ComputedFingerprint> {
+export async function computeFingerprint(input: AssetInput): Promise<ComputedFingerprint> {
   const mediaType = mediaTypeOf(input);
 
-  if (mediaType === "video") {
+  if (mediaType === 'video') {
     if (!input.asset_path) {
       throw new UnsupportedMediaError(
-        "video fingerprinting requires asset_path (frames are streamed from disk)",
+        'video fingerprinting requires asset_path (frames are streamed from disk)',
       );
     }
     const status = await ffmpegStatus();
     if (!status.available) {
       throw new UnsupportedMediaError(
-        `video fingerprinting requires ffmpeg, which is not available (${status.error ?? "not found"})`,
+        `video fingerprinting requires ffmpeg, which is not available (${status.error ?? 'not found'})`,
       );
     }
-    const { info, frames } = await sampleFrames(
-      input.asset_path,
-      VIDEO_FRAME_SAMPLES,
-    );
+    const { info, frames } = await sampleFrames(input.asset_path, VIDEO_FRAME_SAMPLES);
     if (frames.length === 0) {
-      throw new UnsupportedMediaError(
-        "no frames could be decoded from the video",
-      );
+      throw new UnsupportedMediaError('no frames could be decoded from the video');
     }
     const hashes = frames.map((f) => hashFrame(f));
     return {
@@ -169,18 +157,16 @@ export async function computeFingerprint(
   }
 
   const buffer = input.asset_base64
-    ? Buffer.from(input.asset_base64, "base64")
+    ? Buffer.from(input.asset_base64, 'base64')
     : input.asset_path
       ? await fs.readFile(input.asset_path)
       : null;
   if (!buffer) {
-    throw new UnsupportedMediaError(
-      "fingerprinting requires asset_base64 or asset_path",
-    );
+    throw new UnsupportedMediaError('fingerprinting requires asset_base64 or asset_path');
   }
   const hashes = await hashImageBuffer(buffer);
   return {
-    mediaType: "image",
+    mediaType: 'image',
     algorithm: IMAGE_ALGORITHM,
     phash: hashes.phash,
     ahash: hashes.ahash,
@@ -256,7 +242,7 @@ async function allFingerprints(): Promise<FingerprintRecord[]> {
   try {
     if (isPrismaAvailable()) {
       const rows = await prisma!.fingerprint.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         take: Number(process.env.FINGERPRINT_SEARCH_LIMIT ?? 5000),
       });
       if (rows.length > 0) {
@@ -293,9 +279,9 @@ export function getFingerprints(): FingerprintRecord[] {
 /* ------------------------------------------------------------------ */
 
 function confidenceFor(distance: number): MatchConfidence {
-  if (distance <= 4) return "high";
-  if (distance <= 8) return "medium";
-  return "low";
+  if (distance <= 4) return 'high';
+  if (distance <= 8) return 'medium';
+  return 'low';
 }
 
 /** Compare a computed fingerprint against everything registered. */
@@ -309,8 +295,7 @@ export async function findMatches(
   for (const candidate of candidates) {
     // Two videos are compared frame sequence against frame sequence; anything
     // else falls back to the representative single hash.
-    const useSequence =
-      probe.frameHashes.length > 0 && candidate.frameHashes.length > 0;
+    const useSequence = probe.frameHashes.length > 0 && candidate.frameHashes.length > 0;
     const distance = useSequence
       ? sequenceDistance(probe.frameHashes, candidate.frameHashes)
       : hammingDistance(probe.phash, candidate.phash);
@@ -326,13 +311,9 @@ export async function findMatches(
       distances: {
         phash: hammingDistance(probe.phash, candidate.phash),
         ahash:
-          probe.ahash && candidate.ahash
-            ? hammingDistance(probe.ahash, candidate.ahash)
-            : null,
+          probe.ahash && candidate.ahash ? hammingDistance(probe.ahash, candidate.ahash) : null,
         dhash:
-          probe.dhash && candidate.dhash
-            ? hammingDistance(probe.dhash, candidate.dhash)
-            : null,
+          probe.dhash && candidate.dhash ? hammingDistance(probe.dhash, candidate.dhash) : null,
       },
     });
   }
@@ -382,13 +363,13 @@ export async function getFingerprintCapabilities(): Promise<FingerprintCapabilit
       available: status.available,
       algorithm: VIDEO_ALGORITHM,
       frame_samples: VIDEO_FRAME_SAMPLES,
-      requires: "ffmpeg + ffprobe on PATH (or FFMPEG_PATH / FFPROBE_PATH)",
+      requires: 'ffmpeg + ffprobe on PATH (or FFMPEG_PATH / FFPROBE_PATH)',
       detail: status.available ? status.version : status.error,
     },
     match_threshold: MATCH_THRESHOLD,
     known_limitations: [
-      "Global perceptual hashing does not reliably match crops beyond ~10% of the frame, rotations, or heavy letterboxing.",
-      "Matching is a linear scan; it needs an ANN/BK-tree index before it scales past ~10^5 fingerprints.",
+      'Global perceptual hashing does not reliably match crops beyond ~10% of the frame, rotations, or heavy letterboxing.',
+      'Matching is a linear scan; it needs an ANN/BK-tree index before it scales past ~10^5 fingerprints.',
     ],
   };
 }
