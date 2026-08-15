@@ -7,6 +7,12 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from ..services.engines import real_marker
+from ..services.scene_decomposition import (
+    decompose_prompt,
+    decompose_sequence,
+    to_scene_graph,
+)
 from ..services.scene_graph_engine import (
     compute_camera_frustum,
     compute_lighting,
@@ -98,7 +104,72 @@ class LightingResponse(BaseModel):
     ambient: dict[str, Any]
 
 
+class DecomposeRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, description="Natural-language shot description")
+    previous_shot_id: str | None = Field(
+        None, description="Shot this one continues from, for continuity dependency"
+    )
+    shot_id: str | None = Field(None, description="Override the derived shot id")
+
+
+class DecomposeResponse(BaseModel):
+    decomposition: dict[str, Any]
+    scene_graph: dict[str, Any]
+    engine: dict[str, Any]
+
+
+class DecomposeSequenceRequest(BaseModel):
+    prompts: list[str] = Field(..., min_length=1, description="Ordered shot prompts")
+
+
+class DecomposeSequenceResponse(BaseModel):
+    shots: list[dict[str, Any]]
+    shot_count: int
+    total_duration_s: float
+    mean_coverage: float
+    engine: dict[str, Any]
+
+
 # -- Endpoints ----------------------------------------------------------------
+
+
+@router.post("/scene-graph/decompose", response_model=DecomposeResponse)
+async def decompose_endpoint(req: DecomposeRequest) -> DecomposeResponse:
+    """Turn a prompt into the ten structured E3 fields, plus a scene graph.
+
+    This is the layer that was missing: every other endpoint here consumes a
+    scene graph, and nothing produced one. Deterministic -- no model call --
+    and each field records whether it was matched from the prompt, derived by
+    rule, or defaulted.
+    """
+    try:
+        decomposition = decompose_prompt(
+            req.prompt,
+            previous_shot_id=req.previous_shot_id,
+            shot_id=req.shot_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return DecomposeResponse(
+        decomposition=decomposition,
+        scene_graph=to_scene_graph(decomposition),
+        engine=real_marker("scene_graph", detail="Deterministic rule-based decomposition."),
+    )
+
+
+@router.post("/scene-graph/decompose-sequence", response_model=DecomposeSequenceResponse)
+async def decompose_sequence_endpoint(
+    req: DecomposeSequenceRequest,
+) -> DecomposeSequenceResponse:
+    """Decompose an ordered list of prompts, chaining continuity between shots."""
+    try:
+        result = decompose_sequence(req.prompts)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return DecomposeSequenceResponse(
+        **result,
+        engine=real_marker("scene_graph", detail="Deterministic rule-based decomposition."),
+    )
 
 
 @router.post("/scene-graph/layout", response_model=LayoutResponse)
