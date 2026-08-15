@@ -46,6 +46,35 @@ const VALID_ACTIONS: ReceiptAction[] = [
   'consent_revoked',
 ];
 
+/**
+ * Map a `receipts` row onto the API shape.
+ *
+ * Every read path needs this, and they were each doing their own thing before
+ * -- or rather, not doing it at all: `createReceipt` wrote to Postgres while
+ * every read below queried the in-memory Map, so a receipt written to the
+ * database could never be read back. The `Map` made that invisible, because
+ * without a database both halves used it.
+ */
+function toReceipt(row: {
+  receiptId: string;
+  userId: string;
+  action: string;
+  createdAt: Date;
+  details: unknown;
+  status: string;
+  projectId: string | null;
+}): Receipt {
+  return {
+    receiptId: row.receiptId,
+    userId: row.userId,
+    action: row.action as ReceiptAction,
+    timestamp: row.createdAt.toISOString(),
+    details: (row.details ?? {}) as Record<string, unknown>,
+    status: row.status as Receipt["status"],
+    projectId: row.projectId ?? undefined,
+  };
+}
+
 export const receiptService = {
   /**
    * Create a new receipt for a user action.
@@ -110,6 +139,20 @@ export const receiptService = {
     page: number = 1,
     limit: number = 20,
   ): Promise<{ receipts: Receipt[]; total: number; page: number; limit: number }> {
+    if (await isDatabaseReachable()) {
+      const where = { userId };
+      const [rows, total] = await Promise.all([
+        requirePrisma().receipt.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        requirePrisma().receipt.count({ where }),
+      ]);
+      return { receipts: rows.map(toReceipt), total, page, limit };
+    }
+
     const userReceipts = Array.from(receipts.values())
       .filter((r) => r.userId === userId)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -125,6 +168,10 @@ export const receiptService = {
    * Get a single receipt by ID.
    */
   async getReceipt(receiptId: string): Promise<Receipt | undefined> {
+    if (await isDatabaseReachable()) {
+      const row = await requirePrisma().receipt.findUnique({ where: { receiptId } });
+      return row ? toReceipt(row) : undefined;
+    }
     return receipts.get(receiptId);
   },
 
@@ -132,6 +179,14 @@ export const receiptService = {
    * Get all receipts for a given project.
    */
   async getReceiptsByProject(projectId: string): Promise<Receipt[]> {
+    if (await isDatabaseReachable()) {
+      const rows = await requirePrisma().receipt.findMany({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+      });
+      return rows.map(toReceipt);
+    }
+
     return Array.from(receipts.values())
       .filter((r) => r.projectId === projectId)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -141,7 +196,13 @@ export const receiptService = {
    * Generate a summary of user activity for a given period.
    */
   async generateSummary(userId: string, period: string = 'all'): Promise<ReceiptSummary> {
-    let userReceipts = Array.from(receipts.values()).filter((r) => r.userId === userId);
+    let userReceipts: Receipt[];
+    if (await isDatabaseReachable()) {
+      const rows = await requirePrisma().receipt.findMany({ where: { userId } });
+      userReceipts = rows.map(toReceipt);
+    } else {
+      userReceipts = Array.from(receipts.values()).filter((r) => r.userId === userId);
+    }
 
     // Filter by period if not "all"
     if (period !== 'all') {
