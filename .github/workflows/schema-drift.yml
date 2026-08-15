@@ -134,10 +134,46 @@ jobs:
         working-directory: packages/db
         run: npx prisma migrate deploy
 
-      - name: Upload the generated migration
+      # The other way to reconcile the two: throw the history away and generate
+      # one migration from nothing. --from-empty can only emit CREATE, so unlike
+      # the diff above it cannot drop a column — but it is only valid while no
+      # deployed database has applied the existing history.
+      - name: Generate a replacement history from empty
+        working-directory: packages/db
+        run: |
+          npx prisma migrate diff \
+            --from-empty \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --script > /tmp/squash.sql
+
+          if grep -qE '^(ALTER TABLE .* )?DROP ' /tmp/squash.sql; then
+            echo "::error::--from-empty emitted a DROP; refusing to call this non-destructive"
+            exit 1
+          fi
+
+      # Applying the candidate to a third database and re-diffing is what makes
+      # this a measurement rather than a claim: exit code 0 means the file
+      # reproduces schema.prisma exactly.
+      - name: Verify the replacement reproduces schema.prisma
+        run: |
+          PGPASSWORD=drift_password psql -h localhost -U animaforge -d animaforge_drift \
+            -c 'CREATE DATABASE animaforge_squash;'
+          PGPASSWORD=drift_password psql -v ON_ERROR_STOP=1 -h localhost -U animaforge \
+            -d animaforge_squash -f /tmp/squash.sql > /dev/null
+
+          cd packages/db
+          npx prisma migrate diff \
+            --from-url postgresql://animaforge:drift_password@localhost:5432/animaforge_squash \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --exit-code
+          echo "verified: the replacement history reproduces schema.prisma with no drift"
+
+      - name: Upload the generated SQL
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: drift-migration
-          path: /tmp/drift.sql
+          path: |
+            /tmp/drift.sql
+            /tmp/squash.sql
           if-no-files-found: warn
