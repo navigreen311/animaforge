@@ -2,14 +2,41 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect, Suspense } from 'react';
 import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts';
 import {
-  BarChart3, TrendingUp, Clock, Zap, ChevronDown, Download, X,
-  MonitorPlay, Play, Share2, AlertTriangle, AlertCircle, RotateCcw, ExternalLink,
-  ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, Filter,
-  FileSpreadsheet, FileText,
+  BarChart3,
+  TrendingUp,
+  Clock,
+  Zap,
+  ChevronDown,
+  Download,
+  X,
+  MonitorPlay,
+  Play,
+  Share2,
+  AlertTriangle,
+  AlertCircle,
+  RotateCcw,
+  ExternalLink,
+  ArrowUpRight,
+  ArrowDownRight,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  FileSpreadsheet,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +51,12 @@ type DateRange = '7d' | '30d' | '90d' | '1y' | 'custom';
 type RenderStatus = 'Complete' | 'Failed' | 'Running';
 type RenderTier = 'Standard' | 'Pro' | 'Ultra';
 type CreditCategory = 'Video' | 'Audio' | 'Style' | 'Avatar' | 'Script';
-type FailureReason = 'content_moderation' | 'insufficient_credits' | 'timeout' | 'gpu_oom' | 'model_error';
+type FailureReason =
+  | 'content_moderation'
+  | 'insufficient_credits'
+  | 'timeout'
+  | 'gpu_oom'
+  | 'model_error';
 type Platform = 'youtube' | 'tiktok' | 'meta';
 
 interface DaySnapshot {
@@ -139,38 +171,78 @@ const ALL_SNAPSHOTS_365 = generateSnapshots(365);
 
 function getSnapshots(range: DateRange, customFrom?: string, customTo?: string): DaySnapshot[] {
   switch (range) {
-    case '7d': return ALL_SNAPSHOTS_90.slice(-7);
-    case '30d': return ALL_SNAPSHOTS_90.slice(-30);
-    case '90d': return ALL_SNAPSHOTS_90;
-    case '1y': return ALL_SNAPSHOTS_365;
+    case '7d':
+      return ALL_SNAPSHOTS_90.slice(-7);
+    case '30d':
+      return ALL_SNAPSHOTS_90.slice(-30);
+    case '90d':
+      return ALL_SNAPSHOTS_90;
+    case '1y':
+      return ALL_SNAPSHOTS_365;
     case 'custom': {
       if (!customFrom || !customTo) return ALL_SNAPSHOTS_365;
       return ALL_SNAPSHOTS_365.filter((s) => s.date >= customFrom && s.date <= customTo);
     }
-    default: return ALL_SNAPSHOTS_90.slice(-30);
+    default:
+      return ALL_SNAPSHOTS_90.slice(-30);
   }
 }
 
 // Compute from/to ISO dates (YYYY-MM-DD) for a given range
-function computeRangeDates(range: DateRange, customFrom?: string, customTo?: string): { from: string; to: string } {
+function computeRangeDates(
+  range: DateRange,
+  customFrom?: string,
+  customTo?: string,
+): { from: string; to: string } {
   const now = new Date(2026, 2, 25);
   const to = now.toISOString().slice(0, 10);
   const from = new Date(now);
   switch (range) {
-    case '7d': from.setDate(from.getDate() - 6); break;
-    case '30d': from.setDate(from.getDate() - 29); break;
-    case '90d': from.setDate(from.getDate() - 89); break;
-    case '1y': from.setDate(from.getDate() - 364); break;
+    case '7d':
+      from.setDate(from.getDate() - 6);
+      break;
+    case '30d':
+      from.setDate(from.getDate() - 29);
+      break;
+    case '90d':
+      from.setDate(from.getDate() - 89);
+      break;
+    case '1y':
+      from.setDate(from.getDate() - 364);
+      break;
     case 'custom':
       return { from: customFrom || to, to: customTo || to };
   }
   return { from: from.toISOString().slice(0, 10), to };
 }
 
-const PROJECTS = ['Hero Promo', 'Product Launch', 'Brand Story', 'Tutorial Series', 'Social Campaign'];
-const SHOTS = ['Intro', 'Battle', 'Unboxing', 'CTA', 'Montage', 'Setup', 'Aerial', 'Finale', 'Close-Up', 'Transition'];
+const PROJECTS = [
+  'Hero Promo',
+  'Product Launch',
+  'Brand Story',
+  'Tutorial Series',
+  'Social Campaign',
+];
+const SHOTS = [
+  'Intro',
+  'Battle',
+  'Unboxing',
+  'CTA',
+  'Montage',
+  'Setup',
+  'Aerial',
+  'Finale',
+  'Close-Up',
+  'Transition',
+];
 const TIERS: RenderTier[] = ['Standard', 'Pro', 'Ultra'];
-const FAILURE_REASONS: FailureReason[] = ['content_moderation', 'insufficient_credits', 'timeout', 'gpu_oom', 'model_error'];
+const FAILURE_REASONS: FailureReason[] = [
+  'content_moderation',
+  'insufficient_credits',
+  'timeout',
+  'gpu_oom',
+  'model_error',
+];
 
 function generateRenderHistory(): RenderHistoryRow[] {
   const rand = seededRand(99);
@@ -200,7 +272,9 @@ function generateRenderHistory(): RenderHistoryRow[] {
       credits,
       tier,
       status,
-      failureReason: isFailed ? FAILURE_REASONS[Math.floor(rand() * FAILURE_REASONS.length)] : undefined,
+      failureReason: isFailed
+        ? FAILURE_REASONS[Math.floor(rand() * FAILURE_REASONS.length)]
+        : undefined,
     });
   }
   // sort by date descending (reverse label order)
@@ -230,9 +304,14 @@ const TOP_PROJECTS_DATA: TopProjectData[] = [
     firstPassApprovalRate: 0.82,
     avgRenderSec: 184,
     shotsOverTime: [
-      { day: 'D1', shots: 4 }, { day: 'D2', shots: 7 }, { day: 'D3', shots: 5 },
-      { day: 'D4', shots: 9 }, { day: 'D5', shots: 12 }, { day: 'D6', shots: 8 },
-      { day: 'D7', shots: 14 }, { day: 'D8', shots: 11 },
+      { day: 'D1', shots: 4 },
+      { day: 'D2', shots: 7 },
+      { day: 'D3', shots: 5 },
+      { day: 'D4', shots: 9 },
+      { day: 'D5', shots: 12 },
+      { day: 'D6', shots: 8 },
+      { day: 'D7', shots: 14 },
+      { day: 'D8', shots: 11 },
     ],
   },
   {
@@ -246,9 +325,14 @@ const TOP_PROJECTS_DATA: TopProjectData[] = [
     firstPassApprovalRate: 0.74,
     avgRenderSec: 212,
     shotsOverTime: [
-      { day: 'D1', shots: 3 }, { day: 'D2', shots: 5 }, { day: 'D3', shots: 6 },
-      { day: 'D4', shots: 4 }, { day: 'D5', shots: 8 }, { day: 'D6', shots: 10 },
-      { day: 'D7', shots: 7 }, { day: 'D8', shots: 9 },
+      { day: 'D1', shots: 3 },
+      { day: 'D2', shots: 5 },
+      { day: 'D3', shots: 6 },
+      { day: 'D4', shots: 4 },
+      { day: 'D5', shots: 8 },
+      { day: 'D6', shots: 10 },
+      { day: 'D7', shots: 7 },
+      { day: 'D8', shots: 9 },
     ],
   },
   {
@@ -262,9 +346,14 @@ const TOP_PROJECTS_DATA: TopProjectData[] = [
     firstPassApprovalRate: 0.68,
     avgRenderSec: 158,
     shotsOverTime: [
-      { day: 'D1', shots: 2 }, { day: 'D2', shots: 3 }, { day: 'D3', shots: 5 },
-      { day: 'D4', shots: 4 }, { day: 'D5', shots: 6 }, { day: 'D6', shots: 5 },
-      { day: 'D7', shots: 7 }, { day: 'D8', shots: 6 },
+      { day: 'D1', shots: 2 },
+      { day: 'D2', shots: 3 },
+      { day: 'D3', shots: 5 },
+      { day: 'D4', shots: 4 },
+      { day: 'D5', shots: 6 },
+      { day: 'D6', shots: 5 },
+      { day: 'D7', shots: 7 },
+      { day: 'D8', shots: 6 },
     ],
   },
 ];
@@ -273,7 +362,11 @@ const PLATFORM_DATA: PlatformData[] = [
   {
     platform: 'youtube',
     connected: false,
-    bestVideo: { title: 'AnimaForge Launch Trailer', views: 124_500, retention: [100, 92, 85, 78, 70, 62, 55, 48] },
+    bestVideo: {
+      title: 'AnimaForge Launch Trailer',
+      views: 124_500,
+      retention: [100, 92, 85, 78, 70, 62, 55, 48],
+    },
   },
   { platform: 'tiktok', connected: false },
   { platform: 'meta', connected: false },
@@ -284,7 +377,7 @@ const FAILURE_ANALYSIS: FailureAnalysis[] = [
   { reason: 'insufficient_credits', count: 8, retrySuccessRate: 0.88 },
   { reason: 'timeout', count: 5, retrySuccessRate: 0.92 },
   { reason: 'gpu_oom', count: 3, retrySuccessRate: 0.67 },
-  { reason: 'model_error', count: 2, retrySuccessRate: 0.50 },
+  { reason: 'model_error', count: 2, retrySuccessRate: 0.5 },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -384,7 +477,7 @@ const DATE_RANGE_LABELS: Record<DateRange, string> = {
 
 const VALID_DATE_RANGES: DateRange[] = ['7d', '30d', '90d', '1y', 'custom'];
 function parseDateRange(v: string | null): DateRange {
-  return (v && (VALID_DATE_RANGES as string[]).includes(v)) ? (v as DateRange) : '30d';
+  return v && (VALID_DATE_RANGES as string[]).includes(v) ? (v as DateRange) : '30d';
 }
 
 function fmtNum(n: number): string {
@@ -433,7 +526,15 @@ const AMBER = '#facc15';
 // MINI SPARKLINE (SVG, no Recharts for 80x28 sparklines)
 // ══════════════════════════════════════════════════════════════
 
-function Sparkline({ data, type = 'line', color = BRAND_PURPLE }: { data: number[]; type?: 'line' | 'area' | 'bar'; color?: string }) {
+function Sparkline({
+  data,
+  type = 'line',
+  color = BRAND_PURPLE,
+}: {
+  data: number[];
+  type?: 'line' | 'area' | 'bar';
+  color?: string;
+}) {
   const w = 80;
   const h = 28;
   if (!data.length) return null;
@@ -475,12 +576,12 @@ function Sparkline({ data, type = 'line', color = BRAND_PURPLE }: { data: number
     return (
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <defs>
-          <linearGradient id={`spk-grad-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`spk-grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.4} />
             <stop offset="100%" stopColor={color} stopOpacity={0.05} />
           </linearGradient>
         </defs>
-        <path d={areaD} fill={`url(#spk-grad-${color.replace('#','')})`} />
+        <path d={areaD} fill={`url(#spk-grad-${color.replace('#', '')})`} />
         <path d={d} fill="none" stroke={color} strokeWidth={1.5} />
       </svg>
     );
@@ -548,8 +649,12 @@ function AnalyticsPageContent() {
   const searchParams = useSearchParams();
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   // ── State ───────────────────────────────────────────────────
-  const [dateRange, setDateRange] = useState<DateRange>(() => parseDateRange(searchParams?.get('range') ?? null));
-  const [customFrom, setCustomFrom] = useState<string>(() => searchParams?.get('from') ?? '2026-02-25');
+  const [dateRange, setDateRange] = useState<DateRange>(() =>
+    parseDateRange(searchParams?.get('range') ?? null),
+  );
+  const [customFrom, setCustomFrom] = useState<string>(
+    () => searchParams?.get('from') ?? '2026-02-25',
+  );
   const [customTo, setCustomTo] = useState<string>(() => searchParams?.get('to') ?? '2026-03-25');
   const dateDropdown = useDropdown();
   const exportDropdown = useDropdown();
@@ -589,23 +694,33 @@ function AnalyticsPageContent() {
   // ── Derived Data ────────────────────────────────────────────
   const snapshots = useMemo(
     () => getSnapshots(dateRange, customFrom, customTo),
-    [dateRange, customFrom, customTo]
+    [dateRange, customFrom, customTo],
   );
   const rangeDates = useMemo(
     () => computeRangeDates(dateRange, customFrom, customTo),
-    [dateRange, customFrom, customTo]
+    [dateRange, customFrom, customTo],
   );
   // Re-slice mock render history differently per range
   const rangeFilteredHistory = useMemo(() => {
-    const limits: Record<DateRange, number> = { '7d': 20, '30d': 60, '90d': 100, '1y': 120, custom: 80 };
+    const limits: Record<DateRange, number> = {
+      '7d': 20,
+      '30d': 60,
+      '90d': 100,
+      '1y': 120,
+      custom: 80,
+    };
     return ALL_RENDER_HISTORY.slice(0, limits[dateRange] ?? 60);
   }, [dateRange]);
 
   const kpis = useMemo(() => {
     const totalRenders = snapshots.reduce((s, d) => s + d.completed + d.failed, 0);
     const creditsSpent = snapshots.reduce((s, d) => s + d.creditsUsed, 0);
-    const avgRenderSec = Math.round(snapshots.reduce((s, d) => s + d.avgRenderSec, 0) / snapshots.length);
-    const successRate = parseFloat((snapshots.reduce((s, d) => s + d.successRate, 0) / snapshots.length).toFixed(1));
+    const avgRenderSec = Math.round(
+      snapshots.reduce((s, d) => s + d.avgRenderSec, 0) / snapshots.length,
+    );
+    const successRate = parseFloat(
+      (snapshots.reduce((s, d) => s + d.successRate, 0) / snapshots.length).toFixed(1),
+    );
     return { totalRenders, creditsSpent, avgRenderSec, successRate };
   }, [snapshots]);
 
@@ -625,7 +740,11 @@ function AnalyticsPageContent() {
   const daysLeft = Math.round(CREDITS_REMAINING / DAILY_RATE);
   const depletionDate = new Date(2026, 2, 25);
   depletionDate.setDate(depletionDate.getDate() + daysLeft);
-  const depletionLabel = depletionDate.toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' });
+  const depletionLabel = depletionDate.toLocaleDateString('en', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
   const forecastColor = daysLeft < 7 ? RED : daysLeft < 30 ? RED : daysLeft < 60 ? AMBER : GREEN;
   const forecastPulse = daysLeft < 7;
 
@@ -687,7 +806,7 @@ function AnalyticsPageContent() {
   // Running rows -> animated progress simulation
   const runningRowIds = useMemo(
     () => ALL_RENDER_HISTORY.filter((r) => r.status === 'Running').map((r) => r.id),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -776,1164 +895,1699 @@ function AnalyticsPageContent() {
   // ── Render ──────────────────────────────────────────────────
   return (
     <ErrorBoundary>
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-
-      {/* ═══ HEADER ═══════════════════════════════════════════ */}
       <div
-        style={{
-          padding: '20px 24px 0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-          Analytics
-        </h1>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          {/* Date Range Dropdown */}
-          <div ref={dateDropdown.ref} style={{ position: 'relative' }}>
-            <button
-              type="button"
-              style={btnBase}
-              onClick={() => dateDropdown.setOpen(!dateDropdown.open)}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              {DATE_RANGE_LABELS[dateRange]}
-              <ChevronDown size={12} />
-            </button>
-            {dateDropdown.open && (
-              <div style={{ ...dropdownMenu, minWidth: 220 }}>
-                {(Object.keys(DATE_RANGE_LABELS) as DateRange[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    style={{
-                      ...dropdownItem,
-                      background: key === dateRange ? 'var(--bg-hover)' : 'transparent',
-                      fontWeight: key === dateRange ? 600 : 400,
-                    }}
-                    onClick={() => {
-                      setDateRange(key);
-                      if (key !== 'custom') dateDropdown.setOpen(false);
-                      setTablePage(0);
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = key === dateRange ? 'var(--bg-hover)' : 'transparent'; }}
-                  >
-                    {DATE_RANGE_LABELS[key]}
-                  </button>
-                ))}
-                {dateRange === 'custom' && (
-                  <div style={{ padding: '10px 14px', borderTop: '0.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      From
-                      <input
-                        type="date"
-                        value={customFrom}
-                        max={customTo}
-                        onChange={(e) => { setCustomFrom(e.target.value); setTablePage(0); }}
-                        style={{
-                          background: 'var(--bg-elevated)',
-                          border: '0.5px solid var(--border)',
-                          borderRadius: 'var(--radius-md)',
-                          color: 'var(--text-primary)',
-                          padding: '4px 8px',
-                          fontSize: 12,
-                        }}
-                      />
-                    </label>
-                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      To
-                      <input
-                        type="date"
-                        value={customTo}
-                        min={customFrom}
-                        onChange={(e) => { setCustomTo(e.target.value); setTablePage(0); }}
-                        style={{
-                          background: 'var(--bg-elevated)',
-                          border: '0.5px solid var(--border)',
-                          borderRadius: 'var(--radius-md)',
-                          color: 'var(--text-primary)',
-                          padding: '4px 8px',
-                          fontSize: 12,
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      style={{ ...btnBase, justifyContent: 'center', background: 'var(--brand)', color: '#fff', border: 'none', fontWeight: 600 }}
-                      onClick={() => dateDropdown.setOpen(false)}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Export Dropdown */}
-          <div ref={exportDropdown.ref} style={{ position: 'relative' }}>
-            <button
-              type="button"
-              style={btnBase}
-              onClick={() => exportDropdown.setOpen(!exportDropdown.open)}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <Download size={12} />
-              Export
-              <ChevronDown size={12} />
-            </button>
-            {exportDropdown.open && (
-              <div style={dropdownMenu}>
-                <button
-                  type="button"
-                  style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
-                  onClick={handleExportCSV}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <FileSpreadsheet size={13} />
-                  Export as CSV
-                </button>
-                <button
-                  type="button"
-                  style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
-                  onClick={handleExportPDF}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <FileText size={13} />
-                  Export as PDF
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ SCROLLABLE CONTENT ═══════════════════════════════ */}
-      <main
-        style={{
-          padding: '16px 24px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          overflowY: 'auto',
-          flex: 1,
-        }}
-      >
-        {/* ═══ CREDIT FORECAST BAR ════════════════════════════ */}
+        {/* ═══ HEADER ═══════════════════════════════════════════ */}
         <div
           style={{
-            ...card,
+            padding: '20px 24px 0',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 16,
-            borderLeft: `3px solid ${forecastColor}`,
-            animation: forecastPulse ? 'pulse-red 2s ease-in-out infinite' : undefined,
+            alignItems: 'center',
           }}
         >
-          <style>{`
+          <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            Analytics
+          </h1>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            {/* Date Range Dropdown */}
+            <div ref={dateDropdown.ref} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                style={btnBase}
+                onClick={() => dateDropdown.setOpen(!dateDropdown.open)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                {DATE_RANGE_LABELS[dateRange]}
+                <ChevronDown size={12} />
+              </button>
+              {dateDropdown.open && (
+                <div style={{ ...dropdownMenu, minWidth: 220 }}>
+                  {(Object.keys(DATE_RANGE_LABELS) as DateRange[]).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      style={{
+                        ...dropdownItem,
+                        background: key === dateRange ? 'var(--bg-hover)' : 'transparent',
+                        fontWeight: key === dateRange ? 600 : 400,
+                      }}
+                      onClick={() => {
+                        setDateRange(key);
+                        if (key !== 'custom') dateDropdown.setOpen(false);
+                        setTablePage(0);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--bg-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          key === dateRange ? 'var(--bg-hover)' : 'transparent';
+                      }}
+                    >
+                      {DATE_RANGE_LABELS[key]}
+                    </button>
+                  ))}
+                  {dateRange === 'custom' && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderTop: '0.5px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <label
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--text-tertiary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                        }}
+                      >
+                        From
+                        <input
+                          type="date"
+                          value={customFrom}
+                          max={customTo}
+                          onChange={(e) => {
+                            setCustomFrom(e.target.value);
+                            setTablePage(0);
+                          }}
+                          style={{
+                            background: 'var(--bg-elevated)',
+                            border: '0.5px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--text-primary)',
+                            padding: '4px 8px',
+                            fontSize: 12,
+                          }}
+                        />
+                      </label>
+                      <label
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--text-tertiary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                        }}
+                      >
+                        To
+                        <input
+                          type="date"
+                          value={customTo}
+                          min={customFrom}
+                          onChange={(e) => {
+                            setCustomTo(e.target.value);
+                            setTablePage(0);
+                          }}
+                          style={{
+                            background: 'var(--bg-elevated)',
+                            border: '0.5px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--text-primary)',
+                            padding: '4px 8px',
+                            fontSize: 12,
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        style={{
+                          ...btnBase,
+                          justifyContent: 'center',
+                          background: 'var(--brand)',
+                          color: '#fff',
+                          border: 'none',
+                          fontWeight: 600,
+                        }}
+                        onClick={() => dateDropdown.setOpen(false)}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Export Dropdown */}
+            <div ref={exportDropdown.ref} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                style={btnBase}
+                onClick={() => exportDropdown.setOpen(!exportDropdown.open)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <Download size={12} />
+                Export
+                <ChevronDown size={12} />
+              </button>
+              {exportDropdown.open && (
+                <div style={dropdownMenu}>
+                  <button
+                    type="button"
+                    style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
+                    onClick={handleExportCSV}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <FileSpreadsheet size={13} />
+                    Export as CSV
+                  </button>
+                  <button
+                    type="button"
+                    style={{ ...dropdownItem, display: 'flex', alignItems: 'center', gap: 8 }}
+                    onClick={handleExportPDF}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <FileText size={13} />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ SCROLLABLE CONTENT ═══════════════════════════════ */}
+        <main
+          style={{
+            padding: '16px 24px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            overflowY: 'auto',
+            flex: 1,
+          }}
+        >
+          {/* ═══ CREDIT FORECAST BAR ════════════════════════════ */}
+          <div
+            style={{
+              ...card,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              borderLeft: `3px solid ${forecastColor}`,
+              animation: forecastPulse ? 'pulse-red 2s ease-in-out infinite' : undefined,
+            }}
+          >
+            <style>{`
             @keyframes pulse-red {
               0%, 100% { border-left-color: ${RED}; }
               50% { border-left-color: rgba(248,113,113,0.3); }
             }
           `}</style>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-            <Zap size={16} style={{ color: forecastColor, flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              At your current rate (<strong style={{ color: 'var(--text-primary)' }}>{fmtNum(DAILY_RATE)} credits/day</strong>),
-              your <strong style={{ color: 'var(--text-primary)' }}>{fmtNum(CREDITS_REMAINING)} remaining credits</strong> will
-              last <strong style={{ color: forecastColor }}>~{daysLeft} days</strong> (until {depletionLabel})
-            </span>
-          </div>
-          <button
-            type="button"
-            style={{
-              ...btnBase,
-              background: 'var(--brand)',
-              color: '#fff',
-              border: 'none',
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-            onClick={() => toast.info('Redirecting to upgrade...')}
-          >
-            Upgrade plan
-          </button>
-        </div>
-
-        {/* ═══ 4 KPI CARDS ════════════════════════════════════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-          {/* Total Renders */}
-          <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <BarChart3 size={12} style={{ color: 'var(--text-tertiary)' }} />
-              <p style={lbl}>Total Renders</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Zap size={16} style={{ color: forecastColor, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                At your current rate (
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {fmtNum(DAILY_RATE)} credits/day
+                </strong>
+                ), your{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {fmtNum(CREDITS_REMAINING)} remaining credits
+                </strong>{' '}
+                will last <strong style={{ color: forecastColor }}>~{daysLeft} days</strong> (until{' '}
+                {depletionLabel})
+              </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={valBig}>{fmtNum(kpis.totalRenders)}</p>
-              <Sparkline data={sparkData.renders} type="bar" color={BRAND_PURPLE} />
-            </div>
-            <p style={{ fontSize: 10, color: GREEN, margin: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ArrowUpRight size={10} /> +12% from last period
-            </p>
+            <button
+              type="button"
+              style={{
+                ...btnBase,
+                background: 'var(--brand)',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 600,
+                flexShrink: 0,
+              }}
+              onClick={() => toast.info('Redirecting to upgrade...')}
+            >
+              Upgrade plan
+            </button>
           </div>
 
-          {/* Credits Spent */}
-          <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <Zap size={12} style={{ color: 'var(--text-tertiary)' }} />
-              <p style={lbl}>Credits Spent</p>
+          {/* ═══ 4 KPI CARDS ════════════════════════════════════ */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            {/* Total Renders */}
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <BarChart3 size={12} style={{ color: 'var(--text-tertiary)' }} />
+                <p style={lbl}>Total Renders</p>
+              </div>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <p style={valBig}>{fmtNum(kpis.totalRenders)}</p>
+                <Sparkline data={sparkData.renders} type="bar" color={BRAND_PURPLE} />
+              </div>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: GREEN,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <ArrowUpRight size={10} /> +12% from last period
+              </p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={valBig}>{fmtNum(kpis.creditsSpent)}</p>
-              <Sparkline data={sparkData.credits} type="area" color={BRAND_PURPLE} />
+
+            {/* Credits Spent */}
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <Zap size={12} style={{ color: 'var(--text-tertiary)' }} />
+                <p style={lbl}>Credits Spent</p>
+              </div>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <p style={valBig}>{fmtNum(kpis.creditsSpent)}</p>
+                <Sparkline data={sparkData.credits} type="area" color={BRAND_PURPLE} />
+              </div>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: RED,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <ArrowUpRight size={10} /> +18% from last period
+              </p>
             </div>
-            <p style={{ fontSize: 10, color: RED, margin: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ArrowUpRight size={10} /> +18% from last period
-            </p>
+
+            {/* Avg Render Time */}
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <Clock size={12} style={{ color: 'var(--text-tertiary)' }} />
+                <p style={lbl}>Avg Render Time</p>
+              </div>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <p style={valBig}>{fmtSec(kpis.avgRenderSec)}</p>
+                <Sparkline data={sparkData.avgTime} type="line" color={GREEN} />
+              </div>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: GREEN,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <ArrowDownRight size={10} /> -8s from last period
+              </p>
+            </div>
+
+            {/* Success Rate */}
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <TrendingUp size={12} style={{ color: 'var(--text-tertiary)' }} />
+                <p style={lbl}>Success Rate</p>
+              </div>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <p style={valBig}>{kpis.successRate}%</p>
+                <Sparkline data={sparkData.success} type="line" color={BRAND_PURPLE} />
+              </div>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: GREEN,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <ArrowUpRight size={10} /> +1.4% from last period
+              </p>
+            </div>
           </div>
 
-          {/* Avg Render Time */}
-          <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <Clock size={12} style={{ color: 'var(--text-tertiary)' }} />
-              <p style={lbl}>Avg Render Time</p>
+          {/* ═══ TWO-COLUMN CHART ROW ═══════════════════════════ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: 12 }}>
+            {/* ── LEFT: Render Volume Line Chart ────────────────── */}
+            <div style={card}>
+              <h2 style={secTitle}>Render Volume</h2>
+              <div style={{ height: 220 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={renderVolumeData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      tickLine={false}
+                      interval={Math.max(Math.floor(renderVolumeData.length / 8), 0)}
+                    />
+                    <YAxis
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={30}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="completed"
+                      stroke={BRAND_PURPLE}
+                      strokeWidth={2}
+                      dot={false}
+                      name="Completed"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="failed"
+                      stroke={RED}
+                      strokeWidth={1.5}
+                      strokeDasharray="5 3"
+                      dot={false}
+                      name="Failed"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={valBig}>{fmtSec(kpis.avgRenderSec)}</p>
-              <Sparkline data={sparkData.avgTime} type="line" color={GREEN} />
-            </div>
-            <p style={{ fontSize: 10, color: GREEN, margin: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ArrowDownRight size={10} /> -8s from last period
-            </p>
-          </div>
 
-          {/* Success Rate */}
-          <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <TrendingUp size={12} style={{ color: 'var(--text-tertiary)' }} />
-              <p style={lbl}>Success Rate</p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={valBig}>{kpis.successRate}%</p>
-              <Sparkline data={sparkData.success} type="line" color={BRAND_PURPLE} />
-            </div>
-            <p style={{ fontSize: 10, color: GREEN, margin: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ArrowUpRight size={10} /> +1.4% from last period
-            </p>
-          </div>
-        </div>
-
-        {/* ═══ TWO-COLUMN CHART ROW ═══════════════════════════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: 12 }}>
-          {/* ── LEFT: Render Volume Line Chart ────────────────── */}
-          <div style={card}>
-            <h2 style={secTitle}>Render Volume</h2>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={renderVolumeData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
-                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                    tickLine={false}
-                    interval={Math.max(Math.floor(renderVolumeData.length / 8), 0)}
-                  />
-                  <YAxis
-                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={30}
-                  />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="completed"
-                    stroke={BRAND_PURPLE}
-                    strokeWidth={2}
-                    dot={false}
-                    name="Completed"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="failed"
-                    stroke={RED}
-                    strokeWidth={1.5}
-                    strokeDasharray="5 3"
-                    dot={false}
-                    name="Failed"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* ── RIGHT: Credit Burn Area Chart ─────────────────── */}
-          <div style={card}>
-            <h2 style={secTitle}>Credit Burn</h2>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={creditBurnData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={BRAND_PURPLE} stopOpacity={0.3} />
-                      <stop offset="100%" stopColor={BRAND_PURPLE} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
-                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                    tickLine={false}
-                    interval={Math.max(Math.floor(creditBurnData.length / 6), 0)}
-                  />
-                  <YAxis
-                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={40}
-                  />
-                  <Tooltip content={<ChartTooltip />} />
-                  <ReferenceLine
-                    y={redZoneThreshold}
-                    stroke={RED}
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.5}
-                    label={{ value: '20% zone', fill: RED, fontSize: 9, position: 'insideTopRight' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="remaining"
-                    stroke={BRAND_PURPLE}
-                    strokeWidth={2}
-                    fill="url(#burnGrad)"
-                    name="Remaining"
-                    connectNulls={false}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="projected"
-                    stroke={BRAND_PURPLE}
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                    fill="none"
-                    name="Projected"
-                    connectNulls={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ INTERACTIVE CREDIT USAGE BARS ══════════════════ */}
-        <div style={card}>
-          <h2 style={secTitle}>Credit Usage by Category</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {CREDIT_CATEGORIES.map((cat) => {
-              const widthPct = (cat.credits / CREDIT_CATEGORIES[0].credits) * 100;
-              const isUp = cat.trend > 0;
-              const selected = categoryFilter === cat.category;
-              return (
-                <div
-                  key={cat.category}
-                  style={{
-                    cursor: 'pointer',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    background: selected ? 'var(--brand-dim)' : 'transparent',
-                    border: selected ? '1px solid var(--brand-border)' : '1px solid transparent',
-                    transition: 'all 150ms ease',
-                  }}
-                  onClick={() => { setCategoryFilter(selected ? null : cat.category); setTablePage(0); }}
-                  onMouseEnter={(e) => {
-                    if (!selected) e.currentTarget.style.background = 'var(--bg-hover)';
-                  }}
-                  onMouseMove={(e) => {
-                    setCategoryTooltip({ cat, x: e.clientX, y: e.clientY });
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selected) e.currentTarget.style.background = 'transparent';
-                    setCategoryTooltip(null);
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                      {cat.category}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 10, color: isUp ? GREEN : RED, display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                        {isUp ? '+' : ''}{cat.trend}%
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
-                        {fmtNum(cat.credits)} ({cat.pct}%)
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'var(--progress-track)' }}>
-                    <div
-                      style={{
-                        width: `${widthPct}%`,
-                        height: '100%',
-                        borderRadius: 4,
-                        background: selected ? 'var(--brand)' : BRAND_PURPLE,
-                        borderRight: selected ? '2px solid var(--brand-light)' : 'none',
-                        transition: 'width 300ms ease, background 150ms ease',
+            {/* ── RIGHT: Credit Burn Area Chart ─────────────────── */}
+            <div style={card}>
+              <h2 style={secTitle}>Credit Burn</h2>
+              <div style={{ height: 220 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={creditBurnData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={BRAND_PURPLE} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={BRAND_PURPLE} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      tickLine={false}
+                      interval={Math.max(Math.floor(creditBurnData.length / 6), 0)}
+                    />
+                    <YAxis
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <ReferenceLine
+                      y={redZoneThreshold}
+                      stroke={RED}
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.5}
+                      label={{
+                        value: '20% zone',
+                        fill: RED,
+                        fontSize: 9,
+                        position: 'insideTopRight',
                       }}
                     />
-                  </div>
-                </div>
-              );
-            })}
+                    <Area
+                      type="monotone"
+                      dataKey="remaining"
+                      stroke={BRAND_PURPLE}
+                      strokeWidth={2}
+                      fill="url(#burnGrad)"
+                      name="Remaining"
+                      connectNulls={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="projected"
+                      stroke={BRAND_PURPLE}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      fill="none"
+                      name="Projected"
+                      connectNulls={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
 
-            {/* Active category filter pill */}
-            {categoryFilter && (
+          {/* ═══ INTERACTIVE CREDIT USAGE BARS ══════════════════ */}
+          <div style={card}>
+            <h2 style={secTitle}>Credit Usage by Category</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {CREDIT_CATEGORIES.map((cat) => {
+                const widthPct = (cat.credits / CREDIT_CATEGORIES[0].credits) * 100;
+                const isUp = cat.trend > 0;
+                const selected = categoryFilter === cat.category;
+                return (
+                  <div
+                    key={cat.category}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-md)',
+                      background: selected ? 'var(--brand-dim)' : 'transparent',
+                      border: selected ? '1px solid var(--brand-border)' : '1px solid transparent',
+                      transition: 'all 150ms ease',
+                    }}
+                    onClick={() => {
+                      setCategoryFilter(selected ? null : cat.category);
+                      setTablePage(0);
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selected) e.currentTarget.style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseMove={(e) => {
+                      setCategoryTooltip({ cat, x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selected) e.currentTarget.style.background = 'transparent';
+                      setCategoryTooltip(null);
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}
+                      >
+                        {cat.category}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: isUp ? GREEN : RED,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                        >
+                          {isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                          {isUp ? '+' : ''}
+                          {cat.trend}%
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--text-tertiary)',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          {fmtNum(cat.credits)} ({cat.pct}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: 8,
+                        borderRadius: 4,
+                        background: 'var(--progress-track)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${widthPct}%`,
+                          height: '100%',
+                          borderRadius: 4,
+                          background: selected ? 'var(--brand)' : BRAND_PURPLE,
+                          borderRight: selected ? '2px solid var(--brand-light)' : 'none',
+                          transition: 'width 300ms ease, background 150ms ease',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Active category filter pill */}
+              {categoryFilter && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    marginTop: 4,
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--brand-dim)',
+                    border: '1px solid var(--brand-border)',
+                  }}
+                >
+                  <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>
+                    Showing:{' '}
+                    <strong style={{ color: 'var(--brand-light)' }}>{categoryFilter}</strong>{' '}
+                    renders only
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter(null);
+                      setTablePage(0);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      padding: '2px 6px',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                  >
+                    Clear filter <X size={11} />
+                  </button>
+                </div>
+              )}
+
+              {/* Total row */}
               <div
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 8,
+                  alignItems: 'center',
+                  padding: '8px 10px 0',
+                  borderTop: '1px solid var(--border)',
                   marginTop: 4,
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--brand-dim)',
-                  border: '1px solid var(--brand-border)',
                 }}
               >
-                <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>
-                  Showing: <strong style={{ color: 'var(--brand-light)' }}>{categoryFilter}</strong> renders only
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Total
                 </span>
-                <button
-                  type="button"
-                  onClick={() => { setCategoryFilter(null); setTablePage(0); }}
+                <span
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 11,
-                    padding: '2px 6px',
-                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    fontFamily: 'monospace',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >
-                  Clear filter <X size={11} />
-                </button>
+                  {fmtNum(CREDIT_TOTAL)} credits
+                </span>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Total row */}
+          {/* Credit category hover tooltip (fixed, follows cursor) */}
+          {categoryTooltip && (
+            <div
+              style={{
+                position: 'fixed',
+                top: categoryTooltip.y + 14,
+                left: categoryTooltip.x + 14,
+                zIndex: 100,
+                pointerEvents: 'none',
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '8px 12px',
+                fontSize: 11,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                minWidth: 160,
+              }}
+            >
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>
+                {categoryTooltip.cat.category}
+              </div>
+              <div
+                style={{
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
+                <span>Credits</span>
+                <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                  {fmtNum(categoryTooltip.cat.credits)}
+                </strong>
+              </div>
+              <div
+                style={{
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
+                <span>Share</span>
+                <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                  {categoryTooltip.cat.pct}%
+                </strong>
+              </div>
+              <div
+                style={{
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
+                <span>Trend</span>
+                <strong
+                  style={{
+                    color: categoryTooltip.cat.trend > 0 ? GREEN : RED,
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {categoryTooltip.cat.trend > 0 ? '+' : ''}
+                  {categoryTooltip.cat.trend}%
+                </strong>
+              </div>
+              <div
+                style={{
+                  marginTop: 6,
+                  paddingTop: 6,
+                  borderTop: '0.5px solid var(--border)',
+                  color: 'var(--brand-light)',
+                  fontSize: 10,
+                  fontStyle: 'italic',
+                }}
+              >
+                {categoryFilter === categoryTooltip.cat.category
+                  ? 'Click to clear filter'
+                  : 'Click to filter'}
+              </div>
+            </div>
+          )}
+
+          {/* ═══ RENDER HISTORY TABLE ═══════════════════════════ */}
+          <div style={card}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '8px 10px 0',
-                borderTop: '1px solid var(--border)',
-                marginTop: 4,
+                marginBottom: 12,
               }}
             >
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Total</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                {fmtNum(CREDIT_TOTAL)} credits
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Credit category hover tooltip (fixed, follows cursor) */}
-        {categoryTooltip && (
-          <div
-            style={{
-              position: 'fixed',
-              top: categoryTooltip.y + 14,
-              left: categoryTooltip.x + 14,
-              zIndex: 100,
-              pointerEvents: 'none',
-              background: 'var(--bg-elevated)',
-              border: '0.5px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '8px 12px',
-              fontSize: 11,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-              minWidth: 160,
-            }}
-          >
-            <div style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>
-              {categoryTooltip.cat.category}
-            </div>
-            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <span>Credits</span>
-              <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                {fmtNum(categoryTooltip.cat.credits)}
-              </strong>
-            </div>
-            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <span>Share</span>
-              <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                {categoryTooltip.cat.pct}%
-              </strong>
-            </div>
-            <div style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <span>Trend</span>
-              <strong
-                style={{
-                  color: categoryTooltip.cat.trend > 0 ? GREEN : RED,
-                  fontFamily: 'monospace',
-                }}
-              >
-                {categoryTooltip.cat.trend > 0 ? '+' : ''}{categoryTooltip.cat.trend}%
-              </strong>
-            </div>
-            <div
-              style={{
-                marginTop: 6,
-                paddingTop: 6,
-                borderTop: '0.5px solid var(--border)',
-                color: 'var(--brand-light)',
-                fontSize: 10,
-                fontStyle: 'italic',
-              }}
-            >
-              {categoryFilter === categoryTooltip.cat.category
-                ? 'Click to clear filter'
-                : 'Click to filter'}
-            </div>
-          </div>
-        )}
-
-        {/* ═══ RENDER HISTORY TABLE ═══════════════════════════ */}
-        <div style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h2 style={{ ...secTitle, margin: 0 }}>Render History</h2>
-            <button
-              type="button"
-              style={btnBase}
-              onClick={() => { toast.success('Exporting render history CSV...'); }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <Download size={11} />
-              Export CSV
-            </button>
-          </div>
-
-          {/* Filter Row */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-            <select
-              value={filterProject}
-              onChange={(e) => { setFilterProject(e.target.value); setTablePage(0); }}
-              style={{
-                ...btnBase,
-                padding: '5px 10px',
-                appearance: 'auto',
-                background: 'var(--bg-elevated)',
-              }}
-            >
-              <option value="">All Projects</option>
-              {PROJECTS.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setTablePage(0); }}
-              style={{ ...btnBase, padding: '5px 10px', appearance: 'auto', background: 'var(--bg-elevated)' }}
-            >
-              <option value="">All Statuses</option>
-              <option value="Complete">Complete</option>
-              <option value="Failed">Failed</option>
-              <option value="Running">Running</option>
-            </select>
-            <select
-              value={filterTier}
-              onChange={(e) => { setFilterTier(e.target.value); setTablePage(0); }}
-              style={{ ...btnBase, padding: '5px 10px', appearance: 'auto', background: 'var(--bg-elevated)' }}
-            >
-              <option value="">All Tiers</option>
-              {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {(filterProject || filterStatus || filterTier || categoryFilter) && (
+              <h2 style={{ ...secTitle, margin: 0 }}>Render History</h2>
               <button
                 type="button"
-                style={{ ...btnBase, color: RED }}
-                onClick={() => { setFilterProject(''); setFilterStatus(''); setFilterTier(''); setCategoryFilter(null); setTablePage(0); }}
+                style={btnBase}
+                onClick={() => {
+                  toast.success('Exporting render history CSV...');
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
-                <X size={11} /> Clear filters
+                <Download size={11} />
+                Export CSV
               </button>
-            )}
-          </div>
+            </div>
 
-          {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr>
-                  {['Date', 'Project', 'Shot', 'Duration', 'Credits', 'Tier', 'Status', ''].map((col) => (
-                    <th
-                      key={col}
-                      style={{
-                        textAlign: 'left',
-                        padding: '8px 10px',
-                        fontWeight: 500,
-                        fontSize: 10,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: 'var(--text-tertiary)',
-                        borderBottom: '1px solid var(--border)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((row, i) => {
-                  const sc = statusColor(row.status);
-                  const tc = tierColor(row.tier);
-                  const isExpanded = expandedRows.has(row.id);
-                  const isFailed = row.status === 'Failed';
-                  const isNavigable = !!row.projectId;
-                  const isHovered = hoveredRowId === row.id;
-                  return (
-                    <React.Fragment key={row.id}>
-                      <tr
-                        style={{
-                          borderBottom: '1px solid var(--border)',
-                          cursor: isNavigable || isFailed ? 'pointer' : 'default',
-                          background: isHovered
-                            ? 'var(--bg-hover)'
-                            : isExpanded
-                              ? 'rgba(248,113,113,0.04)'
-                              : 'transparent',
-                          transition: 'background 120ms ease',
-                        }}
-                        onMouseEnter={() => setHoveredRowId(row.id)}
-                        onMouseLeave={() => setHoveredRowId(null)}
-                        onClick={() => {
-                          if (isFailed) {
-                            setExpandedRows((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(row.id)) next.delete(row.id);
-                              else next.add(row.id);
-                              return next;
-                            });
-                            return;
-                          }
-                          if (isNavigable) {
-                            router.push(`/projects/${row.projectId}/timeline?shotId=${row.shotId}`);
-                          }
-                        }}
-                      >
-                        <td style={{ padding: '10px 10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                          {row.date}
-                        </td>
-                        <td style={{ padding: '10px 10px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                          {row.project}
-                        </td>
-                        <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>{row.shot}</td>
-                        <td style={{ padding: '10px 10px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: 11 }}>
-                          {row.status === 'Running' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div
-                                style={{
-                                  width: 80,
-                                  height: 4,
-                                  borderRadius: 2,
-                                  background: 'var(--progress-track)',
-                                  overflow: 'hidden',
-                                  position: 'relative',
-                                }}
-                                title={`Rendering ${Math.round(runningProgress[row.id] ?? 0)}%`}
-                              >
+            {/* Filter Row */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+              <select
+                value={filterProject}
+                onChange={(e) => {
+                  setFilterProject(e.target.value);
+                  setTablePage(0);
+                }}
+                style={{
+                  ...btnBase,
+                  padding: '5px 10px',
+                  appearance: 'auto',
+                  background: 'var(--bg-elevated)',
+                }}
+              >
+                <option value="">All Projects</option>
+                {PROJECTS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setTablePage(0);
+                }}
+                style={{
+                  ...btnBase,
+                  padding: '5px 10px',
+                  appearance: 'auto',
+                  background: 'var(--bg-elevated)',
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="Complete">Complete</option>
+                <option value="Failed">Failed</option>
+                <option value="Running">Running</option>
+              </select>
+              <select
+                value={filterTier}
+                onChange={(e) => {
+                  setFilterTier(e.target.value);
+                  setTablePage(0);
+                }}
+                style={{
+                  ...btnBase,
+                  padding: '5px 10px',
+                  appearance: 'auto',
+                  background: 'var(--bg-elevated)',
+                }}
+              >
+                <option value="">All Tiers</option>
+                {TIERS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              {(filterProject || filterStatus || filterTier || categoryFilter) && (
+                <button
+                  type="button"
+                  style={{ ...btnBase, color: RED }}
+                  onClick={() => {
+                    setFilterProject('');
+                    setFilterStatus('');
+                    setFilterTier('');
+                    setCategoryFilter(null);
+                    setTablePage(0);
+                  }}
+                >
+                  <X size={11} /> Clear filters
+                </button>
+              )}
+            </div>
+
+            {/* Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    {['Date', 'Project', 'Shot', 'Duration', 'Credits', 'Tier', 'Status', ''].map(
+                      (col) => (
+                        <th
+                          key={col}
+                          style={{
+                            textAlign: 'left',
+                            padding: '8px 10px',
+                            fontWeight: 500,
+                            fontSize: 10,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: 'var(--text-tertiary)',
+                            borderBottom: '1px solid var(--border)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {col}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((row, i) => {
+                    const sc = statusColor(row.status);
+                    const tc = tierColor(row.tier);
+                    const isExpanded = expandedRows.has(row.id);
+                    const isFailed = row.status === 'Failed';
+                    const isNavigable = !!row.projectId;
+                    const isHovered = hoveredRowId === row.id;
+                    return (
+                      <React.Fragment key={row.id}>
+                        <tr
+                          style={{
+                            borderBottom: '1px solid var(--border)',
+                            cursor: isNavigable || isFailed ? 'pointer' : 'default',
+                            background: isHovered
+                              ? 'var(--bg-hover)'
+                              : isExpanded
+                                ? 'rgba(248,113,113,0.04)'
+                                : 'transparent',
+                            transition: 'background 120ms ease',
+                          }}
+                          onMouseEnter={() => setHoveredRowId(row.id)}
+                          onMouseLeave={() => setHoveredRowId(null)}
+                          onClick={() => {
+                            if (isFailed) {
+                              setExpandedRows((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(row.id)) next.delete(row.id);
+                                else next.add(row.id);
+                                return next;
+                              });
+                              return;
+                            }
+                            if (isNavigable) {
+                              router.push(
+                                `/projects/${row.projectId}/timeline?shotId=${row.shotId}`,
+                              );
+                            }
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '10px 10px',
+                              color: 'var(--text-secondary)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {row.date}
+                          </td>
+                          <td
+                            style={{
+                              padding: '10px 10px',
+                              color: 'var(--text-primary)',
+                              fontWeight: 500,
+                            }}
+                          >
+                            {row.project}
+                          </td>
+                          <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>
+                            {row.shot}
+                          </td>
+                          <td
+                            style={{
+                              padding: '10px 10px',
+                              color: 'var(--text-secondary)',
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                            }}
+                          >
+                            {row.status === 'Running' ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <div
-                                  className="running-progress-fill"
                                   style={{
-                                    width: `${runningProgress[row.id] ?? 0}%`,
-                                    height: '100%',
+                                    width: 80,
+                                    height: 4,
                                     borderRadius: 2,
-                                    transition: 'width 700ms ease',
+                                    background: 'var(--progress-track)',
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                  }}
+                                  title={`Rendering ${Math.round(runningProgress[row.id] ?? 0)}%`}
+                                >
+                                  <div
+                                    className="running-progress-fill"
+                                    style={{
+                                      width: `${runningProgress[row.id] ?? 0}%`,
+                                      height: '100%',
+                                      borderRadius: 2,
+                                      transition: 'width 700ms ease',
+                                    }}
+                                  />
+                                </div>
+                                <span
+                                  style={{
+                                    color: 'var(--status-generating-text)',
+                                    fontSize: 10,
+                                    minWidth: 28,
+                                  }}
+                                >
+                                  {Math.round(runningProgress[row.id] ?? 0)}%
+                                </span>
+                              </div>
+                            ) : (
+                              row.duration
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>
+                            {row.credits > 0 ? fmtNum(row.credits) : '\u2014'}
+                          </td>
+                          <td style={{ padding: '10px 10px' }}>
+                            <span style={pillBadge(tc.bg, tc.color)}>{row.tier}</span>
+                          </td>
+                          <td style={{ padding: '10px 10px' }}>
+                            <span
+                              style={{
+                                ...pillBadge(sc.bg, sc.color),
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              {row.status}
+                              {isFailed && (
+                                <ChevronDown
+                                  size={11}
+                                  style={{
+                                    transition: 'transform 150ms ease',
+                                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                                   }}
                                 />
-                              </div>
-                              <span style={{ color: 'var(--status-generating-text)', fontSize: 10, minWidth: 28 }}>
-                                {Math.round(runningProgress[row.id] ?? 0)}%
-                              </span>
-                            </div>
-                          ) : (
-                            row.duration
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 10px', color: 'var(--text-secondary)' }}>
-                          {row.credits > 0 ? fmtNum(row.credits) : '\u2014'}
-                        </td>
-                        <td style={{ padding: '10px 10px' }}>
-                          <span style={pillBadge(tc.bg, tc.color)}>{row.tier}</span>
-                        </td>
-                        <td style={{ padding: '10px 10px' }}>
-                          <span style={{ ...pillBadge(sc.bg, sc.color), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {row.status}
-                            {isFailed && (
-                              <ChevronDown
-                                size={11}
-                                style={{
-                                  transition: 'transform 150ms ease',
-                                  transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                }}
-                              />
+                              )}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 10px', width: 24, textAlign: 'right' }}>
+                            {isNavigable && isHovered && !isFailed && (
+                              <ExternalLink size={12} style={{ color: 'var(--text-tertiary)' }} />
                             )}
-                          </span>
-                        </td>
-                        <td style={{ padding: '10px 10px', width: 24, textAlign: 'right' }}>
-                          {isNavigable && isHovered && !isFailed && (
-                            <ExternalLink size={12} style={{ color: 'var(--text-tertiary)' }} />
-                          )}
-                        </td>
-                      </tr>
-                      {/* Expanded failure row */}
-                      {isExpanded && isFailed && (
-                        <tr>
-                          <td colSpan={8} style={{ padding: '12px 10px 14px 32px', background: 'rgba(248,113,113,0.04)', borderBottom: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                <AlertCircle size={14} style={{ color: RED, flexShrink: 0, marginTop: 1 }} />
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  <span style={{ fontSize: 11, color: RED, fontWeight: 600 }}>
-                                    {row.failureReason ? FAILURE_LABELS[row.failureReason] : 'Unknown failure'}
-                                  </span>
-                                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                                    This render failed and no credits were charged.
+                          </td>
+                        </tr>
+                        {/* Expanded failure row */}
+                        {isExpanded && isFailed && (
+                          <tr>
+                            <td
+                              colSpan={8}
+                              style={{
+                                padding: '12px 10px 14px 32px',
+                                background: 'rgba(248,113,113,0.04)',
+                                borderBottom: '1px solid var(--border)',
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                  <AlertCircle
+                                    size={14}
+                                    style={{ color: RED, flexShrink: 0, marginTop: 1 }}
+                                  />
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <span style={{ fontSize: 11, color: RED, fontWeight: 600 }}>
+                                      {row.failureReason
+                                        ? FAILURE_LABELS[row.failureReason]
+                                        : 'Unknown failure'}
+                                    </span>
+                                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                                      This render failed and no credits were charged.
+                                    </span>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRetryShot(row.id);
+                                    }}
+                                    style={{
+                                      ...btnBase,
+                                      background: 'var(--brand)',
+                                      color: '#fff',
+                                      border: 'none',
+                                      fontWeight: 600,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.opacity = '0.9';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.opacity = '1';
+                                    }}
+                                  >
+                                    <RotateCcw size={11} />
+                                    Retry shot
+                                  </button>
+                                  <span style={{ fontSize: 11, color: GREEN, fontWeight: 500 }}>
+                                    {fmtNum(Math.max(row.credits, 40))} credits refunded
                                   </span>
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleRetryShot(row.id); }}
-                                  style={{
-                                    ...btnBase,
-                                    background: 'var(--brand)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    fontWeight: 600,
-                                  }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-                                >
-                                  <RotateCcw size={11} />
-                                  Retry shot
-                                </button>
-                                <span style={{ fontSize: 11, color: GREEN, fontWeight: 500 }}>
-                                  {fmtNum(Math.max(row.credits, 40))} credits refunded
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Rows per page:</span>
-              <select
-                value={perPage}
-                onChange={(e) => { setPerPage(Number(e.target.value)); setTablePage(0); }}
-                style={{ ...btnBase, padding: '3px 8px', appearance: 'auto', background: 'var(--bg-elevated)', fontSize: 11 }}
-              >
-                {[10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                Page {tablePage + 1} of {totalPages}
-              </span>
-              <button
-                type="button"
-                style={{ ...btnBase, padding: '4px 8px', opacity: tablePage === 0 ? 0.3 : 1 }}
-                disabled={tablePage === 0}
-                onClick={() => setTablePage(tablePage - 1)}
-              >
-                <ChevronLeft size={12} /> Previous
-              </button>
-              <button
-                type="button"
-                style={{ ...btnBase, padding: '4px 8px', opacity: tablePage >= totalPages - 1 ? 0.3 : 1 }}
-                disabled={tablePage >= totalPages - 1}
-                onClick={() => setTablePage(tablePage + 1)}
-              >
-                Next <ChevronRight size={12} />
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* ═══ CONTENT PERFORMANCE ════════════════════════════ */}
-        <div>
-          <h2 style={secTitle}>Content Performance</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            {PLATFORM_DATA.map((plat) => {
-              const icons: Record<Platform, React.ReactNode> = {
-                youtube: <MonitorPlay size={16} />,
-                tiktok: <Play size={16} />,
-                meta: <Share2 size={16} />,
-              };
-              const names: Record<Platform, string> = { youtube: 'YouTube', tiktok: 'TikTok', meta: 'Meta' };
-              const connected = connectedPlatforms.has(plat.platform);
-
-              return (
-                <div key={plat.platform} style={card}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: connected ? BRAND_PURPLE : 'var(--text-tertiary)' }}>{icons[plat.platform]}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{names[plat.platform]}</span>
-                    </div>
-                    <button
-                      type="button"
-                      style={{
-                        ...btnBase,
-                        padding: '4px 10px',
-                        fontSize: 11,
-                        background: connected ? 'rgba(167,139,250,0.1)' : 'transparent',
-                        color: connected ? BRAND_PURPLE : 'var(--text-secondary)',
-                      }}
-                      onClick={() => {
-                        const next = new Set(connectedPlatforms);
-                        if (connected) next.delete(plat.platform);
-                        else next.add(plat.platform);
-                        setConnectedPlatforms(next);
-                        toast.success(connected ? `Disconnected ${names[plat.platform]}` : `Connected ${names[plat.platform]}`);
-                      }}
-                    >
-                      {connected ? 'Disconnect' : 'Connect'}
-                    </button>
-                  </div>
-
-                  {connected && plat.bestVideo ? (
-                    <div>
-                      <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '0 0 4px', fontWeight: 500 }}>
-                        Best performing: {plat.bestVideo.title}
-                      </p>
-                      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 8px' }}>
-                        {fmtNum(plat.bestVideo.views)} views | {plat.bestVideo.retention[0]}% peak retention
-                      </p>
-                      <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 40 }}>
-                        {plat.bestVideo.retention.map((val, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              flex: 1,
-                              height: `${val * 0.4}px`,
-                              background: BRAND_PURPLE,
-                              opacity: 0.5 + (val / 200),
-                              borderRadius: '2px 2px 0 0',
-                            }}
-                            title={`Shot ${idx + 1}: ${val}% retention`}
-                          />
-                        ))}
-                      </div>
-                      <p style={{ fontSize: 9, color: 'var(--text-tertiary)', margin: '4px 0 0', textAlign: 'center' }}>
-                        Retention by shot
-                      </p>
-                    </div>
-                  ) : connected ? (
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>No analytics data yet.</p>
-                  ) : (
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
-                      Connect to view performance metrics
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ═══ TOP PROJECTS ═══════════════════════════════════ */}
-        <div style={card}>
-          <h2 style={secTitle}>Top Projects</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {TOP_PROJECTS_DATA.map((proj, i) => {
-              const maxCredits = TOP_PROJECTS_DATA[0].credits;
-              const widthPct = (proj.credits / maxCredits) * 100;
-              return (
-                <div
-                  key={proj.name}
-                  style={{
-                    cursor: 'pointer',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    transition: 'background 150ms ease',
+            {/* Pagination */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 12,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Rows per page:</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setTablePage(0);
                   }}
-                  onClick={() => setDrawerProject(proj)}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  style={{
+                    ...btnBase,
+                    padding: '3px 8px',
+                    appearance: 'auto',
+                    background: 'var(--bg-elevated)',
+                    fontSize: 11,
+                  }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', width: 18 }}>
-                        #{i + 1}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
-                        {proj.name}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
-                      {fmtNum(proj.credits)} cr
-                    </span>
-                  </div>
-                  <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'var(--bg-overlay, rgba(255,255,255,0.04))' }}>
+                  {[10, 20, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  Page {tablePage + 1} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  style={{ ...btnBase, padding: '4px 8px', opacity: tablePage === 0 ? 0.3 : 1 }}
+                  disabled={tablePage === 0}
+                  onClick={() => setTablePage(tablePage - 1)}
+                >
+                  <ChevronLeft size={12} /> Previous
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...btnBase,
+                    padding: '4px 8px',
+                    opacity: tablePage >= totalPages - 1 ? 0.3 : 1,
+                  }}
+                  disabled={tablePage >= totalPages - 1}
+                  onClick={() => setTablePage(tablePage + 1)}
+                >
+                  Next <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══ CONTENT PERFORMANCE ════════════════════════════ */}
+          <div>
+            <h2 style={secTitle}>Content Performance</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {PLATFORM_DATA.map((plat) => {
+                const icons: Record<Platform, React.ReactNode> = {
+                  youtube: <MonitorPlay size={16} />,
+                  tiktok: <Play size={16} />,
+                  meta: <Share2 size={16} />,
+                };
+                const names: Record<Platform, string> = {
+                  youtube: 'YouTube',
+                  tiktok: 'TikTok',
+                  meta: 'Meta',
+                };
+                const connected = connectedPlatforms.has(plat.platform);
+
+                return (
+                  <div key={plat.platform} style={card}>
                     <div
                       style={{
-                        width: `${widthPct}%`,
-                        height: '100%',
-                        borderRadius: 3,
-                        background: BRAND_PURPLE,
-                        opacity: 1 - i * 0.2,
-                        transition: 'width 300ms ease',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 12,
                       }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ═══ FAILED RENDER ANALYSIS ═════════════════════════ */}
-        {hasFailures && (
-          <div style={card}>
-            <h2 style={secTitle}>Failed Render Analysis</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {/* Failure Reasons Bar Chart */}
-              <div>
-                <p style={{ ...lbl, marginBottom: 10 }}>Failure Reasons</p>
-                <div style={{ height: 180 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={FAILURE_ANALYSIS.map((f) => ({ name: FAILURE_LABELS[f.reason], count: f.count }))}
-                      layout="vertical"
-                      margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                      <XAxis type="number" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={120}
-                      />
-                      <Tooltip content={<ChartTooltip />} />
-                      <Bar dataKey="count" fill={RED} radius={[0, 4, 4, 0]} name="Failures" barSize={14} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              {/* Retry Success Rate */}
-              <div>
-                <p style={{ ...lbl, marginBottom: 10 }}>Retry Success Rate</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {FAILURE_ANALYSIS.map((f) => (
-                    <div key={f.reason}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{FAILURE_LABELS[f.reason]}</span>
-                        <span style={{ fontSize: 11, fontWeight: 500, color: f.retrySuccessRate >= 0.7 ? GREEN : f.retrySuccessRate >= 0.4 ? AMBER : RED }}>
-                          {Math.round(f.retrySuccessRate * 100)}%
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: connected ? BRAND_PURPLE : 'var(--text-tertiary)' }}>
+                          {icons[plat.platform]}
+                        </span>
+                        <span
+                          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}
+                        >
+                          {names[plat.platform]}
                         </span>
                       </div>
-                      <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'var(--bg-overlay, rgba(255,255,255,0.04))' }}>
-                        <div
-                          style={{
-                            width: `${f.retrySuccessRate * 100}%`,
-                            height: '100%',
-                            borderRadius: 3,
-                            background: f.retrySuccessRate >= 0.7 ? GREEN : f.retrySuccessRate >= 0.4 ? AMBER : RED,
-                            transition: 'width 300ms ease',
-                          }}
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        style={{
+                          ...btnBase,
+                          padding: '4px 10px',
+                          fontSize: 11,
+                          background: connected ? 'rgba(167,139,250,0.1)' : 'transparent',
+                          color: connected ? BRAND_PURPLE : 'var(--text-secondary)',
+                        }}
+                        onClick={() => {
+                          const next = new Set(connectedPlatforms);
+                          if (connected) next.delete(plat.platform);
+                          else next.add(plat.platform);
+                          setConnectedPlatforms(next);
+                          toast.success(
+                            connected
+                              ? `Disconnected ${names[plat.platform]}`
+                              : `Connected ${names[plat.platform]}`,
+                          );
+                        }}
+                      >
+                        {connected ? 'Disconnect' : 'Connect'}
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {connected && plat.bestVideo ? (
+                      <div>
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--text-secondary)',
+                            margin: '0 0 4px',
+                            fontWeight: 500,
+                          }}
+                        >
+                          Best performing: {plat.bestVideo.title}
+                        </p>
+                        <p
+                          style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 8px' }}
+                        >
+                          {fmtNum(plat.bestVideo.views)} views | {plat.bestVideo.retention[0]}% peak
+                          retention
+                        </p>
+                        <div
+                          style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 40 }}
+                        >
+                          {plat.bestVideo.retention.map((val, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                flex: 1,
+                                height: `${val * 0.4}px`,
+                                background: BRAND_PURPLE,
+                                opacity: 0.5 + val / 200,
+                                borderRadius: '2px 2px 0 0',
+                              }}
+                              title={`Shot ${idx + 1}: ${val}% retention`}
+                            />
+                          ))}
+                        </div>
+                        <p
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--text-tertiary)',
+                            margin: '4px 0 0',
+                            textAlign: 'center',
+                          }}
+                        >
+                          Retention by shot
+                        </p>
+                      </div>
+                    ) : connected ? (
+                      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                        No analytics data yet.
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                        Connect to view performance metrics
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
-      </main>
 
-      {/* ═══ PROJECT DRILL-DOWN DRAWER ════════════════════════ */}
-      {drawerProject && (
-        <>
-          {/* Backdrop */}
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.4)',
-              zIndex: 98,
-            }}
-            onClick={() => setDrawerProject(null)}
-          />
-          {/* Drawer */}
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: 400,
-              background: 'var(--bg-elevated)',
-              borderLeft: '1px solid var(--border)',
-              zIndex: 99,
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
-            }}
-          >
-            {/* Drawer Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                {drawerProject.name}
-              </h3>
-              <button
-                type="button"
-                aria-label="Close"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}
-                onClick={() => setDrawerProject(null)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Summary */}
-              <div>
-                <p style={lbl}>Generation Summary</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
-                  <div style={{ ...card, padding: 12 }}>
-                    <p style={{ ...lbl, fontSize: 9 }}>Total Renders</p>
-                    <p style={{ ...valBig, fontSize: 18 }}>{fmtNum(drawerProject.renders)}</p>
+          {/* ═══ TOP PROJECTS ═══════════════════════════════════ */}
+          <div style={card}>
+            <h2 style={secTitle}>Top Projects</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {TOP_PROJECTS_DATA.map((proj, i) => {
+                const maxCredits = TOP_PROJECTS_DATA[0].credits;
+                const widthPct = (proj.credits / maxCredits) * 100;
+                return (
+                  <div
+                    key={proj.name}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-md)',
+                      transition: 'background 150ms ease',
+                    }}
+                    onClick={() => setDrawerProject(proj)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 6,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: 'var(--text-tertiary)',
+                            width: 18,
+                          }}
+                        >
+                          #{i + 1}
+                        </span>
+                        <span
+                          style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}
+                        >
+                          {proj.name}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-tertiary)',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {fmtNum(proj.credits)} cr
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: 6,
+                        borderRadius: 3,
+                        background: 'var(--bg-overlay, rgba(255,255,255,0.04))',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${widthPct}%`,
+                          height: '100%',
+                          borderRadius: 3,
+                          background: BRAND_PURPLE,
+                          opacity: 1 - i * 0.2,
+                          transition: 'width 300ms ease',
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ ...card, padding: 12 }}>
-                    <p style={{ ...lbl, fontSize: 9 }}>Total Credits</p>
-                    <p style={{ ...valBig, fontSize: 18 }}>{fmtNum(drawerProject.credits)}</p>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ═══ FAILED RENDER ANALYSIS ═════════════════════════ */}
+          {hasFailures && (
+            <div style={card}>
+              <h2 style={secTitle}>Failed Render Analysis</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                {/* Failure Reasons Bar Chart */}
+                <div>
+                  <p style={{ ...lbl, marginBottom: 10 }}>Failure Reasons</p>
+                  <div style={{ height: 180 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={FAILURE_ANALYSIS.map((f) => ({
+                          name: FAILURE_LABELS[f.reason],
+                          count: f.count,
+                        }))}
+                        layout="vertical"
+                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="rgba(255,255,255,0.05)"
+                          horizontal={false}
+                        />
+                        <XAxis
+                          type="number"
+                          tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={120}
+                        />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Bar
+                          dataKey="count"
+                          fill={RED}
+                          radius={[0, 4, 4, 0]}
+                          name="Failures"
+                          barSize={14}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
-              </div>
-
-              {/* Credits by Tier */}
-              <div>
-                <p style={lbl}>Credits by Tier</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                  {(['standard', 'pro', 'ultra'] as const).map((tier) => {
-                    const val = drawerProject.tierBreakdown[tier];
-                    const maxTier = Math.max(drawerProject.tierBreakdown.standard, drawerProject.tierBreakdown.pro, drawerProject.tierBreakdown.ultra);
-                    const colors = { standard: '#94a3b8', pro: BRAND_PURPLE, ultra: AMBER };
-                    return (
-                      <div key={tier}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                          <span style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{tier}</span>
-                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{fmtNum(val)}</span>
+                {/* Retry Success Rate */}
+                <div>
+                  <p style={{ ...lbl, marginBottom: 10 }}>Retry Success Rate</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {FAILURE_ANALYSIS.map((f) => (
+                      <div key={f.reason}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 3,
+                          }}
+                        >
+                          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                            {FAILURE_LABELS[f.reason]}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 500,
+                              color:
+                                f.retrySuccessRate >= 0.7
+                                  ? GREEN
+                                  : f.retrySuccessRate >= 0.4
+                                    ? AMBER
+                                    : RED,
+                            }}
+                          >
+                            {Math.round(f.retrySuccessRate * 100)}%
+                          </span>
                         </div>
-                        <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'var(--bg-overlay, rgba(255,255,255,0.04))' }}>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: 6,
+                            borderRadius: 3,
+                            background: 'var(--bg-overlay, rgba(255,255,255,0.04))',
+                          }}
+                        >
                           <div
                             style={{
-                              width: `${(val / maxTier) * 100}%`,
+                              width: `${f.retrySuccessRate * 100}%`,
                               height: '100%',
-                              borderRadius: 4,
-                              background: colors[tier],
+                              borderRadius: 3,
+                              background:
+                                f.retrySuccessRate >= 0.7
+                                  ? GREEN
+                                  : f.retrySuccessRate >= 0.4
+                                    ? AMBER
+                                    : RED,
                               transition: 'width 300ms ease',
                             }}
                           />
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {/* Generation Timeline Sparkline */}
-              <div>
-                <p style={lbl}>Generation Timeline (14 days)</p>
-                <div style={{ marginTop: 8, height: 60 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={drawerProject.timeline} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                      <defs>
-                        <linearGradient id="drawerGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={BRAND_PURPLE} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={BRAND_PURPLE} stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <Area type="monotone" dataKey="count" stroke={BRAND_PURPLE} strokeWidth={1.5} fill="url(#drawerGrad)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Top Character */}
-              <div>
-                <p style={lbl}>Top Character</p>
-                <p style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, margin: '6px 0 0' }}>
-                  {drawerProject.topCharacter}
-                </p>
-              </div>
-
-              {/* Open Project Button */}
-              <button
-                type="button"
-                style={{
-                  ...btnBase,
-                  justifyContent: 'center',
-                  background: 'var(--brand)',
-                  color: '#fff',
-                  border: 'none',
-                  fontWeight: 600,
-                  padding: '10px 16px',
-                  width: '100%',
-                  marginTop: 'auto',
-                }}
-                onClick={() => toast.info(`Opening ${drawerProject.name}...`)}
-              >
-                <ExternalLink size={13} />
-                Open project
-              </button>
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          )}
+        </main>
+
+        {/* ═══ PROJECT DRILL-DOWN DRAWER ════════════════════════ */}
+        {drawerProject && (
+          <>
+            {/* Backdrop */}
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.4)',
+                zIndex: 98,
+              }}
+              onClick={() => setDrawerProject(null)}
+            />
+            {/* Drawer */}
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 400,
+                background: 'var(--bg-elevated)',
+                borderLeft: '1px solid var(--border)',
+                zIndex: 99,
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
+              }}
+            >
+              {/* Drawer Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <h3
+                  style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+                >
+                  {drawerProject.name}
+                </h3>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    padding: 4,
+                  }}
+                  onClick={() => setDrawerProject(null)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Drawer Body */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                }}
+              >
+                {/* Summary */}
+                <div>
+                  <p style={lbl}>Generation Summary</p>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 10,
+                      marginTop: 8,
+                    }}
+                  >
+                    <div style={{ ...card, padding: 12 }}>
+                      <p style={{ ...lbl, fontSize: 9 }}>Total Renders</p>
+                      <p style={{ ...valBig, fontSize: 18 }}>{fmtNum(drawerProject.renders)}</p>
+                    </div>
+                    <div style={{ ...card, padding: 12 }}>
+                      <p style={{ ...lbl, fontSize: 9 }}>Total Credits</p>
+                      <p style={{ ...valBig, fontSize: 18 }}>{fmtNum(drawerProject.credits)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Credits by Tier */}
+                <div>
+                  <p style={lbl}>Credits by Tier</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                    {(['standard', 'pro', 'ultra'] as const).map((tier) => {
+                      const val = drawerProject.tierBreakdown[tier];
+                      const maxTier = Math.max(
+                        drawerProject.tierBreakdown.standard,
+                        drawerProject.tierBreakdown.pro,
+                        drawerProject.tierBreakdown.ultra,
+                      );
+                      const colors = { standard: '#94a3b8', pro: BRAND_PURPLE, ultra: AMBER };
+                      return (
+                        <div key={tier}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                textTransform: 'capitalize',
+                              }}
+                            >
+                              {tier}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: 'var(--text-tertiary)',
+                                fontFamily: 'monospace',
+                              }}
+                            >
+                              {fmtNum(val)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              width: '100%',
+                              height: 8,
+                              borderRadius: 4,
+                              background: 'var(--bg-overlay, rgba(255,255,255,0.04))',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${(val / maxTier) * 100}%`,
+                                height: '100%',
+                                borderRadius: 4,
+                                background: colors[tier],
+                                transition: 'width 300ms ease',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Generation Timeline Sparkline */}
+                <div>
+                  <p style={lbl}>Generation Timeline (14 days)</p>
+                  <div style={{ marginTop: 8, height: 60 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={drawerProject.timeline}
+                        margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
+                      >
+                        <defs>
+                          <linearGradient id="drawerGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={BRAND_PURPLE} stopOpacity={0.3} />
+                            <stop offset="100%" stopColor={BRAND_PURPLE} stopOpacity={0.02} />
+                          </linearGradient>
+                        </defs>
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke={BRAND_PURPLE}
+                          strokeWidth={1.5}
+                          fill="url(#drawerGrad)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Top Character */}
+                <div>
+                  <p style={lbl}>Top Character</p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-primary)',
+                      fontWeight: 500,
+                      margin: '6px 0 0',
+                    }}
+                  >
+                    {drawerProject.topCharacter}
+                  </p>
+                </div>
+
+                {/* Open Project Button */}
+                <button
+                  type="button"
+                  style={{
+                    ...btnBase,
+                    justifyContent: 'center',
+                    background: 'var(--brand)',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 600,
+                    padding: '10px 16px',
+                    width: '100%',
+                    marginTop: 'auto',
+                  }}
+                  onClick={() => toast.info(`Opening ${drawerProject.name}...`)}
+                >
+                  <ExternalLink size={13} />
+                  Open project
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </ErrorBoundary>
   );
 }
 
 export default function AnalyticsPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, color: 'var(--text-secondary)' }}>Loading analytics...</div>}>
+    <Suspense
+      fallback={
+        <div style={{ padding: 40, color: 'var(--text-secondary)' }}>Loading analytics...</div>
+      }
+    >
       <AnalyticsPageContent />
     </Suspense>
   );

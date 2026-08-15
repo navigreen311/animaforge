@@ -19,9 +19,7 @@ import {
   Clock,
   Activity,
 } from 'lucide-react';
-import DMCAFilingWizard, {
-  DMCAMatchData,
-} from '@/components/piracy/DMCAFilingWizard';
+import DMCAFilingWizard, { DMCAMatchData } from '@/components/piracy/DMCAFilingWizard';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -238,14 +236,7 @@ function Gauge({ value }: { value: number }) {
   return (
     <div style={{ position: 'relative', width: 120, height: 120 }}>
       <svg width={120} height={120}>
-        <circle
-          cx={60}
-          cy={60}
-          r={radius}
-          stroke="var(--border)"
-          strokeWidth={8}
-          fill="none"
-        />
+        <circle cx={60} cy={60} r={radius} stroke="var(--border)" strokeWidth={8} fill="none" />
         <circle
           cx={60}
           cy={60}
@@ -279,11 +270,7 @@ function Gauge({ value }: { value: number }) {
         >
           {value}%
         </div>
-        <div
-          style={{ fontSize: 10, color: 'var(--text-tertiary)' }}
-        >
-          similarity
-        </div>
+        <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>similarity</div>
       </div>
     </div>
   );
@@ -313,22 +300,15 @@ function AnalysisRow({
           width: 20,
           height: 20,
           borderRadius: '50%',
-          background: positive
-            ? 'rgba(34,197,94,0.12)'
-            : 'rgba(100,116,139,0.12)',
+          background: positive ? 'rgba(34,197,94,0.12)' : 'rgba(100,116,139,0.12)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Check
-          size={12}
-          style={{ color: positive ? '#4ade80' : '#94a3b8' }}
-        />
+        <Check size={12} style={{ color: positive ? '#4ade80' : '#94a3b8' }} />
       </div>
-      <div style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>
-        {label}
-      </div>
+      <div style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</div>
       <div
         style={{
           fontSize: 12,
@@ -431,9 +411,7 @@ export default function MatchDetailPage() {
               {match.status}
             </span>
           </div>
-          <div
-            style={{ fontSize: 12, color: 'var(--text-tertiary)' }}
-          >
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
             Detected {match.detectedAt}
           </div>
         </div>
@@ -468,8 +446,7 @@ export default function MatchDetailPage() {
                 width: '100%',
                 aspectRatio: '16 / 9',
                 borderRadius: 'var(--radius-md)',
-                background:
-                  'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+                background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
                 marginBottom: 14,
               }}
             />
@@ -562,8 +539,7 @@ export default function MatchDetailPage() {
                 width: '100%',
                 aspectRatio: '16 / 9',
                 borderRadius: 'var(--radius-md)',
-                background:
-                  'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
+                background: 'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
                 marginBottom: 14,
               }}
             />
@@ -616,9 +592,7 @@ export default function MatchDetailPage() {
                   <Eye size={9} style={{ display: 'inline', marginRight: 2 }} />
                   Views
                 </div>
-                <div style={valueStyle}>
-                  {match.infringing.viewCount.toLocaleString()}
-                </div>
+                <div style={valueStyle}>{match.infringing.viewCount.toLocaleString()}</div>
               </div>
               <div>
                 <div style={labelStyle}>
@@ -662,14 +636,8 @@ export default function MatchDetailPage() {
               value="Verified"
               positive={match.analysis.watermarkDetected}
             />
-            <AnalysisRow
-              label="Audio similarity"
-              value={`${match.analysis.audioMatch}%`}
-            />
-            <AnalysisRow
-              label="Visual frame similarity"
-              value={`${match.analysis.visualMatch}%`}
-            />
+            <AnalysisRow label="Audio similarity" value={`${match.analysis.audioMatch}%`} />
+            <AnalysisRow label="Visual frame similarity" value={`${match.analysis.visualMatch}%`} />
           </div>
         </div>
       </div>
@@ -683,10 +651,7 @@ export default function MatchDetailPage() {
           marginBottom: 16,
         }}
       >
-        <button
-          style={primaryBtn}
-          onClick={() => setWizardOpen(true)}
-        >
+        <button style={primaryBtn} onClick={() => setWizardOpen(true)}>
           <FileText size={14} /> File DMCA
         </button>
         <button style={ghostBtn}>
@@ -764,22 +729,14 @@ export default function MatchDetailPage() {
                 >
                   {entry.label}
                 </div>
-                <div
-                  style={{ fontSize: 11, color: 'var(--text-tertiary)' }}
-                >
-                  {entry.at}
-                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{entry.at}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <DMCAFilingWizard
-        open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        match={wizardData}
-      />
+      <DMCAFilingWizard open={wizardOpen} onClose={() => setWizardOpen(false)} match={wizardData} />
     </div>
   );
 }

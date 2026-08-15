@@ -1,12 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-export const SUPPORTED_PLATFORMS = [
-  "youtube",
-  "tiktok",
-  "instagram",
-  "twitter",
-  "vimeo",
-] as const;
+export const SUPPORTED_PLATFORMS = ['youtube', 'tiktok', 'instagram', 'twitter', 'vimeo'] as const;
 
 export type Platform = (typeof SUPPORTED_PLATFORMS)[number];
 
@@ -15,7 +9,7 @@ export interface PlatformConnection {
   userId: string;
   platform: Platform;
   credentials: Record<string, string>;
-  status: "connected" | "expired" | "revoked";
+  status: 'connected' | 'expired' | 'revoked';
   connectedAt: string;
 }
 
@@ -27,7 +21,7 @@ export interface Publication {
   metadata: Record<string, unknown>;
   externalId: string;
   externalUrl: string;
-  status: "published" | "scheduled" | "failed";
+  status: 'published' | 'scheduled' | 'failed';
   scheduledAt?: string;
   publishedAt: string;
   stats: { views: number; likes: number; shares: number };
@@ -57,7 +51,7 @@ export function connectPlatform(
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_PLATFORM";
+    err.code = 'INVALID_PLATFORM';
     throw err;
   }
 
@@ -66,7 +60,7 @@ export function connectPlatform(
     userId,
     platform,
     credentials,
-    status: "connected",
+    status: 'connected',
     connectedAt: new Date().toISOString(),
   };
   connections.set(conn.id, conn);
@@ -95,11 +89,11 @@ function simulatePublish(
 ): Publication {
   const externalId = `${platform}_${uuidv4().slice(0, 8)}`;
   const domainMap: Record<Platform, string> = {
-    youtube: "https://youtube.com/watch?v=",
-    tiktok: "https://tiktok.com/@user/video/",
-    instagram: "https://instagram.com/p/",
-    twitter: "https://twitter.com/i/status/",
-    vimeo: "https://vimeo.com/",
+    youtube: 'https://youtube.com/watch?v=',
+    tiktok: 'https://tiktok.com/@user/video/',
+    instagram: 'https://instagram.com/p/',
+    twitter: 'https://twitter.com/i/status/',
+    vimeo: 'https://vimeo.com/',
   };
 
   const pub: Publication = {
@@ -110,7 +104,7 @@ function simulatePublish(
     metadata,
     externalId,
     externalUrl: `${domainMap[platform]}${externalId}`,
-    status: "published",
+    status: 'published',
     publishedAt: new Date().toISOString(),
     stats: { views: 0, likes: 0, shares: 0 },
   };
@@ -123,7 +117,7 @@ export function publishToYouTube(
   videoUrl: string,
   metadata: Record<string, unknown>,
 ): Publication {
-  return simulatePublish(userId, "youtube", videoUrl, metadata);
+  return simulatePublish(userId, 'youtube', videoUrl, metadata);
 }
 
 export function publishToTikTok(
@@ -131,7 +125,7 @@ export function publishToTikTok(
   videoUrl: string,
   metadata: Record<string, unknown>,
 ): Publication {
-  return simulatePublish(userId, "tiktok", videoUrl, metadata);
+  return simulatePublish(userId, 'tiktok', videoUrl, metadata);
 }
 
 export function publishToInstagram(
@@ -139,7 +133,7 @@ export function publishToInstagram(
   videoUrl: string,
   metadata: Record<string, unknown>,
 ): Publication {
-  return simulatePublish(userId, "instagram", videoUrl, metadata);
+  return simulatePublish(userId, 'instagram', videoUrl, metadata);
 }
 
 export function publishToPlatform(
@@ -154,7 +148,7 @@ export function publishToPlatform(
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_PLATFORM";
+    err.code = 'INVALID_PLATFORM';
     throw err;
   }
   return simulatePublish(userId, platform, videoUrl, metadata);
@@ -162,7 +156,12 @@ export function publishToPlatform(
 
 export function schedulePublication(
   userId: string,
-  items: Array<{ platform: string; videoUrl: string; metadata: Record<string, unknown>; scheduledAt: string }>,
+  items: Array<{
+    platform: string;
+    videoUrl: string;
+    metadata: Record<string, unknown>;
+    scheduledAt: string;
+  }>,
 ): Publication[] {
   return items.map((item) => {
     if (!isPlatformSupported(item.platform)) {
@@ -171,7 +170,7 @@ export function schedulePublication(
         code?: string;
       };
       err.statusCode = 400;
-      err.code = "INVALID_PLATFORM";
+      err.code = 'INVALID_PLATFORM';
       throw err;
     }
 
@@ -181,11 +180,11 @@ export function schedulePublication(
       platform: item.platform,
       videoUrl: item.videoUrl,
       metadata: item.metadata,
-      externalId: "",
-      externalUrl: "",
-      status: "scheduled",
+      externalId: '',
+      externalUrl: '',
+      status: 'scheduled',
       scheduledAt: item.scheduledAt,
-      publishedAt: "",
+      publishedAt: '',
       stats: { views: 0, likes: 0, shares: 0 },
     };
     publications.set(pub.id, pub);

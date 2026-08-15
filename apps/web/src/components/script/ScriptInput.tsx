@@ -21,7 +21,7 @@ export function ScriptInput({ onGenerate, isGenerating }: ScriptInputProps) {
 
   function toggleCharacter(id: string) {
     setSelectedCharacters((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
   }
 
@@ -76,14 +76,22 @@ export function ScriptInput({ onGenerate, isGenerating }: ScriptInputProps) {
                 />
                 <span
                   className={`flex h-4 w-4 items-center justify-center rounded border transition ${
-                    isSelected
-                      ? 'border-violet-500 bg-violet-500'
-                      : 'border-zinc-600 bg-zinc-700'
+                    isSelected ? 'border-violet-500 bg-violet-500' : 'border-zinc-600 bg-zinc-700'
                   }`}
                 >
                   {isSelected && (
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="h-3 w-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   )}
                 </span>
@@ -106,8 +114,12 @@ export function ScriptInput({ onGenerate, isGenerating }: ScriptInputProps) {
             AI is writing
             <span className="inline-flex w-6">
               <span className="animate-pulse">.</span>
-              <span className="animate-pulse" style={{ animationDelay: '200ms' }}>.</span>
-              <span className="animate-pulse" style={{ animationDelay: '400ms' }}>.</span>
+              <span className="animate-pulse" style={{ animationDelay: '200ms' }}>
+                .
+              </span>
+              <span className="animate-pulse" style={{ animationDelay: '400ms' }}>
+                .
+              </span>
             </span>
           </span>
         ) : (

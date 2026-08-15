@@ -11,11 +11,27 @@ import BrandPreview from '@/components/brand/BrandPreview';
 type Tab = 'colors' | 'typography' | 'logo' | 'sonic' | 'templates';
 
 const TABS: { value: Tab; label: string; icon: string }[] = [
-  { value: 'colors', label: 'Colors', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
+  {
+    value: 'colors',
+    label: 'Colors',
+    icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+  },
   { value: 'typography', label: 'Typography', icon: 'M4 6h16M4 12h8m-8 6h16' },
-  { value: 'logo', label: 'Logo', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { value: 'sonic', label: 'Sonic Branding', icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3' },
-  { value: 'templates', label: 'Templates', icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
+  {
+    value: 'logo',
+    label: 'Logo',
+    icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
+  },
+  {
+    value: 'sonic',
+    label: 'Sonic Branding',
+    icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3',
+  },
+  {
+    value: 'templates',
+    label: 'Templates',
+    icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+  },
 ];
 
 interface WatermarkConfig {
@@ -32,8 +48,16 @@ interface BrandTemplate {
 
 const DEFAULT_TEMPLATES: BrandTemplate[] = [
   { id: 't1', name: 'Corporate Clean', description: 'Minimal branding with subtle logo watermark' },
-  { id: 't2', name: 'Bold Creator', description: 'Vibrant colors with prominent branding throughout' },
-  { id: 't3', name: 'Cinematic', description: 'Dark theme with elegant typography and minimal overlay' },
+  {
+    id: 't2',
+    name: 'Bold Creator',
+    description: 'Vibrant colors with prominent branding throughout',
+  },
+  {
+    id: 't3',
+    name: 'Cinematic',
+    description: 'Dark theme with elegant typography and minimal overlay',
+  },
 ];
 
 export default function BrandKitPage() {
@@ -116,7 +140,11 @@ export default function BrandKitPage() {
         body: JSON.stringify({ outputUrl: 'mock://preview-output' }),
       });
       const data = await res.json();
-      alert(data.compliant ? 'Brand is compliant!' : `Violations: ${data.violations.map((v: { message: string }) => v.message).join(', ')}`);
+      alert(
+        data.compliant
+          ? 'Brand is compliant!'
+          : `Violations: ${data.violations.map((v: { message: string }) => v.message).join(', ')}`,
+      );
     } catch {
       // Handle error
     }
@@ -196,25 +224,21 @@ export default function BrandKitPage() {
 
         {/* Tab content */}
         <div className="rounded-xl bg-gray-800/30 border border-gray-800 p-6">
-          {activeTab === 'colors' && (
-            <ColorPicker colors={colors} onChange={setColors as any} />
-          )}
+          {activeTab === 'colors' && <ColorPicker colors={colors} onChange={setColors as any} />}
 
           {activeTab === 'typography' && (
             <TypographyEditor typography={typography} onChange={setTypography} />
           )}
 
-          {activeTab === 'logo' && (
-            <LogoManager logo={logo} onChange={setLogo} />
-          )}
+          {activeTab === 'logo' && <LogoManager logo={logo} onChange={setLogo} />}
 
-          {activeTab === 'sonic' && (
-            <SonicBranding sonic={sonic} onChange={setSonic} />
-          )}
+          {activeTab === 'sonic' && <SonicBranding sonic={sonic} onChange={setSonic} />}
 
           {activeTab === 'templates' && (
             <div className="space-y-4">
-              <p className="text-xs text-gray-400">Select a brand template to quick-start your kit</p>
+              <p className="text-xs text-gray-400">
+                Select a brand template to quick-start your kit
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.map((t) => (
                   <button
@@ -253,7 +277,12 @@ export default function BrandKitPage() {
                         <label className="block text-xs text-gray-400 mb-1">Position</label>
                         <select
                           value={watermark.position}
-                          onChange={(e) => setWatermark({ ...watermark, position: e.target.value as WatermarkConfig['position'] })}
+                          onChange={(e) =>
+                            setWatermark({
+                              ...watermark,
+                              position: e.target.value as WatermarkConfig['position'],
+                            })
+                          }
                           className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
                         >
                           <option value="top-left">Top Left</option>
@@ -266,14 +295,18 @@ export default function BrandKitPage() {
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <label className="text-xs text-gray-400">Opacity</label>
-                          <span className="text-xs text-gray-500 font-mono">{Math.round(watermark.opacity * 100)}%</span>
+                          <span className="text-xs text-gray-500 font-mono">
+                            {Math.round(watermark.opacity * 100)}%
+                          </span>
                         </div>
                         <input
                           type="range"
                           min={0}
                           max={100}
                           value={Math.round(watermark.opacity * 100)}
-                          onChange={(e) => setWatermark({ ...watermark, opacity: Number(e.target.value) / 100 })}
+                          onChange={(e) =>
+                            setWatermark({ ...watermark, opacity: Number(e.target.value) / 100 })
+                          }
                           className="w-full accent-violet-500"
                         />
                       </div>
@@ -289,12 +322,7 @@ export default function BrandKitPage() {
       {/* Side preview panel */}
       <div className="w-80 flex-shrink-0">
         <div className="sticky top-6">
-          <BrandPreview
-            colors={colors}
-            typography={typography}
-            logo={logo}
-            watermark={watermark}
-          />
+          <BrandPreview colors={colors} typography={typography} logo={logo} watermark={watermark} />
         </div>
       </div>
     </div>

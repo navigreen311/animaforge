@@ -2,9 +2,29 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  UserPlus, Shield, Mail, MoreHorizontal, Users, Lock, Key, Activity,
-  ChevronDown, ChevronRight, X, Check, AlertTriangle, Pencil, Eye,
-  Trash2, FolderOpen, CreditCard, Clock, Radio, Plus, Copy, RefreshCw,
+  UserPlus,
+  Shield,
+  Mail,
+  MoreHorizontal,
+  Users,
+  Lock,
+  Key,
+  Activity,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Check,
+  AlertTriangle,
+  Pencil,
+  Eye,
+  Trash2,
+  FolderOpen,
+  CreditCard,
+  Clock,
+  Radio,
+  Plus,
+  Copy,
+  RefreshCw,
   UserMinus,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -82,11 +102,46 @@ const MOCK_PROJECTS = [
 ];
 
 const MOCK_PROJECT_ACCESS: ProjectAccessEntry[] = [
-  { id: 'p1', title: 'Cyber Samurai', status: 'Active', dotColor: '#7c3aed', hasAccess: true, role: 'Editor' },
-  { id: 'p2', title: 'Brand Story', status: 'Active', dotColor: '#06b6d4', hasAccess: true, role: 'Editor' },
-  { id: 'p3', title: 'Product Launch', status: 'Draft', dotColor: '#f59e0b', hasAccess: false, role: 'Viewer' },
-  { id: 'p4', title: 'Holiday Campaign', status: 'Active', dotColor: '#ef4444', hasAccess: false, role: 'Viewer' },
-  { id: 'p5', title: 'Client Reel', status: 'Archived', dotColor: '#10b981', hasAccess: false, role: 'Viewer' },
+  {
+    id: 'p1',
+    title: 'Cyber Samurai',
+    status: 'Active',
+    dotColor: '#7c3aed',
+    hasAccess: true,
+    role: 'Editor',
+  },
+  {
+    id: 'p2',
+    title: 'Brand Story',
+    status: 'Active',
+    dotColor: '#06b6d4',
+    hasAccess: true,
+    role: 'Editor',
+  },
+  {
+    id: 'p3',
+    title: 'Product Launch',
+    status: 'Draft',
+    dotColor: '#f59e0b',
+    hasAccess: false,
+    role: 'Viewer',
+  },
+  {
+    id: 'p4',
+    title: 'Holiday Campaign',
+    status: 'Active',
+    dotColor: '#ef4444',
+    hasAccess: false,
+    role: 'Viewer',
+  },
+  {
+    id: 'p5',
+    title: 'Client Reel',
+    status: 'Archived',
+    dotColor: '#10b981',
+    hasAccess: false,
+    role: 'Viewer',
+  },
 ];
 
 const MEMBERS: TeamMember[] = [
@@ -400,7 +455,9 @@ function Avatar({
 // ══════════════════════════════════════════════════════════════
 
 function AvatarStack({ memberIds }: { memberIds: string[] }) {
-  const members = memberIds.map((id) => MEMBERS.find((m) => m.id === id)).filter(Boolean) as TeamMember[];
+  const members = memberIds
+    .map((id) => MEMBERS.find((m) => m.id === id))
+    .filter(Boolean) as TeamMember[];
   return (
     <div style={{ display: 'flex', marginLeft: 4 }}>
       {members.slice(0, 4).map((m, i) => (
@@ -454,7 +511,9 @@ function CreditLimitModal({
   onClose: () => void;
   onSave: (limit: number | null, policy: LimitPolicy) => void;
 }) {
-  const [mode, setMode] = useState<'unlimited' | 'custom'>(member.creditLimit === null ? 'unlimited' : 'custom');
+  const [mode, setMode] = useState<'unlimited' | 'custom'>(
+    member.creditLimit === null ? 'unlimited' : 'custom',
+  );
   const [customValue, setCustomValue] = useState(member.creditLimit?.toString() || '1000');
   const [policy, setPolicy] = useState<LimitPolicy>(member.limitPolicy);
 
@@ -465,11 +524,29 @@ function CreditLimitModal({
         style={{ ...modalBoxStyle, width: 380 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Credit limit for {member.name}
           </h3>
-          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              cursor: 'pointer',
+              padding: 2,
+            }}
+          >
             <X size={16} />
           </button>
         </div>
@@ -533,7 +610,14 @@ function CreditLimitModal({
 
         {/* When limit reached */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 8,
+            }}
+          >
             When limit is reached
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -568,7 +652,9 @@ function CreditLimitModal({
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
+          <button type="button" onClick={onClose} style={smallBtnStyle}>
+            Cancel
+          </button>
           <button
             type="button"
             onClick={async () => {
@@ -632,18 +718,43 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
         style={{ ...modalBoxStyle, width: 520 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Invite Member
           </h3>
-          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              cursor: 'pointer',
+              padding: 2,
+            }}
+          >
             <X size={16} />
           </button>
         </div>
 
         {/* Email inputs */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 6,
+            }}
+          >
             Email addresses
           </label>
           {entries.map((entry, i) => (
@@ -661,7 +772,13 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
                   type="button"
                   aria-label="Remove email"
                   onClick={() => removeEntry(entry.id)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    padding: 4,
+                  }}
                 >
                   <X size={14} />
                 </button>
@@ -672,7 +789,13 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={addEntry}
-              style={{ ...smallBtnStyle, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+              style={{
+                ...smallBtnStyle,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: 4,
+              }}
             >
               <Plus size={12} /> Add another
             </button>
@@ -681,7 +804,14 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 
         {/* Role selection */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 8,
+            }}
+          >
             Role
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -707,7 +837,9 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
                   style={{ accentColor: 'var(--brand)', marginTop: 2 }}
                 />
                 <div>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{r}</span>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
+                    {r}
+                  </span>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
                     {ROLE_DESCRIPTIONS[r]}
                   </p>
@@ -719,7 +851,14 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 
         {/* Project access */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 8,
+            }}
+          >
             Project access
           </label>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -747,7 +886,17 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
           {projectAccess === 'specific' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {MOCK_PROJECTS.map((p) => (
-                <label key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <label
+                  key={p}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={selectedProjects.includes(p)}
@@ -763,7 +912,14 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 
         {/* Credit limit */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 8,
+            }}
+          >
             Credit limit
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -803,7 +959,14 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 
         {/* Personal message */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>
+          <label
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              display: 'block',
+              marginBottom: 6,
+            }}
+          >
             Personal message (optional)
           </label>
           <textarea
@@ -821,7 +984,9 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
+          <button type="button" onClick={onClose} style={smallBtnStyle}>
+            Cancel
+          </button>
           <UnavailableButton feature="team.invite" hideNote layout="inline" style={primaryBtnStyle}>
             <Mail size={13} />
             Send Invitation
@@ -836,13 +1001,7 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 // PROJECT ACCESS MODAL
 // ══════════════════════════════════════════════════════════════
 
-function ProjectAccessModal({
-  member,
-  onClose,
-}: {
-  member: TeamMember;
-  onClose: () => void;
-}) {
+function ProjectAccessModal({ member, onClose }: { member: TeamMember; onClose: () => void }) {
   const [entries, setEntries] = useState<ProjectAccessEntry[]>(() =>
     MOCK_PROJECT_ACCESS.map((p) => ({
       ...p,
@@ -881,11 +1040,29 @@ function ProjectAccessModal({
         style={{ ...modalBoxStyle, width: 500 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}
+        >
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Project access &mdash; {member.name}
           </h3>
-          <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              cursor: 'pointer',
+              padding: 2,
+            }}
+          >
             <X size={16} />
           </button>
         </div>
@@ -916,7 +1093,9 @@ function ProjectAccessModal({
                   flexShrink: 0,
                 }}
               />
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', flex: 1 }}>
+              <span
+                style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', flex: 1 }}
+              >
                 {entry.title}
               </span>
               <span style={statusBadgeStyle(entry.status)}>{entry.status}</span>
@@ -974,7 +1153,9 @@ function ProjectAccessModal({
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose} style={smallBtnStyle}>Cancel</button>
+          <button type="button" onClick={onClose} style={smallBtnStyle}>
+            Cancel
+          </button>
           <UnavailableButton
             feature="team.projectAccess"
             hideNote
@@ -1024,15 +1205,39 @@ function MemberDetailPanel({
     >
       {/* Close */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
-        <button type="button" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-tertiary)',
+            cursor: 'pointer',
+            padding: 4,
+          }}
+        >
           <X size={16} />
         </button>
       </div>
 
       {/* Profile header */}
-      <div style={{ padding: '0 24px 20px', textAlign: 'center', borderBottom: '0.5px solid var(--border)' }}>
+      <div
+        style={{
+          padding: '0 24px 20px',
+          textAlign: 'center',
+          borderBottom: '0.5px solid var(--border)',
+        }}
+      >
         <Avatar initials={member.initials} color={member.avatarColor} size={56} />
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 4px' }}>
+        <h3
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            margin: '12px 0 4px',
+          }}
+        >
           {member.name}
         </h3>
         <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>{member.email}</p>
@@ -1054,16 +1259,34 @@ function MemberDetailPanel({
 
       {/* This month stats */}
       <div style={{ padding: '16px 24px', borderBottom: '0.5px solid var(--border)' }}>
-        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            margin: '0 0 12px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
           This Month
         </p>
 
         {/* Credits used */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              marginBottom: 4,
+            }}
+          >
             <span>Credits used</span>
             <span>
-              {member.creditsUsed.toLocaleString()} / {member.creditLimit === null ? '∞' : member.creditLimit.toLocaleString()}
+              {member.creditsUsed.toLocaleString()} /{' '}
+              {member.creditLimit === null ? '∞' : member.creditLimit.toLocaleString()}
             </span>
           </div>
           <ProgressBar
@@ -1075,20 +1298,61 @@ function MemberDetailPanel({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
-            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>Shots generated</p>
-            <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: '2px 0 0' }}>{member.shotsGenerated}</p>
+          <div
+            style={{
+              background: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-md)',
+              padding: '8px 12px',
+            }}
+          >
+            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>
+              Shots generated
+            </p>
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                margin: '2px 0 0',
+              }}
+            >
+              {member.shotsGenerated}
+            </p>
           </div>
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
+          <div
+            style={{
+              background: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-md)',
+              padding: '8px 12px',
+            }}
+          >
             <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>Approved</p>
-            <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: '2px 0 0' }}>{member.shotsApproved}</p>
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                margin: '2px 0 0',
+              }}
+            >
+              {member.shotsApproved}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Project access */}
       <div style={{ padding: '16px 24px', borderBottom: '0.5px solid var(--border)' }}>
-        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            margin: '0 0 10px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
           Project Access
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1115,15 +1379,40 @@ function MemberDetailPanel({
 
       {/* Quick actions */}
       <div style={{ padding: '16px 24px' }}>
-        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            margin: '0 0 10px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
           Quick Actions
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[
-            { icon: <Shield size={12} />, label: 'Change role', onClick: () => toast.info('Change role') },
-            { icon: <FolderOpen size={12} />, label: 'Manage project access', onClick: () => onManageAccess(member) },
-            { icon: <CreditCard size={12} />, label: 'Set credit limit', onClick: () => toast.info('Set credit limit') },
-            { icon: <Activity size={12} />, label: 'View activity log', onClick: () => toast.info('View activity log') },
+            {
+              icon: <Shield size={12} />,
+              label: 'Change role',
+              onClick: () => toast.info('Change role'),
+            },
+            {
+              icon: <FolderOpen size={12} />,
+              label: 'Manage project access',
+              onClick: () => onManageAccess(member),
+            },
+            {
+              icon: <CreditCard size={12} />,
+              label: 'Set credit limit',
+              onClick: () => toast.info('Set credit limit'),
+            },
+            {
+              icon: <Activity size={12} />,
+              label: 'View activity log',
+              onClick: () => toast.info('View activity log'),
+            },
           ].map((action) => (
             <button
               key={action.label}
@@ -1143,8 +1432,12 @@ function MemberDetailPanel({
                 width: '100%',
                 textAlign: 'left',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              }}
             >
               {action.icon}
               {action.label}
@@ -1177,11 +1470,30 @@ function ConfirmModal({
 }) {
   return (
     <div style={modalOverlayStyle} onClick={onCancel}>
-      <motion.div {...fadeIn} style={{ ...modalBoxStyle, width: 400 }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>{title}</h3>
-        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 20px', lineHeight: 1.5 }}>{message}</p>
+      <motion.div
+        {...fadeIn}
+        style={{ ...modalBoxStyle, width: 400 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}
+        >
+          {title}
+        </h3>
+        <p
+          style={{
+            fontSize: 12,
+            color: 'var(--text-secondary)',
+            margin: '0 0 20px',
+            lineHeight: 1.5,
+          }}
+        >
+          {message}
+        </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onCancel} style={smallBtnStyle}>Cancel</button>
+          <button type="button" onClick={onCancel} style={smallBtnStyle}>
+            Cancel
+          </button>
           <button
             type="button"
             onClick={onConfirm}
@@ -1229,9 +1541,20 @@ function RowContextMenu({
     { key: 'changeRole', label: 'Change role', icon: <Shield size={12} />, hasSubmenu: true },
     { key: 'manageAccess', label: 'Manage project access', icon: <FolderOpen size={12} /> },
     { key: 'setCreditLimit', label: 'Set credit limit', icon: <CreditCard size={12} /> },
-    { key: 'viewActivity', label: 'View activity log', icon: <Activity size={12} />, unavailable: 'team.activityLog' },
+    {
+      key: 'viewActivity',
+      label: 'View activity log',
+      icon: <Activity size={12} />,
+      unavailable: 'team.activityLog',
+    },
     { key: 'separator', separator: true } as const,
-    { key: 'remove', label: 'Remove from workspace', icon: <UserMinus size={12} />, danger: true, disabledForSelf: true },
+    {
+      key: 'remove',
+      label: 'Remove from workspace',
+      icon: <UserMinus size={12} />,
+      danger: true,
+      disabledForSelf: true,
+    },
   ] as Array<{
     key: string;
     label?: string;
@@ -1278,100 +1601,111 @@ function RowContextMenu({
         }
         const itemDisabled = (!!item.disabledForSelf && isOwnRow) || !!item.unavailable;
         return (
-        <div key={item.key} style={{ position: 'relative' }}>
-          <button
-            type="button"
-            disabled={itemDisabled}
-            title={item.unavailable ? explainFeature(item.unavailable) : undefined}
-            onClick={() => {
-              if (item.key === 'changeRole') {
-                setRoleSubmenu(!roleSubmenu);
-                return;
-              }
-              onAction(item.key, member);
-              onClose();
-            }}
-            onMouseEnter={(e) => {
-              if (!itemDisabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '7px 12px',
-              background: 'transparent',
-              border: 'none',
-              cursor: itemDisabled ? 'not-allowed' : 'pointer',
-              fontSize: 12,
-              color: itemDisabled ? 'var(--text-tertiary)' : item.danger ? '#f87171' : 'var(--text-secondary)',
-              opacity: itemDisabled ? 0.4 : 1,
-              textAlign: 'left',
-            }}
-          >
-            {item.icon}
-            <span style={{ flex: 1 }}>{item.label}</span>
-            {item.hasSubmenu && <ChevronRight size={11} />}
-          </button>
-
-          {/* Role submenu */}
-          {item.key === 'changeRole' && roleSubmenu && (
-            <div
+          <div key={item.key} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              disabled={itemDisabled}
+              title={item.unavailable ? explainFeature(item.unavailable) : undefined}
+              onClick={() => {
+                if (item.key === 'changeRole') {
+                  setRoleSubmenu(!roleSubmenu);
+                  return;
+                }
+                onAction(item.key, member);
+                onClose();
+              }}
+              onMouseEnter={(e) => {
+                if (!itemDisabled)
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              }}
               style={{
-                position: 'absolute',
-                top: 0,
-                left: '100%',
-                width: 160,
-                background: 'var(--bg-elevated)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                padding: '4px 0',
-                zIndex: 951,
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 12px',
+                background: 'transparent',
+                border: 'none',
+                cursor: itemDisabled ? 'not-allowed' : 'pointer',
+                fontSize: 12,
+                color: itemDisabled
+                  ? 'var(--text-tertiary)'
+                  : item.danger
+                    ? '#f87171'
+                    : 'var(--text-secondary)',
+                opacity: itemDisabled ? 0.4 : 1,
+                textAlign: 'left',
               }}
             >
-              {(['Admin', 'Editor', 'Viewer'] as Role[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => {
-                    onAction('changeRole', member, r);
-                    onClose();
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 12px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: 'var(--text-secondary)',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: ROLE_STYLES[r].color,
+              {item.icon}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.hasSubmenu && <ChevronRight size={11} />}
+            </button>
+
+            {/* Role submenu */}
+            {item.key === 'changeRole' && roleSubmenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '100%',
+                  width: 160,
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                  padding: '4px 0',
+                  zIndex: 951,
+                }}
+              >
+                {(['Admin', 'Editor', 'Viewer'] as Role[]).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => {
+                      onAction('changeRole', member, r);
+                      onClose();
                     }}
-                  />
-                  {r}
-                  {member.role === r && <Check size={12} style={{ marginLeft: 'auto', color: 'var(--brand)' }} />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '7px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: ROLE_STYLES[r].color,
+                      }}
+                    />
+                    {r}
+                    {member.role === r && (
+                      <Check size={12} style={{ marginLeft: 'auto', color: 'var(--brand)' }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -1390,7 +1724,9 @@ export default function TeamPage() {
   const [creditLimitMember, setCreditLimitMember] = useState<TeamMember | null>(null);
   const [projectAccessMember, setProjectAccessMember] = useState<TeamMember | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(true);
-  const [contextMenu, setContextMenu] = useState<{ member: TeamMember; rect: DOMRect } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ member: TeamMember; rect: DOMRect } | null>(
+    null,
+  );
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -1409,7 +1745,12 @@ export default function TeamPage() {
       setLivePolling((n) => {
         const next = n + 1;
         // eslint-disable-next-line no-console
-        console.log('[TeamPage] Live presence polled (tick', next, ') at', new Date().toISOString());
+        console.log(
+          '[TeamPage] Live presence polled (tick',
+          next,
+          ') at',
+          new Date().toISOString(),
+        );
         return next;
       });
     }, 30_000);
@@ -1425,45 +1766,48 @@ export default function TeamPage() {
   const totalUsed = members.reduce((sum, m) => sum + m.creditsUsed, 0);
   const unallocated = MONTHLY_CREDITS - totalAllocated;
 
-  const handleMenuAction = useCallback((action: string, member: TeamMember, payload?: unknown) => {
-    switch (action) {
-      case 'changeRole': {
-        const newRole = payload as Role;
-        if (newRole === member.role) return;
-        // optimistic update + mock API
-        setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)));
-        void (async () => {
-          await new Promise((r) => setTimeout(r, 250));
-          toast.success(`${member.name}'s role changed to ${newRole}`);
-        })();
-        break;
-      }
-      case 'setCreditLimit':
-        setCreditLimitMember(member);
-        break;
-      // 'viewActivity' is rendered disabled — see featureStatus['team.activityLog'].
-      // The activity endpoint serves generated samples, not recorded events.
-      case 'manageAccess':
-        setProjectAccessMember(member);
-        break;
-      case 'remove':
-        setConfirmAction({
-          title: 'Remove member',
-          message: `Remove ${member.name} from workspace?`,
-          confirmLabel: 'Remove',
-          danger: true,
-          onConfirm: async () => {
-            // mock API
+  const handleMenuAction = useCallback(
+    (action: string, member: TeamMember, payload?: unknown) => {
+      switch (action) {
+        case 'changeRole': {
+          const newRole = payload as Role;
+          if (newRole === member.role) return;
+          // optimistic update + mock API
+          setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)));
+          void (async () => {
             await new Promise((r) => setTimeout(r, 250));
-            setMembers((prev) => prev.filter((m) => m.id !== member.id));
-            toast.success(`${member.name} has been removed`);
-            setConfirmAction(null);
-            if (selectedMember?.id === member.id) setSelectedMember(null);
-          },
-        });
-        break;
-    }
-  }, [selectedMember]);
+            toast.success(`${member.name}'s role changed to ${newRole}`);
+          })();
+          break;
+        }
+        case 'setCreditLimit':
+          setCreditLimitMember(member);
+          break;
+        // 'viewActivity' is rendered disabled — see featureStatus['team.activityLog'].
+        // The activity endpoint serves generated samples, not recorded events.
+        case 'manageAccess':
+          setProjectAccessMember(member);
+          break;
+        case 'remove':
+          setConfirmAction({
+            title: 'Remove member',
+            message: `Remove ${member.name} from workspace?`,
+            confirmLabel: 'Remove',
+            danger: true,
+            onConfirm: async () => {
+              // mock API
+              await new Promise((r) => setTimeout(r, 250));
+              setMembers((prev) => prev.filter((m) => m.id !== member.id));
+              toast.success(`${member.name} has been removed`);
+              setConfirmAction(null);
+              if (selectedMember?.id === member.id) setSelectedMember(null);
+            },
+          });
+          break;
+      }
+    },
+    [selectedMember],
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -1484,7 +1828,9 @@ export default function TeamPage() {
           {/* ── Page Header ───────────────────────────────── */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <h1
+                style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+              >
                 Team
               </h1>
               <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
@@ -1495,8 +1841,12 @@ export default function TeamPage() {
               type="button"
               onClick={() => setShowInviteModal(true)}
               style={primaryBtnStyle}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+              }}
             >
               <UserPlus size={13} />
               Invite Member
@@ -1508,7 +1858,9 @@ export default function TeamPage() {
             {/* Members / seats */}
             <div style={{ flex: 1, ...cardStyle, padding: '14px 16px', overflow: 'visible' }}>
               <p style={labelStyle}>Members</p>
-              <p style={bigNumberStyle}>{seatUsage} / {TOTAL_SEATS} seats</p>
+              <p style={bigNumberStyle}>
+                {seatUsage} / {TOTAL_SEATS} seats
+              </p>
               <div style={{ marginTop: 8 }}>
                 <ProgressBar
                   value={seatUsage}
@@ -1525,7 +1877,15 @@ export default function TeamPage() {
               <p style={labelStyle}>Active Now</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                 <p style={{ ...bigNumberStyle, margin: 0 }}>{activeMembers.length}</p>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    display: 'inline-block',
+                  }}
+                />
               </div>
             </div>
 
@@ -1580,7 +1940,14 @@ export default function TeamPage() {
                       />
                     </div>
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          margin: 0,
+                        }}
+                      >
                         {m.name}
                       </p>
                       <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '1px 0 0' }}>
@@ -1627,12 +1994,25 @@ export default function TeamPage() {
                   style={{ overflow: 'hidden' }}
                 >
                   {/* Summary bar */}
-                  <div style={{ padding: '12px 16px', display: 'flex', gap: 16, borderBottom: '0.5px solid var(--border)' }}>
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      display: 'flex',
+                      gap: 16,
+                      borderBottom: '0.5px solid var(--border)',
+                    }}
+                  >
                     <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                      Used: <strong style={{ color: 'var(--text-primary)' }}>{totalUsed.toLocaleString()}</strong>
+                      Used:{' '}
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        {totalUsed.toLocaleString()}
+                      </strong>
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                      Unallocated: <strong style={{ color: unallocated < 0 ? '#f87171' : 'var(--text-primary)' }}>
+                      Unallocated:{' '}
+                      <strong
+                        style={{ color: unallocated < 0 ? '#f87171' : 'var(--text-primary)' }}
+                      >
                         {unallocated.toLocaleString()}
                       </strong>
                       {unlimitedCount > 0 && (
@@ -1646,7 +2026,9 @@ export default function TeamPage() {
                   {/* Per-member rows */}
                   {members.map((m) => {
                     const limit = m.creditLimit;
-                    const pct = limit ? Math.min((m.creditsUsed / limit) * 100, 100) : (m.creditsUsed / MONTHLY_CREDITS) * 100;
+                    const pct = limit
+                      ? Math.min((m.creditsUsed / limit) * 100, 100)
+                      : (m.creditsUsed / MONTHLY_CREDITS) * 100;
                     return (
                       <div
                         key={m.id}
@@ -1659,10 +2041,25 @@ export default function TeamPage() {
                         }}
                       >
                         <Avatar initials={m.initials} color={m.avatarColor} size={24} />
-                        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', width: 120, flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: 'var(--text-primary)',
+                            width: 120,
+                            flexShrink: 0,
+                          }}
+                        >
                           {m.name}
                         </span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', width: 80, flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--text-tertiary)',
+                            width: 80,
+                            flexShrink: 0,
+                          }}
+                        >
                           {limit === null ? 'Unlimited' : `${limit.toLocaleString()} credits`}
                         </span>
                         <div style={{ flex: 1 }}>
@@ -1674,7 +2071,15 @@ export default function TeamPage() {
                             dangerAt={100}
                           />
                         </div>
-                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', width: 50, textAlign: 'right', flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--text-tertiary)',
+                            width: 50,
+                            textAlign: 'right',
+                            flexShrink: 0,
+                          }}
+                        >
                           {m.creditsUsed.toLocaleString()}
                         </span>
                         <button
@@ -1688,8 +2093,13 @@ export default function TeamPage() {
                             alignItems: 'center',
                             gap: 4,
                           }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.background =
+                              'var(--bg-hover)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                          }}
                         >
                           <Pencil size={10} />
                           Edit
@@ -1733,10 +2143,29 @@ export default function TeamPage() {
 
                 {/* Name + Email */}
                 <div style={{ marginLeft: 12, minWidth: 0, flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {member.name}
                   </p>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--text-tertiary)',
+                      margin: '2px 0 0',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {member.email}
                   </p>
                 </div>
@@ -1758,13 +2187,39 @@ export default function TeamPage() {
                 </span>
 
                 {/* Status */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 20, minWidth: 70 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: STATUS_COLORS[member.status], flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{member.status}</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginLeft: 20,
+                    minWidth: 70,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: STATUS_COLORS[member.status],
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    {member.status}
+                  </span>
                 </div>
 
                 {/* Joined */}
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 20, whiteSpace: 'nowrap', minWidth: 64 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-tertiary)',
+                    marginLeft: 20,
+                    whiteSpace: 'nowrap',
+                    minWidth: 64,
+                  }}
+                >
                   {member.joined}
                 </span>
 
@@ -1791,8 +2246,12 @@ export default function TeamPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                  }}
                 >
                   <MoreHorizontal size={15} />
                 </button>
@@ -1811,7 +2270,14 @@ export default function TeamPage() {
             </div>
 
             {pendingInvites.length === 0 && (
-              <div style={{ padding: '16px', fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+              <div
+                style={{
+                  padding: '16px',
+                  fontSize: 11,
+                  color: 'var(--text-tertiary)',
+                  textAlign: 'center',
+                }}
+              >
                 No pending invites
               </div>
             )}
@@ -1845,7 +2311,14 @@ export default function TeamPage() {
                   <Mail size={14} style={{ color: '#94a3b8' }} />
                 </div>
                 <div style={{ marginLeft: 12, minWidth: 0, flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                    }}
+                  >
                     {invite.email}
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
@@ -1875,8 +2348,12 @@ export default function TeamPage() {
                       toast.success(`Invitation resent to ${invite.email}`);
                     }}
                     style={smallBtnStyle}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    }}
                   >
                     Resend
                   </button>
@@ -1897,8 +2374,13 @@ export default function TeamPage() {
                       });
                     }}
                     style={dangerBtnStyle}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(239,68,68,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    }}
                   >
                     Revoke
                   </button>
@@ -1914,15 +2396,20 @@ export default function TeamPage() {
                 <Users size={13} style={{ color: 'var(--text-tertiary)' }} />
                 <span style={sectionTitleStyle}>Sub-Teams</span>
               </div>
-              <UnavailableButton feature="team.create"
-                                style={{
+              <UnavailableButton
+                feature="team.create"
+                style={{
                   ...smallBtnStyle,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                }}
               >
                 <Plus size={11} />
                 Create team
@@ -1940,7 +2427,14 @@ export default function TeamPage() {
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                    }}
+                  >
                     {team.name}
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
@@ -1996,7 +2490,14 @@ export default function TeamPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 8 }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-tertiary)',
+                    display: 'block',
+                    marginBottom: 8,
+                  }}
+                >
                   Identity provider
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -2021,21 +2522,55 @@ export default function TeamPage() {
 
               <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--text-tertiary)',
+                      display: 'block',
+                      marginBottom: 4,
+                    }}
+                  >
                     SCIM endpoint
                   </label>
-                  <div style={{ ...inputStyle, opacity: 0.5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div
+                    style={{
+                      ...inputStyle,
+                      opacity: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
                     <Key size={11} style={{ color: 'var(--text-tertiary)' }} />
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Available on Enterprise plan</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      Available on Enterprise plan
+                    </span>
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--text-tertiary)',
+                      display: 'block',
+                      marginBottom: 4,
+                    }}
+                  >
                     SCIM token
                   </label>
-                  <div style={{ ...inputStyle, opacity: 0.5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div
+                    style={{
+                      ...inputStyle,
+                      opacity: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
                     <Lock size={11} style={{ color: 'var(--text-tertiary)' }} />
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Available on Enterprise plan</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      Available on Enterprise plan
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2052,7 +2587,14 @@ export default function TeamPage() {
                 }}
               >
                 <div>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                    }}
+                  >
                     Upgrade to Enterprise
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
@@ -2069,7 +2611,6 @@ export default function TeamPage() {
               </div>
             </div>
           </div>
-
         </main>
 
         {/* ── Member Detail Panel ─────────────────────────── */}
@@ -2099,9 +2640,7 @@ export default function TeamPage() {
 
       {/* ── Modals ──────────────────────────────────────── */}
       <AnimatePresence>
-        {showInviteModal && (
-          <InviteMemberModal onClose={() => setShowInviteModal(false)} />
-        )}
+        {showInviteModal && <InviteMemberModal onClose={() => setShowInviteModal(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -2121,8 +2660,10 @@ export default function TeamPage() {
             onSave={(limit, policy) => {
               setMembers((prev) =>
                 prev.map((m) =>
-                  m.id === creditLimitMember.id ? { ...m, creditLimit: limit, limitPolicy: policy } : m
-                )
+                  m.id === creditLimitMember.id
+                    ? { ...m, creditLimit: limit, limitPolicy: policy }
+                    : m,
+                ),
               );
             }}
           />

@@ -52,10 +52,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!name) {
-      return NextResponse.json(
-        { error: 'Team name is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Team name is required' }, { status: 400 });
     }
 
     const now = new Date().toISOString();
@@ -73,9 +70,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, team }, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

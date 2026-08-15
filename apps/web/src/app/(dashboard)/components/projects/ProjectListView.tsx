@@ -7,12 +7,7 @@ import { motion } from 'framer-motion';
 import { Play, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Project } from '@/lib/types';
-import {
-  timeAgo,
-  getProgressPercent,
-  getStatusColor,
-  getTypeGradient,
-} from '@/lib/utils/format';
+import { timeAgo, getProgressPercent, getStatusColor, getTypeGradient } from '@/lib/utils/format';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -74,8 +69,7 @@ function ProjectRow({ project, index }: ProjectRowProps) {
   const timelineUrl = `/projects/${project.id}/timeline`;
   const reviewUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/projects/${project.id}/review`;
 
-  const thumbnailBackground =
-    project.thumbnailGradient || getTypeGradient(project.projectType);
+  const thumbnailBackground = project.thumbnailGradient || getTypeGradient(project.projectType);
 
   const progressFillColor =
     project.status === 'complete'

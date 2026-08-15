@@ -87,8 +87,18 @@ const STYLE_MODES = [
 ];
 
 const QUICK_START_CARDS = [
-  { title: 'Create Your First Shot', desc: 'Generate a scene with AI', icon: ImagePlus, href: '/projects' },
-  { title: 'Explore Templates', desc: 'Start from a pre-built template', icon: Video, href: '/marketplace' },
+  {
+    title: 'Create Your First Shot',
+    desc: 'Generate a scene with AI',
+    icon: ImagePlus,
+    href: '/projects',
+  },
+  {
+    title: 'Explore Templates',
+    desc: 'Start from a pre-built template',
+    icon: Video,
+    href: '/marketplace',
+  },
   { title: 'Watch Tutorial', desc: '5-min quickstart guide', icon: Rocket, href: '/learn' },
 ];
 
@@ -175,7 +185,12 @@ export default function OnboardingPage() {
             width: i === step ? 24 : 8,
             height: 8,
             borderRadius: 99,
-            background: i === step ? 'var(--brand)' : i < step ? 'var(--brand-light)' : 'var(--border-strong)',
+            background:
+              i === step
+                ? 'var(--brand)'
+                : i < step
+                  ? 'var(--brand-light)'
+                  : 'var(--border-strong)',
             transition: 'all 250ms ease',
           }}
         />
@@ -187,19 +202,35 @@ export default function OnboardingPage() {
   const StepWelcome = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            marginBottom: 12,
+          }}
+        >
           <Wand2 size={28} color="var(--brand-light)" />
           <h1 style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Welcome to AnimaForge
           </h1>
         </div>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, maxWidth: 420 }}>
-          AI-powered animation studio. Create stunning animations from text, images, and your imagination.
+          AI-powered animation studio. Create stunning animations from text, images, and your
+          imagination.
         </p>
       </div>
 
       <div>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12, textAlign: 'center' }}>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--text-secondary)',
+            marginBottom: 12,
+            textAlign: 'center',
+          }}
+        >
           What are you creating?
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxWidth: 440 }}>
@@ -216,14 +247,17 @@ export default function OnboardingPage() {
                 gap: 8,
               }}
               onMouseEnter={(e) => {
-                if (form.projectType !== pt.id) e.currentTarget.style.borderColor = 'var(--border-strong)';
+                if (form.projectType !== pt.id)
+                  e.currentTarget.style.borderColor = 'var(--border-strong)';
               }}
               onMouseLeave={(e) => {
                 if (form.projectType !== pt.id) e.currentTarget.style.borderColor = 'var(--border)';
               }}
             >
               <pt.icon size={24} color={pt.color} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{pt.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                {pt.label}
+              </span>
             </div>
           ))}
         </div>
@@ -269,9 +303,13 @@ export default function OnboardingPage() {
 
   /* ── Step 2: Profile ────────────────────────────────────── */
   const StepProfile = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 480, margin: '0 auto' }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 480, margin: '0 auto' }}
+    >
       <div style={{ textAlign: 'center' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Tell us about yourself</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          Tell us about yourself
+        </h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '6px 0 0' }}>
           We'll personalize your experience
         </p>
@@ -279,7 +317,15 @@ export default function OnboardingPage() {
 
       {/* Role selector */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: 8,
+            display: 'block',
+          }}
+        >
           Your primary role
         </label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -307,7 +353,15 @@ export default function OnboardingPage() {
 
       {/* Experience level */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: 8,
+            display: 'block',
+          }}
+        >
           Experience with animation
         </label>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -322,8 +376,12 @@ export default function OnboardingPage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{e.label}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{e.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                {e.label}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                {e.desc}
+              </div>
             </div>
           ))}
         </div>
@@ -331,7 +389,15 @@ export default function OnboardingPage() {
 
       {/* AI tools multi-select */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: 8,
+            display: 'block',
+          }}
+        >
           AI tools you've used
         </label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -400,9 +466,13 @@ export default function OnboardingPage() {
 
   /* ── Step 3: Create Project ─────────────────────────────── */
   const StepCreate = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 440, margin: '0 auto' }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 440, margin: '0 auto' }}
+    >
       <div style={{ textAlign: 'center' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Create your first project</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          Create your first project
+        </h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '6px 0 0' }}>
           You can always change these later
         </p>
@@ -410,7 +480,15 @@ export default function OnboardingPage() {
 
       {/* Title input */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: 6,
+            display: 'block',
+          }}
+        >
           Project title
         </label>
         <input
@@ -429,14 +507,26 @@ export default function OnboardingPage() {
             outline: 'none',
             fontFamily: 'var(--font-sans)',
           }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--brand-border)'; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--brand-border)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
         />
       </div>
 
       {/* Style mode quick-pick */}
       <div>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: 8,
+            display: 'block',
+          }}
+        >
           Style mode
         </label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -452,14 +542,17 @@ export default function OnboardingPage() {
                 gap: 8,
               }}
               onMouseEnter={(e) => {
-                if (form.styleMode !== sm.id) e.currentTarget.style.borderColor = 'var(--border-strong)';
+                if (form.styleMode !== sm.id)
+                  e.currentTarget.style.borderColor = 'var(--border-strong)';
               }}
               onMouseLeave={(e) => {
                 if (form.styleMode !== sm.id) e.currentTarget.style.borderColor = 'var(--border)';
               }}
             >
               <sm.icon size={18} color="var(--brand-light)" />
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{sm.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                {sm.label}
+              </span>
             </div>
           ))}
         </div>
@@ -551,7 +644,9 @@ export default function OnboardingPage() {
         <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
           You're all set!
         </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0', maxWidth: 380 }}>
+        <p
+          style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0', maxWidth: 380 }}
+        >
           Your workspace is ready. Jump in and start creating.
         </p>
       </div>
@@ -571,11 +666,17 @@ export default function OnboardingPage() {
               width: 160,
               textDecoration: 'none',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-strong)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }}
           >
             <card.icon size={20} color="var(--brand-light)" />
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{card.title}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+              {card.title}
+            </span>
             <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{card.desc}</span>
           </a>
         ))}
@@ -603,7 +704,12 @@ export default function OnboardingPage() {
     </div>
   );
 
-  const steps = [<StepWelcome key={0} />, <StepProfile key={1} />, <StepCreate key={2} />, <StepComplete key={3} />];
+  const steps = [
+    <StepWelcome key={0} />,
+    <StepProfile key={1} />,
+    <StepCreate key={2} />,
+    <StepComplete key={3} />,
+  ];
 
   return (
     <div

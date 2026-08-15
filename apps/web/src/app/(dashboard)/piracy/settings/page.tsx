@@ -185,13 +185,7 @@ const ghostBtn: React.CSSProperties = {
 // TOGGLE
 // ══════════════════════════════════════════════════════════════
 
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
@@ -330,9 +324,7 @@ export default function PiracySettingsPage() {
           <div style={rowStyle}>
             <div>
               <div style={labelStyle}>Auto-scan</div>
-              <div style={hintStyle}>
-                Automatically monitor platforms for infringing content
-              </div>
+              <div style={hintStyle}>Automatically monitor platforms for infringing content</div>
             </div>
             <Toggle
               checked={settings.autoScan}
@@ -368,9 +360,7 @@ export default function PiracySettingsPage() {
             }}
           >
             <div style={{ ...labelStyle, marginBottom: 2 }}>Platforms</div>
-            <div style={{ ...hintStyle, marginBottom: 12 }}>
-              Choose which platforms to monitor
-            </div>
+            <div style={{ ...hintStyle, marginBottom: 12 }}>Choose which platforms to monitor</div>
             <div
               style={{
                 display: 'grid',
@@ -399,10 +389,7 @@ export default function PiracySettingsPage() {
                   >
                     {p.name}
                   </span>
-                  <Toggle
-                    checked={p.enabled}
-                    onChange={(v) => updatePlatform(p.id, v)}
-                  />
+                  <Toggle checked={p.enabled} onChange={(v) => updatePlatform(p.id, v)} />
                 </div>
               ))}
             </div>
@@ -475,14 +462,12 @@ export default function PiracySettingsPage() {
         </div>
         <div style={sectionBodyStyle}>
           <div style={{ ...hintStyle, marginBottom: 10 }}>
-            This template pre-fills the good faith statement in the DMCA filing
-            wizard. Use placeholders like [ORIGINAL_URL] and [MATCH_URL].
+            This template pre-fills the good faith statement in the DMCA filing wizard. Use
+            placeholders like [ORIGINAL_URL] and [MATCH_URL].
           </div>
           <textarea
             value={settings.dmcaTemplate}
-            onChange={(e) =>
-              setSettings({ ...settings, dmcaTemplate: e.target.value })
-            }
+            onChange={(e) => setSettings({ ...settings, dmcaTemplate: e.target.value })}
             rows={10}
             style={{
               ...inputStyle,
@@ -619,9 +604,7 @@ export default function PiracySettingsPage() {
           <div style={rowStyle}>
             <div>
               <div style={labelStyle}>Email alerts</div>
-              <div style={hintStyle}>
-                Receive an email whenever a new match is flagged
-              </div>
+              <div style={hintStyle}>Receive an email whenever a new match is flagged</div>
             </div>
             <Toggle
               checked={settings.emailAlerts}
@@ -637,9 +620,7 @@ export default function PiracySettingsPage() {
               type="url"
               placeholder="https://hooks.slack.com/services/..."
               value={settings.slackWebhook}
-              onChange={(e) =>
-                setSettings({ ...settings, slackWebhook: e.target.value })
-              }
+              onChange={(e) => setSettings({ ...settings, slackWebhook: e.target.value })}
               style={inputStyle}
             />
           </div>

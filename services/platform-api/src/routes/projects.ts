@@ -1,7 +1,7 @@
-import { Router } from "express";
-import { projectController } from "../controllers/projectController.js";
-import { validate } from "../middleware/validate.js";
-import { requireAuth } from "../middleware/auth.js";
+import { Router } from 'express';
+import { projectController } from '../controllers/projectController.js';
+import { validate } from '../middleware/validate.js';
+import { requireAuth } from '../middleware/auth.js';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -9,61 +9,48 @@ import {
   worldBibleSchema,
   brandKitSchema,
   styleLockSchema,
-} from "../models/projectSchemas.js";
+} from '../models/projectSchemas.js';
 
 const router = Router();
 
 router.post(
-  "/projects",
+  '/projects',
   requireAuth,
-  validate(createProjectSchema, "body"),
+  validate(createProjectSchema, 'body'),
   projectController.create,
 );
 
-router.get(
-  "/projects",
-  requireAuth,
-  validate(listQuerySchema, "query"),
-  projectController.list,
-);
+router.get('/projects', requireAuth, validate(listQuerySchema, 'query'), projectController.list);
 
-router.get(
-  "/projects/:id",
-  requireAuth,
-  projectController.getById,
-);
+router.get('/projects/:id', requireAuth, projectController.getById);
 
 router.put(
-  "/projects/:id",
+  '/projects/:id',
   requireAuth,
-  validate(updateProjectSchema, "body"),
+  validate(updateProjectSchema, 'body'),
   projectController.update,
 );
 
-router.delete(
-  "/projects/:id",
-  requireAuth,
-  projectController.delete,
-);
+router.delete('/projects/:id', requireAuth, projectController.delete);
 
 router.put(
-  "/projects/:id/world-bible",
+  '/projects/:id/world-bible',
   requireAuth,
-  validate(worldBibleSchema, "body"),
+  validate(worldBibleSchema, 'body'),
   projectController.updateWorldBible,
 );
 
 router.put(
-  "/projects/:id/brand-kit",
+  '/projects/:id/brand-kit',
   requireAuth,
-  validate(brandKitSchema, "body"),
+  validate(brandKitSchema, 'body'),
   projectController.updateBrandKit,
 );
 
 router.put(
-  "/projects/:id/style-lock",
+  '/projects/:id/style-lock',
   requireAuth,
-  validate(styleLockSchema, "body"),
+  validate(styleLockSchema, 'body'),
   projectController.updateStyleLock,
 );
 

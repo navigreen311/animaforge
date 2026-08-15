@@ -23,16 +23,86 @@ interface Shot {
 /* ------------------------------------------------------------------ */
 
 const MOCK_SHOTS: Shot[] = [
-  { id: 's1', number: 1, description: 'Wide establishing shot - city skyline at dusk with neon reflections', duration: '4.2s', status: 'pending', comment: '' },
-  { id: 's2', number: 2, description: 'Medium close-up - protagonist enters the lobby, camera tracks left', duration: '3.8s', status: 'pending', comment: '' },
-  { id: 's3', number: 3, description: 'Over-the-shoulder - dialogue exchange at the reception desk', duration: '6.1s', status: 'pending', comment: '' },
-  { id: 's4', number: 4, description: 'Close-up - hand pressing elevator button, reflection in chrome', duration: '2.4s', status: 'pending', comment: '' },
-  { id: 's5', number: 5, description: 'Elevator interior - ascending with ambient light changes per floor', duration: '5.0s', status: 'pending', comment: '' },
-  { id: 's6', number: 6, description: 'Corridor walk - long tracking shot with parallax depth layers', duration: '7.3s', status: 'pending', comment: '' },
-  { id: 's7', number: 7, description: 'Door reveal - push-in as door opens to rooftop panorama', duration: '3.5s', status: 'pending', comment: '' },
-  { id: 's8', number: 8, description: 'Final wide - protagonist silhouette against sunset, camera pulls back', duration: '5.8s', status: 'pending', comment: '' },
-  { id: 's9', number: 9, description: 'Title card fade-in with particle effects overlay', duration: '3.0s', status: 'pending', comment: '' },
-  { id: 's10', number: 10, description: 'End credits scroll with miniature scene vignettes', duration: '8.0s', status: 'pending', comment: '' },
+  {
+    id: 's1',
+    number: 1,
+    description: 'Wide establishing shot - city skyline at dusk with neon reflections',
+    duration: '4.2s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's2',
+    number: 2,
+    description: 'Medium close-up - protagonist enters the lobby, camera tracks left',
+    duration: '3.8s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's3',
+    number: 3,
+    description: 'Over-the-shoulder - dialogue exchange at the reception desk',
+    duration: '6.1s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's4',
+    number: 4,
+    description: 'Close-up - hand pressing elevator button, reflection in chrome',
+    duration: '2.4s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's5',
+    number: 5,
+    description: 'Elevator interior - ascending with ambient light changes per floor',
+    duration: '5.0s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's6',
+    number: 6,
+    description: 'Corridor walk - long tracking shot with parallax depth layers',
+    duration: '7.3s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's7',
+    number: 7,
+    description: 'Door reveal - push-in as door opens to rooftop panorama',
+    duration: '3.5s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's8',
+    number: 8,
+    description: 'Final wide - protagonist silhouette against sunset, camera pulls back',
+    duration: '5.8s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's9',
+    number: 9,
+    description: 'Title card fade-in with particle effects overlay',
+    duration: '3.0s',
+    status: 'pending',
+    comment: '',
+  },
+  {
+    id: 's10',
+    number: 10,
+    description: 'End credits scroll with miniature scene vignettes',
+    duration: '8.0s',
+    status: 'pending',
+    comment: '',
+  },
 ];
 
 const PROJECT_TITLE = 'Neon Horizons - Episode 1';
@@ -43,9 +113,24 @@ const PROJECT_TITLE = 'Neon Horizons - Episode 1';
 
 function StatusBadge({ status }: { status: ShotStatus }) {
   const config: Record<ShotStatus, { bg: string; text: string; border: string; label: string }> = {
-    pending: { bg: 'rgba(234,179,8,0.12)', text: '#fbbf24', border: 'rgba(234,179,8,0.3)', label: 'Pending' },
-    approved: { bg: 'rgba(52,211,153,0.12)', text: '#6ee7b7', border: 'rgba(52,211,153,0.3)', label: 'Approved' },
-    changes_requested: { bg: 'rgba(239,68,68,0.12)', text: '#f87171', border: 'rgba(239,68,68,0.3)', label: 'Changes requested' },
+    pending: {
+      bg: 'rgba(234,179,8,0.12)',
+      text: '#fbbf24',
+      border: 'rgba(234,179,8,0.3)',
+      label: 'Pending',
+    },
+    approved: {
+      bg: 'rgba(52,211,153,0.12)',
+      text: '#6ee7b7',
+      border: 'rgba(52,211,153,0.3)',
+      label: 'Approved',
+    },
+    changes_requested: {
+      bg: 'rgba(239,68,68,0.12)',
+      text: '#f87171',
+      border: 'rgba(239,68,68,0.3)',
+      label: 'Changes requested',
+    },
   };
   const c = config[status];
   return (
@@ -83,17 +168,51 @@ function InvalidTokenPage() {
     >
       <div style={{ textAlign: 'center', maxWidth: 420, padding: 32 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>&#128274;</div>
-        <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary, #e2e8f0)', margin: '0 0 8px' }}>
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 600,
+            color: 'var(--text-primary, #e2e8f0)',
+            margin: '0 0 8px',
+          }}
+        >
           Invalid Review Link
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary, rgba(226,232,240,0.55))', lineHeight: 1.6, margin: 0 }}>
-          This review link is invalid or has expired. Please request a new link from the project owner.
+        <p
+          style={{
+            fontSize: 14,
+            color: 'var(--text-secondary, rgba(226,232,240,0.55))',
+            lineHeight: 1.6,
+            margin: 0,
+          }}
+        >
+          This review link is invalid or has expired. Please request a new link from the project
+          owner.
         </p>
-        <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand, #7c3aed)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--brand, #7c3aed)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary, #e2e8f0)' }}>AnimaForge</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary, #e2e8f0)' }}>
+            AnimaForge
+          </span>
         </div>
       </div>
     </div>
@@ -112,7 +231,10 @@ export default function ReviewPortalPage() {
   const [shots, setShots] = useState<Shot[]>(MOCK_SHOTS);
   const [reviewerName, setReviewerName] = useState<string>('');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ shotId: string; action: ShotStatus | 'comment' } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    shotId: string;
+    action: ShotStatus | 'comment';
+  } | null>(null);
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
   const [showCommentFor, setShowCommentFor] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -147,7 +269,11 @@ export default function ReviewPortalPage() {
         setShowCommentFor(pendingAction.shotId);
       } else {
         setShots((prev) =>
-          prev.map((s) => (s.id === pendingAction.shotId ? { ...s, status: pendingAction.action as ShotStatus } : s)),
+          prev.map((s) =>
+            s.id === pendingAction.shotId
+              ? { ...s, status: pendingAction.action as ShotStatus }
+              : s,
+          ),
         );
       }
       setPendingAction(null);
@@ -192,12 +318,25 @@ export default function ReviewPortalPage() {
       >
         <div style={{ textAlign: 'center', maxWidth: 420, padding: 32 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#9989;</div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary, #e2e8f0)', margin: '0 0 8px' }}>
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 600,
+              color: 'var(--text-primary, #e2e8f0)',
+              margin: '0 0 8px',
+            }}
+          >
             Feedback Submitted
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary, rgba(226,232,240,0.55))', lineHeight: 1.6 }}>
-            Thank you, {reviewerName}! Your review for <strong>{PROJECT_TITLE}</strong> has been submitted.
-            The project team will be notified.
+          <p
+            style={{
+              fontSize: 14,
+              color: 'var(--text-secondary, rgba(226,232,240,0.55))',
+              lineHeight: 1.6,
+            }}
+          >
+            Thank you, {reviewerName}! Your review for <strong>{PROJECT_TITLE}</strong> has been
+            submitted. The project team will be notified.
           </p>
         </div>
       </div>
@@ -265,7 +404,10 @@ export default function ReviewPortalPage() {
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
               <button
-                onClick={() => { setShowNamePrompt(false); setPendingAction(null); }}
+                onClick={() => {
+                  setShowNamePrompt(false);
+                  setPendingAction(null);
+                }}
                 style={{
                   padding: '6px 14px',
                   fontSize: 13,
@@ -280,7 +422,9 @@ export default function ReviewPortalPage() {
               </button>
               <button
                 onClick={() => {
-                  const input = document.querySelector<HTMLInputElement>('input[placeholder="Your name"]');
+                  const input = document.querySelector<HTMLInputElement>(
+                    'input[placeholder="Your name"]',
+                  );
                   if (input) confirmName(input.value);
                 }}
                 style={{
@@ -311,7 +455,16 @@ export default function ReviewPortalPage() {
           gap: 12,
         }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand, #7c3aed)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--brand, #7c3aed)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
         <span style={{ fontWeight: 600, fontSize: 15 }}>AnimaForge</span>
@@ -379,12 +532,26 @@ export default function ReviewPortalPage() {
               </div>
 
               <div style={{ padding: '12px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 8,
+                  }}
+                >
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Shot {shot.number}</span>
                   <StatusBadge status={shot.status} />
                 </div>
 
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-secondary)',
+                    margin: '0 0 6px',
+                    lineHeight: 1.5,
+                  }}
+                >
                   {shot.description}
                 </p>
 
@@ -417,7 +584,8 @@ export default function ReviewPortalPage() {
                       padding: '6px 0',
                       fontSize: 12,
                       fontWeight: 500,
-                      background: shot.status === 'approved' ? 'rgba(52,211,153,0.2)' : 'transparent',
+                      background:
+                        shot.status === 'approved' ? 'rgba(52,211,153,0.2)' : 'transparent',
                       border: `1px solid ${shot.status === 'approved' ? 'rgba(52,211,153,0.4)' : 'var(--border)'}`,
                       borderRadius: 'var(--radius-md, 8px)',
                       color: shot.status === 'approved' ? '#6ee7b7' : 'var(--text-secondary)',
@@ -433,10 +601,12 @@ export default function ReviewPortalPage() {
                       padding: '6px 0',
                       fontSize: 12,
                       fontWeight: 500,
-                      background: shot.status === 'changes_requested' ? 'rgba(239,68,68,0.2)' : 'transparent',
+                      background:
+                        shot.status === 'changes_requested' ? 'rgba(239,68,68,0.2)' : 'transparent',
                       border: `1px solid ${shot.status === 'changes_requested' ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`,
                       borderRadius: 'var(--radius-md, 8px)',
-                      color: shot.status === 'changes_requested' ? '#f87171' : 'var(--text-secondary)',
+                      color:
+                        shot.status === 'changes_requested' ? '#f87171' : 'var(--text-secondary)',
                       cursor: 'pointer',
                     }}
                   >
@@ -464,7 +634,9 @@ export default function ReviewPortalPage() {
                     <textarea
                       autoFocus
                       value={commentDraft[shot.id] || ''}
-                      onChange={(e) => setCommentDraft((d) => ({ ...d, [shot.id]: e.target.value }))}
+                      onChange={(e) =>
+                        setCommentDraft((d) => ({ ...d, [shot.id]: e.target.value }))
+                      }
                       placeholder="Add your feedback..."
                       style={{
                         width: '100%',
@@ -481,7 +653,9 @@ export default function ReviewPortalPage() {
                         fontFamily: 'inherit',
                       }}
                     />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 6 }}>
+                    <div
+                      style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 6 }}
+                    >
                       <button
                         onClick={() => setShowCommentFor(null)}
                         style={{

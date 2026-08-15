@@ -12,18 +12,12 @@ const MOCK_TEAMS: Record<string, { name: string; description: string }> = {
 /*  PATCH /api/team/teams/[id]                                        */
 /*  Update a team's details                                           */
 /* ------------------------------------------------------------------ */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const team = MOCK_TEAMS[id];
 
   if (!team) {
-    return NextResponse.json(
-      { error: `Team "${id}" not found` },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: `Team "${id}" not found` }, { status: 404 });
   }
 
   try {
@@ -51,10 +45,7 @@ export async function PATCH(
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }
 
@@ -62,18 +53,12 @@ export async function PATCH(
 /*  DELETE /api/team/teams/[id]                                       */
 /*  Delete a team                                                     */
 /* ------------------------------------------------------------------ */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const team = MOCK_TEAMS[id];
 
   if (!team) {
-    return NextResponse.json(
-      { error: `Team "${id}" not found` },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: `Team "${id}" not found` }, { status: 404 });
   }
 
   return NextResponse.json({

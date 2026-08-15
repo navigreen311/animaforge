@@ -49,9 +49,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
 ];
 
 export default function AvatarExporter() {
-  const job = useAvatarStore((s) =>
-    s.avatarJobs.find((j) => j.id === s.activeAvatar)
-  );
+  const job = useAvatarStore((s) => s.avatarJobs.find((j) => j.id === s.activeAvatar));
 
   const isReady = job?.status === 'complete';
 

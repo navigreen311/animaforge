@@ -114,9 +114,7 @@ function drawTimeRuler(
       ctx.fillStyle = '#a1a1aa';
       const minutes = Math.floor(sec / 60);
       const secs = sec % 60;
-      const label = minutes > 0
-        ? minutes + ':' + secs.toString().padStart(2, '0')
-        : sec + 's';
+      const label = minutes > 0 ? minutes + ':' + secs.toString().padStart(2, '0') : sec + 's';
       ctx.fillText(label, x + 4, 14);
     }
   }
@@ -297,8 +295,12 @@ function drawAudioWaveform(
     const amp = track.waveform[sampleIdx] ?? 0;
     const sineOffset = Math.sin(px * 0.15) * amp * maxAmplitude;
     const drawY = centerY + sineOffset;
-    if (!started) { ctx.moveTo(drawAtX, drawY); started = true; }
-    else { ctx.lineTo(drawAtX, drawY); }
+    if (!started) {
+      ctx.moveTo(drawAtX, drawY);
+      started = true;
+    } else {
+      ctx.lineTo(drawAtX, drawY);
+    }
   }
   ctx.stroke();
   // Mirror waveform
@@ -312,8 +314,12 @@ function drawAudioWaveform(
     const amp = track.waveform[sampleIdx] ?? 0;
     const sineOffset = Math.sin(px * 0.15) * amp * maxAmplitude;
     const drawY = centerY - sineOffset;
-    if (!started) { ctx.moveTo(drawAtX, drawY); started = true; }
-    else { ctx.lineTo(drawAtX, drawY); }
+    if (!started) {
+      ctx.moveTo(drawAtX, drawY);
+      started = true;
+    } else {
+      ctx.lineTo(drawAtX, drawY);
+    }
   }
   ctx.stroke();
   ctx.restore();
@@ -330,7 +336,11 @@ function drawAudioWaveform(
 /* ------------------------------------------------------------------ */
 
 function hitTestShot(
-  x: number, y: number, shots: Shot[], zoom: number, scrollX: number,
+  x: number,
+  y: number,
+  shots: Shot[],
+  zoom: number,
+  scrollX: number,
 ): Shot | null {
   const scale = pxPerSec(zoom);
   if (y < RULER_HEIGHT || y > RULER_HEIGHT + SHOT_TRACK_HEIGHT) return null;
@@ -345,9 +355,7 @@ function hitTestShot(
   return null;
 }
 
-function hitTestPlayhead(
-  x: number, position: number, zoom: number, scrollX: number,
-): boolean {
+function hitTestPlayhead(x: number, position: number, zoom: number, scrollX: number): boolean {
   const scale = pxPerSec(zoom);
   const playheadX = position * scale - scrollX;
   return Math.abs(x - playheadX) < 8;
@@ -446,7 +454,10 @@ export function TimelineViewport({
         return;
       }
       const hitShot = hitTestShot(x, y, shots, zoom, scrollX);
-      if (hitShot) { onSelectShot(hitShot.id); return; }
+      if (hitShot) {
+        onSelectShot(hitShot.id);
+        return;
+      }
       if (y < RULER_HEIGHT && onPlayheadChange) {
         const scale = pxPerSec(zoom);
         const timeSec = (x - TRACK_LABEL_WIDTH + scrollX) / scale;
@@ -487,9 +498,7 @@ export function TimelineViewport({
           0,
           totalDuration * pxPerSec(zoom) - (canvasSize.width - TRACK_LABEL_WIDTH),
         );
-        setScrollX((prev) =>
-          Math.max(0, Math.min(prev + e.deltaY + e.deltaX, maxScroll)),
-        );
+        setScrollX((prev) => Math.max(0, Math.min(prev + e.deltaY + e.deltaX, maxScroll)));
       }
     },
     [zoom, onZoomChange, totalDuration, canvasSize.width],

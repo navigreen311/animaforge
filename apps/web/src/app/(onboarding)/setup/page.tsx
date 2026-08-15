@@ -14,19 +14,14 @@ export default function SetupPage() {
 
   return (
     <div className="w-full">
-      <h1 className="mb-2 text-center text-3xl font-bold">
-        Create Your First Project
-      </h1>
+      <h1 className="mb-2 text-center text-3xl font-bold">Create Your First Project</h1>
       <p className="mb-10 text-center text-zinc-400">
         Set up your workspace and creative preferences.
       </p>
 
       {/* Project Name */}
       <div className="mb-8">
-        <label
-          htmlFor="project-name"
-          className="mb-2 block text-sm font-medium text-zinc-300"
-        >
+        <label htmlFor="project-name" className="mb-2 block text-sm font-medium text-zinc-300">
           Project Name
         </label>
         <input
@@ -41,9 +36,7 @@ export default function SetupPage() {
 
       {/* Style Preference */}
       <div className="mb-8">
-        <label className="mb-3 block text-sm font-medium text-zinc-300">
-          Style Preference
-        </label>
+        <label className="mb-3 block text-sm font-medium text-zinc-300">Style Preference</label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {styles.map((s) => (
             <button
@@ -63,9 +56,7 @@ export default function SetupPage() {
 
       {/* Aspect Ratio */}
       <div className="mb-10">
-        <label className="mb-3 block text-sm font-medium text-zinc-300">
-          Aspect Ratio
-        </label>
+        <label className="mb-3 block text-sm font-medium text-zinc-300">Aspect Ratio</label>
         <div className="flex gap-3">
           {ratios.map((r) => (
             <button

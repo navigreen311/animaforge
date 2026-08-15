@@ -24,19 +24,20 @@ function estimateTimeRemaining(currentStep: number, percent: number): string {
 }
 
 export default function ReconstructionProgress() {
-  const { step, totalSteps, stepName, percent } = useAvatarStore(
-    (s) => s.reconstructionProgress
-  );
+  const { step, totalSteps, stepName, percent } = useAvatarStore((s) => s.reconstructionProgress);
   const activeAvatar = useAvatarStore((s) => s.activeAvatar);
-  const job = useAvatarStore((s) =>
-    s.avatarJobs.find((j) => j.id === s.activeAvatar)
-  );
+  const job = useAvatarStore((s) => s.avatarJobs.find((j) => j.id === s.activeAvatar));
 
   if (!activeAvatar || !job || job.status === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-600 py-16">
         <svg className="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
         </svg>
         <p className="text-sm">Upload photos to begin reconstruction</p>
       </div>
@@ -53,11 +54,7 @@ export default function ReconstructionProgress() {
         <div>
           <h3 className="text-sm font-semibold text-gray-200">X5 Pipeline</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {isComplete
-              ? 'Reconstruction complete'
-              : isCancelled
-                ? 'Job cancelled'
-                : stepName}
+            {isComplete ? 'Reconstruction complete' : isCancelled ? 'Job cancelled' : stepName}
           </p>
         </div>
         {!isComplete && !isCancelled && step > 0 && (
@@ -75,7 +72,9 @@ export default function ReconstructionProgress() {
             <div
               key={ps.num}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-                isActive ? 'bg-violet-600/10 border border-violet-500/30' : 'border border-transparent'
+                isActive
+                  ? 'bg-violet-600/10 border border-violet-500/30'
+                  : 'border border-transparent'
               }`}
             >
               {/* Step indicator */}
@@ -89,8 +88,18 @@ export default function ReconstructionProgress() {
                 }`}
               >
                 {isDone ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 ) : (
                   ps.num
@@ -118,7 +127,9 @@ export default function ReconstructionProgress() {
       {!isComplete && !isCancelled && step > 0 && (
         <div>
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-            <span>Step {step}/{totalSteps}</span>
+            <span>
+              Step {step}/{totalSteps}
+            </span>
             <span>{Math.round(percent)}%</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">

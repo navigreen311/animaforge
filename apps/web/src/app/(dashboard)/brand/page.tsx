@@ -473,7 +473,9 @@ function ColorEditor({
 
         {/* Hex input */}
         <div>
-          <label style={tinyLabel} htmlFor="color-hex">Hex</label>
+          <label style={tinyLabel} htmlFor="color-hex">
+            Hex
+          </label>
           <input
             id="color-hex"
             type="text"
@@ -487,7 +489,9 @@ function ColorEditor({
 
         {/* Role label input */}
         <div>
-          <label style={tinyLabel} htmlFor="color-role">Role</label>
+          <label style={tinyLabel} htmlFor="color-role">
+            Role
+          </label>
           <input
             id="color-role"
             type="text"
@@ -499,8 +503,16 @@ function ColorEditor({
 
         {/* Label input */}
         <div>
-          <label style={tinyLabel} htmlFor="color-label">Label</label>
-          <input id="color-label" type="text" value={label} onChange={(e) => setLabel(e.target.value)} style={inputStyle} />
+          <label style={tinyLabel} htmlFor="color-label">
+            Label
+          </label>
+          <input
+            id="color-label"
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            style={inputStyle}
+          />
         </div>
 
         {/* HSL sliders (bidirectional) */}
@@ -771,7 +783,9 @@ function FontPickerModal({
 
         {/* Live preview */}
         <div>
-          <label style={tinyLabel} htmlFor="font-preview-text">Live preview</label>
+          <label style={tinyLabel} htmlFor="font-preview-text">
+            Live preview
+          </label>
           <input
             id="font-preview-text"
             type="text"
@@ -788,7 +802,14 @@ function FontPickerModal({
               border: '0.5px solid var(--border)',
             }}
           >
-            <span style={{ fontSize: 9, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>
+            <span
+              style={{
+                fontSize: 9,
+                color: 'var(--text-tertiary)',
+                display: 'block',
+                marginBottom: 4,
+              }}
+            >
               {selected}
             </span>
             <span
@@ -930,15 +951,12 @@ export default function BrandKitPage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // ── Helpers ────────────────────────────────────────────────────
-  const addChip = useCallback(
-    (list: string[], setList: (v: string[]) => void) => {
-      const value = prompt('Enter value:');
-      if (value && value.trim()) {
-        setList([...list, value.trim()]);
-      }
-    },
-    [],
-  );
+  const addChip = useCallback((list: string[], setList: (v: string[]) => void) => {
+    const value = prompt('Enter value:');
+    if (value && value.trim()) {
+      setList([...list, value.trim()]);
+    }
+  }, []);
 
   const removeChip = (list: string[], setList: (v: string[]) => void, idx: number) => {
     setList(list.filter((_, i) => i !== idx));
@@ -1036,13 +1054,21 @@ export default function BrandKitPage() {
                 type="button"
                 aria-label="Close"
                 onClick={() => setCreateKitModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 0 }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
               >
                 <X size={14} />
               </button>
             </div>
             <div>
-              <label style={tinyLabel} htmlFor="new-kit-name">Name</label>
+              <label style={tinyLabel} htmlFor="new-kit-name">
+                Name
+              </label>
               <input
                 id="new-kit-name"
                 type="text"
@@ -1244,7 +1270,13 @@ export default function BrandKitPage() {
               ))}
               <button
                 type="button"
-                style={{ ...chipStyle, background: 'var(--bg-hover)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                style={{
+                  ...chipStyle,
+                  background: 'var(--bg-hover)',
+                  border: '0.5px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
                 onClick={() => addChip(enforcementProjects, setEnforcementProjects)}
               >
                 <Plus size={10} /> Add Project
@@ -1291,17 +1323,20 @@ export default function BrandKitPage() {
             2. COLORS
         ══════════════════════════════════════════════════════════ */}
         <div style={sectionBox}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Palette size={14} style={{ color: 'var(--text-secondary)' }} />
               <span style={sectionTitle}>Colors</span>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                type="button"
-                onClick={handleExtractColors}
-                style={ghostBtn}
-              >
+              <button type="button" onClick={handleExtractColors} style={ghostBtn}>
                 <Pipette size={11} />
                 Extract from logo
               </button>
@@ -1309,7 +1344,10 @@ export default function BrandKitPage() {
                 type="button"
                 onClick={() => {
                   const id = `c-${Date.now()}`;
-                  setColors((prev) => [...prev, { id, role: 'CUSTOM', hex: '#ffffff', label: 'New Color' }]);
+                  setColors((prev) => [
+                    ...prev,
+                    { id, role: 'CUSTOM', hex: '#ffffff', label: 'New Color' },
+                  ]);
                   toast.info('New color added');
                 }}
                 style={smallBtn}
@@ -1348,10 +1386,20 @@ export default function BrandKitPage() {
                   }}
                   title={`${color.role}: ${color.hex}`}
                 />
-                <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: 'var(--text-tertiary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
                   {color.role}
                 </span>
-                <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
+                <span
+                  style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}
+                >
                   {color.hex}
                 </span>
                 <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{color.label}</span>
@@ -1361,7 +1409,14 @@ export default function BrandKitPage() {
 
           {/* Extracted swatches */}
           {extractedSwatches && (
-            <div style={{ marginTop: 14, padding: 12, background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)' }}>
+            <div
+              style={{
+                marginTop: 14,
+                padding: 12,
+                background: 'var(--bg-hover)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
               <span style={{ ...subLabel, marginBottom: 8 }}>Extracted from logo</span>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 {extractedSwatches.map((hex, i) => (
@@ -1549,9 +1604,7 @@ export default function BrandKitPage() {
                       marginBottom: 4,
                     }}
                   >
-                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                      Volume
-                    </label>
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Volume</label>
                     <span
                       style={{
                         fontSize: 10,
@@ -1674,14 +1727,25 @@ export default function BrandKitPage() {
                 {brandKeywords.map((kw, i) => (
                   <span key={kw} style={chipStyle}>
                     {kw}
-                    <button type="button" aria-label={`Remove ${kw}`} style={chipDeleteBtn} onClick={() => removeChip(brandKeywords, setBrandKeywords, i)}>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${kw}`}
+                      style={chipDeleteBtn}
+                      onClick={() => removeChip(brandKeywords, setBrandKeywords, i)}
+                    >
                       <X size={10} />
                     </button>
                   </span>
                 ))}
                 <button
                   type="button"
-                  style={{ ...chipStyle, background: 'var(--bg-hover)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                  style={{
+                    ...chipStyle,
+                    background: 'var(--bg-hover)',
+                    border: '0.5px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
                   onClick={() => addChip(brandKeywords, setBrandKeywords)}
                 >
                   <Plus size={10} /> Add
@@ -1694,16 +1758,35 @@ export default function BrandKitPage() {
               <span style={subLabel}>Avoid Words</span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {avoidWords.map((w, i) => (
-                  <span key={w} style={{ ...chipStyle, background: 'rgba(239,68,68,0.12)', border: '0.5px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
+                  <span
+                    key={w}
+                    style={{
+                      ...chipStyle,
+                      background: 'rgba(239,68,68,0.12)',
+                      border: '0.5px solid rgba(239,68,68,0.3)',
+                      color: '#fca5a5',
+                    }}
+                  >
                     {w}
-                    <button type="button" aria-label={`Remove ${w}`} style={{ ...chipDeleteBtn, color: '#fca5a5' }} onClick={() => removeChip(avoidWords, setAvoidWords, i)}>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${w}`}
+                      style={{ ...chipDeleteBtn, color: '#fca5a5' }}
+                      onClick={() => removeChip(avoidWords, setAvoidWords, i)}
+                    >
                       <X size={10} />
                     </button>
                   </span>
                 ))}
                 <button
                   type="button"
-                  style={{ ...chipStyle, background: 'var(--bg-hover)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                  style={{
+                    ...chipStyle,
+                    background: 'var(--bg-hover)',
+                    border: '0.5px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
                   onClick={() => addChip(avoidWords, setAvoidWords)}
                 >
                   <Plus size={10} /> Add
@@ -1713,7 +1796,9 @@ export default function BrandKitPage() {
 
             {/* Tagline */}
             <div>
-              <label style={subLabel} htmlFor="brand-tagline">Tagline</label>
+              <label style={subLabel} htmlFor="brand-tagline">
+                Tagline
+              </label>
               <input
                 id="brand-tagline"
                 type="text"
@@ -1726,7 +1811,9 @@ export default function BrandKitPage() {
 
             {/* Mission */}
             <div>
-              <label style={subLabel} htmlFor="brand-mission">Mission</label>
+              <label style={subLabel} htmlFor="brand-mission">
+                Mission
+              </label>
               <input
                 id="brand-mission"
                 type="text"
@@ -1749,7 +1836,14 @@ export default function BrandKitPage() {
           </div>
 
           {/* Font slots */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
             {fonts.map((f, i) => (
               <div
                 key={f.role}
@@ -1780,7 +1874,9 @@ export default function BrandKitPage() {
                     >
                       {f.role}
                     </span>
-                    <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                    <span
+                      style={{ fontSize: 9, color: 'var(--text-tertiary)', fontStyle: 'italic' }}
+                    >
                       {f.hint}
                     </span>
                   </div>
@@ -1871,7 +1967,9 @@ export default function BrandKitPage() {
                       onBlur={() => {
                         const num = parseInt(editingSizeVal);
                         if (!isNaN(num) && num > 0) {
-                          setFontSizes((prev) => prev.map((s, j) => (j === i ? { ...s, size: num } : s)));
+                          setFontSizes((prev) =>
+                            prev.map((s, j) => (j === i ? { ...s, size: num } : s)),
+                          );
                         }
                         setEditingSizeIdx(null);
                       }}
@@ -1892,7 +1990,13 @@ export default function BrandKitPage() {
                       }}
                     />
                   ) : (
-                    <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--text-tertiary)',
+                        fontFamily: 'monospace',
+                      }}
+                    >
                       {fs.size}px
                     </span>
                   )}
@@ -2063,9 +2167,7 @@ export default function BrandKitPage() {
                       marginBottom: 4,
                     }}
                   >
-                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                      Volume
-                    </label>
+                    <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Volume</label>
                     <span
                       style={{
                         fontSize: 10,
@@ -2172,7 +2274,8 @@ export default function BrandKitPage() {
                 >
                   <div
                     style={{
-                      background: colors.find((c) => c.role === 'PRIMARY')?.hex || lowerThirdBarColor,
+                      background:
+                        colors.find((c) => c.role === 'PRIMARY')?.hex || lowerThirdBarColor,
                       padding: '6px 14px 3px',
                       borderRadius: '4px 4px 0 0',
                       fontFamily: `"${fonts[0]?.family || lowerThirdFont}", sans-serif`,
@@ -2184,7 +2287,8 @@ export default function BrandKitPage() {
                   </div>
                   <div
                     style={{
-                      background: colors.find((c) => c.role === 'SECONDARY')?.hex || 'rgba(0,0,0,0.7)',
+                      background:
+                        colors.find((c) => c.role === 'SECONDARY')?.hex || 'rgba(0,0,0,0.7)',
                       padding: '3px 14px 5px',
                       borderRadius: '0 0 4px 4px',
                       fontFamily: `"${fonts[1]?.family || lowerThirdFont}", sans-serif`,
@@ -2201,7 +2305,9 @@ export default function BrandKitPage() {
             {/* Settings */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel} htmlFor="lower-third-name">Name placeholder</label>
+                <label style={tinyLabel} htmlFor="lower-third-name">
+                  Name placeholder
+                </label>
                 <input
                   id="lower-third-name"
                   type="text"
@@ -2212,7 +2318,9 @@ export default function BrandKitPage() {
                 />
               </div>
               <div>
-                <label style={tinyLabel} htmlFor="lower-third-title">Title placeholder</label>
+                <label style={tinyLabel} htmlFor="lower-third-title">
+                  Title placeholder
+                </label>
                 <input
                   id="lower-third-title"
                   type="text"
@@ -2319,8 +2427,7 @@ export default function BrandKitPage() {
                 style={{
                   width: 400,
                   height: 225,
-                  background:
-                    colors.find((c) => c.role === 'BACKGROUND')?.hex || endCardBg,
+                  background: colors.find((c) => c.role === 'BACKGROUND')?.hex || endCardBg,
                   borderRadius: 'var(--radius-md)',
                   position: 'relative',
                   overflow: 'hidden',
@@ -2339,8 +2446,7 @@ export default function BrandKitPage() {
                     width: 56,
                     height: 56,
                     borderRadius: '50%',
-                    background:
-                      colors.find((c) => c.role === 'PRIMARY')?.hex || 'var(--brand)',
+                    background: colors.find((c) => c.role === 'PRIMARY')?.hex || 'var(--brand)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2376,10 +2482,9 @@ export default function BrandKitPage() {
                   {endCardInstagram && <span>◉ {endCardInstagram}</span>}
                   {endCardTikTok && <span>♪ {endCardTikTok}</span>}
                   {endCardX && <span>𝕏 {endCardX}</span>}
-                  {!endCardYouTube &&
-                    !endCardInstagram &&
-                    !endCardTikTok &&
-                    !endCardX && <span>Add social handles</span>}
+                  {!endCardYouTube && !endCardInstagram && !endCardTikTok && !endCardX && (
+                    <span>Add social handles</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -2387,7 +2492,9 @@ export default function BrandKitPage() {
             {/* Settings */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={tinyLabel} htmlFor="end-card-cta">CTA text</label>
+                <label style={tinyLabel} htmlFor="end-card-cta">
+                  CTA text
+                </label>
                 <input
                   id="end-card-cta"
                   type="text"
@@ -2399,7 +2506,9 @@ export default function BrandKitPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={tinyLabel} htmlFor="end-card-youtube">YouTube</label>
+                  <label style={tinyLabel} htmlFor="end-card-youtube">
+                    YouTube
+                  </label>
                   <input
                     id="end-card-youtube"
                     type="text"
@@ -2410,7 +2519,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel} htmlFor="end-card-instagram">Instagram</label>
+                  <label style={tinyLabel} htmlFor="end-card-instagram">
+                    Instagram
+                  </label>
                   <input
                     id="end-card-instagram"
                     type="text"
@@ -2421,7 +2532,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel} htmlFor="end-card-tiktok">TikTok</label>
+                  <label style={tinyLabel} htmlFor="end-card-tiktok">
+                    TikTok
+                  </label>
                   <input
                     id="end-card-tiktok"
                     type="text"
@@ -2432,7 +2545,9 @@ export default function BrandKitPage() {
                   />
                 </div>
                 <div>
-                  <label style={tinyLabel} htmlFor="end-card-twitter">Twitter</label>
+                  <label style={tinyLabel} htmlFor="end-card-twitter">
+                    Twitter
+                  </label>
                   <input
                     id="end-card-twitter"
                     type="text"
@@ -2485,12 +2600,17 @@ export default function BrandKitPage() {
                 }}
               />
               {!logoUploaded ? (
-                <div style={{ ...dropZone, height: 140 }} onClick={() => logoInputRef.current?.click()}>
+                <div
+                  style={{ ...dropZone, height: 140 }}
+                  onClick={() => logoInputRef.current?.click()}
+                >
                   <Upload size={24} style={{ color: 'var(--text-tertiary)' }} />
                   <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                     Drop PNG or SVG here
                   </span>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>or click to browse</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                    or click to browse
+                  </span>
                 </div>
               ) : (
                 <>
@@ -2549,10 +2669,16 @@ export default function BrandKitPage() {
 
                 {/* Opacity */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}
+                  >
                     <label style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Opacity</label>
                     <span
-                      style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        fontFamily: 'monospace',
+                      }}
                     >
                       {watermarkOpacity}%
                     </span>
@@ -2611,7 +2737,14 @@ export default function BrandKitPage() {
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1.4fr 1fr',
+                gap: 16,
+                alignItems: 'start',
+              }}
+            >
               {/* 16:9 preview frame */}
               <div
                 style={{
@@ -2693,7 +2826,10 @@ export default function BrandKitPage() {
                     justifyContent: 'center',
                   };
                   const posStyles: Record<WatermarkPosition, React.CSSProperties> = {
-                    'top-left': { top: `${safeZoneMargins.top}%`, left: `${safeZoneMargins.left}%` },
+                    'top-left': {
+                      top: `${safeZoneMargins.top}%`,
+                      left: `${safeZoneMargins.left}%`,
+                    },
                     'top-right': {
                       top: `${safeZoneMargins.top}%`,
                       right: `${safeZoneMargins.right}%`,

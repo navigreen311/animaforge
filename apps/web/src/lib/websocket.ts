@@ -49,7 +49,10 @@ function dispatch(event: string, data: Record<string, unknown>): void {
  * Automatically reconnects on unexpected close (up to 5 attempts).
  */
 export function createWSConnection(token: string): WebSocket {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+  if (
+    socket &&
+    (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
+  ) {
     return socket;
   }
 

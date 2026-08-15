@@ -19,10 +19,10 @@ interface SceneViewportProps {
 /* ------------------------------------------------------------------ */
 
 const KIND_COLORS: Record<string, string> = {
-  camera: '#60a5fa',   // blue
+  camera: '#60a5fa', // blue
   character: '#a78bfa', // purple
-  light: '#fbbf24',    // amber
-  prop: '#34d399',     // green
+  light: '#fbbf24', // amber
+  prop: '#34d399', // green
 };
 
 const KIND_SHAPES: Record<string, { width: number; height: number; depth: number }> = {
@@ -213,8 +213,24 @@ export function SceneViewport({ nodes, selectedId, onSelect, onMoveNode }: Scene
                 height="80"
                 style={{ left: '-30px', top: '-20px', transform: 'translateZ(40px)' }}
               >
-                <line x1="0" y1="40" x2="15" y2="0" stroke="rgba(96,165,250,0.3)" strokeWidth="1" strokeDasharray="4 2" />
-                <line x1="60" y1="40" x2="45" y2="0" stroke="rgba(96,165,250,0.3)" strokeWidth="1" strokeDasharray="4 2" />
+                <line
+                  x1="0"
+                  y1="40"
+                  x2="15"
+                  y2="0"
+                  stroke="rgba(96,165,250,0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="4 2"
+                />
+                <line
+                  x1="60"
+                  y1="40"
+                  x2="45"
+                  y2="0"
+                  stroke="rgba(96,165,250,0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="4 2"
+                />
               </svg>
             </div>
           )}

@@ -120,7 +120,7 @@ export const useAvatarStore = create<AvatarState & AvatarActions>((set) => ({
   cancelJob: (id) =>
     set((state) => ({
       avatarJobs: state.avatarJobs.map((job) =>
-        job.id === id ? { ...job, status: 'cancelled' as const } : job
+        job.id === id ? { ...job, status: 'cancelled' as const } : job,
       ),
       activeAvatar: state.activeAvatar === id ? null : state.activeAvatar,
       reconstructionProgress:

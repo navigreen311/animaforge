@@ -5,17 +5,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // Attach/generate a sonic branding audio asset for a brand kit (mock)
 // ---------------------------------------------------------------------------
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   if (!id || !id.startsWith('bk_')) {
-    return NextResponse.json(
-      { error: 'Brand kit not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Brand kit not found' }, { status: 404 });
   }
 
   const body = await request.json().catch(() => ({}));

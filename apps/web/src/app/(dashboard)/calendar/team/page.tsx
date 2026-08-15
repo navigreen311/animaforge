@@ -4,12 +4,7 @@ import React, { useState } from 'react';
 import { Users, ChevronLeft, ChevronRight, Sparkles, UserPlus } from 'lucide-react';
 import TeamAssignmentPanel from '@/components/calendar/TeamAssignmentPanel';
 
-const WEEKS = [
-  'Apr 6 – Apr 12',
-  'Apr 13 – Apr 19',
-  'Apr 20 – Apr 26',
-  'Apr 27 – May 3',
-];
+const WEEKS = ['Apr 6 – Apr 12', 'Apr 13 – Apr 19', 'Apr 20 – Apr 26', 'Apr 27 – May 3'];
 
 interface Freelancer {
   id: string;
@@ -20,9 +15,27 @@ interface Freelancer {
 }
 
 const FREELANCERS: Freelancer[] = [
-  { id: 'f1', name: 'Mia Rodriguez', skill: 'Senior Animator', rate: '$85/h', availability: 'Immediate' },
-  { id: 'f2', name: 'Noah Becker', skill: 'Layout Artist', rate: '$65/h', availability: 'Next week' },
-  { id: 'f3', name: 'Priya Desai', skill: 'Sound Designer', rate: '$75/h', availability: 'Immediate' },
+  {
+    id: 'f1',
+    name: 'Mia Rodriguez',
+    skill: 'Senior Animator',
+    rate: '$85/h',
+    availability: 'Immediate',
+  },
+  {
+    id: 'f2',
+    name: 'Noah Becker',
+    skill: 'Layout Artist',
+    rate: '$65/h',
+    availability: 'Next week',
+  },
+  {
+    id: 'f3',
+    name: 'Priya Desai',
+    skill: 'Sound Designer',
+    rate: '$75/h',
+    availability: 'Immediate',
+  },
 ];
 
 const SUGGESTIONS = [
@@ -121,8 +134,7 @@ export default function TeamPage() {
               background: 'transparent',
               border: 'none',
               color: 'var(--text, #f1f5f9)',
-              cursor:
-                weekIdx === WEEKS.length - 1 ? 'not-allowed' : 'pointer',
+              cursor: weekIdx === WEEKS.length - 1 ? 'not-allowed' : 'pointer',
               opacity: weekIdx === WEEKS.length - 1 ? 0.4 : 1,
               padding: 6,
               display: 'flex',
@@ -221,9 +233,7 @@ export default function TeamPage() {
                         padding: '2px 8px',
                         borderRadius: 999,
                         background:
-                          s.impact === 'High'
-                            ? 'rgba(239,68,68,0.15)'
-                            : 'rgba(234,179,8,0.15)',
+                          s.impact === 'High' ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.15)',
                         color: s.impact === 'High' ? '#ef4444' : '#eab308',
                         fontWeight: 600,
                       }}

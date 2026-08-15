@@ -1,16 +1,16 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 // ── Types ───────────────────────────────────────────────────────────
 export type ReviewTaskType =
-  | "content_moderation"
-  | "quality_check"
-  | "rights_verification"
-  | "customer_support"
-  | "bug_report";
+  | 'content_moderation'
+  | 'quality_check'
+  | 'rights_verification'
+  | 'customer_support'
+  | 'bug_report';
 
-export type TaskPriority = "urgent" | "high" | "normal" | "low";
-export type TaskStatus = "pending" | "assigned" | "in_progress" | "completed" | "escalated";
-export type TaskDecision = "approve" | "reject" | "escalate" | "defer";
+export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low';
+export type TaskStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'escalated';
+export type TaskDecision = 'approve' | 'reject' | 'escalate' | 'defer';
 
 export interface ReviewTask {
   id: string;
@@ -34,7 +34,7 @@ export interface SupportTicket {
   subject: string;
   body: string;
   category: string;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
   responses: TicketResponse[];
   createdAt: string;
   updatedAt: string;
@@ -56,10 +56,10 @@ export interface ReviewerStats {
 
 // ── SLA Targets ─────────────────────────────────────────────────────
 export const SLA_TARGETS: Record<TaskPriority, string> = {
-  urgent: "15min",
-  high: "1hr",
-  normal: "4hr",
-  low: "24hr",
+  urgent: '15min',
+  high: '1hr',
+  normal: '4hr',
+  low: '24hr',
 };
 
 // ── In-memory stores ────────────────────────────────────────────────
@@ -85,7 +85,7 @@ export const humanReviewService = {
       jobId,
       type,
       priority,
-      status: "pending",
+      status: 'pending',
       context,
       createdAt: now,
       updatedAt: now,
@@ -93,9 +93,7 @@ export const humanReviewService = {
     tasks.set(task.id, task);
 
     // Queue position = number of pending tasks with same or higher priority
-    const pendingCount = Array.from(tasks.values()).filter(
-      (t) => t.status === "pending",
-    ).length;
+    const pendingCount = Array.from(tasks.values()).filter((t) => t.status === 'pending').length;
 
     return {
       taskId: task.id,
@@ -107,16 +105,13 @@ export const humanReviewService = {
   /**
    * Assign a task to a human reviewer.
    */
-  assignTask(
-    taskId: string,
-    reviewerId: string,
-  ): ReviewTask | undefined {
+  assignTask(taskId: string, reviewerId: string): ReviewTask | undefined {
     const task = tasks.get(taskId);
     if (!task) return undefined;
-    if (task.status !== "pending" && task.status !== "escalated") return undefined;
+    if (task.status !== 'pending' && task.status !== 'escalated') return undefined;
 
     task.reviewerId = reviewerId;
-    task.status = "assigned";
+    task.status = 'assigned';
     task.assignedAt = new Date().toISOString();
     task.updatedAt = new Date().toISOString();
     reviewers.add(reviewerId);
@@ -136,12 +131,12 @@ export const humanReviewService = {
     const task = tasks.get(taskId);
     if (!task) return undefined;
     if (task.reviewerId !== reviewerId) return undefined;
-    if (task.status !== "assigned" && task.status !== "in_progress") return undefined;
+    if (task.status !== 'assigned' && task.status !== 'in_progress') return undefined;
 
     const now = new Date().toISOString();
     task.decision = decision;
     task.notes = notes;
-    task.status = decision === "escalate" ? "escalated" : "completed";
+    task.status = decision === 'escalate' ? 'escalated' : 'completed';
     task.completedAt = now;
     task.updatedAt = now;
     tasks.set(taskId, task);
@@ -162,11 +157,7 @@ export const humanReviewService = {
   /**
    * Get queue of tasks with optional filters.
    */
-  getQueue(
-    type?: ReviewTaskType,
-    priority?: TaskPriority,
-    status?: TaskStatus,
-  ): ReviewTask[] {
+  getQueue(type?: ReviewTaskType, priority?: TaskPriority, status?: TaskStatus): ReviewTask[] {
     let result = Array.from(tasks.values());
     if (type) result = result.filter((t) => t.type === type);
     if (priority) result = result.filter((t) => t.priority === priority);
@@ -180,12 +171,10 @@ export const humanReviewService = {
   getReviewerWorkload(reviewerId: string): ReviewerStats {
     const today = new Date().toISOString().slice(0, 10);
     const assigned = Array.from(tasks.values()).filter(
-      (t) => t.reviewerId === reviewerId && (t.status === "assigned" || t.status === "in_progress"),
+      (t) => t.reviewerId === reviewerId && (t.status === 'assigned' || t.status === 'in_progress'),
     ).length;
 
-    const todayLogs = completionLog.filter(
-      (l) => l.reviewerId === reviewerId && l.date === today,
-    );
+    const todayLogs = completionLog.filter((l) => l.reviewerId === reviewerId && l.date === today);
     const completed_today = todayLogs.length;
     const avg_time_per_review =
       todayLogs.length > 0
@@ -198,21 +187,18 @@ export const humanReviewService = {
   /**
    * Escalate a task: bump priority and reassign to senior reviewer.
    */
-  escalateTask(
-    taskId: string,
-    reason: string,
-  ): ReviewTask | undefined {
+  escalateTask(taskId: string, reason: string): ReviewTask | undefined {
     const task = tasks.get(taskId);
     if (!task) return undefined;
 
     // Bump priority
-    const priorityOrder: TaskPriority[] = ["low", "normal", "high", "urgent"];
+    const priorityOrder: TaskPriority[] = ['low', 'normal', 'high', 'urgent'];
     const currentIdx = priorityOrder.indexOf(task.priority);
     if (currentIdx < priorityOrder.length - 1) {
       task.priority = priorityOrder[currentIdx + 1];
     }
 
-    task.status = "escalated";
+    task.status = 'escalated';
     task.notes = reason;
     task.reviewerId = undefined; // unassign for senior reassignment
     task.updatedAt = new Date().toISOString();
@@ -234,8 +220,12 @@ export const humanReviewService = {
     const today = new Date().toISOString().slice(0, 10);
     const allTasks = Array.from(tasks.values());
 
-    const pending = allTasks.filter((t) => t.status === "pending" || t.status === "escalated").length;
-    const in_progress = allTasks.filter((t) => t.status === "assigned" || t.status === "in_progress").length;
+    const pending = allTasks.filter(
+      (t) => t.status === 'pending' || t.status === 'escalated',
+    ).length;
+    const in_progress = allTasks.filter(
+      (t) => t.status === 'assigned' || t.status === 'in_progress',
+    ).length;
 
     const todayLogs = completionLog.filter((l) => l.date === today);
     const completed_today = todayLogs.length;
@@ -262,9 +252,9 @@ export const humanReviewService = {
     if (available.length === 0) return [];
 
     const pendingTasks = Array.from(tasks.values())
-      .filter((t) => t.status === "pending" || t.status === "escalated")
+      .filter((t) => t.status === 'pending' || t.status === 'escalated')
       .sort((a, b) => {
-        const priorityOrder: TaskPriority[] = ["urgent", "high", "normal", "low"];
+        const priorityOrder: TaskPriority[] = ['urgent', 'high', 'normal', 'low'];
         return priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority);
       });
 
@@ -296,7 +286,7 @@ export const humanReviewService = {
       subject,
       body,
       category,
-      status: "open",
+      status: 'open',
       responses: [],
       createdAt: now,
       updatedAt: now,
@@ -333,7 +323,7 @@ export const humanReviewService = {
       createdAt: new Date().toISOString(),
     };
     ticket.responses.push(ticketResponse);
-    ticket.status = "in_progress";
+    ticket.status = 'in_progress';
     ticket.updatedAt = new Date().toISOString();
     tickets.set(ticketId, ticket);
     return ticket;
@@ -346,7 +336,7 @@ export const humanReviewService = {
     const ticket = tickets.get(ticketId);
     if (!ticket) return undefined;
 
-    ticket.status = "closed";
+    ticket.status = 'closed';
     ticket.updatedAt = new Date().toISOString();
     tickets.set(ticketId, ticket);
     return ticket;

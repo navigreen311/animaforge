@@ -58,9 +58,7 @@ export function ShotInspector({ shot, onEdit, onGenerate }: ShotInspectorProps) 
           <div className="flex flex-col gap-3">
             {/* Shot number + status */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-zinc-100">
-                Shot #{shot.number}
-              </span>
+              <span className="text-sm font-bold text-zinc-100">Shot #{shot.number}</span>
               <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] capitalize text-zinc-400">
                 {shot.status}
               </span>

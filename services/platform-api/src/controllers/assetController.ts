@@ -1,8 +1,8 @@
-import type { Request, Response, NextFunction } from "express";
-import { CreateAssetSchema } from "../models/assetSchemas.js";
-import * as assetService from "../services/assetService.js";
+import type { Request, Response, NextFunction } from 'express';
+import { CreateAssetSchema } from '../models/assetSchemas.js';
+import * as assetService from '../services/assetService.js';
 
-const STUB_OWNER_ID = "00000000-0000-0000-0000-000000000001";
+const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
@@ -31,11 +31,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function search(req: Request, res: Response, next: NextFunction) {
   try {
-    const q = (req.query.q as string) || "";
+    const q = (req.query.q as string) || '';
     if (!q) {
       res.status(400).json({
         success: false,
-        error: { code: "BAD_REQUEST", message: "Query parameter q is required" },
+        error: { code: 'BAD_REQUEST', message: 'Query parameter q is required' },
       });
       return;
     }
@@ -52,7 +52,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
     if (!asset) {
       res.status(404).json({
         success: false,
-        error: { code: "NOT_FOUND", message: "Asset not found" },
+        error: { code: 'NOT_FOUND', message: 'Asset not found' },
       });
       return;
     }
@@ -68,7 +68,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
     if (!deleted) {
       res.status(404).json({
         success: false,
-        error: { code: "NOT_FOUND", message: "Asset not found" },
+        error: { code: 'NOT_FOUND', message: 'Asset not found' },
       });
       return;
     }

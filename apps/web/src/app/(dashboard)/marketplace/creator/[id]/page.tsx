@@ -66,16 +66,16 @@ function getCreatorProfile(id: string): CreatorProfile {
   // id comes from the URL — decode it to use as display name
   const decoded = decodeURIComponent(id);
   const name = decoded;
-  const initials = name
-    .split(/[\s-_]+/)
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || name.slice(0, 2).toUpperCase();
+  const initials =
+    name
+      .split(/[\s-_]+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || name.slice(0, 2).toUpperCase();
 
-  const gradient =
-    CREATOR_GRADIENTS[name] ?? 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+  const gradient = CREATOR_GRADIENTS[name] ?? 'linear-gradient(135deg, #6366f1, #8b5cf6)';
 
   const bio =
     CREATOR_BIOS[name] ??
@@ -172,7 +172,7 @@ function renderStars(rating: number, size = 12) {
           fill: filled ? '#fbbf24' : 'none',
           flexShrink: 0,
         }}
-      />
+      />,
     );
   }
   return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>{stars}</span>;
@@ -184,11 +184,7 @@ function formatDownloads(n: number): string {
 }
 
 // ── Component ──────────────────────────────────────────────────────
-export default function CreatorProfilePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const profile = useMemo(() => getCreatorProfile(id), [id]);
@@ -199,8 +195,7 @@ export default function CreatorProfilePage({
   const stats = useMemo(() => {
     const itemCount = profile.items.length;
     const totalDownloads = profile.items.reduce((sum, i) => sum + i.downloads, 0);
-    const avgRating =
-      profile.items.reduce((sum, i) => sum + i.rating, 0) / profile.items.length;
+    const avgRating = profile.items.reduce((sum, i) => sum + i.rating, 0) / profile.items.length;
     return { itemCount, totalDownloads, avgRating };
   }, [profile]);
 

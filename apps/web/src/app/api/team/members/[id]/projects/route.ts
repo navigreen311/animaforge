@@ -4,10 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 /*  PATCH /api/team/members/[id]/projects                             */
 /*  Update a member's project access list                             */
 /* ------------------------------------------------------------------ */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   try {
@@ -17,10 +14,7 @@ export async function PATCH(
     };
 
     if (!projectAccess || !Array.isArray(projectAccess)) {
-      return NextResponse.json(
-        { error: 'projectAccess array is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'projectAccess array is required' }, { status: 400 });
     }
 
     const updated = projectAccess.map((entry) => ({
@@ -37,9 +31,6 @@ export async function PATCH(
       updatedAt: new Date().toISOString(),
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

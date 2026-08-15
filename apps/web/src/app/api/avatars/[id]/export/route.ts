@@ -3,10 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const VALID_FORMATS = ['gltf', 'fbx', 'usd', 'bvh', 'arkit', 'mp4'] as const;
 type ExportFormat = (typeof VALID_FORMATS)[number];
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const { searchParams } = request.nextUrl;
   const format = searchParams.get('format') as ExportFormat | null;
 

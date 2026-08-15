@@ -152,9 +152,7 @@ export default function StatsRow({ stats, loading }: StatsRowProps) {
           style={{
             ...valueStyle,
             color:
-              stats.activeRenderJobs > 0
-                ? 'var(--status-generating-text)'
-                : 'var(--text-primary)',
+              stats.activeRenderJobs > 0 ? 'var(--status-generating-text)' : 'var(--text-primary)',
           }}
         >
           {stats.activeRenderJobs}

@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../db.js";
+import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '../db.js';
 import type {
   Review,
   Comment,
@@ -8,14 +8,14 @@ import type {
   CreateReviewInput,
   SubmitReviewInput,
   CommentInput,
-} from "../models/reviewSchemas.js";
+} from '../models/reviewSchemas.js';
 
 // ── In-memory stores ────────────────────────────────────────────────
 const reviews = new Map<string, Review>();
 const comments = new Map<string, Comment>();
 
 // ── Approval level progression ──────────────────────────────────────
-const APPROVAL_ORDER: ApprovalLevel[] = ["editor", "director", "final"];
+const APPROVAL_ORDER: ApprovalLevel[] = ['editor', 'director', 'final'];
 
 function nextLevel(current: ApprovalLevel): ApprovalLevel | null {
   const idx = APPROVAL_ORDER.indexOf(current);
@@ -30,7 +30,7 @@ export const reviewService = {
   async createReview(
     shotId: string,
     reviewerId: string,
-    projectId: string = "00000000-0000-4000-8000-000000000001",
+    projectId: string = '00000000-0000-4000-8000-000000000001',
   ): Promise<Review> {
     // No Postgres path. packages/db/prisma/schema.prisma has no Review model —
     // ShotReview exists but is a different thing (token-based external review
@@ -39,9 +39,7 @@ export const reviewService = {
     // it always threw and fell through to the in-memory store below.
 
     // Determine round number based on existing reviews for this shot
-    const existing = Array.from(reviews.values()).filter(
-      (r) => r.shotId === shotId,
-    );
+    const existing = Array.from(reviews.values()).filter((r) => r.shotId === shotId);
     const round = existing.length + 1;
 
     const now = new Date().toISOString();
@@ -50,8 +48,8 @@ export const reviewService = {
       shotId,
       projectId,
       reviewerId,
-      status: "pending",
-      approvalLevel: "editor",
+      status: 'pending',
+      approvalLevel: 'editor',
       round,
       comments: undefined,
       timecodeRef: undefined,
@@ -133,19 +131,12 @@ export const reviewService = {
   /**
    * Get all reviews for a project, optionally filtered by status.
    */
-  async getReviewsByProject(
-    projectId: string,
-    status?: ReviewStatus,
-  ): Promise<Review[]> {
-    let projectReviews = Array.from(reviews.values()).filter(
-      (r) => r.projectId === projectId,
-    );
+  async getReviewsByProject(projectId: string, status?: ReviewStatus): Promise<Review[]> {
+    let projectReviews = Array.from(reviews.values()).filter((r) => r.projectId === projectId);
     if (status) {
       projectReviews = projectReviews.filter((r) => r.status === status);
     }
-    return projectReviews.sort(
-      (a, b) => b.createdAt.localeCompare(a.createdAt),
-    );
+    return projectReviews.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
   /**
@@ -155,13 +146,13 @@ export const reviewService = {
   async escalateReview(reviewId: string): Promise<Review | undefined> {
     const review = reviews.get(reviewId);
     if (!review) return undefined;
-    if (review.status !== "approved") return undefined;
+    if (review.status !== 'approved') return undefined;
 
     const next = nextLevel(review.approvalLevel);
     if (!next) return undefined; // already at final
 
     review.approvalLevel = next;
-    review.status = "pending";
+    review.status = 'pending';
     review.updatedAt = new Date().toISOString();
     reviews.set(reviewId, review);
     return review;

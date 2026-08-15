@@ -16,12 +16,8 @@ export const MILESTONES = {
   },
 };
 
-export async function checkAndTriggerMilestones(
-  userId: string,
-  completedJobCount: number
-) {
-  const milestone =
-    MILESTONES[completedJobCount as keyof typeof MILESTONES];
+export async function checkAndTriggerMilestones(userId: string, completedJobCount: number) {
+  const milestone = MILESTONES[completedJobCount as keyof typeof MILESTONES];
   if (!milestone) return;
 
   // In production: check if already triggered in DB, send email if not

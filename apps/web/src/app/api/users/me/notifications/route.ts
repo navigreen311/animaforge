@@ -18,10 +18,7 @@ export async function PATCH(request: NextRequest) {
   const { preferences } = body as { preferences?: Record<string, boolean> };
 
   if (!preferences || typeof preferences !== 'object') {
-    return NextResponse.json(
-      { error: 'preferences object is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'preferences object is required' }, { status: 400 });
   }
 
   const updatedPrefs = { ...MOCK_NOTIFICATION_PREFS };

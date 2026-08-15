@@ -77,10 +77,7 @@ export default function FolderSelector({ folders, selectedId, onChange }: Folder
       }}
     >
       {/* ---- "All" chip ---- */}
-      <Chip
-        active={isAllActive}
-        onClick={() => onChange(null)}
-      >
+      <Chip active={isAllActive} onClick={() => onChange(null)}>
         All
       </Chip>
 
@@ -88,11 +85,7 @@ export default function FolderSelector({ folders, selectedId, onChange }: Folder
       {folders.map((folder) => {
         const active = selectedId === folder.id;
         return (
-          <Chip
-            key={folder.id}
-            active={active}
-            onClick={() => onChange(folder.id)}
-          >
+          <Chip key={folder.id} active={active} onClick={() => onChange(folder.id)}>
             {/* Color dot */}
             <span
               style={{
@@ -248,9 +241,7 @@ function Chip({ active, onClick, children }: ChipProps) {
         alignItems: 'center',
         gap: 6,
         background: active ? 'var(--bg-active)' : 'transparent',
-        border: active
-          ? '0.5px solid var(--border-brand)'
-          : '0.5px solid var(--border)',
+        border: active ? '0.5px solid var(--border-brand)' : '0.5px solid var(--border)',
         color: active ? 'var(--text-brand)' : 'var(--text-tertiary)',
         borderRadius: 'var(--radius-pill)',
         padding: '4px 12px',

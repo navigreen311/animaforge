@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { useMarketplaceStore, type MarketplaceItem, type MarketplaceReview } from '@/stores/marketplaceStore';
+import {
+  useMarketplaceStore,
+  type MarketplaceItem,
+  type MarketplaceReview,
+} from '@/stores/marketplaceStore';
 
 const CATEGORY_LABELS: Record<string, string> = {
   'style-packs': 'Style Pack',
@@ -81,7 +85,12 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
           className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Back to Marketplace
         </button>
@@ -94,8 +103,18 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
           <Card className="aspect-video w-full overflow-hidden">
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 text-[var(--color-text-muted)]">
               <div className="text-center">
-                <svg className="mx-auto h-16 w-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                <svg
+                  className="mx-auto h-16 w-16 opacity-30"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                  />
                 </svg>
                 <p className="mt-2 text-sm opacity-50">Preview {activePreview + 1}</p>
               </div>
@@ -148,7 +167,9 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <StarDisplay rating={item.rating} size="md" />
-              <span className="ml-1 text-sm text-[var(--color-text)]">{item.rating.toFixed(1)}</span>
+              <span className="ml-1 text-sm text-[var(--color-text)]">
+                {item.rating.toFixed(1)}
+              </span>
             </div>
             <span className="text-sm text-[var(--color-text-muted)]">
               {item.reviewCount} reviews
@@ -182,7 +203,9 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
           {/* Description */}
           <div>
             <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Description</h3>
-            <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{item.description}</p>
+            <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
+              {item.description}
+            </p>
           </div>
 
           {/* Tags */}
@@ -213,7 +236,9 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
                     {review.userName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-[var(--color-text)]">{review.userName}</p>
+                    <p className="text-sm font-medium text-[var(--color-text)]">
+                      {review.userName}
+                    </p>
                     <p className="text-xs text-[var(--color-text-muted)]">
                       {new Date(review.createdAt).toLocaleDateString()}
                     </p>
@@ -233,10 +258,15 @@ export default function ItemDetail({ item, onBack, relatedItems = [] }: ItemDeta
           <h2 className="mb-4 text-lg font-bold text-[var(--color-text)]">Related Items</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {relatedItems.map((related) => (
-              <Card key={related.id} className="cursor-pointer overflow-hidden transition-all hover:border-primary/50">
+              <Card
+                key={related.id}
+                className="cursor-pointer overflow-hidden transition-all hover:border-primary/50"
+              >
                 <div className="aspect-video w-full bg-gradient-to-br from-gray-800 to-gray-900" />
                 <div className="p-3">
-                  <h4 className="truncate text-sm font-medium text-[var(--color-text)]">{related.name}</h4>
+                  <h4 className="truncate text-sm font-medium text-[var(--color-text)]">
+                    {related.name}
+                  </h4>
                   <p className="text-xs text-[var(--color-text-muted)]">by {related.creatorName}</p>
                   <p className="mt-1 text-sm font-bold text-[var(--color-text)]">
                     {related.price === 0 ? 'Free' : `$${related.price.toFixed(2)}`}

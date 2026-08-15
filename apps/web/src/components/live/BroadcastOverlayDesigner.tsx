@@ -16,9 +16,15 @@ import type { LucideIcon } from 'lucide-react';
 type AnimationIn = 'None' | 'Fade' | 'Slide' | 'Pop';
 type Trigger = 'Manual' | 'Event' | 'Schedule';
 type Position =
-  | 'top-left' | 'top-center' | 'top-right'
-  | 'mid-left' | 'mid-center' | 'mid-right'
-  | 'bot-left' | 'bot-center' | 'bot-right';
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'mid-left'
+  | 'mid-center'
+  | 'mid-right'
+  | 'bot-left'
+  | 'bot-center'
+  | 'bot-right';
 
 interface OverlayTemplate {
   id: string;
@@ -46,9 +52,15 @@ const TEMPLATES: OverlayTemplate[] = [
 ];
 
 const POSITIONS: Position[] = [
-  'top-left', 'top-center', 'top-right',
-  'mid-left', 'mid-center', 'mid-right',
-  'bot-left', 'bot-center', 'bot-right',
+  'top-left',
+  'top-center',
+  'top-right',
+  'mid-left',
+  'mid-center',
+  'mid-right',
+  'bot-left',
+  'bot-center',
+  'bot-right',
 ];
 
 const POSITION_STYLE: Record<Position, React.CSSProperties> = {
@@ -296,7 +308,9 @@ export default function BroadcastOverlayDesigner() {
                       aspectRatio: '1',
                       borderRadius: 4,
                       background:
-                        selected.position === p ? 'var(--accent, #8b5cf6)' : 'var(--surface2, #1f1f2a)',
+                        selected.position === p
+                          ? 'var(--accent, #8b5cf6)'
+                          : 'var(--surface2, #1f1f2a)',
                       border: '1px solid var(--border, #262631)',
                       cursor: 'pointer',
                     }}

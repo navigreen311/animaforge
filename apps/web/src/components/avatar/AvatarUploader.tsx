@@ -52,7 +52,7 @@ export default function AvatarUploader() {
       setIsDragOver(false);
       addFiles(e.dataTransfer.files);
     },
-    [addFiles]
+    [addFiles],
   );
 
   const handleBeginReconstruction = () => {
@@ -109,7 +109,10 @@ export default function AvatarUploader() {
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {photos.map((photo, i) => (
-            <div key={photo.preview} className="relative group rounded-lg overflow-hidden aspect-square bg-gray-800">
+            <div
+              key={photo.preview}
+              className="relative group rounded-lg overflow-hidden aspect-square bg-gray-800"
+            >
               <img
                 src={photo.preview}
                 alt={`Reference ${i + 1}`}
@@ -121,7 +124,12 @@ export default function AvatarUploader() {
                 className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -168,8 +176,18 @@ export default function AvatarUploader() {
         <ul className="space-y-1.5">
           {GUIDELINES.map((tip) => (
             <li key={tip} className="flex items-start gap-2 text-xs text-gray-500">
-              <svg className="w-3.5 h-3.5 text-violet-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+              <svg
+                className="w-3.5 h-3.5 text-violet-500 mt-0.5 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                />
               </svg>
               {tip}
             </li>

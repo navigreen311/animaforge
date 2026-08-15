@@ -13,13 +13,24 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <span className="text-violet-400">Anima</span>Forge
           </Link>
           <div className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
-            <Link href="/#features" className="transition-colors hover:text-white">Features</Link>
-            <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
-            <a href="#" className="transition-colors hover:text-white">Marketplace</a>
-            <a href="#" className="transition-colors hover:text-white">Developers</a>
+            <Link href="/#features" className="transition-colors hover:text-white">
+              Features
+            </Link>
+            <Link href="/pricing" className="transition-colors hover:text-white">
+              Pricing
+            </Link>
+            <a href="#" className="transition-colors hover:text-white">
+              Marketplace
+            </a>
+            <a href="#" className="transition-colors hover:text-white">
+              Developers
+            </a>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-zinc-400 transition-colors hover:text-white">
+            <Link
+              href="/login"
+              className="text-sm text-zinc-400 transition-colors hover:text-white"
+            >
               Sign in
             </Link>
             <Link

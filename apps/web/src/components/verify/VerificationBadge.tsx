@@ -26,7 +26,12 @@ export default function VerificationBadge({ verified, size = 'md' }: Verificatio
   return (
     <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-medium text-sm">
       <svg className={iconSize} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2.5}
+          d="M6 18L18 6M6 6l12 12"
+        />
       </svg>
       Unverified
     </span>

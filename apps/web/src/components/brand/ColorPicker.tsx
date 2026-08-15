@@ -14,10 +14,22 @@ interface ColorPickerProps {
 }
 
 const PRESET_SWATCHES = [
-  '#6D28D9', '#7C3AED', '#8B5CF6', '#A78BFA',
-  '#DC2626', '#EF4444', '#F97316', '#F59E0B',
-  '#059669', '#10B981', '#06B6D4', '#3B82F6',
-  '#1F2937', '#374151', '#6B7280', '#F9FAFB',
+  '#6D28D9',
+  '#7C3AED',
+  '#8B5CF6',
+  '#A78BFA',
+  '#DC2626',
+  '#EF4444',
+  '#F97316',
+  '#F59E0B',
+  '#059669',
+  '#10B981',
+  '#06B6D4',
+  '#3B82F6',
+  '#1F2937',
+  '#374151',
+  '#6B7280',
+  '#F9FAFB',
 ];
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -150,7 +162,9 @@ export default function ColorPicker({ colors, onChange }: ColorPickerProps) {
                 aria-label={`Select color ${swatch} for ${activeEntry.label}`}
                 aria-pressed={activeEntry.value === swatch}
                 className={`h-7 w-7 rounded-md border transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                  activeEntry.value === swatch ? 'border-violet-400 ring-2 ring-violet-500' : 'border-gray-600'
+                  activeEntry.value === swatch
+                    ? 'border-violet-400 ring-2 ring-violet-500'
+                    : 'border-gray-600'
                 }`}
                 style={{ backgroundColor: swatch }}
                 title={swatch}

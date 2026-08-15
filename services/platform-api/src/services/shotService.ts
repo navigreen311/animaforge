@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
-import type { Shot, CreateShotInput, UpdateShotInput } from "../models/shotSchemas.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
+import type { Shot, CreateShotInput, UpdateShotInput } from '../models/shotSchemas.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 // In-memory fallback store
 const shots = new Map<string, Shot>();
 
@@ -19,7 +19,7 @@ export const shotService = {
           characterRefs: input.characterRefs as any,
           durationMs: input.durationMs,
           aspectRatio: input.aspectRatio,
-          status: "draft",
+          status: 'draft',
           // sceneGraph and characterRefs land in Json columns.
         } as Prisma.ShotUncheckedCreateInput,
       }) as unknown as Shot;
@@ -37,7 +37,7 @@ export const shotService = {
       characterRefs: input.characterRefs,
       durationMs: input.durationMs,
       aspectRatio: input.aspectRatio,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -49,7 +49,7 @@ export const shotService = {
     if (await isDatabaseReachable()) {
       const results = await requirePrisma().shot.findMany({
         where: { projectId },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           scene: true,
         },
@@ -80,7 +80,7 @@ export const shotService = {
     if (await isDatabaseReachable()) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
-      if (existing.status === "locked") return undefined;
+      if (existing.status === 'locked') return undefined;
 
       const data: Record<string, unknown> = { ...input };
       if (input.sceneGraph !== undefined) {
@@ -100,7 +100,7 @@ export const shotService = {
     // In-memory fallback
     const shot = shots.get(id);
     if (!shot) return undefined;
-    if (shot.status === "locked") return undefined;
+    if (shot.status === 'locked') return undefined;
 
     const updated: Shot = {
       ...shot,
@@ -115,12 +115,12 @@ export const shotService = {
     if (await isDatabaseReachable()) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
-      if (existing.status === "locked") return undefined;
+      if (existing.status === 'locked') return undefined;
 
       const updated = await requirePrisma().shot.update({
         where: { id },
         data: {
-          status: "approved",
+          status: 'approved',
           approvedBy: userId,
           approvedAt: new Date(),
         },
@@ -131,11 +131,11 @@ export const shotService = {
     // In-memory fallback
     const shot = shots.get(id);
     if (!shot) return undefined;
-    if (shot.status === "locked") return undefined;
+    if (shot.status === 'locked') return undefined;
 
     const updated: Shot = {
       ...shot,
-      status: "approved",
+      status: 'approved',
       approvedBy: userId,
       approvedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -148,12 +148,12 @@ export const shotService = {
     if (await isDatabaseReachable()) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return undefined;
-      if (existing.status === "locked") return undefined;
+      if (existing.status === 'locked') return undefined;
 
       const updated = await requirePrisma().shot.update({
         where: { id },
         data: {
-          status: "draft",
+          status: 'draft',
           approvedBy: null,
           approvedAt: null,
         },
@@ -164,11 +164,11 @@ export const shotService = {
     // In-memory fallback
     const shot = shots.get(id);
     if (!shot) return undefined;
-    if (shot.status === "locked") return undefined;
+    if (shot.status === 'locked') return undefined;
 
     const updated: Shot = {
       ...shot,
-      status: "draft",
+      status: 'draft',
       approvedBy: undefined,
       approvedAt: undefined,
       updatedAt: new Date().toISOString(),
@@ -184,7 +184,7 @@ export const shotService = {
 
       const updated = await requirePrisma().shot.update({
         where: { id },
-        data: { status: "locked" },
+        data: { status: 'locked' },
       });
       return updated as unknown as Shot;
     }
@@ -195,7 +195,7 @@ export const shotService = {
 
     const updated: Shot = {
       ...shot,
-      status: "locked",
+      status: 'locked',
       updatedAt: new Date().toISOString(),
     };
     shots.set(id, updated);
@@ -206,7 +206,7 @@ export const shotService = {
     if (await isDatabaseReachable()) {
       const existing = await requirePrisma().shot.findUnique({ where: { id } });
       if (!existing) return false;
-      if (existing.status === "locked") return false;
+      if (existing.status === 'locked') return false;
 
       await requirePrisma().shot.delete({ where: { id } });
       return true;
@@ -215,7 +215,7 @@ export const shotService = {
     // In-memory fallback
     const shot = shots.get(id);
     if (!shot) return false;
-    if (shot.status === "locked") return false;
+    if (shot.status === 'locked') return false;
     return shots.delete(id);
   },
 

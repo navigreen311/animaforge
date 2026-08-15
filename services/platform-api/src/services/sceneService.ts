@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
-import type { Scene, CreateSceneInput, UpdateSceneInput } from "../models/sceneSchemas.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
+import type { Scene, CreateSceneInput, UpdateSceneInput } from '../models/sceneSchemas.js';
 
 // In-memory fallback store
 const scenes = new Map<string, Scene>();
@@ -38,7 +38,7 @@ export const sceneService = {
     if (await isDatabaseReachable()) {
       const results = await requirePrisma().scene.findMany({
         where: { projectId },
-        orderBy: { order: "asc" },
+        orderBy: { order: 'asc' },
         include: {
           shots: true,
         },

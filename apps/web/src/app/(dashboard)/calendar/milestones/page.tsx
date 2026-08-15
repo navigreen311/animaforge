@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Flag,
-  ChevronDown,
-  AlertTriangle,
-  CheckSquare,
-  History,
-} from 'lucide-react';
+import { Flag, ChevronDown, AlertTriangle, CheckSquare, History } from 'lucide-react';
 import MilestoneBurndown from '@/components/calendar/MilestoneBurndown';
 
 const MILESTONES = [
@@ -27,10 +21,38 @@ interface MilestoneHistoryRow {
 }
 
 const HISTORY: MilestoneHistoryRow[] = [
-  { id: 'h1', name: 'Script Lock', plannedDate: '2026-03-12', actualDate: '2026-03-13', status: 'done', delta: '+1d' },
-  { id: 'h2', name: 'Storyboard Complete', plannedDate: '2026-03-20', actualDate: '2026-03-19', status: 'done', delta: '-1d' },
-  { id: 'h3', name: 'Asset Kick-off', plannedDate: '2026-03-25', actualDate: '2026-03-28', status: 'late', delta: '+3d' },
-  { id: 'h4', name: 'Animatic Draft', plannedDate: '2026-04-02', actualDate: '2026-04-03', status: 'done', delta: '+1d' },
+  {
+    id: 'h1',
+    name: 'Script Lock',
+    plannedDate: '2026-03-12',
+    actualDate: '2026-03-13',
+    status: 'done',
+    delta: '+1d',
+  },
+  {
+    id: 'h2',
+    name: 'Storyboard Complete',
+    plannedDate: '2026-03-20',
+    actualDate: '2026-03-19',
+    status: 'done',
+    delta: '-1d',
+  },
+  {
+    id: 'h3',
+    name: 'Asset Kick-off',
+    plannedDate: '2026-03-25',
+    actualDate: '2026-03-28',
+    status: 'late',
+    delta: '+3d',
+  },
+  {
+    id: 'h4',
+    name: 'Animatic Draft',
+    plannedDate: '2026-04-02',
+    actualDate: '2026-04-03',
+    status: 'done',
+    delta: '+1d',
+  },
 ];
 
 const BLOCKERS = [
@@ -46,9 +68,12 @@ const ACTION_ITEMS = [
 
 function statusColor(s: MilestoneHistoryRow['status']): string {
   switch (s) {
-    case 'done': return '#22c55e';
-    case 'late': return '#ef4444';
-    case 'on_track': return '#eab308';
+    case 'done':
+      return '#22c55e';
+    case 'late':
+      return '#ef4444';
+    case 'on_track':
+      return '#eab308';
   }
 }
 
@@ -254,13 +279,9 @@ export default function MilestonesPage() {
                 style={{
                   padding: 10,
                   background:
-                    b.severity === 'high'
-                      ? 'rgba(239,68,68,0.08)'
-                      : 'rgba(234,179,8,0.08)',
+                    b.severity === 'high' ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)',
                   border: `1px solid ${
-                    b.severity === 'high'
-                      ? 'rgba(239,68,68,0.3)'
-                      : 'rgba(234,179,8,0.3)'
+                    b.severity === 'high' ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)'
                   }`,
                   borderRadius: 6,
                   fontSize: 12,

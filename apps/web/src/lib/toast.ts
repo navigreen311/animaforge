@@ -34,7 +34,9 @@ export const notify = {
   /** Dismiss a loading toast and show render-failed. */
   renderFailed(toastId?: string | number, reason?: string) {
     if (toastId !== undefined) toast.dismiss(toastId);
-    toast.error('Render failed', { description: reason ?? 'Something went wrong. Please try again.' });
+    toast.error('Render failed', {
+      description: reason ?? 'Something went wrong. Please try again.',
+    });
   },
 
   /** Warn the user about low credits. */

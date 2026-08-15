@@ -43,11 +43,30 @@ function resolveInvite(token: string | null): { state: InviteState; details?: In
 
 function AnimaForgeLogo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 32 }}>
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        justifyContent: 'center',
+        marginBottom: 32,
+      }}
+    >
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#7c3aed"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
-      <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary, #e2e8f0)' }}>AnimaForge</span>
+      <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary, #e2e8f0)' }}>
+        AnimaForge
+      </span>
     </div>
   );
 }
@@ -121,7 +140,9 @@ function AcceptInviteContent() {
                   animation: 'spin 1s linear infinite',
                 }}
               />
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Verifying invitation...</p>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+                Verifying invitation...
+              </p>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </motion.div>
           )}
@@ -160,9 +181,12 @@ function AcceptInviteContent() {
                   &#9993;
                 </div>
 
-                <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>You&apos;re invited!</h1>
+                <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>
+                  You&apos;re invited!
+                </h1>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 24px' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>{details.inviterName}</strong> has invited you to join a workspace.
+                  <strong style={{ color: 'var(--text-primary)' }}>{details.inviterName}</strong>{' '}
+                  has invited you to join a workspace.
                 </p>
 
                 {/* Invite details */}
@@ -176,11 +200,15 @@ function AcceptInviteContent() {
                   }}
                 >
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Workspace</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>
+                      Workspace
+                    </div>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{details.workspaceName}</div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Your Role</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>
+                      Your Role
+                    </div>
                     <div style={{ fontSize: 14 }}>
                       <span
                         style={{
@@ -197,7 +225,9 @@ function AcceptInviteContent() {
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>Project Access</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>
+                      Project Access
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {details.projectAccess.map((p) => (
                         <span
@@ -226,7 +256,9 @@ function AcceptInviteContent() {
                     padding: '12px 0',
                     fontSize: 14,
                     fontWeight: 600,
-                    background: accepting ? 'var(--brand-dim, rgba(124,58,237,0.2))' : 'var(--brand, #7c3aed)',
+                    background: accepting
+                      ? 'var(--brand-dim, rgba(124,58,237,0.2))'
+                      : 'var(--brand, #7c3aed)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: 'var(--radius-md, 8px)',
@@ -266,9 +298,19 @@ function AcceptInviteContent() {
               >
                 &#9203;
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fbbf24', margin: '0 0 8px' }}>Invitation Expired</h2>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 20px' }}>
-                This invitation link has expired. Please ask the workspace admin to send a new invitation.
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fbbf24', margin: '0 0 8px' }}>
+                Invitation Expired
+              </h2>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                  margin: '0 0 20px',
+                }}
+              >
+                This invitation link has expired. Please ask the workspace admin to send a new
+                invitation.
               </p>
               <button
                 onClick={() => router.push('/login')}
@@ -313,9 +355,19 @@ function AcceptInviteContent() {
               >
                 &#10003;
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#93c5fd', margin: '0 0 8px' }}>Already Accepted</h2>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 20px' }}>
-                This invitation has already been used. If you&apos;re already a member, head to your projects.
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#93c5fd', margin: '0 0 8px' }}>
+                Already Accepted
+              </h2>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                  margin: '0 0 20px',
+                }}
+              >
+                This invitation has already been used. If you&apos;re already a member, head to your
+                projects.
               </p>
               <button
                 onClick={() => router.push('/projects')}
@@ -360,9 +412,19 @@ function AcceptInviteContent() {
               >
                 &#10007;
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f87171', margin: '0 0 8px' }}>Invalid Invitation</h2>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 20px' }}>
-                This invitation link is invalid. Please check the URL or request a new invitation from the workspace admin.
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f87171', margin: '0 0 8px' }}>
+                Invalid Invitation
+              </h2>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                  margin: '0 0 20px',
+                }}
+              >
+                This invitation link is invalid. Please check the URL or request a new invitation
+                from the workspace admin.
               </p>
               <button
                 onClick={() => router.push('/login')}
@@ -389,7 +451,9 @@ function AcceptInviteContent() {
 
 export default function AcceptInvitePage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg-base, #0a0a0f)' }} />}>
+    <Suspense
+      fallback={<div style={{ minHeight: '100vh', background: 'var(--bg-base, #0a0a0f)' }} />}
+    >
       <AcceptInviteContent />
     </Suspense>
   );

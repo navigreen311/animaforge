@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import { explainFeature } from "../unavailable/featureStatus";
+import Link from 'next/link';
+import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { explainFeature } from '../unavailable/featureStatus';
 
 interface NavItemProps {
   icon: LucideIcon;
   label: string;
   href: string;
   active?: boolean;
-  badge?: "new" | "dot";
+  badge?: 'new' | 'dot';
   collapsed?: boolean;
   disabled?: boolean;
 }
@@ -27,18 +27,18 @@ export default function NavItem({
   const [hovered, setHovered] = useState(false);
 
   const color = active
-    ? "var(--text-brand)"
+    ? 'var(--text-brand)'
     : hovered && !disabled
-      ? "var(--text-primary)"
-      : "var(--text-secondary)";
+      ? 'var(--text-primary)'
+      : 'var(--text-secondary)';
 
   const backgroundColor = active
-    ? "var(--bg-active)"
+    ? 'var(--bg-active)'
     : hovered && !disabled
-      ? "var(--bg-hover)"
-      : "transparent";
+      ? 'var(--bg-hover)'
+      : 'transparent';
 
-  const borderLeft = active ? "2px solid var(--brand)" : "2px solid transparent";
+  const borderLeft = active ? '2px solid var(--brand)' : '2px solid transparent';
 
   // A disabled entry is announced as such and simply does not navigate. It used
   // to swallow the click and raise a "coming soon" toast, which told the user
@@ -51,31 +51,31 @@ export default function NavItem({
 
   return (
     <Link
-      href={disabled ? "#" : href}
+      href={disabled ? '#' : href}
       onClick={handleClick}
       aria-disabled={disabled || undefined}
       tabIndex={disabled ? -1 : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: collapsed ? 0 : "8px",
-        justifyContent: collapsed ? "center" : "flex-start",
-        padding: "6px 10px",
-        margin: "1px 8px",
-        borderRadius: "var(--radius-md)",
+        display: 'flex',
+        alignItems: 'center',
+        gap: collapsed ? 0 : '8px',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        padding: '6px 10px',
+        margin: '1px 8px',
+        borderRadius: 'var(--radius-md)',
         backgroundColor,
         borderLeft,
         color,
-        textDecoration: "none",
-        transition: "background-color 150ms ease, color 150ms ease, border-color 150ms ease",
-        position: "relative",
+        textDecoration: 'none',
+        transition: 'background-color 150ms ease, color 150ms ease, border-color 150ms ease',
+        position: 'relative',
       }}
-      aria-current={active ? "page" : undefined}
+      aria-current={active ? 'page' : undefined}
       title={
         disabled
-          ? `${label} — ${explainFeature("nav.unbuiltRoute")}`
+          ? `${label} — ${explainFeature('nav.unbuiltRoute')}`
           : collapsed
             ? label
             : undefined
@@ -85,7 +85,7 @@ export default function NavItem({
         size={16}
         style={{
           flexShrink: 0,
-          transition: "color 150ms ease",
+          transition: 'color 150ms ease',
         }}
       />
 
@@ -93,46 +93,46 @@ export default function NavItem({
         <>
           <span
             style={{
-              fontSize: "12px",
+              fontSize: '12px',
               fontWeight: 500,
               lineHeight: 1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {label}
           </span>
 
-          {badge === "new" && (
+          {badge === 'new' && (
             <span
               style={{
-                fontSize: "9px",
+                fontSize: '9px',
                 fontWeight: 600,
                 lineHeight: 1,
-                padding: "2px 5px",
-                borderRadius: "var(--radius-pill)",
-                backgroundColor: "rgba(52, 211, 153, 0.15)",
-                color: "var(--status-complete-text)",
-                border: "0.5px solid rgba(52, 211, 153, 0.25)",
-                marginLeft: "auto",
+                padding: '2px 5px',
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                color: 'var(--status-complete-text)',
+                border: '0.5px solid rgba(52, 211, 153, 0.25)',
+                marginLeft: 'auto',
                 flexShrink: 0,
-                letterSpacing: "0.02em",
+                letterSpacing: '0.02em',
               }}
             >
               NEW
             </span>
           )}
 
-          {badge === "dot" && (
+          {badge === 'dot' && (
             <span
               style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                backgroundColor: "var(--brand)",
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--brand)',
                 flexShrink: 0,
-                marginLeft: "4px",
+                marginLeft: '4px',
               }}
               aria-label="Notification"
             />
@@ -144,21 +144,21 @@ export default function NavItem({
         <span
           role="tooltip"
           style={{
-            position: "absolute",
-            left: "calc(100% + 8px)",
-            top: "50%",
-            transform: "translateY(-50%)",
-            padding: "4px 8px",
-            borderRadius: "var(--radius-sm, 6px)",
-            backgroundColor: "var(--bg-overlay)",
-            border: "0.5px solid var(--border)",
-            color: "var(--text-primary)",
-            fontSize: "11px",
+            position: 'absolute',
+            left: 'calc(100% + 8px)',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            padding: '4px 8px',
+            borderRadius: 'var(--radius-sm, 6px)',
+            backgroundColor: 'var(--bg-overlay)',
+            border: '0.5px solid var(--border)',
+            color: 'var(--text-primary)',
+            fontSize: '11px',
             fontWeight: 500,
-            whiteSpace: "nowrap",
-            pointerEvents: "none",
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
             zIndex: 50,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
           }}
         >
           {label}

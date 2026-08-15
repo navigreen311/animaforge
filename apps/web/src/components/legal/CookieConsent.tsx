@@ -153,7 +153,14 @@ function SettingsModal({
           margin: '0 16px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             Cookie Settings
           </h2>
@@ -187,8 +194,12 @@ function SettingsModal({
             >
               <span style={{ color: 'var(--brand-light)', marginTop: 2 }}>{cat.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{cat.label}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{cat.description}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {cat.label}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {cat.description}
+                </div>
               </div>
               <Toggle checked={cat.checked} onChange={cat.onChange} disabled={cat.disabled} />
             </div>

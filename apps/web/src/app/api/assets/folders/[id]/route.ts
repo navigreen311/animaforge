@@ -4,10 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // PATCH /api/assets/folders/:id
 // ---------------------------------------------------------------------------
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   let body: { name?: string };

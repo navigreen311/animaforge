@@ -67,8 +67,7 @@ export function useCreateProject() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateProjectInput) =>
-      apiClient.post<Project>('/api/v1/projects', input),
+    mutationFn: (input: CreateProjectInput) => apiClient.post<Project>('/api/v1/projects', input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.lists() });
     },

@@ -1,14 +1,14 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from 'express';
 import {
   AvatarArtifacts,
   CreateCharacterSchema,
   HairParams,
   UpdateCharacterSchema,
   Wardrobe,
-} from "../models/characterSchemas.js";
-import * as characterService from "../services/characterService.js";
+} from '../models/characterSchemas.js';
+import * as characterService from '../services/characterService.js';
 
-const STUB_OWNER_ID = "00000000-0000-0000-0000-000000000001";
+const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
 
 /**
  * Read the `:id` path parameter as a string.
@@ -25,7 +25,7 @@ function pathId(req: Request): string {
 function notFound(res: Response): void {
   res.status(404).json({
     success: false,
-    error: { code: "NOT_FOUND", message: "Character not found" },
+    error: { code: 'NOT_FOUND', message: 'Character not found' },
   });
 }
 
@@ -82,17 +82,10 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 }
 
 /** PUT /characters/:id/hair — persists the Hair tab's state. */
-export async function updateHair(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function updateHair(req: Request, res: Response, next: NextFunction) {
   try {
     const hairParams = HairParams.parse(req.body);
-    const character = await characterService.updateHairParams(
-      pathId(req),
-      hairParams
-    );
+    const character = await characterService.updateHairParams(pathId(req), hairParams);
     if (!character) {
       notFound(res);
       return;
@@ -104,17 +97,10 @@ export async function updateHair(
 }
 
 /** PUT /characters/:id/wardrobe — persists the Wardrobe tab's state. */
-export async function updateWardrobe(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function updateWardrobe(req: Request, res: Response, next: NextFunction) {
   try {
     const wardrobe = Wardrobe.parse(req.body);
-    const character = await characterService.updateWardrobe(
-      pathId(req),
-      wardrobe
-    );
+    const character = await characterService.updateWardrobe(pathId(req), wardrobe);
     if (!character) {
       notFound(res);
       return;
@@ -126,17 +112,10 @@ export async function updateWardrobe(
 }
 
 /** PUT /characters/:id/avatar — records X5 reconstruction artifacts. */
-export async function updateAvatarArtifacts(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function updateAvatarArtifacts(req: Request, res: Response, next: NextFunction) {
   try {
     const artifacts = AvatarArtifacts.parse(req.body);
-    const character = await characterService.updateAvatarArtifacts(
-      pathId(req),
-      artifacts
-    );
+    const character = await characterService.updateAvatarArtifacts(pathId(req), artifacts);
     if (!character) {
       notFound(res);
       return;
@@ -147,11 +126,7 @@ export async function updateAvatarArtifacts(
   }
 }
 
-export async function triggerTwin(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function triggerTwin(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await characterService.triggerDigitalTwin(pathId(req));
     if (!result) {

@@ -28,10 +28,7 @@ function getAnnouncer(): HTMLDivElement {
  * @param message  The text to announce.
  * @param priority `polite` (default) waits for idle; `assertive` interrupts.
  */
-export function announce(
-  message: string,
-  priority: 'polite' | 'assertive' = 'polite',
-) {
+export function announce(message: string, priority: 'polite' | 'assertive' = 'polite') {
   const el = getAnnouncer();
   if (!el) return;
   el.setAttribute('aria-live', priority);

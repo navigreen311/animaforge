@@ -12,9 +12,7 @@ export async function GET(request: NextRequest) {
 
   // Filter by status
   if (status && status !== 'all') {
-    filteredProjects = filteredProjects.filter(
-      (project) => project.status === status,
-    );
+    filteredProjects = filteredProjects.filter((project) => project.status === status);
   }
 
   // Filter by search term (case-insensitive match on title or description)
@@ -45,8 +43,7 @@ export async function GET(request: NextRequest) {
     case 'recent':
     default:
       filteredProjects.sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       );
       break;
   }
@@ -67,10 +64,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!title || title.trim().length === 0) {
-    return NextResponse.json(
-      { error: 'Title is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Title is required' }, { status: 400 });
   }
 
   const now = new Date().toISOString();

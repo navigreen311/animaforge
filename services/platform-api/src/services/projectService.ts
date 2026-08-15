@@ -1,12 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
-import type {
-  Project,
-  CreateProjectInput,
-  UpdateProjectInput,
-} from "../models/projectSchemas.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
+import type { Project, CreateProjectInput, UpdateProjectInput } from '../models/projectSchemas.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 // In-memory fallback store
 const projects = new Map<string, Project>();
 
@@ -20,8 +16,8 @@ export const projectService = {
         data: {
           ownerId,
           title: input.title,
-          description: input.description ?? "",
-          status: "active",
+          description: input.description ?? '',
+          status: 'active',
           worldBible: {},
           brandKit: {},
           styleLock: {},
@@ -34,8 +30,8 @@ export const projectService = {
     const project: Project = {
       id: uuidv4(),
       title: input.title,
-      description: input.description ?? "",
-      status: "active",
+      description: input.description ?? '',
+      status: 'active',
       worldBible: {},
       brandKit: {},
       styleLock: {},
@@ -60,7 +56,7 @@ export const projectService = {
       const [items, total] = await Promise.all([
         requirePrisma().project.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
           include: {
@@ -76,18 +72,13 @@ export const projectService = {
     }
 
     // In-memory fallback
-    let items = Array.from(projects.values()).filter(
-      (p) => p.status !== "deleted",
-    );
+    let items = Array.from(projects.values()).filter((p) => p.status !== 'deleted');
 
     if (status) {
       items = items.filter((p) => p.status === status);
     }
 
-    items.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const total = items.length;
     const start = (page - 1) * limit;
@@ -111,7 +102,7 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (project && project.status === "deleted") return undefined;
+    if (project && project.status === 'deleted') return undefined;
     return project;
   },
 
@@ -131,7 +122,7 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (!project || project.status === "deleted") return undefined;
+    if (!project || project.status === 'deleted') return undefined;
 
     const updated: Project = {
       ...project,
@@ -152,7 +143,7 @@ export const projectService = {
       await requirePrisma().project.update({
         where: { id },
         data: {
-          status: "deleted",
+          status: 'deleted',
           deletedAt: new Date(),
         },
       });
@@ -161,9 +152,9 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (!project || project.status === "deleted") return false;
+    if (!project || project.status === 'deleted') return false;
 
-    project.status = "deleted";
+    project.status = 'deleted';
     project.updatedAt = new Date().toISOString();
     projects.set(id, project);
     return true;
@@ -188,7 +179,7 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (!project || project.status === "deleted") return undefined;
+    if (!project || project.status === 'deleted') return undefined;
 
     project.worldBible = worldBible;
     project.updatedAt = new Date().toISOString();
@@ -215,7 +206,7 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (!project || project.status === "deleted") return undefined;
+    if (!project || project.status === 'deleted') return undefined;
 
     project.brandKit = brandKit;
     project.updatedAt = new Date().toISOString();
@@ -242,7 +233,7 @@ export const projectService = {
 
     // In-memory fallback
     const project = projects.get(id);
-    if (!project || project.status === "deleted") return undefined;
+    if (!project || project.status === 'deleted') return undefined;
 
     project.styleLock = styleLock;
     project.updatedAt = new Date().toISOString();

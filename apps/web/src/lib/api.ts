@@ -159,8 +159,7 @@ async function request<T>(
 /* ------------------------------------------------------------------ */
 
 export const apiClient = {
-  get: <T>(path: string, options?: RequestOptions) =>
-    request<T>('GET', path, undefined, options),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
 
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>('POST', path, body, options),
@@ -197,7 +196,10 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-        throw new ApiError(response.status, errorBody.message || `Upload failed: ${response.status}`);
+        throw new ApiError(
+          response.status,
+          errorBody.message || `Upload failed: ${response.status}`,
+        );
       }
 
       return response.json() as Promise<T>;

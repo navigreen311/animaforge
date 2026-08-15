@@ -5,10 +5,7 @@ export async function POST(request: NextRequest) {
   const { credits } = body as { credits?: number };
 
   if (!credits || credits <= 0) {
-    return NextResponse.json(
-      { error: 'A positive credits amount is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'A positive credits amount is required' }, { status: 400 });
   }
 
   return NextResponse.json({

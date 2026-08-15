@@ -34,10 +34,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json(
-      { error: 'No valid fields provided' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 });
   }
 
   const updatedUser = {

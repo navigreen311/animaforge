@@ -24,11 +24,7 @@ const MOCK_VOICES = [
 
 /* ── Component ───────────────────────────────────────────── */
 
-export default function VoiceSelectorModal({
-  isOpen,
-  onClose,
-  onSelect,
-}: VoiceSelectorModalProps) {
+export default function VoiceSelectorModal({ isOpen, onClose, onSelect }: VoiceSelectorModalProps) {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   /* ── Escape key ──────────────────────────────────────── */
@@ -116,12 +112,8 @@ export default function VoiceSelectorModal({
               alignItems: 'center',
               transition: 'color 150ms',
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = 'var(--text-primary)')
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = 'var(--text-tertiary)')
-            }
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
           >
             <X size={20} />
           </button>
@@ -145,20 +137,14 @@ export default function VoiceSelectorModal({
                   transition: 'background 150ms',
                   cursor: 'default',
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'var(--bg-hover)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = 'transparent')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Speaker icon */}
                 <SpeakerIcon
                   size={18}
                   style={{
-                    color: isPreviewing
-                      ? 'var(--brand)'
-                      : 'var(--text-tertiary)',
+                    color: isPreviewing ? 'var(--brand)' : 'var(--text-tertiary)',
                     flexShrink: 0,
                   }}
                 />
@@ -182,9 +168,7 @@ export default function VoiceSelectorModal({
                   style={{
                     background: 'transparent',
                     border: '0.5px solid var(--border)',
-                    color: isPreviewing
-                      ? 'var(--brand)'
-                      : 'var(--text-secondary)',
+                    color: isPreviewing ? 'var(--brand)' : 'var(--text-secondary)',
                     padding: '4px 10px',
                     borderRadius: 'var(--radius-md)',
                     fontSize: 11,
@@ -194,12 +178,8 @@ export default function VoiceSelectorModal({
                     fontFamily: 'inherit',
                     flexShrink: 0,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.borderColor = 'var(--border-strong)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.borderColor = 'var(--border)')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
                   {isPreviewing ? 'Stop' : 'Preview'}
                 </button>
@@ -221,12 +201,8 @@ export default function VoiceSelectorModal({
                     fontFamily: 'inherit',
                     flexShrink: 0,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.opacity = '0.85')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.opacity = '1')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                 >
                   Select
                 </button>
@@ -243,8 +219,10 @@ export default function VoiceSelectorModal({
             paddingTop: 12,
           }}
         >
-          <UnavailableButton feature="voice.uploadSample" layout="inline"
-                        style={{
+          <UnavailableButton
+            feature="voice.uploadSample"
+            layout="inline"
+            style={{
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -261,8 +239,7 @@ export default function VoiceSelectorModal({
               fontFamily: 'inherit',
             }}
           >
-            <Upload size={16} />
-            + Upload voice sample
+            <Upload size={16} />+ Upload voice sample
           </UnavailableButton>
         </div>
       </div>

@@ -1,10 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface LogoConfig {
   url: string;
-  placement: "top-left" | "center" | "bottom-right";
+  placement: 'top-left' | 'center' | 'bottom-right';
   minSize: number;
 }
 
@@ -22,7 +22,7 @@ export interface SonicConfig {
 
 export interface WatermarkConfig {
   enabled: boolean;
-  position: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
   opacity: number;
 }
 
@@ -54,7 +54,7 @@ export interface BrandKit {
 
 export interface BrandViolation {
   rule: string;
-  severity: "error" | "warning";
+  severity: 'error' | 'warning';
   message: string;
 }
 
@@ -75,7 +75,7 @@ export function clearBrandKits(): void {
 
 export async function createBrandKit(
   projectId: string,
-  data: Omit<BrandKit, "id" | "projectId" | "createdAt" | "updatedAt">,
+  data: Omit<BrandKit, 'id' | 'projectId' | 'createdAt' | 'updatedAt'>,
 ): Promise<BrandKit> {
   const now = new Date().toISOString();
   const kit: BrandKit = {
@@ -95,7 +95,7 @@ export async function getBrandKit(projectId: string): Promise<BrandKit | undefin
 
 export async function updateBrandKit(
   projectId: string,
-  updates: Partial<Omit<BrandKit, "id" | "projectId" | "createdAt" | "updatedAt">>,
+  updates: Partial<Omit<BrandKit, 'id' | 'projectId' | 'createdAt' | 'updatedAt'>>,
 ): Promise<BrandKit | undefined> {
   const existing = brandKits.get(projectId);
   if (!existing) return undefined;
@@ -127,7 +127,7 @@ export async function validateBrandConsistency(
     return {
       compliant: false,
       violations: [
-        { rule: "brand-kit-exists", severity: "error", message: "No brand kit found for project" },
+        { rule: 'brand-kit-exists', severity: 'error', message: 'No brand kit found for project' },
       ],
     };
   }
@@ -136,29 +136,29 @@ export async function validateBrandConsistency(
 
   if (!kit.logo.url) {
     violations.push({
-      rule: "logo-present",
-      severity: "warning",
-      message: "Brand kit has no logo configured — output cannot include logo overlay",
+      rule: 'logo-present',
+      severity: 'warning',
+      message: 'Brand kit has no logo configured — output cannot include logo overlay',
     });
   }
 
   if (!kit.watermark.enabled) {
     violations.push({
-      rule: "watermark-enabled",
-      severity: "warning",
-      message: "Watermark is disabled — output will not include watermark protection",
+      rule: 'watermark-enabled',
+      severity: 'warning',
+      message: 'Watermark is disabled — output will not include watermark protection',
     });
   }
 
   if (!outputUrl) {
     violations.push({
-      rule: "output-url-valid",
-      severity: "error",
-      message: "Output URL is required for validation",
+      rule: 'output-url-valid',
+      severity: 'error',
+      message: 'Output URL is required for validation',
     });
   }
 
-  return { compliant: violations.filter((v) => v.severity === "error").length === 0, violations };
+  return { compliant: violations.filter((v) => v.severity === 'error').length === 0, violations };
 }
 
 export async function generateBrandGuide(
@@ -169,23 +169,23 @@ export async function generateBrandGuide(
 
   const sections: BrandGuideSection[] = [
     {
-      title: "Color Palette",
+      title: 'Color Palette',
       content: `Primary: ${kit.colors.primary}, Secondary: ${kit.colors.secondary}, Accent: ${kit.colors.accent}, Background: ${kit.colors.background}, Text: ${kit.colors.text}`,
     },
     {
-      title: "Typography",
-      content: `Heading: ${kit.typography.headingFont}, Body: ${kit.typography.bodyFont}, Sizes: ${kit.typography.sizes.map((s) => `${s.label}=${s.value}px`).join(", ")}`,
+      title: 'Typography',
+      content: `Heading: ${kit.typography.headingFont}, Body: ${kit.typography.bodyFont}, Sizes: ${kit.typography.sizes.map((s) => `${s.label}=${s.value}px`).join(', ')}`,
     },
     {
-      title: "Logo Usage",
+      title: 'Logo Usage',
       content: `Placement: ${kit.logo.placement}, Minimum size: ${kit.logo.minSize}px`,
     },
     {
-      title: "Sonic Branding",
-      content: `Intro: ${kit.sonic.introUrl || "none"}, Outro: ${kit.sonic.outroUrl || "none"}, Transition: ${kit.sonic.transitionUrl || "none"}`,
+      title: 'Sonic Branding',
+      content: `Intro: ${kit.sonic.introUrl || 'none'}, Outro: ${kit.sonic.outroUrl || 'none'}, Transition: ${kit.sonic.transitionUrl || 'none'}`,
     },
     {
-      title: "Watermark",
+      title: 'Watermark',
       content: `Enabled: ${kit.watermark.enabled}, Position: ${kit.watermark.position}, Opacity: ${kit.watermark.opacity}`,
     },
   ];

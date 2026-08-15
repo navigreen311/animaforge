@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
-import type { Asset, CreateAssetInput } from "../models/assetSchemas.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
+import type { Asset, CreateAssetInput } from '../models/assetSchemas.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 // In-memory fallback store
 const assets: Map<string, Asset> = new Map();
 
@@ -57,7 +57,7 @@ export async function listAssets(query: ListAssetsQuery) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       requirePrisma().asset.count({ where }),
     ]);
@@ -111,10 +111,10 @@ export async function searchAssets(q: string) {
       where: {
         name: {
           contains: q,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
     return { items: items as unknown as Asset[], total: items.length, query: q };

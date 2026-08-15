@@ -175,11 +175,7 @@ export function renderFailedEmail(
 //  4. Credits Low Email
 // ---------------------------------------------------------------------------
 
-export function creditsLowEmail(
-  name: string,
-  remaining: number,
-  burnRate?: number,
-): string {
+export function creditsLowEmail(name: string, remaining: number, burnRate?: number): string {
   const burnInfo = burnRate
     ? `At your current pace (~${burnRate} credits/day), you'll run out in about <strong>${Math.max(1, Math.ceil(remaining / burnRate))} days</strong>.`
     : `You have <strong>${remaining} credits</strong> remaining.`;
@@ -258,11 +254,7 @@ export interface WeeklyStats {
   credits: number;
 }
 
-export function weeklyDigestEmail(
-  name: string,
-  stats: WeeklyStats,
-  topProject?: string,
-): string {
+export function weeklyDigestEmail(name: string, stats: WeeklyStats, topProject?: string): string {
   return emailLayout(`
     ${heading(`Your week in review, ${name}`)}
     ${paragraph("Here's what happened on AnimaForge this week:")}
@@ -338,11 +330,7 @@ export function marketplaceSaleEmail(
 //  9. Milestone Email
 // ---------------------------------------------------------------------------
 
-export function milestoneEmail(
-  name: string,
-  milestone: string,
-  tips: string[],
-): string {
+export function milestoneEmail(name: string, milestone: string, tips: string[]): string {
   const tipsHtml = tips
     .map(
       (tip) =>

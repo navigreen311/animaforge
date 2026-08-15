@@ -1,12 +1,12 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 import {
   type Platform,
   connectPlatform,
   disconnectPlatform as disconnectPlatformBase,
   publishToPlatform,
   getPublicationHistory,
-} from "./socialService.js";
-import { applyBrandToOutput } from "./brandKitService.js";
+} from './socialService.js';
+import { applyBrandToOutput } from './brandKitService.js';
 
 export interface PlatformSpec {
   id: Platform;
@@ -19,44 +19,44 @@ export interface PlatformSpec {
 
 export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
   youtube: {
-    id: "youtube",
-    name: "YouTube",
+    id: 'youtube',
+    name: 'YouTube',
     maxDuration: 43200,
-    maxFileSize: "256GB",
-    aspectRatios: ["16:9", "9:16"],
-    authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    maxFileSize: '256GB',
+    aspectRatios: ['16:9', '9:16'],
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   },
   tiktok: {
-    id: "tiktok",
-    name: "TikTok",
+    id: 'tiktok',
+    name: 'TikTok',
     maxDuration: 600,
-    maxFileSize: "4GB",
-    aspectRatios: ["9:16"],
-    authUrl: "https://www.tiktok.com/auth/authorize/",
+    maxFileSize: '4GB',
+    aspectRatios: ['9:16'],
+    authUrl: 'https://www.tiktok.com/auth/authorize/',
   },
   instagram: {
-    id: "instagram",
-    name: "Instagram",
+    id: 'instagram',
+    name: 'Instagram',
     maxDuration: 3600,
-    maxFileSize: "4GB",
-    aspectRatios: ["1:1", "4:5", "9:16"],
-    authUrl: "https://api.instagram.com/oauth/authorize",
+    maxFileSize: '4GB',
+    aspectRatios: ['1:1', '4:5', '9:16'],
+    authUrl: 'https://api.instagram.com/oauth/authorize',
   },
   twitter: {
-    id: "twitter",
-    name: "Twitter / X",
+    id: 'twitter',
+    name: 'Twitter / X',
     maxDuration: 140,
-    maxFileSize: "512MB",
-    aspectRatios: ["16:9", "1:1"],
-    authUrl: "https://twitter.com/i/oauth2/authorize",
+    maxFileSize: '512MB',
+    aspectRatios: ['16:9', '1:1'],
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
   },
   vimeo: {
-    id: "vimeo",
-    name: "Vimeo",
+    id: 'vimeo',
+    name: 'Vimeo',
     maxDuration: 43200,
-    maxFileSize: "256GB",
-    aspectRatios: ["16:9", "4:3"],
-    authUrl: "https://api.vimeo.com/oauth/authorize",
+    maxFileSize: '256GB',
+    aspectRatios: ['16:9', '4:3'],
+    authUrl: 'https://api.vimeo.com/oauth/authorize',
   },
 };
 
@@ -91,7 +91,7 @@ export interface CalendarEntry {
   id: string;
   platform: Platform;
   videoUrl: string;
-  status: "published" | "scheduled" | "failed";
+  status: 'published' | 'scheduled' | 'failed';
   scheduledAt?: string;
   publishedAt: string;
   date: string;
@@ -133,23 +133,19 @@ export function resetPublisherStores(): void {
   metricsStore.clear();
 }
 
-export function connectOAuth(
-  userId: string,
-  platform: string,
-  _authCode: string,
-): OAuthConnection {
+export function connectOAuth(userId: string, platform: string, _authCode: string): OAuthConnection {
   if (!(platform in PLATFORM_SPECS)) {
-    const err = new Error("Unsupported platform: " + platform) as Error & {
+    const err = new Error('Unsupported platform: ' + platform) as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_PLATFORM";
+    err.code = 'INVALID_PLATFORM';
     throw err;
   }
 
-  const accessToken = platform + "_access_" + uuidv4().slice(0, 8);
-  const refreshToken = platform + "_refresh_" + uuidv4().slice(0, 8);
+  const accessToken = platform + '_access_' + uuidv4().slice(0, 8);
+  const refreshToken = platform + '_refresh_' + uuidv4().slice(0, 8);
   const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
   const conn: OAuthConnection = {
@@ -175,12 +171,12 @@ export async function publishWithBrand(
   brandKitId: string,
 ): Promise<BrandedPublishResult> {
   if (!(platform in PLATFORM_SPECS)) {
-    const err = new Error("Unsupported platform: " + platform) as Error & {
+    const err = new Error('Unsupported platform: ' + platform) as Error & {
       statusCode?: number;
       code?: string;
     };
     err.statusCode = 400;
-    err.code = "INVALID_PLATFORM";
+    err.code = 'INVALID_PLATFORM';
     throw err;
   }
 
@@ -222,12 +218,12 @@ export async function scheduleMultiPlatform(
 
   for (const platform of platforms) {
     if (!(platform in PLATFORM_SPECS)) {
-      const err = new Error("Unsupported platform: " + platform) as Error & {
+      const err = new Error('Unsupported platform: ' + platform) as Error & {
         statusCode?: number;
         code?: string;
       };
       err.statusCode = 400;
-      err.code = "INVALID_PLATFORM";
+      err.code = 'INVALID_PLATFORM';
       throw err;
     }
     entries.push({ platform: platform as Platform, scheduledAt: scheduleAt });
@@ -241,7 +237,7 @@ export async function scheduleMultiPlatform(
     }
   }
 
-  const { schedulePublication } = await import("./socialService.js");
+  const { schedulePublication } = await import('./socialService.js');
   schedulePublication(
     userId,
     platforms.map((p) => ({
@@ -255,10 +251,7 @@ export async function scheduleMultiPlatform(
   return { scheduleId: uuidv4(), publications: entries };
 }
 
-export function getPublishingCalendar(
-  userId: string,
-  month: string,
-): CalendarEntry[] {
+export function getPublishingCalendar(userId: string, month: string): CalendarEntry[] {
   const history = getPublicationHistory(userId);
 
   return history
@@ -301,10 +294,7 @@ export function getPerformanceMetrics(
   return metrics;
 }
 
-export function getCrossplatformReport(
-  userId: string,
-  period: string,
-): CrossPlatformReport {
+export function getCrossplatformReport(userId: string, period: string): CrossPlatformReport {
   const history = getPublicationHistory(userId);
 
   const platformMap = new Map<
@@ -313,11 +303,15 @@ export function getCrossplatformReport(
   >();
 
   for (const pub of history) {
-    const dateStr = pub.publishedAt || pub.scheduledAt || "";
+    const dateStr = pub.publishedAt || pub.scheduledAt || '';
     if (!dateStr.startsWith(period)) continue;
 
     const existing = platformMap.get(pub.platform) ?? {
-      count: 0, views: 0, likes: 0, shares: 0, engagementSum: 0,
+      count: 0,
+      views: 0,
+      likes: 0,
+      shares: 0,
+      engagementSum: 0,
     };
 
     const metrics = metricsStore.get(pub.id);
@@ -353,7 +347,10 @@ export function getCrossplatformReport(
 
   if (totals.publications > 0) {
     totals.avgEngagementRate = parseFloat(
-      (platforms.reduce((sum, p) => sum + p.avgEngagementRate * p.totalPublications, 0) / totals.publications).toFixed(2),
+      (
+        platforms.reduce((sum, p) => sum + p.avgEngagementRate * p.totalPublications, 0) /
+        totals.publications
+      ).toFixed(2),
     );
   }
 

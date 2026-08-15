@@ -20,8 +20,7 @@ export default function StatsCard({ icon, value, label, trend }: StatsCardProps)
         ? 'text-red-400'
         : 'text-gray-400';
 
-  const trendArrow =
-    trend?.direction === 'up' ? '+' : trend?.direction === 'down' ? '-' : '';
+  const trendArrow = trend?.direction === 'up' ? '+' : trend?.direction === 'down' ? '-' : '';
 
   return (
     <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 hover:border-gray-700 transition-colors">

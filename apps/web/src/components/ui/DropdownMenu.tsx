@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -12,7 +12,7 @@ export interface DropdownMenuItem {
   label: string;
   icon?: LucideIcon;
   onClick: () => void;
-  variant?: "default" | "danger";
+  variant?: 'default' | 'danger';
   separator?: boolean;
   disabled?: boolean;
 }
@@ -22,7 +22,7 @@ export interface DropdownMenuProps {
   isOpen: boolean;
   onClose: () => void;
   anchorRef?: React.RefObject<HTMLElement>;
-  position?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+  position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
 }
 
 /* ------------------------------------------------------------------ */
@@ -35,41 +35,39 @@ export interface DropdownMenuProps {
  */
 function resolvePosition(
   anchorEl: HTMLElement | null | undefined,
-  preferred: DropdownMenuProps["position"]
-): NonNullable<DropdownMenuProps["position"]> {
-  if (!anchorEl) return preferred ?? "bottom-left";
+  preferred: DropdownMenuProps['position'],
+): NonNullable<DropdownMenuProps['position']> {
+  if (!anchorEl) return preferred ?? 'bottom-left';
 
   const rect = anchorEl.getBoundingClientRect();
   const nearBottom = rect.bottom > window.innerHeight * 0.7;
 
   if (nearBottom) {
-    if (preferred === "bottom-left" || !preferred) return "top-left";
-    if (preferred === "bottom-right") return "top-right";
+    if (preferred === 'bottom-left' || !preferred) return 'top-left';
+    if (preferred === 'bottom-right') return 'top-right';
   }
 
-  return preferred ?? "bottom-left";
+  return preferred ?? 'bottom-left';
 }
 
-function positionStyles(
-  pos: NonNullable<DropdownMenuProps["position"]>
-): React.CSSProperties {
+function positionStyles(pos: NonNullable<DropdownMenuProps['position']>): React.CSSProperties {
   switch (pos) {
-    case "bottom-left":
-      return { top: "100%", left: 0, marginTop: 4 };
-    case "bottom-right":
-      return { top: "100%", right: 0, marginTop: 4 };
-    case "top-left":
-      return { bottom: "100%", left: 0, marginBottom: 4 };
-    case "top-right":
-      return { bottom: "100%", right: 0, marginBottom: 4 };
+    case 'bottom-left':
+      return { top: '100%', left: 0, marginTop: 4 };
+    case 'bottom-right':
+      return { top: '100%', right: 0, marginTop: 4 };
+    case 'top-left':
+      return { bottom: '100%', left: 0, marginBottom: 4 };
+    case 'top-right':
+      return { bottom: '100%', right: 0, marginBottom: 4 };
   }
 }
 
 const originMap: Record<string, string> = {
-  "bottom-left": "top left",
-  "bottom-right": "top right",
-  "top-left": "bottom left",
-  "top-right": "bottom right",
+  'bottom-left': 'top left',
+  'bottom-right': 'top right',
+  'top-left': 'bottom left',
+  'top-right': 'bottom right',
 };
 
 /* ------------------------------------------------------------------ */
@@ -86,10 +84,7 @@ export default function DropdownMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [focusIndex, setFocusIndex] = useState(-1);
 
-  const resolvedPosition = resolvePosition(
-    anchorRef?.current,
-    preferredPosition
-  );
+  const resolvedPosition = resolvePosition(anchorRef?.current, preferredPosition);
 
   /* ---- Reset focus index whenever menu opens/closes ---- */
   useEffect(() => {
@@ -113,8 +108,8 @@ export default function DropdownMenu({
       }
     }
 
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, [isOpen, onClose, anchorRef]);
 
   /* ---- Keyboard navigation ---- */
@@ -127,7 +122,7 @@ export default function DropdownMenu({
       if (enabledIndices.length === 0) return;
 
       switch (e.key) {
-        case "ArrowDown": {
+        case 'ArrowDown': {
           e.preventDefault();
           const currentPos = enabledIndices.indexOf(focusIndex);
           const next =
@@ -137,7 +132,7 @@ export default function DropdownMenu({
           setFocusIndex(next);
           break;
         }
-        case "ArrowUp": {
+        case 'ArrowUp': {
           e.preventDefault();
           const currentPos = enabledIndices.indexOf(focusIndex);
           const prev =
@@ -147,8 +142,8 @@ export default function DropdownMenu({
           setFocusIndex(prev);
           break;
         }
-        case "Enter":
-        case " ": {
+        case 'Enter':
+        case ' ': {
           e.preventDefault();
           if (focusIndex >= 0 && !items[focusIndex].disabled) {
             items[focusIndex].onClick();
@@ -156,14 +151,14 @@ export default function DropdownMenu({
           }
           break;
         }
-        case "Escape": {
+        case 'Escape': {
           e.preventDefault();
           onClose();
           break;
         }
       }
     },
-    [items, focusIndex, onClose]
+    [items, focusIndex, onClose],
   );
 
   /* ---- Render ---- */
@@ -180,23 +175,22 @@ export default function DropdownMenu({
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.1 }}
           style={{
-            position: "absolute",
+            position: 'absolute',
             ...positionStyles(resolvedPosition),
             transformOrigin: originMap[resolvedPosition],
-            background: "var(--bg-elevated)",
-            border: "0.5px solid var(--border-strong)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow:
-              "0 4px 16px rgba(0, 0, 0, 0.24), 0 1px 4px rgba(0, 0, 0, 0.12)",
+            background: 'var(--bg-elevated)',
+            border: '0.5px solid var(--border-strong)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.24), 0 1px 4px rgba(0, 0, 0, 0.12)',
             zIndex: 50,
             minWidth: 180,
             padding: 4,
-            outline: "none",
+            outline: 'none',
           }}
         >
           {items.map((item, index) => {
             const Icon = item.icon;
-            const isDanger = item.variant === "danger";
+            const isDanger = item.variant === 'danger';
             const isFocused = focusIndex === index;
             const isDisabled = !!item.disabled;
 
@@ -207,8 +201,8 @@ export default function DropdownMenu({
                   <div
                     style={{
                       height: 0,
-                      borderTop: "0.5px solid var(--border)",
-                      margin: "4px 0",
+                      borderTop: '0.5px solid var(--border)',
+                      margin: '4px 0',
                     }}
                   />
                 )}
@@ -228,36 +222,26 @@ export default function DropdownMenu({
                   }}
                   onMouseLeave={() => setFocusIndex(-1)}
                   style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
                     gap: 8,
-                    width: "100%",
-                    padding: "6px 12px",
+                    width: '100%',
+                    padding: '6px 12px',
                     fontSize: 11,
                     lineHeight: 1.4,
-                    border: "none",
-                    background: isFocused
-                      ? "var(--bg-hover)"
-                      : "transparent",
-                    borderRadius: "var(--radius-sm)",
-                    color:
-                      isDanger && isFocused
-                        ? "#ef4444"
-                        : "inherit",
-                    cursor: isDisabled ? "not-allowed" : "pointer",
+                    border: 'none',
+                    background: isFocused ? 'var(--bg-hover)' : 'transparent',
+                    borderRadius: 'var(--radius-sm)',
+                    color: isDanger && isFocused ? '#ef4444' : 'inherit',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                     opacity: isDisabled ? 0.4 : 1,
-                    textAlign: "left",
-                    fontFamily: "inherit",
-                    transition: "background 80ms ease, color 80ms ease",
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                    transition: 'background 80ms ease, color 80ms ease',
                   }}
                 >
-                  {Icon && (
-                    <Icon
-                      size={14}
-                      style={{ flexShrink: 0 }}
-                    />
-                  )}
+                  {Icon && <Icon size={14} style={{ flexShrink: 0 }} />}
                   <span>{item.label}</span>
                 </button>
               </div>

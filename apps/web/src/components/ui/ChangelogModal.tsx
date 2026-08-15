@@ -21,22 +21,49 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     version: '1.2.0',
     date: '2026-04-07',
     items: [
-      { category: 'Major', text: 'Avatar Studio v2 with real-time pose editing and multi-angle preview' },
-      { category: 'New', text: 'Brand Kit — save and reuse color palettes, fonts, and logo watermarks across projects' },
+      {
+        category: 'Major',
+        text: 'Avatar Studio v2 with real-time pose editing and multi-angle preview',
+      },
+      {
+        category: 'New',
+        text: 'Brand Kit — save and reuse color palettes, fonts, and logo watermarks across projects',
+      },
       { category: 'New', text: 'Batch render queue: schedule up to 20 renders at once' },
-      { category: 'Improved', text: 'Script AI now supports 12 additional languages for dialogue generation' },
-      { category: 'Fixed', text: 'Timeline drag-and-drop no longer drops frames when moving clips across tracks' },
-      { category: 'Fixed', text: 'Audio Studio waveform rendering corrected for files longer than 30 minutes' },
+      {
+        category: 'Improved',
+        text: 'Script AI now supports 12 additional languages for dialogue generation',
+      },
+      {
+        category: 'Fixed',
+        text: 'Timeline drag-and-drop no longer drops frames when moving clips across tracks',
+      },
+      {
+        category: 'Fixed',
+        text: 'Audio Studio waveform rendering corrected for files longer than 30 minutes',
+      },
     ],
   },
   {
     version: '1.1.0',
     date: '2026-03-15',
     items: [
-      { category: 'Major', text: 'Style Studio — AI-powered style transfer for consistent visual themes' },
-      { category: 'New', text: 'Team collaboration: invite members, assign roles, leave comments on timeline' },
-      { category: 'New', text: 'Asset Library search now supports tags and natural language queries' },
-      { category: 'Improved', text: 'Generation speed improved by 40% on average for 1080p renders' },
+      {
+        category: 'Major',
+        text: 'Style Studio — AI-powered style transfer for consistent visual themes',
+      },
+      {
+        category: 'New',
+        text: 'Team collaboration: invite members, assign roles, leave comments on timeline',
+      },
+      {
+        category: 'New',
+        text: 'Asset Library search now supports tags and natural language queries',
+      },
+      {
+        category: 'Improved',
+        text: 'Generation speed improved by 40% on average for 1080p renders',
+      },
       { category: 'Improved', text: 'Dashboard overview now shows real-time credit usage chart' },
       { category: 'Fixed', text: 'Export dialog no longer resets format selection on re-open' },
     ],
@@ -46,9 +73,15 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     date: '2026-02-01',
     items: [
       { category: 'Major', text: 'Initial release of AnimaForge' },
-      { category: 'New', text: 'Script AI: generate and refine animation scripts with AI assistance' },
+      {
+        category: 'New',
+        text: 'Script AI: generate and refine animation scripts with AI assistance',
+      },
       { category: 'New', text: 'Avatar Studio: create and customize character avatars' },
-      { category: 'New', text: 'Audio Studio: generate voiceovers, sound effects, and background music' },
+      {
+        category: 'New',
+        text: 'Audio Studio: generate voiceovers, sound effects, and background music',
+      },
       { category: 'New', text: 'Timeline editor with multi-track support and keyframe animation' },
       { category: 'New', text: 'Asset Library with 500+ starter assets' },
     ],

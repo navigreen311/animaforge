@@ -54,10 +54,7 @@ export default function ActivityFeed({ activities, loading }: ActivityFeedProps)
       }}
     >
       {/* Header */}
-      <div
-        className="flex justify-between items-center"
-        style={{ marginBottom: 12 }}
-      >
+      <div className="flex justify-between items-center" style={{ marginBottom: 12 }}>
         <span
           style={{
             fontSize: 12,
@@ -105,10 +102,7 @@ export default function ActivityFeed({ activities, loading }: ActivityFeedProps)
               className="flex flex-row gap-2 items-start"
               style={{
                 padding: '8px 0',
-                borderBottom:
-                  index < activities.length - 1
-                    ? '0.5px solid var(--border)'
-                    : 'none',
+                borderBottom: index < activities.length - 1 ? '0.5px solid var(--border)' : 'none',
               }}
             >
               {/* Dot */}
@@ -150,7 +144,7 @@ export default function ActivityFeed({ activities, loading }: ActivityFeedProps)
                           </span>
                         ) : (
                           <span key={i}>{part}</span>
-                        )
+                        ),
                       )}
                     </>
                   ) : (

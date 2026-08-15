@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!imageUrl) {
-    return NextResponse.json(
-      { error: 'imageUrl is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
   }
 
   return NextResponse.json({

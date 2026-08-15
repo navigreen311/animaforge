@@ -22,7 +22,7 @@ export async function generateVideo(params: VideoGenerationParams): Promise<Vide
   const response = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+      Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -49,12 +49,9 @@ export async function generateVideo(params: VideoGenerationParams): Promise<Vide
 export async function pollVideoJob(
   replicateJobId: string,
 ): Promise<{ status: string; outputUrl?: string; error?: string }> {
-  const response = await fetch(
-    `https://api.replicate.com/v1/predictions/${replicateJobId}`,
-    {
-      headers: { 'Authorization': `Bearer ${process.env.REPLICATE_API_TOKEN}` },
-    },
-  );
+  const response = await fetch(`https://api.replicate.com/v1/predictions/${replicateJobId}`, {
+    headers: { Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}` },
+  });
 
   if (!response.ok) throw new Error('Failed to poll video job');
 

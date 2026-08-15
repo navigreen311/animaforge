@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react';
+import {
+  Search,
+  ChevronDown,
+  ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
+  ExternalLink,
+} from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -62,77 +69,88 @@ const ARTICLES: Article[] = [
     title: 'Platform overview',
     category: 'Getting Started',
     readingTime: '2 min',
-    content: 'AnimaForge is an AI-powered animation platform that lets you go from idea to finished animation in minutes. Explore the dashboard to discover Script AI, Avatar Studio, Style Studio, Audio Studio, and more.',
+    content:
+      'AnimaForge is an AI-powered animation platform that lets you go from idea to finished animation in minutes. Explore the dashboard to discover Script AI, Avatar Studio, Style Studio, Audio Studio, and more.',
   },
   {
     id: 'timeline-basics',
     title: 'Timeline basics: tracks, clips, and keyframes',
     category: 'Projects & Timeline',
     readingTime: '5 min',
-    content: 'The timeline is where you arrange your animation. Each row is a track (video, audio, effects). Drag clips to reorder, resize edges to trim, and double-click to add keyframes for position, opacity, and scale.',
+    content:
+      'The timeline is where you arrange your animation. Each row is a track (video, audio, effects). Drag clips to reorder, resize edges to trim, and double-click to add keyframes for position, opacity, and scale.',
   },
   {
     id: 'script-ai-tips',
     title: 'Writing effective prompts for Script AI',
     category: 'Script AI',
     readingTime: '3 min',
-    content: 'Be specific about mood, setting, and character actions. Use short paragraphs for each scene. Include camera directions like "close-up" or "wide shot" for better results.',
+    content:
+      'Be specific about mood, setting, and character actions. Use short paragraphs for each scene. Include camera directions like "close-up" or "wide shot" for better results.',
   },
   {
     id: 'style-transfer',
     title: 'Applying style transfer to your project',
     category: 'Style Studio',
     readingTime: '4 min',
-    content: 'Style Studio lets you apply a consistent visual look across all scenes. Upload a reference image or choose from built-in styles. The AI will adapt colors, textures, and lighting to match.',
+    content:
+      'Style Studio lets you apply a consistent visual look across all scenes. Upload a reference image or choose from built-in styles. The AI will adapt colors, textures, and lighting to match.',
   },
   {
     id: 'avatar-customization',
     title: 'Customizing avatars with expressions and poses',
     category: 'Avatar Studio',
     readingTime: '5 min',
-    content: 'After generating a base avatar, use the expression editor to create smile, surprise, and talk variants. The pose library lets you set standing, sitting, walking, and custom poses.',
+    content:
+      'After generating a base avatar, use the expression editor to create smile, surprise, and talk variants. The pose library lets you set standing, sitting, walking, and custom poses.',
   },
   {
     id: 'audio-voiceover',
     title: 'Generating voiceovers and sound effects',
     category: 'Audio Studio',
     readingTime: '3 min',
-    content: 'Paste your dialogue text, choose a voice profile, and adjust speed and pitch. For sound effects, describe what you need ("footsteps on gravel") and the AI will generate matching audio.',
+    content:
+      'Paste your dialogue text, choose a voice profile, and adjust speed and pitch. For sound effects, describe what you need ("footsteps on gravel") and the AI will generate matching audio.',
   },
   {
     id: 'asset-library-usage',
     title: 'Browsing and importing assets',
     category: 'Asset Library',
     readingTime: '2 min',
-    content: 'The Asset Library contains backgrounds, props, and UI elements. Use search or browse by category. Drag any asset directly onto the timeline or canvas.',
+    content:
+      'The Asset Library contains backgrounds, props, and UI elements. Use search or browse by category. Drag any asset directly onto the timeline or canvas.',
   },
   {
     id: 'brand-kit-setup',
     title: 'Setting up your Brand Kit',
     category: 'Brand Kit',
     readingTime: '3 min',
-    content: 'Upload your logo, define brand colors, and select fonts. These are automatically available across all projects so every animation stays on-brand.',
+    content:
+      'Upload your logo, define brand colors, and select fonts. These are automatically available across all projects so every animation stays on-brand.',
   },
   {
     id: 'team-collaboration',
     title: 'Inviting team members and managing roles',
     category: 'Team',
     readingTime: '3 min',
-    content: 'Go to Team settings to invite members by email. Assign roles: Viewer (read-only), Editor (can edit projects), or Admin (full access including billing).',
+    content:
+      'Go to Team settings to invite members by email. Assign roles: Viewer (read-only), Editor (can edit projects), or Admin (full access including billing).',
   },
   {
     id: 'api-getting-started',
     title: 'API quickstart',
     category: 'API',
     readingTime: '5 min',
-    content: 'Generate an API key under Settings > API. Use our REST endpoints to create projects, trigger renders, and fetch results programmatically. See the full API reference at docs.animaforge.io.',
+    content:
+      'Generate an API key under Settings > API. Use our REST endpoints to create projects, trigger renders, and fetch results programmatically. See the full API reference at docs.animaforge.io.',
   },
   {
     id: 'troubleshooting-slow',
     title: 'Renders are slow — how to speed them up',
     category: 'Troubleshooting',
     readingTime: '2 min',
-    content: 'Reduce resolution during drafts, limit scenes to under 30 seconds each, and close unused browser tabs. Batch rendering during off-peak hours also helps.',
+    content:
+      'Reduce resolution during drafts, limit scenes to under 30 seconds each, and close unused browser tabs. Batch rendering during off-peak hours also helps.',
   },
 ];
 
@@ -240,7 +258,8 @@ export default function HelpPage() {
                 borderRadius: 'var(--radius-md)',
                 border: 'none',
                 background: selectedCategory === cat.name ? 'var(--bg-active)' : 'transparent',
-                color: selectedCategory === cat.name ? 'var(--text-brand)' : 'var(--text-secondary)',
+                color:
+                  selectedCategory === cat.name ? 'var(--text-brand)' : 'var(--text-secondary)',
                 fontSize: 13,
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -256,15 +275,25 @@ export default function HelpPage() {
 
       {/* ── Main content ──────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+        <h1
+          style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}
+        >
           Help Center
         </h1>
         <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text-secondary)' }}>
-          {selectedCategory ? selectedCategory : 'All articles'} &middot; {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''}
+          {selectedCategory ? selectedCategory : 'All articles'} &middot; {filteredArticles.length}{' '}
+          article{filteredArticles.length !== 1 ? 's' : ''}
         </p>
 
         {filteredArticles.length === 0 && (
-          <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 40, textAlign: 'center' }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-tertiary)',
+              marginTop: 40,
+              textAlign: 'center',
+            }}
+          >
             No articles found. Try a different search term.
           </p>
         )}
@@ -299,11 +328,19 @@ export default function HelpPage() {
                   }}
                 >
                   {isExpanded ? (
-                    <ChevronDown size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                    <ChevronDown
+                      size={14}
+                      style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
+                    />
                   ) : (
-                    <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                    <ChevronRight
+                      size={14}
+                      style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
+                    />
                   )}
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>
+                  <span
+                    style={{ flex: 1, fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
+                  >
                     {article.title}
                   </span>
                   <span
@@ -359,12 +396,18 @@ export default function HelpPage() {
                           type="button"
                           onClick={() => setHelpfulVotes((v) => ({ ...v, [article.id]: 'up' }))}
                           style={{
-                            background: helpfulVotes[article.id] === 'up' ? 'var(--status-complete-bg)' : 'transparent',
+                            background:
+                              helpfulVotes[article.id] === 'up'
+                                ? 'var(--status-complete-bg)'
+                                : 'transparent',
                             border: '0.5px solid var(--border-strong)',
                             borderRadius: 'var(--radius-sm)',
                             padding: '4px 8px',
                             cursor: 'pointer',
-                            color: helpfulVotes[article.id] === 'up' ? 'var(--status-complete-text)' : 'var(--text-tertiary)',
+                            color:
+                              helpfulVotes[article.id] === 'up'
+                                ? 'var(--status-complete-text)'
+                                : 'var(--text-tertiary)',
                           }}
                           aria-label="Helpful"
                         >
@@ -374,12 +417,18 @@ export default function HelpPage() {
                           type="button"
                           onClick={() => setHelpfulVotes((v) => ({ ...v, [article.id]: 'down' }))}
                           style={{
-                            background: helpfulVotes[article.id] === 'down' ? 'rgba(239,68,68,0.12)' : 'transparent',
+                            background:
+                              helpfulVotes[article.id] === 'down'
+                                ? 'rgba(239,68,68,0.12)'
+                                : 'transparent',
                             border: '0.5px solid var(--border-strong)',
                             borderRadius: 'var(--radius-sm)',
                             padding: '4px 8px',
                             cursor: 'pointer',
-                            color: helpfulVotes[article.id] === 'down' ? '#f87171' : 'var(--text-tertiary)',
+                            color:
+                              helpfulVotes[article.id] === 'down'
+                                ? '#f87171'
+                                : 'var(--text-tertiary)',
                           }}
                           aria-label="Not helpful"
                         >

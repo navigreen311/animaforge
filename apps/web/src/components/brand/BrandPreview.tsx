@@ -39,11 +39,16 @@ export default function BrandPreview({ colors, typography, logo, watermark }: Br
 
   const watermarkPositionClass = (() => {
     switch (watermark.position) {
-      case 'top-left': return 'top-2 left-2';
-      case 'top-right': return 'top-2 right-2';
-      case 'bottom-left': return 'bottom-2 left-2';
-      case 'center': return 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
-      default: return 'bottom-2 right-2';
+      case 'top-left':
+        return 'top-2 left-2';
+      case 'top-right':
+        return 'top-2 right-2';
+      case 'bottom-left':
+        return 'bottom-2 left-2';
+      case 'center':
+        return 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
+      default:
+        return 'bottom-2 right-2';
     }
   })();
 
@@ -83,18 +88,12 @@ export default function BrandPreview({ colors, typography, logo, watermark }: Br
           </p>
           {/* Accent bar */}
           <div className="flex gap-2 mt-2">
-            <div
-              className="h-1.5 w-16 rounded-full"
-              style={{ backgroundColor: colors.primary }}
-            />
+            <div className="h-1.5 w-16 rounded-full" style={{ backgroundColor: colors.primary }} />
             <div
               className="h-1.5 w-10 rounded-full"
               style={{ backgroundColor: colors.secondary }}
             />
-            <div
-              className="h-1.5 w-6 rounded-full"
-              style={{ backgroundColor: colors.accent }}
-            />
+            <div className="h-1.5 w-6 rounded-full" style={{ backgroundColor: colors.accent }} />
           </div>
         </div>
 

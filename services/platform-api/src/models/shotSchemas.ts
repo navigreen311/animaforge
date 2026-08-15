@@ -1,14 +1,14 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const SceneGraphSchema = z.object({
-  subject: z.string().min(1, "Subject is required"),
+  subject: z.string().min(1, 'Subject is required'),
   camera: z.object({
     angle: z.string().min(1),
     movement: z.string().min(1),
     focal_length: z.string().optional(),
   }),
-  action: z.string().min(1, "Action is required"),
-  emotion: z.string().min(1, "Emotion is required"),
+  action: z.string().min(1, 'Action is required'),
+  emotion: z.string().min(1, 'Emotion is required'),
   timing: z.object({
     duration_ms: z.number().int().positive(),
     pacing: z.string().min(1),
@@ -18,11 +18,11 @@ export const SceneGraphSchema = z.object({
 
 export const CreateShotSchema = z.object({
   sceneGraph: SceneGraphSchema,
-  prompt: z.string().min(1, "Prompt is required").max(2000),
+  prompt: z.string().min(1, 'Prompt is required').max(2000),
   styleRef: z.string().min(1).optional(),
   characterRefs: z.array(z.string()).default([]),
   durationMs: z.number().int().positive(),
-  aspectRatio: z.string().regex(/^\d+:\d+$/, "Aspect ratio must be in format W:H"),
+  aspectRatio: z.string().regex(/^\d+:\d+$/, 'Aspect ratio must be in format W:H'),
 });
 
 export const UpdateShotSchema = z.object({
@@ -31,7 +31,10 @@ export const UpdateShotSchema = z.object({
   styleRef: z.string().min(1).optional(),
   characterRefs: z.array(z.string()).optional(),
   durationMs: z.number().int().positive().optional(),
-  aspectRatio: z.string().regex(/^\d+:\d+$/).optional(),
+  aspectRatio: z
+    .string()
+    .regex(/^\d+:\d+$/)
+    .optional(),
 });
 
 export const ShotParamsSchema = z.object({
@@ -50,7 +53,7 @@ export type CreateShotInput = z.infer<typeof CreateShotSchema>;
 export type UpdateShotInput = z.infer<typeof UpdateShotSchema>;
 export type SceneGraph = z.infer<typeof SceneGraphSchema>;
 
-export type ShotStatus = "draft" | "approved" | "locked";
+export type ShotStatus = 'draft' | 'approved' | 'locked';
 
 export interface Shot {
   id: string;

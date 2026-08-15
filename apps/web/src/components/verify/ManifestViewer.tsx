@@ -38,9 +38,7 @@ function ManifestNodeItem({ node, depth = 0 }: { node: ManifestNode; depth?: num
           <span className="w-4.5" />
         )}
         <span className="text-sm font-medium text-gray-700">{node.label}</span>
-        {node.value && (
-          <span className="text-sm text-gray-500 font-mono">{node.value}</span>
-        )}
+        {node.value && <span className="text-sm text-gray-500 font-mono">{node.value}</span>}
       </div>
       {hasChildren && expanded && (
         <div>

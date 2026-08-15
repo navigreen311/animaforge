@@ -18,11 +18,7 @@ export default function TableRowSkeleton({ columns = 5 }: TableRowSkeletonProps)
       }}
     >
       {Array.from({ length: columns }).map((_, i) => (
-        <Skeleton
-          key={i}
-          width={i === 0 ? '80%' : '60%'}
-          height={12}
-        />
+        <Skeleton key={i} width={i === 0 ? '80%' : '60%'} height={12} />
       ))}
     </div>
   );

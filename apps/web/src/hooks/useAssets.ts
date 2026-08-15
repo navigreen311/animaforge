@@ -22,8 +22,7 @@ export interface Asset {
 
 const assetKeys = {
   all: ['assets'] as const,
-  list: (projectId: string, type?: string) =>
-    [...assetKeys.all, 'list', projectId, type] as const,
+  list: (projectId: string, type?: string) => [...assetKeys.all, 'list', projectId, type] as const,
   search: (query: string) => [...assetKeys.all, 'search', query] as const,
 };
 

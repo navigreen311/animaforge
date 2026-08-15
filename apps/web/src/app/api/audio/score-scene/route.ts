@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!projectId || !shotIds || shotIds.length === 0) {
-    return NextResponse.json(
-      { error: 'projectId and shotIds are required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'projectId and shotIds are required' }, { status: 400 });
   }
 
   const result = {

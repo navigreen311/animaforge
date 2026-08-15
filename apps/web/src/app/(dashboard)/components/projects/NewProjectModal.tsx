@@ -107,11 +107,7 @@ export default function NewProjectModal() {
 
   /* ── Enter submits (when not in textarea) ──────────── */
   const handleKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if (
-      e.key === 'Enter' &&
-      (e.target as HTMLElement).tagName !== 'TEXTAREA' &&
-      !submitting
-    ) {
+    if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && !submitting) {
       e.preventDefault();
       handleSubmit();
     }
@@ -253,9 +249,7 @@ export default function NewProjectModal() {
                       gap: 6,
                       padding: '12px 4px',
                       borderRadius: 'var(--radius-md)',
-                      border: selected
-                        ? '1.5px solid var(--brand)'
-                        : '0.5px solid var(--border)',
+                      border: selected ? '1.5px solid var(--brand)' : '0.5px solid var(--border)',
                       background: selected ? 'var(--brand-dim)' : 'var(--bg-surface)',
                       color: selected ? 'var(--brand)' : 'var(--text-secondary)',
                       cursor: submitting ? 'not-allowed' : 'pointer',
@@ -265,12 +259,10 @@ export default function NewProjectModal() {
                       fontWeight: 500,
                     }}
                     onMouseEnter={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border-strong)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border)';
                     }}
                   >
                     <Icon size={20} />
@@ -315,12 +307,10 @@ export default function NewProjectModal() {
                       fontFamily: 'inherit',
                     }}
                     onMouseEnter={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border-strong)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border)';
                     }}
                   >
                     <span
@@ -373,21 +363,17 @@ export default function NewProjectModal() {
                       gap: 4,
                       padding: '14px 8px',
                       borderRadius: 'var(--radius-md)',
-                      border: selected
-                        ? '1.5px solid var(--brand)'
-                        : '0.5px solid var(--border)',
+                      border: selected ? '1.5px solid var(--brand)' : '0.5px solid var(--border)',
                       background: selected ? 'var(--brand-dim)' : 'var(--bg-surface)',
                       cursor: submitting ? 'not-allowed' : 'pointer',
                       transition: 'all 150ms',
                       fontFamily: 'inherit',
                     }}
                     onMouseEnter={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border-strong)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border-strong)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!selected)
-                        e.currentTarget.style.borderColor = 'var(--border)';
+                      if (!selected) e.currentTarget.style.borderColor = 'var(--border)';
                     }}
                   >
                     <span
@@ -461,12 +447,7 @@ export default function NewProjectModal() {
                 if (!e.currentTarget.disabled) e.currentTarget.style.opacity = '1';
               }}
             >
-              {submitting && (
-                <Loader
-                  size={14}
-                  style={{ animation: 'spin 1s linear infinite' }}
-                />
-              )}
+              {submitting && <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />}
               {submitting ? 'Creating...' : 'Create Project'}
             </button>
           </div>
@@ -534,9 +515,7 @@ function FieldGroup({
       >
         <span style={labelStyle}>
           {label}
-          {required && (
-            <span style={{ color: 'var(--brand)', marginLeft: 2 }}>*</span>
-          )}
+          {required && <span style={{ color: 'var(--brand)', marginLeft: 2 }}>*</span>}
         </span>
         {counter && (
           <span

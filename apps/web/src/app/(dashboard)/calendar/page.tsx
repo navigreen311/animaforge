@@ -78,12 +78,28 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: 'list', label: 'List' },
 ];
 
-const EVENT_COLORS: Record<EventType, { bg: string; text: string; border: string; label: string }> = {
-  shot: { bg: 'rgba(124, 58, 237, 0.18)', text: '#c4b5fd', border: '#7c3aed', label: 'Shot due' },
-  milestone: { bg: 'rgba(34, 197, 94, 0.18)', text: '#86efac', border: '#22c55e', label: 'Milestone' },
-  meeting: { bg: 'rgba(59, 130, 246, 0.18)', text: '#93c5fd', border: '#3b82f6', label: 'Team meeting' },
-  review: { bg: 'rgba(251, 191, 36, 0.18)', text: '#fcd34d', border: '#fbbf24', label: 'Review deadline' },
-};
+const EVENT_COLORS: Record<EventType, { bg: string; text: string; border: string; label: string }> =
+  {
+    shot: { bg: 'rgba(124, 58, 237, 0.18)', text: '#c4b5fd', border: '#7c3aed', label: 'Shot due' },
+    milestone: {
+      bg: 'rgba(34, 197, 94, 0.18)',
+      text: '#86efac',
+      border: '#22c55e',
+      label: 'Milestone',
+    },
+    meeting: {
+      bg: 'rgba(59, 130, 246, 0.18)',
+      text: '#93c5fd',
+      border: '#3b82f6',
+      label: 'Team meeting',
+    },
+    review: {
+      bg: 'rgba(251, 191, 36, 0.18)',
+      text: '#fcd34d',
+      border: '#fbbf24',
+      label: 'Review deadline',
+    },
+  };
 
 const PHASE_COLORS: Record<Phase, string> = {
   'pre-prod': '#3b82f6',
@@ -111,56 +127,296 @@ function iso(y: number, m: number, d: number, h = 9): string {
 }
 
 const MOCK_EVENTS: CalendarEvent[] = [
-  { id: 'e1',  title: 'Hero intro shot', type: 'shot', projectId: 'p1', date: iso(YEAR, MONTH, 3, 10), startHour: 10, durationHours: 2, owner: 'Aria Chen', status: 'complete', description: 'Final render delivery for scene 1 hero shot.' },
-  { id: 'e2',  title: 'Daily standup', type: 'meeting', projectId: 'p1', date: iso(YEAR, MONTH, 6, 9), startHour: 9, durationHours: 1, owner: 'Team', status: 'complete' },
-  { id: 'e3',  title: 'Pre-prod sign-off', type: 'milestone', projectId: 'p1', date: iso(YEAR, MONTH, 7, 14), owner: 'Director', status: 'complete', description: 'Pre-production phase officially closed.' },
-  { id: 'e4',  title: 'Scene 3 review', type: 'review', projectId: 'p2', date: iso(YEAR, MONTH, 8, 15), startHour: 15, durationHours: 1, owner: 'Jordan Lee', status: 'complete' },
-  { id: 'e5',  title: 'Shot 12 due', type: 'shot', projectId: 'p2', date: iso(YEAR, MONTH, 9, 12), startHour: 12, durationHours: 3, owner: 'Mika Tanaka', status: 'in_progress', description: 'Chase sequence rooftop approach.' },
-  { id: 'e6',  title: 'Daily standup', type: 'meeting', projectId: 'p1', date: iso(YEAR, MONTH, 9, 9), startHour: 9, durationHours: 1, owner: 'Team', status: 'in_progress' },
-  { id: 'e7',  title: 'Render window', type: 'meeting', projectId: 'p3', date: iso(YEAR, MONTH, 10, 13), startHour: 13, durationHours: 4, owner: 'Render Farm', status: 'scheduled' },
-  { id: 'e8',  title: 'Director review', type: 'review', projectId: 'p1', date: iso(YEAR, MONTH, 11, 16), startHour: 16, durationHours: 2, owner: 'Director', status: 'scheduled' },
-  { id: 'e9',  title: 'Shot 14 due', type: 'shot', projectId: 'p1', date: iso(YEAR, MONTH, 13, 11), owner: 'Kael Rivers', status: 'scheduled' },
-  { id: 'e10', title: 'Animatic lock', type: 'milestone', projectId: 'p2', date: iso(YEAR, MONTH, 14, 10), owner: 'Morath Vale', status: 'scheduled', description: 'Locked animatic ready for production handoff.' },
-  { id: 'e11', title: 'Client review', type: 'review', projectId: 'p2', date: iso(YEAR, MONTH, 16, 14), startHour: 14, durationHours: 2, owner: 'Sarah Chen', status: 'scheduled' },
-  { id: 'e12', title: 'Shot 17 due', type: 'shot', projectId: 'p3', date: iso(YEAR, MONTH, 17, 15), owner: 'Aria Chen', status: 'scheduled' },
-  { id: 'e13', title: 'Production kickoff', type: 'milestone', projectId: 'p3', date: iso(YEAR, MONTH, 20, 9), owner: 'Director', status: 'scheduled' },
-  { id: 'e14', title: 'Color pass review', type: 'review', projectId: 'p1', date: iso(YEAR, MONTH, 22, 13), owner: 'Jordan Lee', status: 'scheduled' },
-  { id: 'e15', title: 'Shot 21 due', type: 'shot', projectId: 'p2', date: iso(YEAR, MONTH, 28, 12), owner: 'Mika Tanaka', status: 'scheduled' },
+  {
+    id: 'e1',
+    title: 'Hero intro shot',
+    type: 'shot',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 3, 10),
+    startHour: 10,
+    durationHours: 2,
+    owner: 'Aria Chen',
+    status: 'complete',
+    description: 'Final render delivery for scene 1 hero shot.',
+  },
+  {
+    id: 'e2',
+    title: 'Daily standup',
+    type: 'meeting',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 6, 9),
+    startHour: 9,
+    durationHours: 1,
+    owner: 'Team',
+    status: 'complete',
+  },
+  {
+    id: 'e3',
+    title: 'Pre-prod sign-off',
+    type: 'milestone',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 7, 14),
+    owner: 'Director',
+    status: 'complete',
+    description: 'Pre-production phase officially closed.',
+  },
+  {
+    id: 'e4',
+    title: 'Scene 3 review',
+    type: 'review',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 8, 15),
+    startHour: 15,
+    durationHours: 1,
+    owner: 'Jordan Lee',
+    status: 'complete',
+  },
+  {
+    id: 'e5',
+    title: 'Shot 12 due',
+    type: 'shot',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 9, 12),
+    startHour: 12,
+    durationHours: 3,
+    owner: 'Mika Tanaka',
+    status: 'in_progress',
+    description: 'Chase sequence rooftop approach.',
+  },
+  {
+    id: 'e6',
+    title: 'Daily standup',
+    type: 'meeting',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 9, 9),
+    startHour: 9,
+    durationHours: 1,
+    owner: 'Team',
+    status: 'in_progress',
+  },
+  {
+    id: 'e7',
+    title: 'Render window',
+    type: 'meeting',
+    projectId: 'p3',
+    date: iso(YEAR, MONTH, 10, 13),
+    startHour: 13,
+    durationHours: 4,
+    owner: 'Render Farm',
+    status: 'scheduled',
+  },
+  {
+    id: 'e8',
+    title: 'Director review',
+    type: 'review',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 11, 16),
+    startHour: 16,
+    durationHours: 2,
+    owner: 'Director',
+    status: 'scheduled',
+  },
+  {
+    id: 'e9',
+    title: 'Shot 14 due',
+    type: 'shot',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 13, 11),
+    owner: 'Kael Rivers',
+    status: 'scheduled',
+  },
+  {
+    id: 'e10',
+    title: 'Animatic lock',
+    type: 'milestone',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 14, 10),
+    owner: 'Morath Vale',
+    status: 'scheduled',
+    description: 'Locked animatic ready for production handoff.',
+  },
+  {
+    id: 'e11',
+    title: 'Client review',
+    type: 'review',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 16, 14),
+    startHour: 14,
+    durationHours: 2,
+    owner: 'Sarah Chen',
+    status: 'scheduled',
+  },
+  {
+    id: 'e12',
+    title: 'Shot 17 due',
+    type: 'shot',
+    projectId: 'p3',
+    date: iso(YEAR, MONTH, 17, 15),
+    owner: 'Aria Chen',
+    status: 'scheduled',
+  },
+  {
+    id: 'e13',
+    title: 'Production kickoff',
+    type: 'milestone',
+    projectId: 'p3',
+    date: iso(YEAR, MONTH, 20, 9),
+    owner: 'Director',
+    status: 'scheduled',
+  },
+  {
+    id: 'e14',
+    title: 'Color pass review',
+    type: 'review',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 22, 13),
+    owner: 'Jordan Lee',
+    status: 'scheduled',
+  },
+  {
+    id: 'e15',
+    title: 'Shot 21 due',
+    type: 'shot',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 28, 12),
+    owner: 'Mika Tanaka',
+    status: 'scheduled',
+  },
 ];
 
 const MOCK_LIST_EVENTS: CalendarEvent[] = [
   ...MOCK_EVENTS,
-  { id: 'l1', title: 'VO session',       type: 'meeting',   projectId: 'p1', date: iso(YEAR, MONTH, 4, 10), owner: 'Aria Chen',   status: 'complete' },
-  { id: 'l2', title: 'Shot 4 due',       type: 'shot',      projectId: 'p1', date: iso(YEAR, MONTH, 5, 12), owner: 'Kael Rivers', status: 'complete' },
-  { id: 'l3', title: 'Style review',     type: 'review',    projectId: 'p3', date: iso(YEAR, MONTH, 12, 14), owner: 'Sarah Chen', status: 'scheduled' },
-  { id: 'l4', title: 'Shot 9 due',       type: 'shot',      projectId: 'p3', date: iso(YEAR, MONTH, 15, 11), owner: 'Morath Vale', status: 'scheduled' },
-  { id: 'l5', title: 'Final delivery',   type: 'milestone', projectId: 'p2', date: iso(YEAR, MONTH, 30, 17), owner: 'Director',    status: 'scheduled' },
+  {
+    id: 'l1',
+    title: 'VO session',
+    type: 'meeting',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 4, 10),
+    owner: 'Aria Chen',
+    status: 'complete',
+  },
+  {
+    id: 'l2',
+    title: 'Shot 4 due',
+    type: 'shot',
+    projectId: 'p1',
+    date: iso(YEAR, MONTH, 5, 12),
+    owner: 'Kael Rivers',
+    status: 'complete',
+  },
+  {
+    id: 'l3',
+    title: 'Style review',
+    type: 'review',
+    projectId: 'p3',
+    date: iso(YEAR, MONTH, 12, 14),
+    owner: 'Sarah Chen',
+    status: 'scheduled',
+  },
+  {
+    id: 'l4',
+    title: 'Shot 9 due',
+    type: 'shot',
+    projectId: 'p3',
+    date: iso(YEAR, MONTH, 15, 11),
+    owner: 'Morath Vale',
+    status: 'scheduled',
+  },
+  {
+    id: 'l5',
+    title: 'Final delivery',
+    type: 'milestone',
+    projectId: 'p2',
+    date: iso(YEAR, MONTH, 30, 17),
+    owner: 'Director',
+    status: 'scheduled',
+  },
 ];
 
 const GANTT_TASKS: GanttTask[] = [
-  { id: 't1', name: 'Script lock',        projectId: 'p1', startDay: 0,  duration: 5,  phase: 'pre-prod' },
-  { id: 't2', name: 'Storyboards',        projectId: 'p1', startDay: 4,  duration: 7,  phase: 'pre-prod', dependencies: ['t1'] },
-  { id: 't3', name: 'Animatic',           projectId: 'p1', startDay: 10, duration: 5,  phase: 'pre-prod', dependencies: ['t2'] },
-  { id: 't4', name: 'Shot generation',    projectId: 'p1', startDay: 14, duration: 12, phase: 'production', dependencies: ['t3'] },
-  { id: 't5', name: 'Character animation', projectId: 'p2', startDay: 6, duration: 10, phase: 'production' },
-  { id: 't6', name: 'VFX integration',    projectId: 'p2', startDay: 15, duration: 8,  phase: 'production', dependencies: ['t5'] },
-  { id: 't7', name: 'Color grading',      projectId: 'p3', startDay: 20, duration: 6,  phase: 'post' },
-  { id: 't8', name: 'Final mix + deliver', projectId: 'p3', startDay: 24, duration: 4,  phase: 'post', dependencies: ['t7'] },
+  { id: 't1', name: 'Script lock', projectId: 'p1', startDay: 0, duration: 5, phase: 'pre-prod' },
+  {
+    id: 't2',
+    name: 'Storyboards',
+    projectId: 'p1',
+    startDay: 4,
+    duration: 7,
+    phase: 'pre-prod',
+    dependencies: ['t1'],
+  },
+  {
+    id: 't3',
+    name: 'Animatic',
+    projectId: 'p1',
+    startDay: 10,
+    duration: 5,
+    phase: 'pre-prod',
+    dependencies: ['t2'],
+  },
+  {
+    id: 't4',
+    name: 'Shot generation',
+    projectId: 'p1',
+    startDay: 14,
+    duration: 12,
+    phase: 'production',
+    dependencies: ['t3'],
+  },
+  {
+    id: 't5',
+    name: 'Character animation',
+    projectId: 'p2',
+    startDay: 6,
+    duration: 10,
+    phase: 'production',
+  },
+  {
+    id: 't6',
+    name: 'VFX integration',
+    projectId: 'p2',
+    startDay: 15,
+    duration: 8,
+    phase: 'production',
+    dependencies: ['t5'],
+  },
+  { id: 't7', name: 'Color grading', projectId: 'p3', startDay: 20, duration: 6, phase: 'post' },
+  {
+    id: 't8',
+    name: 'Final mix + deliver',
+    projectId: 'p3',
+    startDay: 24,
+    duration: 4,
+    phase: 'post',
+    dependencies: ['t7'],
+  },
 ];
 
 const TEAM_MEMBERS: TeamMember[] = [
-  { id: 'm1', name: 'Aria Chen',    role: 'Director',      workload: 85, color: '#7c3aed' },
-  { id: 'm2', name: 'Kael Rivers',  role: 'Lead Animator', workload: 92, color: '#3b82f6' },
-  { id: 'm3', name: 'Mika Tanaka',  role: 'VFX Artist',    workload: 64, color: '#22c55e' },
-  { id: 'm4', name: 'Morath Vale',  role: 'Storyboard',    workload: 45, color: '#fbbf24' },
-  { id: 'm5', name: 'Sarah Chen',   role: 'Reviewer',      workload: 30, color: '#f472b6' },
+  { id: 'm1', name: 'Aria Chen', role: 'Director', workload: 85, color: '#7c3aed' },
+  { id: 'm2', name: 'Kael Rivers', role: 'Lead Animator', workload: 92, color: '#3b82f6' },
+  { id: 'm3', name: 'Mika Tanaka', role: 'VFX Artist', workload: 64, color: '#22c55e' },
+  { id: 'm4', name: 'Morath Vale', role: 'Storyboard', workload: 45, color: '#fbbf24' },
+  { id: 'm5', name: 'Sarah Chen', role: 'Reviewer', workload: 30, color: '#f472b6' },
 ];
 
 /* ------------------------------------------------------------------ */
 /*  Date helpers                                                       */
 /* ------------------------------------------------------------------ */
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function startOfMonth(year: number, month: number): Date {
@@ -172,7 +428,11 @@ function daysInMonth(year: number, month: number): number {
 }
 
 function sameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function addDays(d: Date, n: number): Date {
@@ -208,11 +468,11 @@ export default function CalendarPage() {
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
   const visibleEvents = useMemo(() => {
-    return MOCK_EVENTS.filter(e => projectFilter === 'all' || e.projectId === projectFilter);
+    return MOCK_EVENTS.filter((e) => projectFilter === 'all' || e.projectId === projectFilter);
   }, [projectFilter]);
 
   const visibleListEvents = useMemo(() => {
-    const filtered = MOCK_LIST_EVENTS.filter(e => {
+    const filtered = MOCK_LIST_EVENTS.filter((e) => {
       if (projectFilter !== 'all' && e.projectId !== projectFilter) return false;
       if (listFilter === 'shots' && e.type !== 'shot') return false;
       if (listFilter === 'milestones' && e.type !== 'milestone') return false;
@@ -222,12 +482,24 @@ export default function CalendarPage() {
     const sorted = [...filtered].sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
-        case 'date':    cmp = new Date(a.date).getTime() - new Date(b.date).getTime(); break;
-        case 'event':   cmp = a.title.localeCompare(b.title); break;
-        case 'project': cmp = a.projectId.localeCompare(b.projectId); break;
-        case 'type':    cmp = a.type.localeCompare(b.type); break;
-        case 'owner':   cmp = a.owner.localeCompare(b.owner); break;
-        case 'status':  cmp = a.status.localeCompare(b.status); break;
+        case 'date':
+          cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'event':
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case 'project':
+          cmp = a.projectId.localeCompare(b.projectId);
+          break;
+        case 'type':
+          cmp = a.type.localeCompare(b.type);
+          break;
+        case 'owner':
+          cmp = a.owner.localeCompare(b.owner);
+          break;
+        case 'status':
+          cmp = a.status.localeCompare(b.status);
+          break;
       }
       return sortAsc ? cmp : -cmp;
     });
@@ -238,7 +510,7 @@ export default function CalendarPage() {
     const weekStart = startOfWeek(today);
     const weekEnd = addDays(weekStart, 7);
     return visibleEvents
-      .filter(e => {
+      .filter((e) => {
         const d = new Date(e.date);
         return d >= weekStart && d < weekEnd;
       })
@@ -246,14 +518,17 @@ export default function CalendarPage() {
   }, [visibleEvents]);
 
   const stats = useMemo(() => {
-    const shots = visibleEvents.filter(e => e.type === 'shot').length;
-    const milestones = visibleEvents.filter(e => e.type === 'milestone').length;
+    const shots = visibleEvents.filter((e) => e.type === 'shot').length;
+    const milestones = visibleEvents.filter((e) => e.type === 'milestone').length;
     return { shots, milestones, teamAssigned: TEAM_MEMBERS.length };
   }, [visibleEvents]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
-    else { setSortKey(key); setSortAsc(true); }
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
   };
 
   const navigatePrev = () => {
@@ -287,7 +562,7 @@ export default function CalendarPage() {
     return cells;
   }, [cursor]);
 
-  const eventsForDay = (d: Date) => visibleEvents.filter(e => sameDay(new Date(e.date), d));
+  const eventsForDay = (d: Date) => visibleEvents.filter((e) => sameDay(new Date(e.date), d));
 
   /* ---------------- Render ---------------- */
 
@@ -296,9 +571,26 @@ export default function CalendarPage() {
       {/* ============== Main column ============== */}
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 18,
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
+            <h1
+              style={{
+                fontSize: 22,
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
               Production Calendar
             </h1>
             <select
@@ -315,16 +607,28 @@ export default function CalendarPage() {
                 cursor: 'pointer',
               }}
             >
-              {PROJECTS.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {PROJECTS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* View toggle */}
-            <div style={{ display: 'flex', background: 'var(--bg-surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 2 }} role="tablist" aria-label="Calendar view">
-              {VIEW_MODES.map(v => {
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--bg-surface)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: 2,
+              }}
+              role="tablist"
+              aria-label="Calendar view"
+            >
+              {VIEW_MODES.map((v) => {
                 const active = viewMode === v.id;
                 return (
                   <button
@@ -352,10 +656,17 @@ export default function CalendarPage() {
             <button
               type="button"
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'var(--brand)', color: '#fff', border: 'none',
-                borderRadius: 'var(--radius-sm)', padding: '8px 14px',
-                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'var(--brand)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
               }}
             >
               <Plus size={14} />
@@ -371,10 +682,16 @@ export default function CalendarPage() {
             onClick={navigatePrev}
             aria-label="Previous"
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-surface)', border: '0.5px solid var(--border)',
-              color: 'var(--text-secondary)', cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-surface)',
+              border: '0.5px solid var(--border)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
             }}
           >
             <ChevronLeft size={15} />
@@ -383,9 +700,14 @@ export default function CalendarPage() {
             type="button"
             onClick={navigateToday}
             style={{
-              background: 'var(--bg-surface)', border: '0.5px solid var(--border)',
-              borderRadius: 'var(--radius-sm)', padding: '6px 14px',
-              fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', cursor: 'pointer',
+              background: 'var(--bg-surface)',
+              border: '0.5px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 500,
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
             }}
           >
             Today
@@ -395,15 +717,28 @@ export default function CalendarPage() {
             onClick={navigateNext}
             aria-label="Next"
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-surface)', border: '0.5px solid var(--border)',
-              color: 'var(--text-secondary)', cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-surface)',
+              border: '0.5px solid var(--border)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
             }}
           >
             <ChevronRight size={15} />
           </button>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.01em',
+            }}
+          >
             {MONTH_NAMES[cursor.getMonth()]} {cursor.getFullYear()}
           </span>
         </div>
@@ -429,9 +764,7 @@ export default function CalendarPage() {
           />
         )}
 
-        {viewMode === 'gantt' && (
-          <GanttView tasks={GANTT_TASKS} projects={PROJECTS} />
-        )}
+        {viewMode === 'gantt' && <GanttView tasks={GANTT_TASKS} projects={PROJECTS} />}
 
         {viewMode === 'list' && (
           <ListView
@@ -457,8 +790,17 @@ export default function CalendarPage() {
               padding: 18,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <h2
+                style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+              >
                 {formatDate(selectedDate)}
               </h2>
               <button
@@ -466,31 +808,44 @@ export default function CalendarPage() {
                 onClick={() => setSelectedDate(null)}
                 aria-label="Close day detail"
                 style={{
-                  background: 'transparent', border: 'none', color: 'var(--text-tertiary)',
-                  cursor: 'pointer', display: 'flex', padding: 4,
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  padding: 4,
                 }}
               >
                 <X size={14} />
               </button>
             </div>
             {eventsForDay(selectedDate).length === 0 ? (
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>No events scheduled.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+                No events scheduled.
+              </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {eventsForDay(selectedDate).map(ev => (
+                {eventsForDay(selectedDate).map((ev) => (
                   <button
                     key={ev.id}
                     type="button"
                     onClick={() => setSelectedEvent(ev)}
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      background: 'var(--bg-base)', border: `0.5px solid ${EVENT_COLORS[ev.type].border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'var(--bg-base)',
+                      border: `0.5px solid ${EVENT_COLORS[ev.type].border}`,
                       borderLeft: `3px solid ${EVENT_COLORS[ev.type].border}`,
-                      borderRadius: 'var(--radius-sm)', padding: '10px 12px',
-                      cursor: 'pointer', textAlign: 'left',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '10px 12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{ev.title}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>
+                      {ev.title}
+                    </span>
                     <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{ev.owner}</span>
                   </button>
                 ))}
@@ -516,7 +871,16 @@ export default function CalendarPage() {
       >
         {/* Upcoming this week */}
         <section>
-          <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', margin: '0 0 10px' }}>
+          <h3
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--text-tertiary)',
+              margin: '0 0 10px',
+            }}
+          >
             Upcoming this week
           </h3>
           <div
@@ -531,24 +895,38 @@ export default function CalendarPage() {
             }}
           >
             {upcomingThisWeek.length === 0 ? (
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>No upcoming events.</span>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                No upcoming events.
+              </span>
             ) : (
-              upcomingThisWeek.slice(0, 5).map(ev => {
+              upcomingThisWeek.slice(0, 5).map((ev) => {
                 const d = new Date(ev.date);
                 return (
                   <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div
                       style={{
-                        width: 3, height: 26, borderRadius: 2,
+                        width: 3,
+                        height: 26,
+                        borderRadius: 2,
                         background: EVENT_COLORS[ev.type].border,
                       }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {ev.title}
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                        {WEEKDAY_SHORT[d.getDay()]} · {d.getHours()}:{String(d.getMinutes()).padStart(2, '0')}
+                        {WEEKDAY_SHORT[d.getDay()]} · {d.getHours()}:
+                        {String(d.getMinutes()).padStart(2, '0')}
                       </div>
                     </div>
                   </div>
@@ -560,47 +938,96 @@ export default function CalendarPage() {
 
         {/* Quick stats */}
         <section>
-          <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', margin: '0 0 10px' }}>
+          <h3
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--text-tertiary)',
+              margin: '0 0 10px',
+            }}
+          >
             Quick stats
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <StatRow icon={Calendar} label={`${stats.shots} shots due`} color="#7c3aed" />
             <StatRow icon={AlertCircle} label={`${stats.milestones} milestones`} color="#22c55e" />
-            <StatRow icon={Users} label={`${stats.teamAssigned} team members assigned`} color="#3b82f6" />
+            <StatRow
+              icon={Users}
+              label={`${stats.teamAssigned} team members assigned`}
+              color="#3b82f6"
+            />
           </div>
         </section>
 
         {/* Team assignments */}
         <section>
-          <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', margin: '0 0 10px' }}>
+          <h3
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--text-tertiary)',
+              margin: '0 0 10px',
+            }}
+          >
             Team workload
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {TEAM_MEMBERS.map(m => (
+            {TEAM_MEMBERS.map((m) => (
               <div key={m.id}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 4,
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div
                       style={{
-                        width: 22, height: 22, borderRadius: '50%',
-                        background: m.color, color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 600,
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: m.color,
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 10,
+                        fontWeight: 600,
                       }}
                     >
-                      {m.name.split(' ').map(s => s[0]).join('').slice(0, 2)}
+                      {m.name
+                        .split(' ')
+                        .map((s) => s[0])
+                        .join('')
+                        .slice(0, 2)}
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>{m.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {m.name}
+                      </div>
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{m.role}</div>
                     </div>
                   </div>
                   <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{m.workload}%</span>
                 </div>
-                <div style={{ height: 4, background: 'var(--bg-base)', borderRadius: 2, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: 4,
+                    background: 'var(--bg-base)',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
                   <div
                     style={{
-                      width: `${m.workload}%`, height: '100%',
+                      width: `${m.workload}%`,
+                      height: '100%',
                       background: m.workload > 80 ? '#f87171' : m.color,
                     }}
                   />
@@ -612,9 +1039,7 @@ export default function CalendarPage() {
       </aside>
 
       {/* ============== Event detail modal ============== */}
-      {selectedEvent && (
-        <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
-      )}
+      {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
     </div>
   );
 }
@@ -648,13 +1073,21 @@ function MonthView({
       }}
     >
       {/* Weekday header */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'var(--bg-base)', borderBottom: '0.5px solid var(--border)' }}>
-        {WEEKDAY_SHORT.map(w => (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          background: 'var(--bg-base)',
+          borderBottom: '0.5px solid var(--border)',
+        }}
+      >
+        {WEEKDAY_SHORT.map((w) => (
           <div
             key={w}
             style={{
               padding: '10px 12px',
-              fontSize: 11, fontWeight: 600,
+              fontSize: 11,
+              fontWeight: 600,
               color: 'var(--text-tertiary)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
@@ -666,7 +1099,13 @@ function MonthView({
       </div>
 
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(108px, 1fr)' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gridAutoRows: 'minmax(108px, 1fr)',
+        }}
+      >
         {grid.map((cell, i) => {
           const isToday = sameDay(cell.date, today);
           const isSelected = selectedDate && sameDay(cell.date, selectedDate);
@@ -685,7 +1124,9 @@ function MonthView({
                 padding: 8,
                 cursor: 'pointer',
                 opacity: cell.inMonth ? 1 : 0.35,
-                display: 'flex', flexDirection: 'column', gap: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
                 minHeight: 108,
                 position: 'relative',
               }}
@@ -698,18 +1139,24 @@ function MonthView({
                     color: isToday ? '#fff' : 'var(--text-secondary)',
                     background: isToday ? 'var(--brand)' : 'transparent',
                     borderRadius: '50%',
-                    width: 20, height: 20,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 20,
+                    height: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   {cell.date.getDate()}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden' }}>
-                {dayEvents.slice(0, 3).map(ev => (
+                {dayEvents.slice(0, 3).map((ev) => (
                   <span
                     key={ev.id}
-                    onClick={(e) => { e.stopPropagation(); onSelectEvent(ev); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectEvent(ev);
+                    }}
                     style={{
                       display: 'block',
                       background: EVENT_COLORS[ev.type].bg,
@@ -717,8 +1164,11 @@ function MonthView({
                       borderLeft: `2px solid ${EVENT_COLORS[ev.type].border}`,
                       borderRadius: 3,
                       padding: '2px 6px',
-                      fontSize: 10, fontWeight: 500,
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      fontSize: 10,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                   >
                     {ev.title}
@@ -767,9 +1217,16 @@ function WeekView({
       }}
     >
       {/* Header row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', borderBottom: '0.5px solid var(--border)', background: 'var(--bg-base)' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '60px repeat(7, 1fr)',
+          borderBottom: '0.5px solid var(--border)',
+          background: 'var(--bg-base)',
+        }}
+      >
         <div />
-        {days.map(d => {
+        {days.map((d) => {
           const isToday = sameDay(d, today);
           return (
             <div
@@ -783,7 +1240,9 @@ function WeekView({
                 borderLeft: '0.5px solid var(--border)',
               }}
             >
-              <div style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>{WEEKDAY_SHORT[d.getDay()]}</div>
+              <div style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {WEEKDAY_SHORT[d.getDay()]}
+              </div>
               <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2 }}>{d.getDate()}</div>
             </div>
           );
@@ -791,10 +1250,16 @@ function WeekView({
       </div>
 
       {/* Hours grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', position: 'relative' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '60px repeat(7, 1fr)',
+          position: 'relative',
+        }}
+      >
         {/* Hours column */}
         <div>
-          {hours.map(h => (
+          {hours.map((h) => (
             <div
               key={h}
               style={{
@@ -811,15 +1276,18 @@ function WeekView({
           ))}
         </div>
         {/* Day columns */}
-        {days.map(d => (
-          <div key={d.toISOString()} style={{ borderLeft: '0.5px solid var(--border)', position: 'relative' }}>
-            {hours.map(h => (
+        {days.map((d) => (
+          <div
+            key={d.toISOString()}
+            style={{ borderLeft: '0.5px solid var(--border)', position: 'relative' }}
+          >
+            {hours.map((h) => (
               <div key={h} style={{ height: 48, borderBottom: '0.5px solid var(--border)' }} />
             ))}
             {/* Events for the day */}
             {events
-              .filter(e => sameDay(new Date(e.date), d) && typeof e.startHour === 'number')
-              .map(e => {
+              .filter((e) => sameDay(new Date(e.date), d) && typeof e.startHour === 'number')
+              .map((e) => {
                 const top = ((e.startHour ?? 8) - 8) * 48;
                 const height = Math.max(22, (e.durationHours ?? 1) * 48 - 4);
                 return (
@@ -838,13 +1306,18 @@ function WeekView({
                       borderLeft: `3px solid ${EVENT_COLORS[e.type].border}`,
                       borderRadius: 4,
                       padding: '4px 6px',
-                      fontSize: 10, fontWeight: 500,
+                      fontSize: 10,
+                      fontWeight: 500,
                       textAlign: 'left',
                       cursor: 'pointer',
                       overflow: 'hidden',
                     }}
                   >
-                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</div>
+                    <div
+                      style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                      {e.title}
+                    </div>
                     <div style={{ fontSize: 9, opacity: 0.8 }}>{e.owner}</div>
                   </button>
                 );
@@ -867,7 +1340,7 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
   const labelWidth = 180;
   const chartWidth = totalDays * colWidth;
 
-  const projectName = (id: string) => projects.find(p => p.id === id)?.name ?? id;
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
 
   return (
     <div
@@ -879,8 +1352,25 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
       }}
     >
       {/* Header: day numbers */}
-      <div style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', background: 'var(--bg-base)' }}>
-        <div style={{ width: labelWidth, flexShrink: 0, padding: '10px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div
+        style={{
+          display: 'flex',
+          borderBottom: '0.5px solid var(--border)',
+          background: 'var(--bg-base)',
+        }}
+      >
+        <div
+          style={{
+            width: labelWidth,
+            flexShrink: 0,
+            padding: '10px 12px',
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--text-tertiary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}
+        >
           Task
         </div>
         <div style={{ display: 'flex', position: 'relative' }}>
@@ -908,7 +1398,14 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
           const left = t.startDay * colWidth;
           const width = t.duration * colWidth - 2;
           return (
-            <div key={t.id} style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', height: rowHeight }}>
+            <div
+              key={t.id}
+              style={{
+                display: 'flex',
+                borderBottom: '0.5px solid var(--border)',
+                height: rowHeight,
+              }}
+            >
               <div
                 style={{
                   width: labelWidth,
@@ -919,8 +1416,12 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{t.name}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{projectName(t.projectId)}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {t.name}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                  {projectName(t.projectId)}
+                </span>
               </div>
               <div style={{ position: 'relative', width: chartWidth, height: rowHeight }}>
                 {/* Grid lines */}
@@ -930,7 +1431,8 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
                     style={{
                       position: 'absolute',
                       left: i * colWidth,
-                      top: 0, bottom: 0,
+                      top: 0,
+                      bottom: 0,
                       width: 1,
                       background: 'var(--border)',
                       opacity: 0.3,
@@ -961,10 +1463,10 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
                   {t.phase}
                 </div>
                 {/* Dependency arrows (simple right-angle) */}
-                {t.dependencies?.map(depId => {
-                  const dep = tasks.find(x => x.id === depId);
+                {t.dependencies?.map((depId) => {
+                  const dep = tasks.find((x) => x.id === depId);
                   if (!dep) return null;
-                  const depIdx = tasks.findIndex(x => x.id === depId);
+                  const depIdx = tasks.findIndex((x) => x.id === depId);
                   const depEnd = (dep.startDay + dep.duration) * colWidth;
                   const rowDiff = idx - depIdx;
                   const midX = depEnd + 4;
@@ -1004,8 +1506,10 @@ function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectO
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, padding: 12, borderTop: '0.5px solid var(--border)' }}>
-        {(Object.keys(PHASE_COLORS) as Phase[]).map(p => (
+      <div
+        style={{ display: 'flex', gap: 16, padding: 12, borderTop: '0.5px solid var(--border)' }}
+      >
+        {(Object.keys(PHASE_COLORS) as Phase[]).map((p) => (
           <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 10, height: 10, borderRadius: 2, background: PHASE_COLORS[p] }} />
             <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{p}</span>
@@ -1039,7 +1543,7 @@ function ListView({
   projects: ProjectOption[];
   onSelectEvent: (e: CalendarEvent) => void;
 }) {
-  const projectName = (id: string) => projects.find(p => p.id === id)?.name ?? id;
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
 
   const columns: { key: SortKey; label: string }[] = [
     { key: 'date', label: 'Date' },
@@ -1060,7 +1564,15 @@ function ListView({
       }}
     >
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderBottom: '0.5px solid var(--border)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: 12,
+          borderBottom: '0.5px solid var(--border)',
+        }}
+      >
         <Filter size={13} style={{ color: 'var(--text-tertiary)' }} />
         <select
           value={filter}
@@ -1091,7 +1603,7 @@ function ListView({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-base)' }}>
-              {columns.map(c => (
+              {columns.map((c) => (
                 <th
                   key={c.key}
                   scope="col"
@@ -1120,7 +1632,7 @@ function ListView({
             </tr>
           </thead>
           <tbody>
-            {events.map(ev => {
+            {events.map((ev) => {
               const d = new Date(ev.date);
               return (
                 <tr
@@ -1128,13 +1640,28 @@ function ListView({
                   onClick={() => onSelectEvent(ev)}
                   style={{ cursor: 'pointer', borderBottom: '0.5px solid var(--border)' }}
                 >
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>
-                    {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <td
+                    style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}
+                  >
+                    {d.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>
+                  <td
+                    style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      color: 'var(--text-primary)',
+                      fontWeight: 500,
+                    }}
+                  >
                     {ev.title}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>
+                  <td
+                    style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}
+                  >
                     {projectName(ev.projectId)}
                   </td>
                   <td style={{ padding: '10px 14px', fontSize: 12 }}>
@@ -1151,7 +1678,9 @@ function ListView({
                       {EVENT_COLORS[ev.type].label}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>
+                  <td
+                    style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}
+                  >
                     {ev.owner}
                   </td>
                   <td style={{ padding: '10px 14px', fontSize: 12 }}>
@@ -1183,7 +1712,15 @@ function ListView({
 /*  Shared bits                                                        */
 /* ------------------------------------------------------------------ */
 
-function StatRow({ icon: Icon, label, color }: { icon: typeof Calendar; label: string; color: string }) {
+function StatRow({
+  icon: Icon,
+  label,
+  color,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  color: string;
+}) {
   return (
     <div
       style={{
@@ -1198,11 +1735,14 @@ function StatRow({ icon: Icon, label, color }: { icon: typeof Calendar; label: s
     >
       <div
         style={{
-          width: 28, height: 28,
+          width: 28,
+          height: 28,
           borderRadius: 'var(--radius-sm)',
           background: `${color}22`,
           color,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <Icon size={14} />
@@ -1221,9 +1761,12 @@ function EventModal({ event, onClose }: { event: CalendarEvent; onClose: () => v
       aria-label={`${event.title} details`}
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0,
+        position: 'fixed',
+        inset: 0,
         background: 'rgba(0, 0, 0, 0.55)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 100,
         padding: 20,
       }}
@@ -1240,16 +1783,27 @@ function EventModal({ event, onClose }: { event: CalendarEvent; onClose: () => v
           boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            marginBottom: 14,
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
-                width: 8, height: 36, borderRadius: 2,
+                width: 8,
+                height: 36,
+                borderRadius: 2,
                 background: EVENT_COLORS[event.type].border,
               }}
             />
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <h2
+                style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+              >
                 {event.title}
               </h2>
               <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
@@ -1262,8 +1816,12 @@ function EventModal({ event, onClose }: { event: CalendarEvent; onClose: () => v
             onClick={onClose}
             aria-label="Close"
             style={{
-              background: 'transparent', border: 'none', color: 'var(--text-tertiary)',
-              cursor: 'pointer', padding: 4, display: 'flex',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              cursor: 'pointer',
+              padding: 4,
+              display: 'flex',
             }}
           >
             <X size={16} />
@@ -1273,7 +1831,10 @@ function EventModal({ event, onClose }: { event: CalendarEvent; onClose: () => v
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <DetailRow icon={Calendar} label={formatDate(d)} />
           {typeof event.startHour === 'number' && (
-            <DetailRow icon={Clock} label={`${event.startHour}:00 · ${event.durationHours ?? 1}h`} />
+            <DetailRow
+              icon={Clock}
+              label={`${event.startHour}:00 · ${event.durationHours ?? 1}h`}
+            />
           )}
           <DetailRow icon={Users} label={event.owner} />
           <div
@@ -1292,7 +1853,14 @@ function EventModal({ event, onClose }: { event: CalendarEvent; onClose: () => v
             {event.status.replace('_', ' ')}
           </div>
           {event.description && (
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '8px 0 0' }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
+                margin: '8px 0 0',
+              }}
+            >
               {event.description}
             </p>
           )}

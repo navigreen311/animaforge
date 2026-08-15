@@ -31,10 +31,7 @@ export async function POST(request: NextRequest) {
   const styleMode = formData.get('styleMode') as string | null;
 
   if (!name) {
-    return NextResponse.json(
-      { error: 'name is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'name is required' }, { status: 400 });
   }
 
   const now = Date.now();

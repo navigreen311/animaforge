@@ -7,11 +7,11 @@ import { useEffect, useRef, useCallback } from 'react';
 /* ------------------------------------------------------------------ */
 
 export interface ShortcutDef {
-  keys: string[];          // e.g. ['Ctrl', 'K'] or ['g', 'p'] (chord)
+  keys: string[]; // e.g. ['Ctrl', 'K'] or ['g', 'p'] (chord)
   label: string;
   description: string;
   id: string;
-  chord?: boolean;         // two-key chord (g then p within 500ms)
+  chord?: boolean; // two-key chord (g then p within 500ms)
 }
 
 export interface ShortcutGroup {
@@ -20,32 +20,87 @@ export interface ShortcutGroup {
 }
 
 export const GLOBAL_SHORTCUTS: ShortcutDef[] = [
-  { id: 'search',       keys: ['Ctrl', 'K'],  label: 'Search',              description: 'Open search palette' },
-  { id: 'new-project',  keys: ['Ctrl', 'N'],  label: 'New project',         description: 'Create a new project' },
-  { id: 'shortcuts',    keys: ['?'],           label: 'Show shortcuts',      description: 'Open keyboard shortcuts modal' },
-  { id: 'escape',       keys: ['Esc'],         label: 'Close / Dismiss',     description: 'Close modal or panel' },
+  { id: 'search', keys: ['Ctrl', 'K'], label: 'Search', description: 'Open search palette' },
+  {
+    id: 'new-project',
+    keys: ['Ctrl', 'N'],
+    label: 'New project',
+    description: 'Create a new project',
+  },
+  {
+    id: 'shortcuts',
+    keys: ['?'],
+    label: 'Show shortcuts',
+    description: 'Open keyboard shortcuts modal',
+  },
+  { id: 'escape', keys: ['Esc'], label: 'Close / Dismiss', description: 'Close modal or panel' },
 ];
 
 export const NAV_SHORTCUTS: ShortcutDef[] = [
-  { id: 'go-projects',    keys: ['g', 'p'], label: 'Go to Projects',    description: 'Navigate to Projects page',    chord: true },
-  { id: 'go-characters',  keys: ['g', 'c'], label: 'Go to Characters',  description: 'Navigate to Characters page',  chord: true },
-  { id: 'go-timeline',    keys: ['g', 't'], label: 'Go to Timeline',    description: 'Navigate to Timeline page',    chord: true },
-  { id: 'go-assets',      keys: ['g', 'a'], label: 'Go to Assets',      description: 'Navigate to Assets page',      chord: true },
-  { id: 'go-settings',    keys: ['g', 's'], label: 'Go to Settings',    description: 'Navigate to Settings page',    chord: true },
+  {
+    id: 'go-projects',
+    keys: ['g', 'p'],
+    label: 'Go to Projects',
+    description: 'Navigate to Projects page',
+    chord: true,
+  },
+  {
+    id: 'go-characters',
+    keys: ['g', 'c'],
+    label: 'Go to Characters',
+    description: 'Navigate to Characters page',
+    chord: true,
+  },
+  {
+    id: 'go-timeline',
+    keys: ['g', 't'],
+    label: 'Go to Timeline',
+    description: 'Navigate to Timeline page',
+    chord: true,
+  },
+  {
+    id: 'go-assets',
+    keys: ['g', 'a'],
+    label: 'Go to Assets',
+    description: 'Navigate to Assets page',
+    chord: true,
+  },
+  {
+    id: 'go-settings',
+    keys: ['g', 's'],
+    label: 'Go to Settings',
+    description: 'Navigate to Settings page',
+    chord: true,
+  },
 ];
 
 export const TIMELINE_SHORTCUTS: ShortcutDef[] = [
-  { id: 'play-pause',   keys: ['Space'],       label: 'Play / Pause',     description: 'Toggle timeline playback' },
-  { id: 'frame-left',   keys: ['ArrowLeft'],    label: 'Previous frame',   description: 'Step one frame backward' },
-  { id: 'frame-right',  keys: ['ArrowRight'],   label: 'Next frame',       description: 'Step one frame forward' },
-  { id: 'zoom-in',      keys: ['Ctrl', '='],    label: 'Zoom in',          description: 'Zoom into timeline' },
-  { id: 'zoom-out',     keys: ['Ctrl', '-'],    label: 'Zoom out',         description: 'Zoom out of timeline' },
+  {
+    id: 'play-pause',
+    keys: ['Space'],
+    label: 'Play / Pause',
+    description: 'Toggle timeline playback',
+  },
+  {
+    id: 'frame-left',
+    keys: ['ArrowLeft'],
+    label: 'Previous frame',
+    description: 'Step one frame backward',
+  },
+  {
+    id: 'frame-right',
+    keys: ['ArrowRight'],
+    label: 'Next frame',
+    description: 'Step one frame forward',
+  },
+  { id: 'zoom-in', keys: ['Ctrl', '='], label: 'Zoom in', description: 'Zoom into timeline' },
+  { id: 'zoom-out', keys: ['Ctrl', '-'], label: 'Zoom out', description: 'Zoom out of timeline' },
 ];
 
 export const SHORTCUT_GROUPS: ShortcutGroup[] = [
-  { title: 'Global',     shortcuts: GLOBAL_SHORTCUTS },
+  { title: 'Global', shortcuts: GLOBAL_SHORTCUTS },
   { title: 'Navigation', shortcuts: NAV_SHORTCUTS },
-  { title: 'Timeline',   shortcuts: TIMELINE_SHORTCUTS },
+  { title: 'Timeline', shortcuts: TIMELINE_SHORTCUTS },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -80,17 +135,39 @@ export function useKeyboardShortcuts(handlers: Record<string, () => void>) {
     const key = e.key;
 
     // ── Mod combos ──────────────────────────────────────
-    if (mod && key === 'k') { e.preventDefault(); handlersRef.current['search']?.(); return; }
-    if (mod && key === 'n') { e.preventDefault(); handlersRef.current['new-project']?.(); return; }
-    if (mod && key === '=') { e.preventDefault(); handlersRef.current['zoom-in']?.(); return; }
-    if (mod && key === '-') { e.preventDefault(); handlersRef.current['zoom-out']?.(); return; }
+    if (mod && key === 'k') {
+      e.preventDefault();
+      handlersRef.current['search']?.();
+      return;
+    }
+    if (mod && key === 'n') {
+      e.preventDefault();
+      handlersRef.current['new-project']?.();
+      return;
+    }
+    if (mod && key === '=') {
+      e.preventDefault();
+      handlersRef.current['zoom-in']?.();
+      return;
+    }
+    if (mod && key === '-') {
+      e.preventDefault();
+      handlersRef.current['zoom-out']?.();
+      return;
+    }
 
     // Don't process further if mod key is held
     if (mod) return;
 
     // ── Single keys ─────────────────────────────────────
-    if (key === '?') { handlersRef.current['shortcuts']?.(); return; }
-    if (key === 'Escape') { handlersRef.current['escape']?.(); return; }
+    if (key === '?') {
+      handlersRef.current['shortcuts']?.();
+      return;
+    }
+    if (key === 'Escape') {
+      handlersRef.current['escape']?.();
+      return;
+    }
     if (key === ' ') {
       if (handlersRef.current['play-pause']) {
         e.preventDefault();
@@ -98,8 +175,14 @@ export function useKeyboardShortcuts(handlers: Record<string, () => void>) {
         return;
       }
     }
-    if (key === 'ArrowLeft') { handlersRef.current['frame-left']?.(); return; }
-    if (key === 'ArrowRight') { handlersRef.current['frame-right']?.(); return; }
+    if (key === 'ArrowLeft') {
+      handlersRef.current['frame-left']?.();
+      return;
+    }
+    if (key === 'ArrowRight') {
+      handlersRef.current['frame-right']?.();
+      return;
+    }
 
     // ── Chord handling (g → second key) ─────────────────
     const now = Date.now();
@@ -113,11 +196,21 @@ export function useKeyboardShortcuts(handlers: Record<string, () => void>) {
     if (pending && pending.key === 'g' && now - pending.time < 500) {
       chordRef.current = null;
       switch (key) {
-        case 'p': handlersRef.current['go-projects']?.(); return;
-        case 'c': handlersRef.current['go-characters']?.(); return;
-        case 't': handlersRef.current['go-timeline']?.(); return;
-        case 'a': handlersRef.current['go-assets']?.(); return;
-        case 's': handlersRef.current['go-settings']?.(); return;
+        case 'p':
+          handlersRef.current['go-projects']?.();
+          return;
+        case 'c':
+          handlersRef.current['go-characters']?.();
+          return;
+        case 't':
+          handlersRef.current['go-timeline']?.();
+          return;
+        case 'a':
+          handlersRef.current['go-assets']?.();
+          return;
+        case 's':
+          handlersRef.current['go-settings']?.();
+          return;
       }
     }
 

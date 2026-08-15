@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   return NextResponse.json({
     match: {
       id: params.id,
@@ -25,10 +22,7 @@ export async function GET(
   });
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const body = await request.json().catch(() => ({}));
   return NextResponse.json({
     match: {

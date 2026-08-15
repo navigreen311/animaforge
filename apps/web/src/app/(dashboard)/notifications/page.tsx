@@ -49,9 +49,19 @@ interface Notification {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const FILTER_TABS: { id: FilterTab; label: string; icon: typeof Bell; types: NotificationType[] }[] = [
+const FILTER_TABS: {
+  id: FilterTab;
+  label: string;
+  icon: typeof Bell;
+  types: NotificationType[];
+}[] = [
   { id: 'all', label: 'All', icon: Bell, types: [] },
-  { id: 'renders', label: 'Renders', icon: Film, types: ['render_complete', 'render_failed', 'export_ready'] },
+  {
+    id: 'renders',
+    label: 'Renders',
+    icon: Film,
+    types: ['render_complete', 'render_failed', 'export_ready'],
+  },
   { id: 'team', label: 'Team', icon: Users, types: ['shot_approved', 'comment', 'member_joined'] },
   { id: 'marketplace', label: 'Marketplace', icon: Store, types: ['marketplace_sale'] },
   { id: 'system', label: 'System', icon: Settings, types: ['credits_low'] },
@@ -75,22 +85,148 @@ const PAGE_SIZE = 8;
 /* ------------------------------------------------------------------ */
 
 const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', type: 'render_complete', title: 'Render complete', subtitle: 'Hero entrance shot — 1080p export ready for download', createdAt: '2026-04-09T09:45:00Z', read: false, actionLabel: 'View', actionHref: '/shots/s1' },
-  { id: 'n2', type: 'comment', title: 'New comment on Scene 3', subtitle: 'Alex: "Love the lighting here, can we keep this direction?"', createdAt: '2026-04-09T09:20:00Z', read: false, actionLabel: 'Reply', actionHref: '/shots/s1' },
-  { id: 'n3', type: 'shot_approved', title: 'Shot approved', subtitle: 'Sunset fly-over establishing shot was approved by Director', createdAt: '2026-04-09T08:00:00Z', read: false },
-  { id: 'n4', type: 'member_joined', title: 'New team member', subtitle: 'Sarah Chen joined project Midnight Fable as Animator', createdAt: '2026-04-08T16:30:00Z', read: true },
-  { id: 'n5', type: 'render_failed', title: 'Render failed', subtitle: 'Chase sequence rooftop — GPU timeout after 12 minutes', createdAt: '2026-04-08T14:00:00Z', read: true, actionLabel: 'Retry', actionHref: '/renders' },
-  { id: 'n6', type: 'marketplace_sale', title: 'Marketplace sale', subtitle: 'Magic particle FX pack purchased for $12.00', createdAt: '2026-04-08T10:00:00Z', read: true },
-  { id: 'n7', type: 'credits_low', title: 'Credits running low', subtitle: 'You have 150 credits remaining. Top up to avoid interruptions.', createdAt: '2026-04-07T09:00:00Z', read: true, actionLabel: 'Top up', actionHref: '/settings' },
-  { id: 'n8', type: 'export_ready', title: 'Export ready', subtitle: 'Product Launch Ad — MP4 1080p download ready', createdAt: '2026-04-06T15:00:00Z', read: true, actionLabel: 'Download', actionHref: '/exports' },
-  { id: 'n9', type: 'render_complete', title: 'Render complete', subtitle: 'Close-up reaction shot — 4K export', createdAt: '2026-04-05T12:00:00Z', read: true },
-  { id: 'n10', type: 'comment', title: 'New comment on Timeline', subtitle: 'Mike: "Can we adjust the timing on the transition?"', createdAt: '2026-04-04T18:00:00Z', read: true },
-  { id: 'n11', type: 'shot_approved', title: 'Shot approved', subtitle: 'Forest background pan approved by Art Director', createdAt: '2026-04-03T11:00:00Z', read: true },
-  { id: 'n12', type: 'render_complete', title: 'Render complete', subtitle: 'Opening sequence — batch render finished', createdAt: '2026-04-02T16:00:00Z', read: true },
-  { id: 'n13', type: 'marketplace_sale', title: 'Marketplace sale', subtitle: 'Anime character template sold for $8.00', createdAt: '2026-04-01T10:00:00Z', read: true },
-  { id: 'n14', type: 'member_joined', title: 'New team member', subtitle: 'Jordan Lee joined project Product Launch Ad', createdAt: '2026-03-30T14:00:00Z', read: true },
-  { id: 'n15', type: 'export_ready', title: 'Export ready', subtitle: 'Explainer video — WebM format', createdAt: '2026-03-28T09:00:00Z', read: true, actionLabel: 'Download', actionHref: '/exports' },
-  { id: 'n16', type: 'credits_low', title: 'Credits depleted', subtitle: 'All credits used. Renders are paused.', createdAt: '2026-03-25T08:00:00Z', read: true, actionLabel: 'Top up', actionHref: '/settings' },
+  {
+    id: 'n1',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'Hero entrance shot — 1080p export ready for download',
+    createdAt: '2026-04-09T09:45:00Z',
+    read: false,
+    actionLabel: 'View',
+    actionHref: '/shots/s1',
+  },
+  {
+    id: 'n2',
+    type: 'comment',
+    title: 'New comment on Scene 3',
+    subtitle: 'Alex: "Love the lighting here, can we keep this direction?"',
+    createdAt: '2026-04-09T09:20:00Z',
+    read: false,
+    actionLabel: 'Reply',
+    actionHref: '/shots/s1',
+  },
+  {
+    id: 'n3',
+    type: 'shot_approved',
+    title: 'Shot approved',
+    subtitle: 'Sunset fly-over establishing shot was approved by Director',
+    createdAt: '2026-04-09T08:00:00Z',
+    read: false,
+  },
+  {
+    id: 'n4',
+    type: 'member_joined',
+    title: 'New team member',
+    subtitle: 'Sarah Chen joined project Midnight Fable as Animator',
+    createdAt: '2026-04-08T16:30:00Z',
+    read: true,
+  },
+  {
+    id: 'n5',
+    type: 'render_failed',
+    title: 'Render failed',
+    subtitle: 'Chase sequence rooftop — GPU timeout after 12 minutes',
+    createdAt: '2026-04-08T14:00:00Z',
+    read: true,
+    actionLabel: 'Retry',
+    actionHref: '/renders',
+  },
+  {
+    id: 'n6',
+    type: 'marketplace_sale',
+    title: 'Marketplace sale',
+    subtitle: 'Magic particle FX pack purchased for $12.00',
+    createdAt: '2026-04-08T10:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n7',
+    type: 'credits_low',
+    title: 'Credits running low',
+    subtitle: 'You have 150 credits remaining. Top up to avoid interruptions.',
+    createdAt: '2026-04-07T09:00:00Z',
+    read: true,
+    actionLabel: 'Top up',
+    actionHref: '/settings',
+  },
+  {
+    id: 'n8',
+    type: 'export_ready',
+    title: 'Export ready',
+    subtitle: 'Product Launch Ad — MP4 1080p download ready',
+    createdAt: '2026-04-06T15:00:00Z',
+    read: true,
+    actionLabel: 'Download',
+    actionHref: '/exports',
+  },
+  {
+    id: 'n9',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'Close-up reaction shot — 4K export',
+    createdAt: '2026-04-05T12:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n10',
+    type: 'comment',
+    title: 'New comment on Timeline',
+    subtitle: 'Mike: "Can we adjust the timing on the transition?"',
+    createdAt: '2026-04-04T18:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n11',
+    type: 'shot_approved',
+    title: 'Shot approved',
+    subtitle: 'Forest background pan approved by Art Director',
+    createdAt: '2026-04-03T11:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n12',
+    type: 'render_complete',
+    title: 'Render complete',
+    subtitle: 'Opening sequence — batch render finished',
+    createdAt: '2026-04-02T16:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n13',
+    type: 'marketplace_sale',
+    title: 'Marketplace sale',
+    subtitle: 'Anime character template sold for $8.00',
+    createdAt: '2026-04-01T10:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n14',
+    type: 'member_joined',
+    title: 'New team member',
+    subtitle: 'Jordan Lee joined project Product Launch Ad',
+    createdAt: '2026-03-30T14:00:00Z',
+    read: true,
+  },
+  {
+    id: 'n15',
+    type: 'export_ready',
+    title: 'Export ready',
+    subtitle: 'Explainer video — WebM format',
+    createdAt: '2026-03-28T09:00:00Z',
+    read: true,
+    actionLabel: 'Download',
+    actionHref: '/exports',
+  },
+  {
+    id: 'n16',
+    type: 'credits_low',
+    title: 'Credits depleted',
+    subtitle: 'All credits used. Renders are paused.',
+    createdAt: '2026-03-25T08:00:00Z',
+    read: true,
+    actionLabel: 'Top up',
+    actionHref: '/settings',
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -175,7 +311,17 @@ export default function NotificationsPage() {
         }}
       >
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <Bell size={18} />
             Notifications
             {unreadCount > 0 && (
@@ -215,8 +361,12 @@ export default function NotificationsPage() {
               alignItems: 'center',
               gap: 5,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
           >
             <CheckCheck size={13} />
             Mark all read
@@ -236,8 +386,12 @@ export default function NotificationsPage() {
               alignItems: 'center',
               gap: 5,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
           >
             <Trash2 size={13} />
             Clear all
@@ -261,7 +415,10 @@ export default function NotificationsPage() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => { setActiveTab(tab.id); setPage(1); }}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPage(1);
+              }}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -325,8 +482,14 @@ export default function NotificationsPage() {
                           background: n.read ? 'transparent' : 'rgba(124, 58, 237, 0.04)',
                           transition: 'background 100ms',
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(124, 58, 237, 0.04)'; }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = n.read
+                            ? 'transparent'
+                            : 'rgba(124, 58, 237, 0.04)';
+                        }}
                       >
                         <div
                           style={{
@@ -345,7 +508,13 @@ export default function NotificationsPage() {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 500,
+                                color: 'var(--text-primary)',
+                              }}
+                            >
                               {n.title}
                             </span>
                             {!n.read && (
@@ -360,11 +529,17 @@ export default function NotificationsPage() {
                               />
                             )}
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                          <div
+                            style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}
+                          >
                             {n.subtitle}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{timeAgo(n.createdAt)}</span>
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}
+                          >
+                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                              {timeAgo(n.createdAt)}
+                            </span>
                             {n.actionLabel && n.actionHref && (
                               <a
                                 href={n.actionHref}
@@ -411,7 +586,8 @@ export default function NotificationsPage() {
                   width: 32,
                   height: 32,
                   borderRadius: 'var(--radius-md)',
-                  border: page === i + 1 ? '1px solid var(--brand-border)' : '0.5px solid var(--border)',
+                  border:
+                    page === i + 1 ? '1px solid var(--brand-border)' : '0.5px solid var(--border)',
                   background: page === i + 1 ? 'var(--bg-active)' : 'var(--bg-elevated)',
                   color: page === i + 1 ? 'var(--text-brand)' : 'var(--text-secondary)',
                   fontSize: 12,

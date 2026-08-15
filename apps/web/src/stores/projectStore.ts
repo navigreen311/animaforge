@@ -35,17 +35,12 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
 
   updateProject: (id, patch) =>
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === id ? { ...p, ...patch } : p,
-      ),
+      projects: state.projects.map((p) => (p.id === id ? { ...p, ...patch } : p)),
       activeProject:
-        state.activeProject?.id === id
-          ? { ...state.activeProject, ...patch }
-          : state.activeProject,
+        state.activeProject?.id === id ? { ...state.activeProject, ...patch } : state.activeProject,
     })),
 
-  addProject: (project) =>
-    set((state) => ({ projects: [...state.projects, project] })),
+  addProject: (project) => set((state) => ({ projects: [...state.projects, project] })),
 
   removeProject: (id) =>
     set((state) => ({
@@ -56,16 +51,12 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
   updateWorldBible: (worldBible) =>
     set((state) => ({
       worldBible,
-      activeProject: state.activeProject
-        ? { ...state.activeProject, worldBible }
-        : null,
+      activeProject: state.activeProject ? { ...state.activeProject, worldBible } : null,
     })),
 
   updateBrandKit: (brandKit) =>
     set((state) => ({
       brandKit,
-      activeProject: state.activeProject
-        ? { ...state.activeProject, brandKit }
-        : null,
+      activeProject: state.activeProject ? { ...state.activeProject, brandKit } : null,
     })),
 }));

@@ -62,13 +62,19 @@ export default function PublishPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
-          <svg className="h-8 w-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-8 w-8 text-emerald-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Item Submitted!</h1>
         <p className="mt-3 text-[var(--color-text-muted)]">
-          Your item is now under review. You will be notified once it is approved and live on the marketplace.
+          Your item is now under review. You will be notified once it is approved and live on the
+          marketplace.
         </p>
         <Button
           className="mt-8"
@@ -107,9 +113,7 @@ export default function PublishPage() {
 
         {/* Description */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-[var(--color-text)]">
-            Description
-          </label>
+          <label className="block text-sm font-medium text-[var(--color-text)]">Description</label>
           <textarea
             rows={4}
             placeholder="Describe your item, what it includes, and how to use it..."
@@ -117,9 +121,7 @@ export default function PublishPage() {
             onChange={(e) => setDescription(e.target.value)}
             className="w-full rounded-lg border border-[var(--color-border)] bg-bg px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {errors.description && (
-            <p className="text-xs text-red-500">{errors.description}</p>
-          )}
+          {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
         </div>
 
         {/* Category */}
@@ -166,7 +168,9 @@ export default function PublishPage() {
 
         {/* Preview images */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-[var(--color-text)]">Preview Images</label>
+          <label className="block text-sm font-medium text-[var(--color-text)]">
+            Preview Images
+          </label>
           <div className="flex flex-wrap gap-3">
             {previewImages.map((_, idx) => (
               <div
@@ -182,7 +186,12 @@ export default function PublishPage() {
               className="flex h-24 w-32 items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-primary hover:text-primary"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             </button>
           </div>
@@ -195,8 +204,10 @@ export default function PublishPage() {
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-              By publishing on the AnimaForge Creator Marketplace, you agree to a <strong className="text-[var(--color-text)]">70/30 revenue split</strong>.
-              You receive 70% of each sale. AnimaForge retains 30% to cover platform fees, payment processing, and infrastructure costs.
+              By publishing on the AnimaForge Creator Marketplace, you agree to a{' '}
+              <strong className="text-[var(--color-text)]">70/30 revenue split</strong>. You receive
+              70% of each sale. AnimaForge retains 30% to cover platform fees, payment processing,
+              and infrastructure costs.
             </p>
             <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
               <input
@@ -207,9 +218,7 @@ export default function PublishPage() {
               />
               I agree to the 70/30 revenue split and marketplace terms
             </label>
-            {errors.terms && (
-              <p className="mt-1 text-xs text-red-500">{errors.terms}</p>
-            )}
+            {errors.terms && <p className="mt-1 text-xs text-red-500">{errors.terms}</p>}
           </CardContent>
         </Card>
 

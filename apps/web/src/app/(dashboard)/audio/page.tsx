@@ -104,12 +104,21 @@ const CHARACTER_VOICES: VoiceOption[] = [
   { id: 'voice-marcus', name: 'Marcus', gender: 'male', pitch: 'mid' },
 ];
 
-
 const SPEAKING_STYLES = ['Neutral', 'Dramatic', 'Whisper', 'Excited', 'Sad', 'Angry'] as const;
 
 const LANGUAGES = [
-  'English', 'Spanish', 'French', 'German', 'Japanese', 'Korean',
-  'Mandarin', 'Portuguese', 'Italian', 'Arabic', 'Hindi', 'Russian',
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Japanese',
+  'Korean',
+  'Mandarin',
+  'Portuguese',
+  'Italian',
+  'Arabic',
+  'Hindi',
+  'Russian',
 ] as const;
 
 const SFX_CATEGORIES = ['All', 'Action', 'Nature', 'UI', 'Sci-Fi', 'Foley', 'Music Hits'] as const;
@@ -132,33 +141,141 @@ const STATUS_COLORS: Record<ShotStatus, string> = {
 const PROJECT_SHOTS: Record<string, SceneShot[]> = {
   'proj-1': [
     { id: 'p1-s1', label: 'Shot 1', durationSec: 3.2, status: 'approved', emotionalBeat: 'Tense' },
-    { id: 'p1-s2', label: 'Shot 2', durationSec: 5.4, status: 'approved', emotionalBeat: 'Mysterious' },
-    { id: 'p1-s3', label: 'Shot 3', durationSec: 2.1, status: 'in-progress', emotionalBeat: 'Tense' },
+    {
+      id: 'p1-s2',
+      label: 'Shot 2',
+      durationSec: 5.4,
+      status: 'approved',
+      emotionalBeat: 'Mysterious',
+    },
+    {
+      id: 'p1-s3',
+      label: 'Shot 3',
+      durationSec: 2.1,
+      status: 'in-progress',
+      emotionalBeat: 'Tense',
+    },
     { id: 'p1-s4', label: 'Shot 4', durationSec: 4.8, status: 'draft', emotionalBeat: 'Epic' },
-    { id: 'p1-s5', label: 'Shot 5', durationSec: 2.6, status: 'needs-review', emotionalBeat: 'Epic' },
-    { id: 'p1-s6', label: 'Shot 6', durationSec: 5.9, status: 'approved', emotionalBeat: 'Triumphant' },
-    { id: 'p1-s7', label: 'Shot 7', durationSec: 3.5, status: 'in-progress', emotionalBeat: 'Triumphant' },
+    {
+      id: 'p1-s5',
+      label: 'Shot 5',
+      durationSec: 2.6,
+      status: 'needs-review',
+      emotionalBeat: 'Epic',
+    },
+    {
+      id: 'p1-s6',
+      label: 'Shot 6',
+      durationSec: 5.9,
+      status: 'approved',
+      emotionalBeat: 'Triumphant',
+    },
+    {
+      id: 'p1-s7',
+      label: 'Shot 7',
+      durationSec: 3.5,
+      status: 'in-progress',
+      emotionalBeat: 'Triumphant',
+    },
     { id: 'p1-s8', label: 'Shot 8', durationSec: 4.2, status: 'draft', emotionalBeat: 'Resolute' },
   ],
   'proj-2': [
-    { id: 'p2-s1', label: 'Shot 1', durationSec: 5.8, status: 'approved', emotionalBeat: 'Peaceful' },
-    { id: 'p2-s2', label: 'Shot 2', durationSec: 4.2, status: 'approved', emotionalBeat: 'Peaceful' },
-    { id: 'p2-s3', label: 'Shot 3', durationSec: 3.1, status: 'in-progress', emotionalBeat: 'Curious' },
+    {
+      id: 'p2-s1',
+      label: 'Shot 1',
+      durationSec: 5.8,
+      status: 'approved',
+      emotionalBeat: 'Peaceful',
+    },
+    {
+      id: 'p2-s2',
+      label: 'Shot 2',
+      durationSec: 4.2,
+      status: 'approved',
+      emotionalBeat: 'Peaceful',
+    },
+    {
+      id: 'p2-s3',
+      label: 'Shot 3',
+      durationSec: 3.1,
+      status: 'in-progress',
+      emotionalBeat: 'Curious',
+    },
     { id: 'p2-s4', label: 'Shot 4', durationSec: 5.5, status: 'draft', emotionalBeat: 'Awe' },
     { id: 'p2-s5', label: 'Shot 5', durationSec: 2.4, status: 'approved', emotionalBeat: 'Awe' },
-    { id: 'p2-s6', label: 'Shot 6', durationSec: 4.7, status: 'needs-review', emotionalBeat: 'Uplifting' },
-    { id: 'p2-s7', label: 'Shot 7', durationSec: 3.8, status: 'in-progress', emotionalBeat: 'Uplifting' },
-    { id: 'p2-s8', label: 'Shot 8', durationSec: 5.2, status: 'approved', emotionalBeat: 'Peaceful' },
+    {
+      id: 'p2-s6',
+      label: 'Shot 6',
+      durationSec: 4.7,
+      status: 'needs-review',
+      emotionalBeat: 'Uplifting',
+    },
+    {
+      id: 'p2-s7',
+      label: 'Shot 7',
+      durationSec: 3.8,
+      status: 'in-progress',
+      emotionalBeat: 'Uplifting',
+    },
+    {
+      id: 'p2-s8',
+      label: 'Shot 8',
+      durationSec: 5.2,
+      status: 'approved',
+      emotionalBeat: 'Peaceful',
+    },
   ],
   'proj-3': [
-    { id: 'p3-s1', label: 'Shot 1', durationSec: 2.0, status: 'approved', emotionalBeat: 'Energetic' },
-    { id: 'p3-s2', label: 'Shot 2', durationSec: 2.4, status: 'approved', emotionalBeat: 'Energetic' },
-    { id: 'p3-s3', label: 'Shot 3', durationSec: 2.1, status: 'in-progress', emotionalBeat: 'Bold' },
+    {
+      id: 'p3-s1',
+      label: 'Shot 1',
+      durationSec: 2.0,
+      status: 'approved',
+      emotionalBeat: 'Energetic',
+    },
+    {
+      id: 'p3-s2',
+      label: 'Shot 2',
+      durationSec: 2.4,
+      status: 'approved',
+      emotionalBeat: 'Energetic',
+    },
+    {
+      id: 'p3-s3',
+      label: 'Shot 3',
+      durationSec: 2.1,
+      status: 'in-progress',
+      emotionalBeat: 'Bold',
+    },
     { id: 'p3-s4', label: 'Shot 4', durationSec: 2.8, status: 'draft', emotionalBeat: 'Bold' },
-    { id: 'p3-s5', label: 'Shot 5', durationSec: 2.3, status: 'approved', emotionalBeat: 'Confident' },
-    { id: 'p3-s6', label: 'Shot 6', durationSec: 2.6, status: 'needs-review', emotionalBeat: 'Confident' },
-    { id: 'p3-s7', label: 'Shot 7', durationSec: 2.2, status: 'in-progress', emotionalBeat: 'Triumphant' },
-    { id: 'p3-s8', label: 'Shot 8', durationSec: 2.5, status: 'approved', emotionalBeat: 'Triumphant' },
+    {
+      id: 'p3-s5',
+      label: 'Shot 5',
+      durationSec: 2.3,
+      status: 'approved',
+      emotionalBeat: 'Confident',
+    },
+    {
+      id: 'p3-s6',
+      label: 'Shot 6',
+      durationSec: 2.6,
+      status: 'needs-review',
+      emotionalBeat: 'Confident',
+    },
+    {
+      id: 'p3-s7',
+      label: 'Shot 7',
+      durationSec: 2.2,
+      status: 'in-progress',
+      emotionalBeat: 'Triumphant',
+    },
+    {
+      id: 'p3-s8',
+      label: 'Shot 8',
+      durationSec: 2.5,
+      status: 'approved',
+      emotionalBeat: 'Triumphant',
+    },
   ],
 };
 
@@ -210,14 +327,52 @@ function generateBars(count: number): number[] {
 
 // ── Mock Data ────────────────────────────────────────────────
 const MUSIC_TRACKS: MusicTrack[] = [
-  { id: 'mt-1', name: 'Neon Streets', genre: 'Electronic', mood: 'Tense', duration: '0:32', bpm: 128, bars: generateBars(60) },
-  { id: 'mt-2', name: 'Garden Lullaby', genre: 'Ambient', mood: 'Peaceful', duration: '1:05', bpm: 72, bars: generateBars(60) },
-  { id: 'mt-3', name: 'Final Battle', genre: 'Cinematic', mood: 'Epic', duration: '0:48', bpm: 140, bars: generateBars(60) },
+  {
+    id: 'mt-1',
+    name: 'Neon Streets',
+    genre: 'Electronic',
+    mood: 'Tense',
+    duration: '0:32',
+    bpm: 128,
+    bars: generateBars(60),
+  },
+  {
+    id: 'mt-2',
+    name: 'Garden Lullaby',
+    genre: 'Ambient',
+    mood: 'Peaceful',
+    duration: '1:05',
+    bpm: 72,
+    bars: generateBars(60),
+  },
+  {
+    id: 'mt-3',
+    name: 'Final Battle',
+    genre: 'Cinematic',
+    mood: 'Epic',
+    duration: '0:48',
+    bpm: 140,
+    bars: generateBars(60),
+  },
 ];
 
 const VOICE_ENTRIES: VoiceEntry[] = [
-  { id: 've-1', name: 'Hero Monologue — Take 1', character: 'Marcus', style: 'Dramatic', duration: '0:12', bars: generateBars(60) },
-  { id: 've-2', name: 'Narrator Intro', character: 'Elena', style: 'Neutral', duration: '0:08', bars: generateBars(60) },
+  {
+    id: 've-1',
+    name: 'Hero Monologue — Take 1',
+    character: 'Marcus',
+    style: 'Dramatic',
+    duration: '0:12',
+    bars: generateBars(60),
+  },
+  {
+    id: 've-2',
+    name: 'Narrator Intro',
+    character: 'Elena',
+    style: 'Neutral',
+    duration: '0:08',
+    bars: generateBars(60),
+  },
 ];
 
 const SFX_LIBRARY: SfxItem[] = [
@@ -358,7 +513,14 @@ function DropdownMenu({
 }) {
   return (
     <div style={{ position: 'relative' }}>
-      <button type="button" onClick={onToggle} style={smallBtnStyle} aria-label={ariaLabel} aria-haspopup="menu" aria-expanded={open}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={smallBtnStyle}
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
         {trigger}
       </button>
       {open && (
@@ -527,7 +689,7 @@ export default function AudioStudioPage() {
         () => {
           setPlayingTrack((curr) => (curr === id ? null : curr));
           setPlaybackProgress(0);
-        }
+        },
       )
       .catch((err) => {
         console.error('[audio] play failed', err);
@@ -564,13 +726,14 @@ export default function AudioStudioPage() {
 
   const selectedShots = sceneShots.filter((s) => selectedShotIds.has(s.id));
   const selectedTotalSec = selectedShots.reduce((a, b) => a + b.durationSec, 0);
-  const selectedTotalDuration = selectedShots.length > 0 ? formatDuration(selectedTotalSec) : '\u2014';
+  const selectedTotalDuration =
+    selectedShots.length > 0 ? formatDuration(selectedTotalSec) : '\u2014';
   const selectedMoodArc =
     selectedShots.length === 0
       ? '\u2014'
       : selectedShots.length === 1
-      ? selectedShots[0].emotionalBeat
-      : `${selectedShots[0].emotionalBeat} \u2192 ${selectedShots[selectedShots.length - 1].emotionalBeat}`;
+        ? selectedShots[0].emotionalBeat
+        : `${selectedShots[0].emotionalBeat} \u2192 ${selectedShots[selectedShots.length - 1].emotionalBeat}`;
   const selectedPacing = computePacing(selectedShots);
 
   const toggleShotSelection = (id: string) => {
@@ -671,8 +834,12 @@ export default function AudioStudioPage() {
           cursor: 'pointer',
           transition: 'opacity 150ms ease',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '0.85';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '1';
+        }}
       >
         {isPlaying ? (
           <Pause size={14} style={{ color: '#ffffff' }} />
@@ -693,23 +860,64 @@ export default function AudioStudioPage() {
     }));
 
     const downloadItems = [
-      { label: 'MP3', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.mp3`) },
-      { label: 'WAV', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.wav`) },
-      { label: 'AIFF', icon: <Download size={12} />, onClick: () => toast.success(`Downloading ${displayName}.aiff`) },
+      {
+        label: 'MP3',
+        icon: <Download size={12} />,
+        onClick: () => toast.success(`Downloading ${displayName}.mp3`),
+      },
+      {
+        label: 'WAV',
+        icon: <Download size={12} />,
+        onClick: () => toast.success(`Downloading ${displayName}.wav`),
+      },
+      {
+        label: 'AIFF',
+        icon: <Download size={12} />,
+        onClick: () => toast.success(`Downloading ${displayName}.aiff`),
+      },
     ];
 
     const stemsItems = [
-      { label: 'All stems (ZIP)', icon: <Download size={12} />, onClick: () => toast.success('Downloading all stems...') },
-      { label: 'Drums', icon: <Layers size={12} />, onClick: () => toast.success('Downloading drums stem...') },
-      { label: 'Bass', icon: <Layers size={12} />, onClick: () => toast.success('Downloading bass stem...') },
-      { label: 'Melody', icon: <Layers size={12} />, onClick: () => toast.success('Downloading melody stem...') },
+      {
+        label: 'All stems (ZIP)',
+        icon: <Download size={12} />,
+        onClick: () => toast.success('Downloading all stems...'),
+      },
+      {
+        label: 'Drums',
+        icon: <Layers size={12} />,
+        onClick: () => toast.success('Downloading drums stem...'),
+      },
+      {
+        label: 'Bass',
+        icon: <Layers size={12} />,
+        onClick: () => toast.success('Downloading bass stem...'),
+      },
+      {
+        label: 'Melody',
+        icon: <Layers size={12} />,
+        onClick: () => toast.success('Downloading melody stem...'),
+      },
     ];
 
     const moreItems = [
       { label: 'Rename', icon: <Edit3 size={12} />, onClick: () => setEditingTrackName(id) },
-      { label: 'Add to favorites', icon: <Star size={12} />, onClick: () => toast.success('Added to favorites') },
-      { label: 'Generate cue sheet', icon: <FileText size={12} />, onClick: () => toast.success('Cue sheet generated') },
-      { label: 'Delete', icon: <Trash2 size={12} />, onClick: () => toast('Track deleted'), danger: true },
+      {
+        label: 'Add to favorites',
+        icon: <Star size={12} />,
+        onClick: () => toast.success('Added to favorites'),
+      },
+      {
+        label: 'Generate cue sheet',
+        icon: <FileText size={12} />,
+        onClick: () => toast.success('Cue sheet generated'),
+      },
+      {
+        label: 'Delete',
+        icon: <Trash2 size={12} />,
+        onClick: () => toast('Track deleted'),
+        danger: true,
+      },
     ];
 
     const visible = hoveredTrack === id || openDropdown?.endsWith(`-${id}`);
@@ -725,23 +933,41 @@ export default function AudioStudioPage() {
             style={{ display: 'flex', gap: 4 }}
           >
             <DropdownMenu
-              trigger={<>Add to Timeline <ChevronDown size={10} /></>}
+              trigger={
+                <>
+                  Add to Timeline <ChevronDown size={10} />
+                </>
+              }
               items={timelineItems}
               open={openDropdown === `timeline-${id}`}
-              onToggle={() => setOpenDropdown(openDropdown === `timeline-${id}` ? null : `timeline-${id}`)}
+              onToggle={() =>
+                setOpenDropdown(openDropdown === `timeline-${id}` ? null : `timeline-${id}`)
+              }
             />
             <DropdownMenu
-              trigger={<><Download size={11} /> Download <ChevronDown size={10} /></>}
+              trigger={
+                <>
+                  <Download size={11} /> Download <ChevronDown size={10} />
+                </>
+              }
               items={downloadItems}
               open={openDropdown === `download-${id}`}
-              onToggle={() => setOpenDropdown(openDropdown === `download-${id}` ? null : `download-${id}`)}
+              onToggle={() =>
+                setOpenDropdown(openDropdown === `download-${id}` ? null : `download-${id}`)
+              }
             />
             {isMusic && (
               <DropdownMenu
-                trigger={<><Layers size={11} /> Stems <ChevronDown size={10} /></>}
+                trigger={
+                  <>
+                    <Layers size={11} /> Stems <ChevronDown size={10} />
+                  </>
+                }
                 items={stemsItems}
                 open={openDropdown === `stems-${id}`}
-                onToggle={() => setOpenDropdown(openDropdown === `stems-${id}` ? null : `stems-${id}`)}
+                onToggle={() =>
+                  setOpenDropdown(openDropdown === `stems-${id}` ? null : `stems-${id}`)
+                }
               />
             )}
             <DropdownMenu
@@ -759,7 +985,10 @@ export default function AudioStudioPage() {
 
   // ── Main Render ────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }} onClick={handlePageClick}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}
+      onClick={handlePageClick}
+    >
       <main
         style={{
           padding: '20px 24px',
@@ -817,16 +1046,10 @@ export default function AudioStudioPage() {
               type="button"
               onClick={() => setActiveTab(tab.value)}
               style={{
-                background:
-                  activeTab === tab.value ? 'var(--bg-elevated)' : 'transparent',
-                color:
-                  activeTab === tab.value
-                    ? 'var(--text-primary)'
-                    : 'var(--text-secondary)',
+                background: activeTab === tab.value ? 'var(--bg-elevated)' : 'transparent',
+                color: activeTab === tab.value ? 'var(--text-primary)' : 'var(--text-secondary)',
                 border:
-                  activeTab === tab.value
-                    ? '0.5px solid var(--border)'
-                    : '0.5px solid transparent',
+                  activeTab === tab.value ? '0.5px solid var(--border)' : '0.5px solid transparent',
                 padding: '5px 14px',
                 borderRadius: 'var(--radius-md)',
                 fontSize: 12,
@@ -857,14 +1080,16 @@ export default function AudioStudioPage() {
                   style={{
                     background: musicMode === mode ? 'var(--brand)' : 'var(--bg-elevated)',
                     color: musicMode === mode ? '#ffffff' : 'var(--text-secondary)',
-                    border: musicMode === mode
-                      ? '0.5px solid var(--brand)'
-                      : '0.5px solid var(--border)',
+                    border:
+                      musicMode === mode ? '0.5px solid var(--brand)' : '0.5px solid var(--border)',
                     padding: '6px 16px',
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: 'pointer',
-                    borderRadius: mode === 'free' ? 'var(--radius-md) 0 0 var(--radius-md)' : '0 var(--radius-md) var(--radius-md) 0',
+                    borderRadius:
+                      mode === 'free'
+                        ? 'var(--radius-md) 0 0 var(--radius-md)'
+                        : '0 var(--radius-md) var(--radius-md) 0',
                     transition: 'all 150ms ease',
                   }}
                 >
@@ -880,29 +1105,77 @@ export default function AudioStudioPage() {
 
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {/* Genre */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 140 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      flex: 1,
+                      minWidth: 140,
+                    }}
+                  >
                     <label style={labelStyle}>Genre</label>
-                    <select value={selectedGenre} onChange={(e) => setSelectedGenre(e.target.value)} style={selectStyle}>
-                      {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                    <select
+                      value={selectedGenre}
+                      onChange={(e) => setSelectedGenre(e.target.value)}
+                      style={selectStyle}
+                    >
+                      {GENRES.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   {/* Mood */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 140 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      flex: 1,
+                      minWidth: 140,
+                    }}
+                  >
                     <label style={labelStyle}>Mood</label>
-                    <select value={selectedMood} onChange={(e) => setSelectedMood(e.target.value)} style={selectStyle}>
-                      {MOODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                    <select
+                      value={selectedMood}
+                      onChange={(e) => setSelectedMood(e.target.value)}
+                      style={selectStyle}
+                    >
+                      {MOODS.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   {/* Duration */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 80 }}>
-                    <label style={labelStyle} htmlFor="audio-duration">Duration</label>
-                    <input id="audio-duration" type="text" value={duration} onChange={(e) => setDuration(e.target.value)} style={inputStyle} placeholder="0:30" />
+                    <label style={labelStyle} htmlFor="audio-duration">
+                      Duration
+                    </label>
+                    <input
+                      id="audio-duration"
+                      type="text"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      style={inputStyle}
+                      placeholder="0:30"
+                    />
                   </div>
 
                   {/* BPM */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: bpmRangeOn ? 180 : 80 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      minWidth: bpmRangeOn ? 180 : 80,
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <label style={labelStyle}>BPM</label>
                       <button
@@ -924,12 +1197,33 @@ export default function AudioStudioPage() {
                     </div>
                     {bpmRangeOn ? (
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        <input aria-label="Minimum BPM" type="text" value={bpmMin} onChange={(e) => setBpmMin(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Min" />
+                        <input
+                          aria-label="Minimum BPM"
+                          type="text"
+                          value={bpmMin}
+                          onChange={(e) => setBpmMin(e.target.value)}
+                          style={{ ...inputStyle, width: 60 }}
+                          placeholder="Min"
+                        />
                         <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>-</span>
-                        <input aria-label="Maximum BPM" type="text" value={bpmMax} onChange={(e) => setBpmMax(e.target.value)} style={{ ...inputStyle, width: 60 }} placeholder="Max" />
+                        <input
+                          aria-label="Maximum BPM"
+                          type="text"
+                          value={bpmMax}
+                          onChange={(e) => setBpmMax(e.target.value)}
+                          style={{ ...inputStyle, width: 60 }}
+                          placeholder="Max"
+                        />
                       </div>
                     ) : (
-                      <input aria-label="BPM" type="text" value={bpm} onChange={(e) => setBpm(e.target.value)} style={inputStyle} placeholder="120" />
+                      <input
+                        aria-label="BPM"
+                        type="text"
+                        value={bpm}
+                        onChange={(e) => setBpm(e.target.value)}
+                        style={inputStyle}
+                        placeholder="120"
+                      />
                     )}
                   </div>
 
@@ -962,8 +1256,12 @@ export default function AudioStudioPage() {
                     cursor: musicGenerating ? 'not-allowed' : 'pointer',
                   }}
                   onClick={handleGenerateMusic}
-                  onMouseEnter={(e) => { if (!musicGenerating) e.currentTarget.style.opacity = '0.9'; }}
-                  onMouseLeave={(e) => { if (!musicGenerating) e.currentTarget.style.opacity = '1'; }}
+                  onMouseEnter={(e) => {
+                    if (!musicGenerating) e.currentTarget.style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!musicGenerating) e.currentTarget.style.opacity = '1';
+                  }}
                 >
                   {musicGenerating ? (
                     <>
@@ -988,14 +1286,28 @@ export default function AudioStudioPage() {
                 {/* Project Selector */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 280 }}>
                   <label style={labelStyle}>Project</label>
-                  <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} style={selectStyle}>
-                    {PROJECTS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => setSelectedProject(e.target.value)}
+                    style={selectStyle}
+                  >
+                    {PROJECTS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 {/* Scene Timeline with real shots (AU-5) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
                     <label style={labelStyle}>Scene Timeline</label>
                     <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                       {selectedShotIds.size > 0
@@ -1039,7 +1351,9 @@ export default function AudioStudioPage() {
                             fontWeight: 600,
                             color: '#ffffff',
                             borderRadius: 2,
-                            border: isSelected ? '1.5px solid var(--brand)' : '1.5px solid transparent',
+                            border: isSelected
+                              ? '1.5px solid var(--brand)'
+                              : '1.5px solid transparent',
                             cursor: 'pointer',
                             transition: 'opacity 150ms ease, border-color 150ms ease',
                             padding: 0,
@@ -1078,8 +1392,14 @@ export default function AudioStudioPage() {
                     { label: 'Pacing', value: selectedPacing },
                   ].map((p) => (
                     <div key={p.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>{p.label}</span>
-                      <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{p.value}</span>
+                      <span
+                        style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}
+                      >
+                        {p.label}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {p.value}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1093,8 +1413,12 @@ export default function AudioStudioPage() {
                     cursor: sceneGenerating ? 'not-allowed' : 'pointer',
                   }}
                   onClick={handleGenerateSceneScore}
-                  onMouseEnter={(e) => { if (!sceneGenerating) e.currentTarget.style.opacity = '0.9'; }}
-                  onMouseLeave={(e) => { if (!sceneGenerating) e.currentTarget.style.opacity = '1'; }}
+                  onMouseEnter={(e) => {
+                    if (!sceneGenerating) e.currentTarget.style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!sceneGenerating) e.currentTarget.style.opacity = '1';
+                  }}
                 >
                   {sceneGenerating ? (
                     <>
@@ -1167,8 +1491,8 @@ export default function AudioStudioPage() {
                                 background: isHit
                                   ? 'var(--brand)'
                                   : isDownbeat
-                                  ? '#ffffff'
-                                  : 'rgba(255,255,255,0.2)',
+                                    ? '#ffffff'
+                                    : 'rgba(255,255,255,0.2)',
                                 pointerEvents: 'none',
                               }}
                             />
@@ -1219,14 +1543,46 @@ export default function AudioStudioPage() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Loader2 size={14} style={{ color: 'var(--brand)', animation: 'spin 1s linear infinite' }} />
+                    <Loader2
+                      size={14}
+                      style={{ color: 'var(--brand)', animation: 'spin 1s linear infinite' }}
+                    />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
-                    <div style={{ width: 140, height: 12, background: 'var(--bg-surface)', borderRadius: 4 }} />
-                    <div style={{ width: 100, height: 10, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                    <div
+                      style={{
+                        width: 140,
+                        height: 12,
+                        background: 'var(--bg-surface)',
+                        borderRadius: 4,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: 100,
+                        height: 10,
+                        background: 'var(--bg-surface)',
+                        borderRadius: 4,
+                      }}
+                    />
                   </div>
-                  <div style={{ flex: 1, minWidth: 80, height: 14, background: 'var(--bg-surface)', borderRadius: 4 }} />
-                  <div style={{ width: 32, height: 10, background: 'var(--bg-surface)', borderRadius: 4 }} />
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 80,
+                      height: 14,
+                      background: 'var(--bg-surface)',
+                      borderRadius: 4,
+                    }}
+                  />
+                  <div
+                    style={{
+                      width: 32,
+                      height: 10,
+                      background: 'var(--bg-surface)',
+                      borderRadius: 4,
+                    }}
+                  />
                 </div>
               ))}
 
@@ -1259,7 +1615,8 @@ export default function AudioStudioPage() {
                         defaultValue={trackNames[track.id] ?? track.name}
                         onBlur={(e) => handleTrackNameSave(track.id, e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleTrackNameSave(track.id, (e.target as HTMLInputElement).value);
+                          if (e.key === 'Enter')
+                            handleTrackNameSave(track.id, (e.target as HTMLInputElement).value);
                           if (e.key === 'Escape') setEditingTrackName(null);
                         }}
                         style={{
@@ -1346,7 +1703,9 @@ export default function AudioStudioPage() {
                   }}
                   style={selectStyle}
                 >
-                  <option value="" disabled>Select a voice...</option>
+                  <option value="" disabled>
+                    Select a voice...
+                  </option>
                   {CHARACTER_VOICES.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name} ({v.gender}, {v.pitch} pitch)
@@ -1358,7 +1717,9 @@ export default function AudioStudioPage() {
 
               {/* Text Input (AU-7: char count warnings at 400 / 490) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <label style={labelStyle}>Script Text</label>
                   <span
                     style={{
@@ -1367,8 +1728,8 @@ export default function AudioStudioPage() {
                         voiceText.length > 490
                           ? '#ef4444'
                           : voiceText.length > 400
-                          ? '#eab308'
-                          : 'var(--text-tertiary)',
+                            ? '#eab308'
+                            : 'var(--text-tertiary)',
                       fontVariantNumeric: 'tabular-nums',
                       fontWeight: voiceText.length > 400 ? 600 : 400,
                     }}
@@ -1398,8 +1759,16 @@ export default function AudioStudioPage() {
                 {/* Speaking Style */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label style={labelStyle}>Speaking Style</label>
-                  <select value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)} style={selectStyle}>
-                    {SPEAKING_STYLES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  <select
+                    value={voiceStyle}
+                    onChange={(e) => setVoiceStyle(e.target.value)}
+                    style={selectStyle}
+                  >
+                    {SPEAKING_STYLES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1407,7 +1776,15 @@ export default function AudioStudioPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <label style={labelStyle}>Speed</label>
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{voiceSpeed.toFixed(1)}x</span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {voiceSpeed.toFixed(1)}x
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -1432,7 +1809,16 @@ export default function AudioStudioPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <label style={labelStyle}>Pitch</label>
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{voicePitch > 0 ? '+' : ''}{voicePitch} st</span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-tertiary)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {voicePitch > 0 ? '+' : ''}
+                      {voicePitch} st
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -1457,8 +1843,16 @@ export default function AudioStudioPage() {
               {/* Language */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 200 }}>
                 <label style={labelStyle}>Language</label>
-                <select value={voiceLang} onChange={(e) => setVoiceLang(e.target.value)} style={selectStyle}>
-                  {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+                <select
+                  value={voiceLang}
+                  onChange={(e) => setVoiceLang(e.target.value)}
+                  style={selectStyle}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1471,8 +1865,12 @@ export default function AudioStudioPage() {
                   opacity: !voiceCanGenerate ? 0.5 : 1,
                   cursor: !voiceCanGenerate ? 'not-allowed' : 'pointer',
                 }}
-                onMouseEnter={(e) => { if (voiceCanGenerate) e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={(e) => { if (voiceCanGenerate) e.currentTarget.style.opacity = '1'; }}
+                onMouseEnter={(e) => {
+                  if (voiceCanGenerate) e.currentTarget.style.opacity = '0.9';
+                }}
+                onMouseLeave={(e) => {
+                  if (voiceCanGenerate) e.currentTarget.style.opacity = '1';
+                }}
               >
                 {voiceGenerating ? (
                   <>
@@ -1542,7 +1940,8 @@ export default function AudioStudioPage() {
                         defaultValue={trackNames[voice.id] ?? voice.name}
                         onBlur={(e) => handleTrackNameSave(voice.id, e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleTrackNameSave(voice.id, (e.target as HTMLInputElement).value);
+                          if (e.key === 'Enter')
+                            handleTrackNameSave(voice.id, (e.target as HTMLInputElement).value);
                           if (e.key === 'Escape') setEditingTrackName(null);
                         }}
                         style={{
@@ -1617,7 +2016,9 @@ export default function AudioStudioPage() {
               <h2 style={sectionTitleStyle}>Generate SFX</h2>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={labelStyle} htmlFor="sfx-description">Description</label>
+                <label style={labelStyle} htmlFor="sfx-description">
+                  Description
+                </label>
                 <input
                   id="sfx-description"
                   type="text"
@@ -1640,7 +2041,10 @@ export default function AudioStudioPage() {
                         style={{
                           background: sfxDuration === d ? 'var(--brand)' : 'var(--bg-surface)',
                           color: sfxDuration === d ? '#ffffff' : 'var(--text-secondary)',
-                          border: sfxDuration === d ? '0.5px solid var(--brand)' : '0.5px solid var(--border)',
+                          border:
+                            sfxDuration === d
+                              ? '0.5px solid var(--brand)'
+                              : '0.5px solid var(--border)',
                           padding: '5px 10px',
                           borderRadius: 'var(--radius-md)',
                           fontSize: 11,
@@ -1657,7 +2061,9 @@ export default function AudioStudioPage() {
 
                 {sfxDuration === 'Custom' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 80 }}>
-                    <label style={labelStyle} htmlFor="sfx-custom-duration">Seconds</label>
+                    <label style={labelStyle} htmlFor="sfx-custom-duration">
+                      Seconds
+                    </label>
                     <input
                       id="sfx-custom-duration"
                       type="text"
@@ -1674,8 +2080,12 @@ export default function AudioStudioPage() {
                 type="button"
                 style={primaryBtnStyle}
                 onClick={() => toast.success('Generating SFX...')}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.9';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
               >
                 <Volume2 size={13} />
                 Generate SFX
@@ -1722,9 +2132,10 @@ export default function AudioStudioPage() {
                     style={{
                       background: sfxCategory === cat ? 'var(--brand-dim)' : 'var(--bg-elevated)',
                       color: sfxCategory === cat ? 'var(--brand-light)' : 'var(--text-secondary)',
-                      border: sfxCategory === cat
-                        ? '0.5px solid var(--brand-border)'
-                        : '0.5px solid var(--border)',
+                      border:
+                        sfxCategory === cat
+                          ? '0.5px solid var(--brand-border)'
+                          : '0.5px solid var(--border)',
                       padding: '4px 12px',
                       borderRadius: 999,
                       fontSize: 11,
@@ -1905,7 +2316,9 @@ export default function AudioStudioPage() {
                 boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 22 }}>{sfxAddModal.sfx.icon}</span>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1942,7 +2355,9 @@ export default function AudioStudioPage() {
                   style={selectStyle}
                 >
                   {PROJECTS.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1955,7 +2370,9 @@ export default function AudioStudioPage() {
                   style={selectStyle}
                 >
                   {SCENE_SHOTS.map((s) => (
-                    <option key={s.id} value={s.id}>{s.label}</option>
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1978,7 +2395,7 @@ export default function AudioStudioPage() {
                     const proj = PROJECTS.find((p) => p.id === sfxModalProject);
                     const shot = SCENE_SHOTS.find((s) => s.id === sfxModalShot);
                     toast.success(
-                      `SFX added to timeline — ${proj?.name ?? 'project'} / ${shot?.label ?? 'shot'}`
+                      `SFX added to timeline — ${proj?.name ?? 'project'} / ${shot?.label ?? 'shot'}`,
                     );
                     setSfxAddModal(null);
                   }}
@@ -2037,7 +2454,9 @@ export default function AudioStudioPage() {
                 boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <h3 style={{ ...sectionTitleStyle, fontSize: 15 }}>Upload Voice Sample</h3>
                 <button
                   type="button"
@@ -2056,7 +2475,9 @@ export default function AudioStudioPage() {
                 </button>
               </div>
 
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              <p
+                style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}
+              >
                 Upload a 30-second clean audio sample (WAV or MP3). The model will clone the voice
                 characteristics for use in generation.
               </p>
@@ -2082,11 +2503,18 @@ export default function AudioStudioPage() {
                 <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
                   WAV, MP3 up to 10MB
                 </span>
-                <input type="file" accept="audio/*" aria-label="Upload voice sample" style={{ display: 'none' }} />
+                <input
+                  type="file"
+                  accept="audio/*"
+                  aria-label="Upload voice sample"
+                  style={{ display: 'none' }}
+                />
               </label>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={labelStyle} htmlFor="voice-name">Voice name</label>
+                <label style={labelStyle} htmlFor="voice-name">
+                  Voice name
+                </label>
                 <input id="voice-name" type="text" placeholder="e.g. Narrator" style={inputStyle} />
               </div>
 

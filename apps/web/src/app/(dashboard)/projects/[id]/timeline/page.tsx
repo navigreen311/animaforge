@@ -85,7 +85,7 @@ function mockWaveform(count: number): number[] {
   const waveform: number[] = [];
   let val = 0.3;
   for (let i = 0; i < count; i++) {
-    val += (Math.sin(i * 0.7) * 0.15 + Math.cos(i * 0.3) * 0.1);
+    val += Math.sin(i * 0.7) * 0.15 + Math.cos(i * 0.3) * 0.1;
     waveform.push(Math.max(0.05, Math.min(1, Math.abs(val))));
   }
   return waveform;

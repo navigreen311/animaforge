@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search,
-  X,
-  Film,
-  User,
-  Package,
-  FolderOpen,
-  Clock,
-  ArrowRight,
-} from 'lucide-react';
+import { Search, X, Film, User, Package, FolderOpen, Clock, ArrowRight } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /*  Mock Data                                                          */
@@ -27,16 +18,76 @@ interface SearchResult {
 }
 
 const MOCK_RESULTS: SearchResult[] = [
-  { id: 's1', type: 'shot', name: 'Hero entrance — wide angle', metadata: 'Scene 3 · 24 frames', updatedAt: '2026-04-09T08:30:00Z' },
-  { id: 's2', type: 'shot', name: 'Sunset fly-over establishing', metadata: 'Scene 1 · 48 frames', updatedAt: '2026-04-08T14:00:00Z' },
-  { id: 's3', type: 'shot', name: 'Close-up reaction shot', metadata: 'Scene 5 · 12 frames', updatedAt: '2026-04-07T10:20:00Z' },
-  { id: 'c1', type: 'character', name: 'Luna — protagonist', metadata: 'Anime style · 12 variants', updatedAt: '2026-04-09T06:00:00Z' },
-  { id: 'c2', type: 'character', name: 'Rex — antagonist', metadata: '3D Render · 8 variants', updatedAt: '2026-04-06T18:00:00Z' },
-  { id: 'a1', type: 'asset', name: 'Enchanted Forest BG', metadata: 'Background · 4096x2160', updatedAt: '2026-04-08T09:00:00Z' },
-  { id: 'a2', type: 'asset', name: 'Magic particle FX', metadata: 'VFX · Loopable', updatedAt: '2026-04-05T12:00:00Z' },
-  { id: 'a3', type: 'asset', name: 'Spaceship interior', metadata: 'Background · 3840x2160', updatedAt: '2026-04-04T15:30:00Z' },
-  { id: 'p1', type: 'project', name: 'Midnight Fable', metadata: '24 shots · In progress', updatedAt: '2026-04-09T09:00:00Z' },
-  { id: 'p2', type: 'project', name: 'Product Launch Ad', metadata: '8 shots · Draft', updatedAt: '2026-04-07T16:00:00Z' },
+  {
+    id: 's1',
+    type: 'shot',
+    name: 'Hero entrance — wide angle',
+    metadata: 'Scene 3 · 24 frames',
+    updatedAt: '2026-04-09T08:30:00Z',
+  },
+  {
+    id: 's2',
+    type: 'shot',
+    name: 'Sunset fly-over establishing',
+    metadata: 'Scene 1 · 48 frames',
+    updatedAt: '2026-04-08T14:00:00Z',
+  },
+  {
+    id: 's3',
+    type: 'shot',
+    name: 'Close-up reaction shot',
+    metadata: 'Scene 5 · 12 frames',
+    updatedAt: '2026-04-07T10:20:00Z',
+  },
+  {
+    id: 'c1',
+    type: 'character',
+    name: 'Luna — protagonist',
+    metadata: 'Anime style · 12 variants',
+    updatedAt: '2026-04-09T06:00:00Z',
+  },
+  {
+    id: 'c2',
+    type: 'character',
+    name: 'Rex — antagonist',
+    metadata: '3D Render · 8 variants',
+    updatedAt: '2026-04-06T18:00:00Z',
+  },
+  {
+    id: 'a1',
+    type: 'asset',
+    name: 'Enchanted Forest BG',
+    metadata: 'Background · 4096x2160',
+    updatedAt: '2026-04-08T09:00:00Z',
+  },
+  {
+    id: 'a2',
+    type: 'asset',
+    name: 'Magic particle FX',
+    metadata: 'VFX · Loopable',
+    updatedAt: '2026-04-05T12:00:00Z',
+  },
+  {
+    id: 'a3',
+    type: 'asset',
+    name: 'Spaceship interior',
+    metadata: 'Background · 3840x2160',
+    updatedAt: '2026-04-04T15:30:00Z',
+  },
+  {
+    id: 'p1',
+    type: 'project',
+    name: 'Midnight Fable',
+    metadata: '24 shots · In progress',
+    updatedAt: '2026-04-09T09:00:00Z',
+  },
+  {
+    id: 'p2',
+    type: 'project',
+    name: 'Product Launch Ad',
+    metadata: '8 shots · Draft',
+    updatedAt: '2026-04-07T16:00:00Z',
+  },
 ];
 
 const TYPE_META: Record<SearchResult['type'], { label: string; icon: typeof Film }> = {
@@ -259,7 +310,9 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         return (
                           <div
                             key={r.id}
-                            onClick={() => { window.location.href = `/${r.type}s/${r.id}`; }}
+                            onClick={() => {
+                              window.location.href = `/${r.type}s/${r.id}`;
+                            }}
                             onMouseEnter={() => setSelectedIndex(thisIdx)}
                             style={{
                               display: 'flex',
@@ -286,12 +339,32 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                               <Icon size={14} color="var(--text-secondary)" />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div
+                                style={{
+                                  fontSize: 13,
+                                  color: 'var(--text-primary)',
+                                  fontWeight: 500,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
                                 {r.name}
                               </div>
-                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{r.metadata}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                                {r.metadata}
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontSize: 11,
+                                color: 'var(--text-tertiary)',
+                                flexShrink: 0,
+                              }}
+                            >
                               <Clock size={10} />
                               {timeAgo(r.updatedAt)}
                             </div>

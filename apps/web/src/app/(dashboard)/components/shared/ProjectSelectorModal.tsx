@@ -34,10 +34,7 @@ export default function ProjectSelectorModal({
 
   /* ── Filter projects by search term ──────────────────── */
   const filtered = useMemo(
-    () =>
-      MOCK_PROJECTS.filter((p) =>
-        p.title.toLowerCase().includes(search.toLowerCase()),
-      ),
+    () => MOCK_PROJECTS.filter((p) => p.title.toLowerCase().includes(search.toLowerCase())),
     [search],
   );
 
@@ -124,12 +121,8 @@ export default function ProjectSelectorModal({
               alignItems: 'center',
               transition: 'color 150ms',
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = 'var(--text-primary)')
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = 'var(--text-tertiary)')
-            }
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
           >
             <X size={20} />
           </button>
@@ -167,12 +160,8 @@ export default function ProjectSelectorModal({
               transition: 'border-color 150ms',
               boxSizing: 'border-box',
             }}
-            onFocus={(e) =>
-              (e.currentTarget.style.borderColor = 'var(--border-brand)')
-            }
-            onBlur={(e) =>
-              (e.currentTarget.style.borderColor = 'var(--border)')
-            }
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--border-brand)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
           />
         </div>
 
@@ -207,12 +196,8 @@ export default function ProjectSelectorModal({
                   transition: 'background 150ms',
                   cursor: 'default',
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'var(--bg-hover)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = 'transparent')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Gradient swatch */}
                 <div
@@ -274,12 +259,8 @@ export default function ProjectSelectorModal({
                     fontFamily: 'inherit',
                     flexShrink: 0,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.opacity = '0.85')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.opacity = '1')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                 >
                   Select
                 </button>

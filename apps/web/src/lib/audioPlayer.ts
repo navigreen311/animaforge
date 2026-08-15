@@ -30,7 +30,8 @@ class AudioPlayerManager {
       const Ctor =
         (typeof window !== 'undefined' &&
           ((window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ||
-            (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)) ||
+            (window as unknown as { webkitAudioContext?: typeof AudioContext })
+              .webkitAudioContext)) ||
         null;
       if (!Ctor) {
         throw new Error('Web Audio API is not supported in this environment');
@@ -110,7 +111,7 @@ class AudioPlayerManager {
     trackId: string,
     url: string,
     onProgress?: ProgressCallback,
-    onEnd?: EndCallback
+    onEnd?: EndCallback,
   ): Promise<void> {
     const ctx = this.ensureContext();
 

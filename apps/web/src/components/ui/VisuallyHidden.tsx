@@ -11,10 +11,7 @@ interface VisuallyHiddenProps {
 /**
  * Screen-reader-only text wrapper. Visually hidden but accessible.
  */
-export default function VisuallyHidden({
-  children,
-  as: Tag = 'span',
-}: VisuallyHiddenProps) {
+export default function VisuallyHidden({ children, as: Tag = 'span' }: VisuallyHiddenProps) {
   return (
     <Tag
       style={{

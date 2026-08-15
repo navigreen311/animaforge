@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction, Router } from "express";
-import { Router as ExpressRouter } from "express";
+import type { Request, Response, NextFunction, Router } from 'express';
+import { Router as ExpressRouter } from 'express';
 
 interface EndpointStats {
   hits: number;
@@ -15,13 +15,13 @@ const SLOW_THRESHOLD_MS = 500;
 export function performanceMonitor(req: Request, res: Response, next: NextFunction): void {
   const start = process.hrtime.bigint();
 
-  res.on("finish", () => {
+  res.on('finish', () => {
     const durationNs = Number(process.hrtime.bigint() - start);
     const durationMs = durationNs / 1_000_000;
 
     try {
       if (!res.headersSent) {
-        res.setHeader("Server-Timing", `total;dur=${durationMs.toFixed(2)}`);
+        res.setHeader('Server-Timing', `total;dur=${durationMs.toFixed(2)}`);
       }
     } catch {
       // headers already sent
@@ -56,7 +56,7 @@ export function performanceMonitor(req: Request, res: Response, next: NextFuncti
 export function metricsRouter(): Router {
   const router = ExpressRouter();
 
-  router.get("/metrics", (_req: Request, res: Response) => {
+  router.get('/metrics', (_req: Request, res: Response) => {
     const endpoints: Record<string, any> = {};
     for (const [key, s] of stats.entries()) {
       endpoints[key] = {
@@ -68,7 +68,10 @@ export function metricsRouter(): Router {
       };
     }
     const totalHits = Array.from(stats.values()).reduce((sum, s) => sum + s.hits, 0);
-    const totalSlowRequests = Array.from(stats.values()).reduce((sum, s) => sum + s.slowRequests, 0);
+    const totalSlowRequests = Array.from(stats.values()).reduce(
+      (sum, s) => sum + s.slowRequests,
+      0,
+    );
 
     res.json({
       success: true,

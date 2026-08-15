@@ -135,8 +135,12 @@ export default function FeedbackWidget() {
               }}
             >
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <h2
+                  style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}
+                >
                   Send Feedback
                 </h2>
                 <button
@@ -159,7 +163,15 @@ export default function FeedbackWidget() {
 
               {/* Type selector */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                  }}
+                >
                   Type
                 </span>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -215,9 +227,7 @@ export default function FeedbackWidget() {
               </div>
 
               {/* Auto-filled URL */}
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                Page: {currentUrl}
-              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Page: {currentUrl}</div>
 
               {/* Actions */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

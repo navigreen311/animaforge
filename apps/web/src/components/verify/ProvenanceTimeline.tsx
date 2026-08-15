@@ -45,9 +45,7 @@ export default function ProvenanceTimeline({ steps }: ProvenanceTimelineProps) {
             <div key={`${step.label}-${index}`} className="relative flex gap-4 pb-6 last:pb-0">
               {/* Vertical line */}
               {!isLast && (
-                <div
-                  className={`absolute left-[9px] top-5 w-0.5 h-full ${styles.line}`}
-                />
+                <div className={`absolute left-[9px] top-5 w-0.5 h-full ${styles.line}`} />
               )}
               {/* Dot */}
               <div className="relative z-10 flex-shrink-0 mt-1">

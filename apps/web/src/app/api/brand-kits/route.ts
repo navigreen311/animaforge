@@ -110,10 +110,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!name || name.trim().length === 0) {
-    return NextResponse.json(
-      { error: 'Name is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
   const now = new Date().toISOString();

@@ -99,9 +99,7 @@ export default function ProjectsPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q),
+        (p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
       );
     }
 
@@ -127,10 +125,7 @@ export default function ProjectsPage() {
         break;
       case 'recent':
       default:
-        result.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        );
+        result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         break;
     }
 
@@ -232,8 +227,11 @@ export default function ProjectsPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <UnavailableButton feature="projects.import" hideNote layout="inline"
-                            style={{
+            <UnavailableButton
+              feature="projects.import"
+              hideNote
+              layout="inline"
+              style={{
                 background: 'transparent',
                 border: '0.5px solid var(--border)',
                 color: 'var(--text-secondary)',

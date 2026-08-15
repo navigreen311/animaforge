@@ -1,38 +1,43 @@
-import { Router } from "express";
-import { sceneController } from "../controllers/sceneController.js";
-import { validate } from "../middleware/validate.js";
-import { requireAuth } from "../middleware/auth.js";
-import { CreateSceneSchema, UpdateSceneSchema, ProjectParamsSchema, SceneParamsSchema } from "../models/sceneSchemas.js";
+import { Router } from 'express';
+import { sceneController } from '../controllers/sceneController.js';
+import { validate } from '../middleware/validate.js';
+import { requireAuth } from '../middleware/auth.js';
+import {
+  CreateSceneSchema,
+  UpdateSceneSchema,
+  ProjectParamsSchema,
+  SceneParamsSchema,
+} from '../models/sceneSchemas.js';
 
 const router = Router();
 
 router.post(
-  "/projects/:projectId/scenes",
+  '/projects/:projectId/scenes',
   requireAuth,
-  validate(ProjectParamsSchema, "params"),
-  validate(CreateSceneSchema, "body"),
+  validate(ProjectParamsSchema, 'params'),
+  validate(CreateSceneSchema, 'body'),
   sceneController.create,
 );
 
 router.get(
-  "/projects/:projectId/scenes",
+  '/projects/:projectId/scenes',
   requireAuth,
-  validate(ProjectParamsSchema, "params"),
+  validate(ProjectParamsSchema, 'params'),
   sceneController.list,
 );
 
 router.put(
-  "/scenes/:id",
+  '/scenes/:id',
   requireAuth,
-  validate(SceneParamsSchema, "params"),
-  validate(UpdateSceneSchema, "body"),
+  validate(SceneParamsSchema, 'params'),
+  validate(UpdateSceneSchema, 'body'),
   sceneController.update,
 );
 
 router.delete(
-  "/scenes/:id",
+  '/scenes/:id',
   requireAuth,
-  validate(SceneParamsSchema, "params"),
+  validate(SceneParamsSchema, 'params'),
   sceneController.delete,
 );
 

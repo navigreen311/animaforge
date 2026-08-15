@@ -48,9 +48,7 @@ export class RateLimiter {
     const windowStart = now - this.config.windowMs;
 
     // Get existing timestamps and prune expired entries
-    const timestamps = (this.requests.get(key) || []).filter(
-      (t) => t > windowStart,
-    );
+    const timestamps = (this.requests.get(key) || []).filter((t) => t > windowStart);
 
     if (timestamps.length >= this.config.maxRequests) {
       const oldestInWindow = timestamps[0]!;
@@ -75,9 +73,7 @@ export class RateLimiter {
    */
   remaining(key: string): number {
     const windowStart = Date.now() - this.config.windowMs;
-    const timestamps = (this.requests.get(key) || []).filter(
-      (t) => t > windowStart,
-    );
+    const timestamps = (this.requests.get(key) || []).filter((t) => t > windowStart);
     return Math.max(this.config.maxRequests - timestamps.length, 0);
   }
 
@@ -124,10 +120,7 @@ const globalLimiter = new RateLimiter();
  * Returns `{ allowed: true }` when all checks pass, or
  * `{ allowed: false, reason }` with a human-readable explanation.
  */
-export function validateGenerationRequest(
-  userId: string,
-  creditCost: number,
-): ValidationResult {
+export function validateGenerationRequest(userId: string, creditCost: number): ValidationResult {
   // Gate 1: Rate limit
   const rateResult = globalLimiter.check(userId);
   if (!rateResult.allowed) {
@@ -166,11 +159,7 @@ export function validateGenerationRequest(
  * Refund credits to a user (e.g. after a failed generation).
  * Also decrements the concurrent job counter.
  */
-export function refundCredits(
-  userId: string,
-  creditCost: number,
-  reason: string,
-): void {
+export function refundCredits(userId: string, creditCost: number, reason: string): void {
   const account = getOrCreateAccount(userId);
   account.balance += creditCost;
   account.concurrentJobs = Math.max(account.concurrentJobs - 1, 0);

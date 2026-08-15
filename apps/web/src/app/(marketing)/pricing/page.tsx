@@ -2,15 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Check,
-  X,
-  ChevronDown,
-  Zap,
-  Package,
-  CreditCard,
-} from 'lucide-react';
+import { ArrowRight, Check, X, ChevronDown, Zap, Package, CreditCard } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════
    DATA
@@ -123,16 +115,65 @@ interface ComparisonRow {
 }
 
 const comparisonRows: ComparisonRow[] = [
-  { feature: 'Projects', free: '1', creator: '10', pro: '50', studio: 'Unlimited', enterprise: 'Unlimited' },
-  { feature: 'Watermark', free: true, creator: false, pro: false, studio: false, enterprise: false },
-  { feature: 'Style library', free: 'Community', creator: 'Custom', pro: 'Full + AI', studio: 'Full + AI', enterprise: 'Full + AI' },
-  { feature: 'Avatar studio', free: false, creator: '3 avatars', pro: 'Unlimited', studio: 'Unlimited', enterprise: 'Unlimited' },
-  { feature: 'Team members', free: '1', creator: '1', pro: '5', studio: 'Unlimited', enterprise: 'Unlimited' },
+  {
+    feature: 'Projects',
+    free: '1',
+    creator: '10',
+    pro: '50',
+    studio: 'Unlimited',
+    enterprise: 'Unlimited',
+  },
+  {
+    feature: 'Watermark',
+    free: true,
+    creator: false,
+    pro: false,
+    studio: false,
+    enterprise: false,
+  },
+  {
+    feature: 'Style library',
+    free: 'Community',
+    creator: 'Custom',
+    pro: 'Full + AI',
+    studio: 'Full + AI',
+    enterprise: 'Full + AI',
+  },
+  {
+    feature: 'Avatar studio',
+    free: false,
+    creator: '3 avatars',
+    pro: 'Unlimited',
+    studio: 'Unlimited',
+    enterprise: 'Unlimited',
+  },
+  {
+    feature: 'Team members',
+    free: '1',
+    creator: '1',
+    pro: '5',
+    studio: 'Unlimited',
+    enterprise: 'Unlimited',
+  },
   { feature: 'API access', free: false, creator: false, pro: true, studio: true, enterprise: true },
   { feature: 'Brand Kit', free: false, creator: false, pro: false, studio: true, enterprise: true },
   { feature: 'SSO', free: false, creator: false, pro: false, studio: false, enterprise: true },
-  { feature: 'SLA', free: false, creator: false, pro: false, studio: '99.9%', enterprise: 'Custom' },
-  { feature: 'Priority generation', free: false, creator: true, pro: true, studio: true, enterprise: true },
+  {
+    feature: 'SLA',
+    free: false,
+    creator: false,
+    pro: false,
+    studio: '99.9%',
+    enterprise: 'Custom',
+  },
+  {
+    feature: 'Priority generation',
+    free: false,
+    creator: true,
+    pro: true,
+    studio: true,
+    enterprise: true,
+  },
 ];
 
 const creditPacks = [
@@ -195,9 +236,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
           className={`ml-4 h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      {open && (
-        <p className="pb-5 text-sm leading-relaxed text-zinc-400">{a}</p>
-      )}
+      {open && <p className="pb-5 text-sm leading-relaxed text-zinc-400">{a}</p>}
     </div>
   );
 }
@@ -215,16 +254,16 @@ export default function PricingPage() {
       {/* ── Header ── */}
       <section className="relative overflow-hidden px-6 pb-16 pt-16 text-center sm:pt-20">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.12),transparent_70%)]" />
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Plans &amp; Pricing
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Plans &amp; Pricing</h1>
         <p className="mx-auto mt-4 max-w-lg text-lg text-zinc-400">
           Start free. Scale with credits. No hidden fees.
         </p>
 
         {/* Billing toggle */}
         <div className="mt-10 flex items-center justify-center gap-3">
-          <span className={`text-sm font-medium ${!annual ? 'text-white' : 'text-zinc-500'}`}>Monthly</span>
+          <span className={`text-sm font-medium ${!annual ? 'text-white' : 'text-zinc-500'}`}>
+            Monthly
+          </span>
           <button
             onClick={() => setAnnual(!annual)}
             className={`relative h-7 w-12 rounded-full transition-colors ${
@@ -308,7 +347,9 @@ export default function PricingPage() {
           className="mx-auto flex items-center gap-2 text-sm font-medium text-violet-400 transition-colors hover:text-violet-300"
         >
           {showComparison ? 'Hide' : 'Show'} full feature comparison
-          <ChevronDown className={`h-4 w-4 transition-transform ${showComparison ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${showComparison ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {showComparison && (
@@ -318,7 +359,9 @@ export default function PricingPage() {
                 <tr className="border-b border-zinc-800">
                   <th className="py-3 pr-4 text-left font-medium text-zinc-400">Feature</th>
                   {['Free', 'Creator', 'Pro', 'Studio', 'Enterprise'].map((h) => (
-                    <th key={h} className="px-3 py-3 text-center font-medium text-zinc-300">{h}</th>
+                    <th key={h} className="px-3 py-3 text-center font-medium text-zinc-300">
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -326,11 +369,21 @@ export default function PricingPage() {
                 {comparisonRows.map((row) => (
                   <tr key={row.feature} className="border-b border-zinc-800/40">
                     <td className="py-3 pr-4 text-zinc-300">{row.feature}</td>
-                    <td className="px-3 py-3 text-center"><CellValue value={row.free} /></td>
-                    <td className="px-3 py-3 text-center"><CellValue value={row.creator} /></td>
-                    <td className="px-3 py-3 text-center"><CellValue value={row.pro} /></td>
-                    <td className="px-3 py-3 text-center"><CellValue value={row.studio} /></td>
-                    <td className="px-3 py-3 text-center"><CellValue value={row.enterprise} /></td>
+                    <td className="px-3 py-3 text-center">
+                      <CellValue value={row.free} />
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <CellValue value={row.creator} />
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <CellValue value={row.pro} />
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <CellValue value={row.studio} />
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <CellValue value={row.enterprise} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

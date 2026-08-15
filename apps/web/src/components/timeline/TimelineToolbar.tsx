@@ -74,23 +74,42 @@ export function TimelineToolbar({
 
   return (
     <div className="flex items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-2">
-      <button onClick={onPlayPause} className="flex h-8 w-8 items-center justify-center rounded bg-zinc-800 text-zinc-100 hover:bg-zinc-700" aria-label={playing ? 'Pause' : 'Play'}>
-        {playing ? (<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12" /><rect x="9" y="2" width="4" height="12" /></svg>) : (<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><polygon points="3,2 14,8 3,14" /></svg>)}
+      <button
+        onClick={onPlayPause}
+        className="flex h-8 w-8 items-center justify-center rounded bg-zinc-800 text-zinc-100 hover:bg-zinc-700"
+        aria-label={playing ? 'Pause' : 'Play'}
+      >
+        {playing ? (
+          <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="3" y="2" width="4" height="12" />
+            <rect x="9" y="2" width="4" height="12" />
+          </svg>
+        ) : (
+          <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+            <polygon points="3,2 14,8 3,14" />
+          </svg>
+        )}
       </button>
       <div className="flex items-center gap-2">
         <span className="text-xs text-zinc-400">Zoom</span>
-        <input type="range" min={25} max={200} value={zoom} onChange={(e) => onZoomChange(Number(e.target.value))} className="h-1 w-24 cursor-pointer accent-violet-500" />
+        <input
+          type="range"
+          min={25}
+          max={200}
+          value={zoom}
+          onChange={(e) => onZoomChange(Number(e.target.value))}
+          className="h-1 w-24 cursor-pointer accent-violet-500"
+        />
         <span className="w-10 text-xs text-zinc-400">{zoom}%</span>
       </div>
 
       {/* Snap toggle */}
       <button
         onClick={onSnapToggle}
-        className={'rounded px-3 py-1 text-xs font-medium ' + (
-          snap
-            ? 'bg-violet-600 text-white'
-            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-        )}
+        className={
+          'rounded px-3 py-1 text-xs font-medium ' +
+          (snap ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700')
+        }
       >
         Snap
       </button>
@@ -103,7 +122,9 @@ export function TimelineToolbar({
           className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
         >
           {snapModes.map((sm) => (
-            <option key={sm.value} value={sm.value}>{sm.label}</option>
+            <option key={sm.value} value={sm.value}>
+              {sm.label}
+            </option>
           ))}
         </select>
       )}
@@ -114,11 +135,12 @@ export function TimelineToolbar({
           <button
             key={btn.value}
             onClick={() => onModeChange(btn.value)}
-            className={'rounded px-3 py-1 text-xs font-medium ' + (
-              mode === btn.value
+            className={
+              'rounded px-3 py-1 text-xs font-medium ' +
+              (mode === btn.value
                 ? 'bg-violet-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-            )}
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700')
+            }
           >
             {btn.label}
           </button>
@@ -138,7 +160,9 @@ export function TimelineToolbar({
             className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
           >
             {frameRates.map((fps) => (
-              <option key={fps} value={fps}>{fps}</option>
+              <option key={fps} value={fps}>
+                {fps}
+              </option>
             ))}
           </select>
         </div>
@@ -153,7 +177,13 @@ export function TimelineToolbar({
           aria-label="Undo"
           title="Undo (Ctrl+Z)"
         >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            className="h-3.5 w-3.5"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M3 8h8a3 3 0 0 1 0 6H9" />
             <path d="M5 5L2 8l3 3" />
           </svg>
@@ -165,7 +195,13 @@ export function TimelineToolbar({
           aria-label="Redo"
           title="Redo (Ctrl+Shift+Z)"
         >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            className="h-3.5 w-3.5"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M13 8H5a3 3 0 0 0 0 6h2" />
             <path d="M11 5l3 3-3 3" />
           </svg>

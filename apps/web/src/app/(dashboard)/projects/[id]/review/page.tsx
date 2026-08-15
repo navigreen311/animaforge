@@ -11,13 +11,27 @@ type FilterStatus = 'all' | 'review' | 'approved' | 'draft';
 
 const mockShots: ReviewShot[] = [
   { id: 's1', shotNumber: 1, scene: 'INT-01', duration: '4.2s', status: 'review', commentCount: 3 },
-  { id: 's2', shotNumber: 2, scene: 'INT-01', duration: '3.8s', status: 'approved', commentCount: 1 },
+  {
+    id: 's2',
+    shotNumber: 2,
+    scene: 'INT-01',
+    duration: '3.8s',
+    status: 'approved',
+    commentCount: 1,
+  },
   { id: 's3', shotNumber: 3, scene: 'EXT-02', duration: '6.1s', status: 'draft', commentCount: 0 },
   { id: 's4', shotNumber: 4, scene: 'EXT-02', duration: '2.9s', status: 'review', commentCount: 5 },
   { id: 's5', shotNumber: 5, scene: 'INT-03', duration: '5.5s', status: 'review', commentCount: 2 },
   { id: 's6', shotNumber: 6, scene: 'INT-03', duration: '4.0s', status: 'locked', commentCount: 4 },
   { id: 's7', shotNumber: 7, scene: 'EXT-04', duration: '3.3s', status: 'draft', commentCount: 0 },
-  { id: 's8', shotNumber: 8, scene: 'EXT-04', duration: '7.1s', status: 'approved', commentCount: 2 },
+  {
+    id: 's8',
+    shotNumber: 8,
+    scene: 'EXT-04',
+    duration: '7.1s',
+    status: 'approved',
+    commentCount: 2,
+  },
 ];
 
 const FILTERS: { value: FilterStatus; label: string }[] = [
@@ -41,9 +55,7 @@ export default function ReviewPage() {
   };
 
   const bulkUpdate = (status: BadgeStatus) => {
-    setShots((prev) =>
-      prev.map((s) => (selectedIds.has(s.id) ? { ...s, status } : s))
-    );
+    setShots((prev) => prev.map((s) => (selectedIds.has(s.id) ? { ...s, status } : s)));
     setSelectedIds(new Set());
   };
 
@@ -67,7 +79,8 @@ export default function ReviewPage() {
           <div>
             <h1 className="text-xl font-bold text-gray-100">Review &amp; Approval</h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              Project {params.id} &mdash; {pendingCount} shot{pendingCount !== 1 ? 's' : ''} pending review
+              Project {params.id} &mdash; {pendingCount} shot{pendingCount !== 1 ? 's' : ''} pending
+              review
             </p>
           </div>
 
@@ -126,7 +139,12 @@ export default function ReviewPage() {
                 }`}
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </button>
 
@@ -142,8 +160,18 @@ export default function ReviewPage() {
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <svg className="w-10 h-10 text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-10 h-10 text-gray-700 mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-gray-500">No shots match this filter.</p>
           </div>
@@ -164,10 +192,7 @@ export default function ReviewPage() {
       {/* Comment side panel */}
       {commentShotId && (
         <div className="w-80 flex-shrink-0">
-          <CommentThread
-            shotId={commentShotId}
-            onClose={() => setCommentShotId(null)}
-          />
+          <CommentThread shotId={commentShotId} onClose={() => setCommentShotId(null)} />
         </div>
       )}
     </div>

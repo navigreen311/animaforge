@@ -148,7 +148,9 @@ export default function NewCharacterModal({ open, onClose }: NewCharacterModalPr
             onChange={(e) => setName(e.target.value)}
             style={inputStyle}
           />
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', float: 'right', marginTop: 2 }}>
+          <span
+            style={{ fontSize: 10, color: 'var(--text-tertiary)', float: 'right', marginTop: 2 }}
+          >
             {name.length}/{NAME_MAX}
           </span>
         </div>
@@ -163,7 +165,9 @@ export default function NewCharacterModal({ open, onClose }: NewCharacterModalPr
             rows={3}
             style={{ ...inputStyle, resize: 'vertical', minHeight: 64 }}
           />
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', float: 'right', marginTop: 2 }}>
+          <span
+            style={{ fontSize: 10, color: 'var(--text-tertiary)', float: 'right', marginTop: 2 }}
+          >
             {description.length}/{DESC_MAX}
           </span>
         </div>

@@ -12,9 +12,15 @@ interface CollabBarProps {
 export default function CollabBar({ users, isConnected, projectId }: CollabBarProps) {
   const connectionColor = isConnected
     ? 'bg-green-500 animate-pulse'
-    : users.length > 0 ? 'bg-yellow-500' : 'bg-red-500';
+    : users.length > 0
+      ? 'bg-yellow-500'
+      : 'bg-red-500';
 
-  const connectionLabel = isConnected ? 'Connected' : users.length > 0 ? 'Reconnecting...' : 'Disconnected';
+  const connectionLabel = isConnected
+    ? 'Connected'
+    : users.length > 0
+      ? 'Reconnecting...'
+      : 'Disconnected';
 
   const handleShare = useCallback(() => {
     if (!projectId) return;
@@ -45,8 +51,11 @@ export default function CollabBar({ users, isConnected, projectId }: CollabBarPr
         ))}
       </div>
       <span className="text-[10px] text-gray-500">{users.length} online</span>
-      <button type="button" onClick={handleShare}
-        className="ml-auto rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-[10px] font-medium text-gray-300 hover:border-violet-600/50 hover:text-violet-400 transition-colors">
+      <button
+        type="button"
+        onClick={handleShare}
+        className="ml-auto rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-[10px] font-medium text-gray-300 hover:border-violet-600/50 hover:text-violet-400 transition-colors"
+      >
         Share
       </button>
     </div>

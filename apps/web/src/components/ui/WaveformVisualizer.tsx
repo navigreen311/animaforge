@@ -67,7 +67,7 @@ function drawRoundedBar(
   y: number,
   w: number,
   h: number,
-  r: number
+  r: number,
 ) {
   const radius = Math.min(r, w / 2, h / 2);
   const anyCtx = ctx as unknown as {
@@ -172,9 +172,7 @@ export function WaveformVisualizer({
       const totalGap = gap * (BAR_COUNT - 1);
       const barWidth = Math.max(1, (cssWidth - totalGap) / BAR_COUNT);
       const radius = Math.min(2, barWidth / 2);
-      const progressBarIndex = Math.floor(
-        Math.max(0, Math.min(1, progress)) * BAR_COUNT
-      );
+      const progressBarIndex = Math.floor(Math.max(0, Math.min(1, progress)) * BAR_COUNT);
 
       for (let i = 0; i < BAR_COUNT; i++) {
         const v = Math.max(0.04, Math.min(1, bars[i] ?? 0.1));

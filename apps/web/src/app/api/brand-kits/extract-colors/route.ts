@@ -5,10 +5,7 @@ export async function POST(request: NextRequest) {
   const { logoUrl } = body as { logoUrl?: string };
 
   if (!logoUrl || logoUrl.trim().length === 0) {
-    return NextResponse.json(
-      { error: 'logoUrl is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'logoUrl is required' }, { status: 400 });
   }
 
   return NextResponse.json({

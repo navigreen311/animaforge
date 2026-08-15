@@ -15,18 +15,12 @@ const MOCK_MEMBERS: Record<string, { name: string; email: string; role: string }
 /*  PATCH /api/team/members/[id]                                      */
 /*  Update a team member's role or credit settings                    */
 /* ------------------------------------------------------------------ */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const member = MOCK_MEMBERS[id];
 
   if (!member) {
-    return NextResponse.json(
-      { error: `Member "${id}" not found` },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: `Member "${id}" not found` }, { status: 404 });
   }
 
   try {
@@ -52,10 +46,7 @@ export async function PATCH(
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }
 
@@ -63,18 +54,12 @@ export async function PATCH(
 /*  DELETE /api/team/members/[id]                                     */
 /*  Remove a team member                                              */
 /* ------------------------------------------------------------------ */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const member = MOCK_MEMBERS[id];
 
   if (!member) {
-    return NextResponse.json(
-      { error: `Member "${id}" not found` },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: `Member "${id}" not found` }, { status: 404 });
   }
 
   return NextResponse.json({

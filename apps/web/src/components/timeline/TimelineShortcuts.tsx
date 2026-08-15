@@ -102,8 +102,11 @@ export function TimelineShortcuts({
         case 'Z':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            if (e.shiftKey) { onRedo?.(); }
-            else { onUndo?.(); }
+            if (e.shiftKey) {
+              onRedo?.();
+            } else {
+              onUndo?.();
+            }
           }
           break;
         case 'd':
@@ -129,9 +132,19 @@ export function TimelineShortcuts({
       }
     },
     [
-      playing, onPlayPause, playheadPosition, onPlayheadChange,
-      totalDuration, frameDuration, selectedShotIds, onDeleteShots,
-      onDuplicateShot, onUndo, onRedo, zoom, onZoomChange,
+      playing,
+      onPlayPause,
+      playheadPosition,
+      onPlayheadChange,
+      totalDuration,
+      frameDuration,
+      selectedShotIds,
+      onDeleteShots,
+      onDuplicateShot,
+      onUndo,
+      onRedo,
+      zoom,
+      onZoomChange,
     ],
   );
 

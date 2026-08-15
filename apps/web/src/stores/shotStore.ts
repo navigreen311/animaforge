@@ -29,8 +29,7 @@ export const useShotStore = create<ShotState & ShotActions>((set) => ({
   setActiveShot: (shot) => set({ activeShot: shot }),
   updateSceneGraph: (sceneGraph) => set({ sceneGraph, isDirty: true }),
 
-  addShot: (shot) =>
-    set((state) => ({ shots: [...state.shots, shot], isDirty: true })),
+  addShot: (shot) => set((state) => ({ shots: [...state.shots, shot], isDirty: true })),
 
   removeShot: (id) =>
     set((state) => ({

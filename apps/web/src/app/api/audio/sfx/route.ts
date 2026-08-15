@@ -8,10 +8,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!description) {
-    return NextResponse.json(
-      { error: 'description is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'description is required' }, { status: 400 });
   }
 
   const track = {

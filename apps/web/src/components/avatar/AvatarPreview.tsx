@@ -4,9 +4,7 @@ import { useAvatarStore } from '@/stores/avatarStore';
 
 export default function AvatarPreview() {
   const previewUrl = useAvatarStore((s) => s.previewUrl);
-  const job = useAvatarStore((s) =>
-    s.avatarJobs.find((j) => j.id === s.activeAvatar)
-  );
+  const job = useAvatarStore((s) => s.avatarJobs.find((j) => j.id === s.activeAvatar));
 
   const qualityScore = job?.qualityScore ?? null;
   const isComplete = job?.status === 'complete';
@@ -16,11 +14,7 @@ export default function AvatarPreview() {
       {/* 3D Preview area */}
       <div className="flex-1 rounded-xl bg-gray-900/60 border border-gray-800 flex items-center justify-center min-h-[360px] relative overflow-hidden">
         {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="Avatar preview"
-            className="w-full h-full object-contain"
-          />
+          <img src={previewUrl} alt="Avatar preview" className="w-full h-full object-contain" />
         ) : (
           <div className="flex flex-col items-center gap-3 text-gray-600">
             <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +57,12 @@ export default function AvatarPreview() {
             </div>
             {qualityScore !== null && qualityScore < 0.92 && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-4 h-4 text-amber-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

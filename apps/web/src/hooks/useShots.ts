@@ -21,7 +21,18 @@ type CreateShotInput = Omit<Shot, 'id' | 'status' | 'thumbnailUrl' | 'outputUrl'
 };
 
 type UpdateShotInput = Partial<
-  Pick<Shot, 'subject' | 'camera' | 'action' | 'emotion' | 'timing' | 'dialogue' | 'durationSec' | 'characterRefs' | 'styleRef'>
+  Pick<
+    Shot,
+    | 'subject'
+    | 'camera'
+    | 'action'
+    | 'emotion'
+    | 'timing'
+    | 'dialogue'
+    | 'durationSec'
+    | 'characterRefs'
+    | 'styleRef'
+  >
 >;
 
 /* ------------------------------------------------------------------ */
@@ -31,8 +42,7 @@ type UpdateShotInput = Partial<
 export function useShots(projectId: string | undefined) {
   return useQuery({
     queryKey: shotKeys.byProject(projectId!),
-    queryFn: () =>
-      apiClient.get<Shot[]>(`/api/v1/projects/${projectId}/shots`),
+    queryFn: () => apiClient.get<Shot[]>(`/api/v1/projects/${projectId}/shots`),
     enabled: !!projectId,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
@@ -82,8 +92,7 @@ export function useApproveShot() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.put<Shot>(`/api/v1/shots/${id}/approve`),
+    mutationFn: (id: string) => apiClient.put<Shot>(`/api/v1/shots/${id}/approve`),
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: shotKeys.detail(id) });
       qc.invalidateQueries({ queryKey: shotKeys.all });

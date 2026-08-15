@@ -32,17 +32,11 @@ const MOCK_BRAND_KIT = {
   updatedAt: '2026-03-20T14:30:00.000Z',
 };
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   if (!id || !id.startsWith('bk_')) {
-    return NextResponse.json(
-      { error: 'Brand kit not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Brand kit not found' }, { status: 404 });
   }
 
   return NextResponse.json({
@@ -50,17 +44,11 @@ export async function GET(
   });
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   if (!id || !id.startsWith('bk_')) {
-    return NextResponse.json(
-      { error: 'Brand kit not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Brand kit not found' }, { status: 404 });
   }
 
   const body = await request.json();
@@ -74,17 +62,11 @@ export async function PATCH(
   return NextResponse.json({ brandKit: updatedKit });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 
   if (!id || !id.startsWith('bk_')) {
-    return NextResponse.json(
-      { error: 'Brand kit not found' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Brand kit not found' }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

@@ -56,7 +56,10 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
           <input
             type="date"
             value={dateFrom}
-            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(1);
+            }}
             className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
           />
         </div>
@@ -65,7 +68,10 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
           <input
             type="date"
             value={dateTo}
-            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(1);
+            }}
             className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
           />
         </div>
@@ -75,7 +81,10 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
             type="text"
             placeholder="Filter by user..."
             value={userFilter}
-            onChange={(e) => { setUserFilter(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setUserFilter(e.target.value);
+              setPage(1);
+            }}
             className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
           />
         </div>
@@ -83,7 +92,10 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
           <label className="block text-xs text-gray-400 mb-1">Action</label>
           <select
             value={actionFilter}
-            onChange={(e) => { setActionFilter(e.target.value as ActionType); setPage(1); }}
+            onChange={(e) => {
+              setActionFilter(e.target.value as ActionType);
+              setPage(1);
+            }}
             className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-1.5 focus:ring-purple-500 focus:border-purple-500"
           >
             <option value="all">All Actions</option>
@@ -109,7 +121,10 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
           <thead className="bg-gray-900">
             <tr>
               {['Timestamp', 'User', 'Action', 'Resource', 'Resource ID', 'IP Address'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th
+                  key={h}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                >
                   {h}
                 </th>
               ))}
@@ -123,7 +138,9 @@ export default function AuditLogTable({ entries, onExport }: AuditLogTableProps)
                 </td>
                 <td className="px-4 py-3 text-white whitespace-nowrap">{entry.user}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${actionColors[entry.action] || 'bg-gray-800 text-gray-300'}`}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${actionColors[entry.action] || 'bg-gray-800 text-gray-300'}`}
+                  >
                     {entry.action}
                   </span>
                 </td>

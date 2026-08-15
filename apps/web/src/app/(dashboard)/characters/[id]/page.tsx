@@ -28,7 +28,15 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 import type { Character, StyleMode } from '@/lib/types';
 import { useAuthStore } from '@/stores/authStore';
 import { Toast, useToast } from '@/components/shared/Toast';
@@ -76,14 +84,36 @@ const STYLE_MODES: { value: StyleMode; label: string; gradient: string }[] = [
   { value: 'realistic', label: 'Realistic', gradient: 'linear-gradient(135deg, #334155, #1e293b)' },
   { value: 'anime', label: 'Anime', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
   { value: 'cartoon', label: 'Cartoon', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
-  { value: 'cel-shaded', label: 'Cel-Shaded', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)' },
+  {
+    value: 'cel-shaded',
+    label: 'Cel-Shaded',
+    gradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
+  },
   { value: 'pixel', label: 'Pixel', gradient: 'linear-gradient(135deg, #ec4899, #f97316)' },
   { value: 'clay', label: 'Clay', gradient: 'linear-gradient(135deg, #a16207, #854d0e)' },
 ];
 
-const SKIN_TONES = ['#FDDBB4', '#E8B98D', '#D2A679', '#C68642', '#8D5524', '#6B3A1F', '#3B1F0B', '#F5D6C6'];
+const SKIN_TONES = [
+  '#FDDBB4',
+  '#E8B98D',
+  '#D2A679',
+  '#C68642',
+  '#8D5524',
+  '#6B3A1F',
+  '#3B1F0B',
+  '#F5D6C6',
+];
 
-const HAIR_COLORS = ['#1a1a2e', '#4a2c0a', '#8B4513', '#D2691E', '#DAA520', '#C0C0C0', '#DC143C', '#2E0854'];
+const HAIR_COLORS = [
+  '#1a1a2e',
+  '#4a2c0a',
+  '#8B4513',
+  '#D2691E',
+  '#DAA520',
+  '#C0C0C0',
+  '#DC143C',
+  '#2E0854',
+];
 
 const BUILD_OPTIONS = ['Slim', 'Average', 'Athletic', 'Heavy'];
 
@@ -113,9 +143,21 @@ const EMOTION_PREVIEWS = [
 ];
 
 const MOCK_HISTORY = [
-  { id: 'h-1', project: 'Cyber Samurai: Origin', shotNumber: 7, date: '2026-03-20', consistencyScore: 94 },
+  {
+    id: 'h-1',
+    project: 'Cyber Samurai: Origin',
+    shotNumber: 7,
+    date: '2026-03-20',
+    consistencyScore: 94,
+  },
   { id: 'h-2', project: 'Neon Drift', shotNumber: 3, date: '2026-03-18', consistencyScore: 88 },
-  { id: 'h-3', project: 'Cyber Samurai: Origin', shotNumber: 12, date: '2026-03-15', consistencyScore: 91 },
+  {
+    id: 'h-3',
+    project: 'Cyber Samurai: Origin',
+    shotNumber: 12,
+    date: '2026-03-15',
+    consistencyScore: 91,
+  },
 ];
 
 /* ── Voice Modal Mock Voices ──────────────────────────────────── */
@@ -142,11 +184,46 @@ const DRIFT_CHART_DATA = [
 /* ── Enhanced History Data ────────────────────────────────────── */
 
 const ENHANCED_HISTORY = [
-  { id: 'h-1', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 7, date: '2026-03-20', score: 94 },
-  { id: 'h-2', project: 'Neon Drift', projectId: 'proj-2', shotNumber: 3, date: '2026-03-18', score: 88 },
-  { id: 'h-3', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 12, date: '2026-03-15', score: 91 },
-  { id: 'h-4', project: 'Neon Drift', projectId: 'proj-2', shotNumber: 8, date: '2026-03-10', score: 55 },
-  { id: 'h-5', project: 'Cyber Samurai: Origin', projectId: 'proj-1', shotNumber: 2, date: '2026-03-01', score: 72 },
+  {
+    id: 'h-1',
+    project: 'Cyber Samurai: Origin',
+    projectId: 'proj-1',
+    shotNumber: 7,
+    date: '2026-03-20',
+    score: 94,
+  },
+  {
+    id: 'h-2',
+    project: 'Neon Drift',
+    projectId: 'proj-2',
+    shotNumber: 3,
+    date: '2026-03-18',
+    score: 88,
+  },
+  {
+    id: 'h-3',
+    project: 'Cyber Samurai: Origin',
+    projectId: 'proj-1',
+    shotNumber: 12,
+    date: '2026-03-15',
+    score: 91,
+  },
+  {
+    id: 'h-4',
+    project: 'Neon Drift',
+    projectId: 'proj-2',
+    shotNumber: 8,
+    date: '2026-03-10',
+    score: 55,
+  },
+  {
+    id: 'h-5',
+    project: 'Cyber Samurai: Origin',
+    projectId: 'proj-1',
+    shotNumber: 2,
+    date: '2026-03-01',
+    score: 72,
+  },
 ];
 
 /* ── Helpers ─────────────────────────────────────────────────── */
@@ -187,14 +264,17 @@ export default function CharacterDetailPage() {
   const [customHairHex, setCustomHairHex] = useState('');
   const [hairLength, setHairLength] = useState(character.hairLength);
   const [facialHair, setFacialHair] = useState(character.facialHair);
-  const [wardrobeCategory, setWardrobeCategory] = useState<(typeof WARDROBE_CATEGORIES)[number]>('Tops');
+  const [wardrobeCategory, setWardrobeCategory] =
+    useState<(typeof WARDROBE_CATEGORIES)[number]>('Tops');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(character.name);
 
   /* Voice tab state */
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [pairedVoiceId, setPairedVoiceId] = useState<string | null>(character.voiceId ?? null);
-  const [pairedVoiceName, setPairedVoiceName] = useState<string | null>(character.voiceName ?? null);
+  const [pairedVoiceName, setPairedVoiceName] = useState<string | null>(
+    character.voiceName ?? null,
+  );
   const [voiceModalTab, setVoiceModalTab] = useState<'select' | 'upload'>('select');
   const [uploadVoiceName, setUploadVoiceName] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -260,7 +340,14 @@ export default function CharacterDetailPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {/* Style Mode */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 10,
+            }}
+          >
             Style Mode
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -270,7 +357,10 @@ export default function CharacterDetailPage() {
                 onClick={() => setSelectedStyle(mode.value)}
                 style={{
                   background: mode.gradient,
-                  border: selectedStyle === mode.value ? '2px solid var(--brand-light)' : '2px solid transparent',
+                  border:
+                    selectedStyle === mode.value
+                      ? '2px solid var(--brand-light)'
+                      : '2px solid transparent',
                   borderRadius: 'var(--radius-md)',
                   padding: '14px 8px',
                   color: 'var(--text-primary)',
@@ -289,7 +379,14 @@ export default function CharacterDetailPage() {
 
         {/* Skin Tone */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 10,
+            }}
+          >
             Skin Tone
           </h4>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -302,7 +399,10 @@ export default function CharacterDetailPage() {
                   height: 32,
                   borderRadius: '50%',
                   backgroundColor: tone,
-                  border: selectedSkin === tone ? '3px solid var(--brand-light)' : '2px solid var(--border)',
+                  border:
+                    selectedSkin === tone
+                      ? '3px solid var(--brand-light)'
+                      : '2px solid var(--border)',
                   cursor: 'pointer',
                   transition: 'border-color 0.15s',
                 }}
@@ -314,7 +414,14 @@ export default function CharacterDetailPage() {
 
         {/* Age Slider */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 10,
+            }}
+          >
             Age: {age}
           </h4>
           <input
@@ -325,7 +432,14 @@ export default function CharacterDetailPage() {
             onChange={(e) => setAge(Number(e.target.value))}
             style={{ width: '100%', accentColor: 'var(--brand)' }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+            }}
+          >
             <span>18</span>
             <span>80</span>
           </div>
@@ -333,7 +447,14 @@ export default function CharacterDetailPage() {
 
         {/* Build Selector */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 10,
+            }}
+          >
             Build
           </h4>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -347,7 +468,8 @@ export default function CharacterDetailPage() {
                   fontSize: 12,
                   fontWeight: 500,
                   borderRadius: 'var(--radius-md)',
-                  border: build === opt ? '1px solid var(--brand-border)' : '1px solid var(--border)',
+                  border:
+                    build === opt ? '1px solid var(--brand-border)' : '1px solid var(--border)',
                   backgroundColor: build === opt ? 'var(--bg-active)' : 'var(--bg-surface)',
                   color: build === opt ? 'var(--text-brand)' : 'var(--text-secondary)',
                   cursor: 'pointer',
@@ -390,20 +512,40 @@ export default function CharacterDetailPage() {
 
           {facialOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 8 }}>
-              {([
-                { key: 'eyeSize', label: 'Eye size' },
-                { key: 'eyeSpacing', label: 'Eye spacing' },
-                { key: 'noseWidth', label: 'Nose width' },
-                { key: 'noseLength', label: 'Nose length' },
-                { key: 'jawDefinition', label: 'Jaw definition' },
-                { key: 'jawWidth', label: 'Jaw width' },
-                { key: 'lipFullness', label: 'Lip fullness' },
-                { key: 'cheekVolume', label: 'Cheek volume' },
-              ] as const).map(({ key, label }) => (
+              {(
+                [
+                  { key: 'eyeSize', label: 'Eye size' },
+                  { key: 'eyeSpacing', label: 'Eye spacing' },
+                  { key: 'noseWidth', label: 'Nose width' },
+                  { key: 'noseLength', label: 'Nose length' },
+                  { key: 'jawDefinition', label: 'Jaw definition' },
+                  { key: 'jawWidth', label: 'Jaw width' },
+                  { key: 'lipFullness', label: 'Lip fullness' },
+                  { key: 'cheekVolume', label: 'Cheek volume' },
+                ] as const
+              ).map(({ key, label }) => (
                 <div key={key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 4,
+                    }}
+                  >
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', minWidth: 24, textAlign: 'right' }}>{facialSliders[key]}</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        fontVariantNumeric: 'tabular-nums',
+                        minWidth: 24,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {facialSliders[key]}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -426,7 +568,14 @@ export default function CharacterDetailPage() {
 
         {/* Emotion Previews */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 10,
+            }}
+          >
             Emotion Previews
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -523,10 +672,17 @@ export default function CharacterDetailPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-              zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 50,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-            onClick={(e) => { if (e.target === e.currentTarget) setVoiceModalOpen(false); }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setVoiceModalOpen(false);
+            }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -534,34 +690,75 @@ export default function CharacterDetailPage() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               style={{
-                background: 'var(--bg-elevated)', border: '0.5px solid var(--border-strong)',
-                borderRadius: 'var(--radius-xl)', width: 440, maxHeight: '90vh',
-                overflowY: 'auto', padding: 24,
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--border-strong)',
+                borderRadius: 'var(--radius-xl)',
+                width: 440,
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                padding: 24,
               }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 16,
+                }}
+              >
+                <h2
+                  style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+                >
                   Pair a Voice
                 </h2>
-                <button type="button" onClick={() => setVoiceModalOpen(false)} aria-label="Close"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setVoiceModalOpen(false)}
+                  aria-label="Close"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    color: 'var(--text-tertiary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
                   <X size={20} />
                 </button>
               </div>
 
               {/* Tab Switcher */}
-              <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 0,
+                  borderBottom: '1px solid var(--border)',
+                  marginBottom: 16,
+                }}
+              >
                 {(['select', 'upload'] as const).map((tab) => (
-                  <button key={tab} onClick={() => setVoiceModalTab(tab)}
+                  <button
+                    key={tab}
+                    onClick={() => setVoiceModalTab(tab)}
                     style={{
-                      flex: 1, padding: '8px 0', fontSize: 13, fontWeight: 500, border: 'none',
-                      borderBottom: voiceModalTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
+                      flex: 1,
+                      padding: '8px 0',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      border: 'none',
+                      borderBottom:
+                        voiceModalTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
                       backgroundColor: 'transparent',
                       color: voiceModalTab === tab ? 'var(--text-brand)' : 'var(--text-tertiary)',
-                      cursor: 'pointer', transition: 'all 0.15s',
-                    }}>
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
                     {tab === 'select' ? 'Select existing' : 'Upload new sample'}
                   </button>
                 ))}
@@ -571,34 +768,73 @@ export default function CharacterDetailPage() {
               {voiceModalTab === 'select' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {VOICE_LIBRARY.map((voice) => (
-                    <div key={voice.id}
+                    <div
+                      key={voice.id}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                        borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
-                        backgroundColor: 'var(--bg-surface)', transition: 'border-color 0.15s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg-surface)',
+                        transition: 'border-color 0.15s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-border)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.borderColor = 'var(--brand-border)')
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                     >
                       <Volume2 size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{voice.name}</p>
-                        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>{voice.style}</p>
+                        <p
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--text-primary)',
+                            margin: 0,
+                          }}
+                        >
+                          {voice.name}
+                        </p>
+                        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                          {voice.style}
+                        </p>
                       </div>
-                      <button type="button" onClick={playPreviewTone}
+                      <button
+                        type="button"
+                        onClick={playPreviewTone}
                         style={{
-                          background: 'transparent', border: '0.5px solid var(--border)', color: 'var(--text-secondary)',
-                          padding: '4px 10px', borderRadius: 'var(--radius-md)', fontSize: 11, fontWeight: 500,
-                          cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                        }}>
+                          background: 'transparent',
+                          border: '0.5px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          flexShrink: 0,
+                        }}
+                      >
                         &#9654; Preview
                       </button>
-                      <button type="button" onClick={() => handleVoicePair(voice.id, voice.name)}
+                      <button
+                        type="button"
+                        onClick={() => handleVoicePair(voice.id, voice.name)}
                         style={{
-                          background: 'var(--brand)', color: '#fff', border: 'none', padding: '4px 12px',
-                          borderRadius: 'var(--radius-md)', fontSize: 11, fontWeight: 500,
-                          cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                        }}>
+                          background: 'var(--brand)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '4px 12px',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          flexShrink: 0,
+                        }}
+                      >
                         Select
                       </button>
                     </div>
@@ -611,15 +847,25 @@ export default function CharacterDetailPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* Drop zone */}
                   <div
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(true);
+                    }}
                     onDragLeave={() => setDragOver(false)}
-                    onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                    }}
                     style={{
                       border: `2px dashed ${dragOver ? 'var(--brand)' : 'var(--border-strong)'}`,
-                      borderRadius: 'var(--radius-md)', padding: '32px 16px', textAlign: 'center',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '32px 16px',
+                      textAlign: 'center',
                       backgroundColor: dragOver ? 'var(--bg-active)' : 'var(--bg-surface)',
-                      transition: 'all 0.15s', cursor: 'pointer',
-                    }}>
+                      transition: 'all 0.15s',
+                      cursor: 'pointer',
+                    }}
+                  >
                     <Upload size={28} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
                     <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                       Drop audio file here or click to browse
@@ -631,38 +877,78 @@ export default function CharacterDetailPage() {
 
                   {/* Voice name input */}
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                    <label
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: 'var(--text-secondary)',
+                        display: 'block',
+                        marginBottom: 6,
+                      }}
+                    >
                       Voice name
                     </label>
                     <input
-                      type="text" value={uploadVoiceName} onChange={(e) => setUploadVoiceName(e.target.value)}
+                      type="text"
+                      value={uploadVoiceName}
+                      onChange={(e) => setUploadVoiceName(e.target.value)}
                       placeholder="e.g. My custom voice"
                       style={{
-                        width: '100%', padding: '8px 12px', fontSize: 13, borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)',
-                        color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
 
                   {/* Create button + progress */}
-                  <button type="button" onClick={simulateUpload}
+                  <button
+                    type="button"
+                    onClick={simulateUpload}
                     disabled={!uploadVoiceName.trim() || uploadProgress !== null}
                     style={{
-                      padding: '10px 20px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
-                      border: 'none', backgroundColor: uploadVoiceName.trim() ? 'var(--brand)' : 'var(--bg-surface)',
+                      padding: '10px 20px',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      borderRadius: 'var(--radius-md)',
+                      border: 'none',
+                      backgroundColor: uploadVoiceName.trim()
+                        ? 'var(--brand)'
+                        : 'var(--bg-surface)',
                       color: uploadVoiceName.trim() ? '#fff' : 'var(--text-tertiary)',
-                      cursor: uploadVoiceName.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s',
-                    }}>
-                    {uploadProgress !== null ? `Creating... ${uploadProgress}%` : 'Create Voice Clone'}
+                      cursor: uploadVoiceName.trim() ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {uploadProgress !== null
+                      ? `Creating... ${uploadProgress}%`
+                      : 'Create Voice Clone'}
                   </button>
 
                   {uploadProgress !== null && (
-                    <div style={{ height: 4, borderRadius: 2, backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%', width: `${uploadProgress}%`, backgroundColor: 'var(--brand)',
-                        borderRadius: 2, transition: 'width 0.3s ease',
-                      }} />
+                    <div
+                      style={{
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: 'var(--bg-surface)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${uploadProgress}%`,
+                          backgroundColor: 'var(--brand)',
+                          borderRadius: 2,
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
                     </div>
                   )}
                 </div>
@@ -684,36 +970,86 @@ export default function CharacterDetailPage() {
         {hasPairedVoice ? (
           <>
             {/* Identity Lock Card */}
-            <div style={{
-              borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
-              backgroundColor: 'var(--bg-surface)', padding: 20,
-            }}>
-              <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, margin: 0 }}>
+            <div
+              style={{
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg-surface)',
+                padding: 20,
+              }}
+            >
+              <h4
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  marginBottom: 16,
+                  margin: 0,
+                }}
+              >
                 Identity Lock
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 24, height: 24, borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
                     <Check size={14} style={{ color: '#34d399' }} />
                   </div>
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Visual Identity</p>
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>Appearance locked to style reference</p>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                      }}
+                    >
+                      Visual Identity
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                      Appearance locked to style reference
+                    </p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 24, height: 24, borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
                     <Check size={14} style={{ color: '#34d399' }} />
                   </div>
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Audio Identity</p>
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>{pairedVoiceName} - Voice cloned and lip-sync ready</p>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                      }}
+                    >
+                      Audio Identity
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                      {pairedVoiceName} - Voice cloned and lip-sync ready
+                    </p>
                   </div>
                 </div>
               </div>
@@ -721,41 +1057,93 @@ export default function CharacterDetailPage() {
 
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={playPreviewTone}
+              <button
+                onClick={playPreviewTone}
                 style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: '10px 16px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--brand-border)', backgroundColor: 'var(--bg-active)',
-                  color: 'var(--text-brand)', cursor: 'pointer',
-                }}>
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '10px 16px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--brand-border)',
+                  backgroundColor: 'var(--bg-active)',
+                  color: 'var(--text-brand)',
+                  cursor: 'pointer',
+                }}
+              >
                 <Play size={14} /> Preview voice
               </button>
-              <button onClick={handleVoiceUnpair}
+              <button
+                onClick={handleVoiceUnpair}
                 style={{
-                  flex: 1, padding: '10px 16px', fontSize: 13, fontWeight: 500, borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)', backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)', cursor: 'pointer',
-                }}>
+                  flex: 1,
+                  padding: '10px 16px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
                 Unpair voice
               </button>
             </div>
           </>
         ) : (
           /* Unpaired state */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 32, paddingBottom: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 12,
+              paddingTop: 32,
+              paddingBottom: 16,
+            }}
+          >
             <Mic size={48} style={{ color: 'var(--text-tertiary)', opacity: 0.2 }} />
             <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               No voice paired
             </h4>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', maxWidth: 280, lineHeight: 1.5, margin: 0 }}>
-              Pair a voice to enable voice cloning and automatic lip-sync for this character across all projects.
-            </p>
-            <button onClick={() => { setVoiceModalTab('select'); setVoiceModalOpen(true); }}
+            <p
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 13, fontWeight: 500,
-                borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)',
-                backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', marginTop: 8,
-              }}>
+                fontSize: 13,
+                color: 'var(--text-tertiary)',
+                textAlign: 'center',
+                maxWidth: 280,
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              Pair a voice to enable voice cloning and automatic lip-sync for this character across
+              all projects.
+            </p>
+            <button
+              onClick={() => {
+                setVoiceModalTab('select');
+                setVoiceModalOpen(true);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '10px 24px',
+                fontSize: 13,
+                fontWeight: 500,
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--brand-border)',
+                backgroundColor: 'var(--brand-dim)',
+                color: 'var(--text-brand)',
+                cursor: 'pointer',
+                marginTop: 8,
+              }}
+            >
               <Plus size={14} /> Pair a Voice
             </button>
           </div>
@@ -771,24 +1159,46 @@ export default function CharacterDetailPage() {
     const uniqueProjects = new Set(ENHANCED_HISTORY.map((e) => e.projectId));
 
     function scoreColor(score: number) {
-      if (score > 80) return { bg: 'rgba(52, 211, 153, 0.12)', fg: '#6ee7b7', border: 'rgba(52, 211, 153, 0.3)' };
-      if (score >= 60) return { bg: 'rgba(234, 179, 8, 0.12)', fg: '#fbbf24', border: 'rgba(234, 179, 8, 0.3)' };
+      if (score > 80)
+        return { bg: 'rgba(52, 211, 153, 0.12)', fg: '#6ee7b7', border: 'rgba(52, 211, 153, 0.3)' };
+      if (score >= 60)
+        return { bg: 'rgba(234, 179, 8, 0.12)', fg: '#fbbf24', border: 'rgba(234, 179, 8, 0.3)' };
       return { bg: 'rgba(248, 113, 113, 0.12)', fg: '#f87171', border: 'rgba(248, 113, 113, 0.3)' };
     }
 
     if (!hasHistory) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 40, paddingBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            paddingTop: 40,
+            paddingBottom: 20,
+          }}
+        >
           <FolderOpen size={40} style={{ color: 'var(--text-tertiary)', opacity: 0.3 }} />
           <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
             This character hasn&apos;t been used in any shots yet.
           </p>
-          <button onClick={() => router.push('/projects')}
+          <button
+            onClick={() => router.push('/projects')}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', fontSize: 13, fontWeight: 500,
-              borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)',
-              backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', marginTop: 4,
-            }}>
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '10px 20px',
+              fontSize: 13,
+              fontWeight: 500,
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--brand-border)',
+              backgroundColor: 'var(--brand-dim)',
+              color: 'var(--text-brand)',
+              cursor: 'pointer',
+              marginTop: 4,
+            }}
+          >
             Use in Project &rarr;
           </button>
         </div>
@@ -798,67 +1208,145 @@ export default function CharacterDetailPage() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Drift Score Chart */}
-        <div style={{
-          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
-          backgroundColor: 'var(--bg-surface)', padding: '16px 16px 8px',
-        }}>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+        <div
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            backgroundColor: 'var(--bg-surface)',
+            padding: '16px 16px 8px',
+          }}
+        >
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              margin: '0 0 12px 0',
+            }}
+          >
             Drift Score Over Time
           </h4>
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={DRIFT_CHART_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
                 labelStyle={{ color: 'var(--text-secondary)' }}
                 itemStyle={{ color: 'var(--text-primary)' }}
               />
               <ReferenceLine y={80} stroke="#34d399" strokeDasharray="4 4" strokeOpacity={0.5} />
               <ReferenceLine y={60} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.5} />
-              <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3, fill: '#8b5cf6' }} activeDot={{ r: 5 }} />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#8b5cf6"
+                strokeWidth={2}
+                dot={{ r: 3, fill: '#8b5cf6' }}
+                activeDot={{ r: 5 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Shot History List */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8 }}>
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+              marginBottom: 8,
+            }}
+          >
             Appears in {ENHANCED_HISTORY.length} shots across {uniqueProjects.size} projects
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {ENHANCED_HISTORY.map((entry) => {
               const sc = scoreColor(entry.score);
               return (
-                <div key={entry.id}
+                <div
+                  key={entry.id}
                   onClick={() => router.push(`/projects/${entry.projectId}`)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg-surface)', cursor: 'pointer', transition: 'border-color 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg-surface)',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-border)')}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
                   {/* Project thumbnail placeholder */}
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-elevated)',
-                    border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
                     <FolderOpen size={14} style={{ color: 'var(--text-tertiary)' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                      }}
+                    >
                       {entry.project} &rarr; Shot {entry.shotNumber}
                     </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-tertiary)',
+                        marginTop: 2,
+                        margin: 0,
+                      }}
+                    >
                       {formatDate(entry.date)}
                     </p>
                   </div>
-                  <div style={{
-                    padding: '4px 10px', borderRadius: 'var(--radius-pill)', fontSize: 12, fontWeight: 500,
-                    backgroundColor: sc.bg, color: sc.fg, border: `1px solid ${sc.border}`, flexShrink: 0,
-                  }}>
+                  <div
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-pill)',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      backgroundColor: sc.bg,
+                      color: sc.fg,
+                      border: `1px solid ${sc.border}`,
+                      flexShrink: 0,
+                    }}
+                  >
                     {entry.score}%
                   </div>
                 </div>
@@ -875,7 +1363,9 @@ export default function CharacterDetailPage() {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>
+        <h4
+          style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}
+        >
           Export Formats
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -895,34 +1385,100 @@ export default function CharacterDetailPage() {
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                 {fmt.label}
               </span>
-              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                {fmt.compat}
-              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{fmt.compat}</span>
 
               {/* MP4 extra settings */}
               {fmt.id === 'mp4' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
                   <div>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Resolution</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-tertiary)',
+                        display: 'block',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Resolution
+                    </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {(['720p', '1080p', '4K'] as const).map((r) => (
-                        <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: mp4Resolution === r ? 'var(--text-brand)' : 'var(--text-secondary)', cursor: 'pointer' }}>
-                          <input type="radio" name="mp4res" checked={mp4Resolution === r} onChange={() => setMp4Resolution(r)} style={{ accentColor: 'var(--brand)' }} />
+                        <label
+                          key={r}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11,
+                            color:
+                              mp4Resolution === r ? 'var(--text-brand)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="mp4res"
+                            checked={mp4Resolution === r}
+                            onChange={() => setMp4Resolution(r)}
+                            style={{ accentColor: 'var(--brand)' }}
+                          />
                           {r}
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Duration: {mp4Duration}s</span>
-                    <input type="range" min={1} max={30} value={mp4Duration} onChange={(e) => setMp4Duration(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--brand)' }} />
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-tertiary)',
+                        display: 'block',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Duration: {mp4Duration}s
+                    </span>
+                    <input
+                      type="range"
+                      min={1}
+                      max={30}
+                      value={mp4Duration}
+                      onChange={(e) => setMp4Duration(Number(e.target.value))}
+                      style={{ width: '100%', accentColor: 'var(--brand)' }}
+                    />
                   </div>
                   <div>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', marginBottom: 4 }}>Background</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-tertiary)',
+                        display: 'block',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Background
+                    </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {(['Transparent', 'Black', 'White'] as const).map((bg) => (
-                        <label key={bg} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: mp4Background === bg ? 'var(--text-brand)' : 'var(--text-secondary)', cursor: 'pointer' }}>
-                          <input type="radio" name="mp4bg" checked={mp4Background === bg} onChange={() => setMp4Background(bg)} style={{ accentColor: 'var(--brand)' }} />
+                        <label
+                          key={bg}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11,
+                            color:
+                              mp4Background === bg ? 'var(--text-brand)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="mp4bg"
+                            checked={mp4Background === bg}
+                            onChange={() => setMp4Background(bg)}
+                            style={{ accentColor: 'var(--brand)' }}
+                          />
                           {bg}
                         </label>
                       ))}
@@ -935,17 +1491,37 @@ export default function CharacterDetailPage() {
                 onClick={() => handleExport(fmt.id, fmt.label)}
                 disabled={isExporting(fmt.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  marginTop: 'auto', padding: '8px 12px', borderRadius: 'var(--radius-sm)',
-                  border: 'none', backgroundColor: 'var(--brand)', color: '#fff',
-                  fontSize: 12, fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  marginTop: 'auto',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  backgroundColor: 'var(--brand)',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
                   cursor: isExporting(fmt.id) ? 'not-allowed' : 'pointer',
-                  opacity: isExporting(fmt.id) ? 0.7 : 1, transition: 'opacity 150ms',
+                  opacity: isExporting(fmt.id) ? 0.7 : 1,
+                  transition: 'opacity 150ms',
                 }}
               >
                 {isExporting(fmt.id) ? (
                   <>
-                    <svg className="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                    <svg
+                      className="spin"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
                     Exporting&hellip;
                   </>
                 ) : (
@@ -964,10 +1540,18 @@ export default function CharacterDetailPage() {
           onClick={handleExportAll}
           disabled={exportAllLoading}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--brand-border)', backgroundColor: 'var(--brand-dim)',
-            color: 'var(--text-brand)', fontSize: 13, fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--brand-border)',
+            backgroundColor: 'var(--brand-dim)',
+            color: 'var(--text-brand)',
+            fontSize: 13,
+            fontWeight: 600,
             cursor: exportAllLoading ? 'not-allowed' : 'pointer',
             opacity: exportAllLoading ? 0.7 : 1,
             transition: 'opacity 150ms, background-color 150ms',
@@ -975,7 +1559,18 @@ export default function CharacterDetailPage() {
         >
           {exportAllLoading ? (
             <>
-              <svg className="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+              <svg
+                className="spin"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
               Exporting All&hellip;
             </>
           ) : (
@@ -1030,7 +1625,14 @@ export default function CharacterDetailPage() {
             transform="rotate(-90 50 50)"
             style={{ transition: 'stroke-dashoffset 0.5s ease' }}
           />
-          <text x="50" y="46" textAnchor="middle" fill="var(--text-primary)" fontSize="22" fontWeight="700">
+          <text
+            x="50"
+            y="46"
+            textAnchor="middle"
+            fill="var(--text-primary)"
+            fontSize="22"
+            fontWeight="700"
+          >
             {score}
           </text>
           <text x="50" y="62" textAnchor="middle" fill="var(--text-tertiary)" fontSize="11">
@@ -1048,7 +1650,18 @@ export default function CharacterDetailPage() {
     <div style={{ position: 'relative' }}>
       {/* Toast Container */}
       {toasts.length > 0 && (
-        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360 }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 16,
+            right: 16,
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            maxWidth: 360,
+          }}
+        >
           {toasts.map((t) => (
             <Toast key={t.id} item={t} onDismiss={dismiss} />
           ))}
@@ -1075,18 +1688,89 @@ export default function CharacterDetailPage() {
             const previewSrc = character.previewUrls?.[viewKey] ?? character.thumbnailUrl ?? null;
             if (previewSrc) {
               return (
-                <div style={{ height: 300, backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', position: 'relative' }}>
+                <div
+                  style={{
+                    height: 300,
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewSrc} alt={`${character.name} - ${activeView} view`} style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'var(--bg-surface)' }} />
-                  <span style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 10, color: 'var(--text-tertiary)', background: 'rgba(0,0,0,0.55)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{activeView} View</span>
+                  <img
+                    src={previewSrc}
+                    alt={`${character.name} - ${activeView} view`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      background: 'var(--bg-surface)',
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: 8,
+                      left: 10,
+                      fontSize: 10,
+                      color: 'var(--text-tertiary)',
+                      background: 'rgba(0,0,0,0.55)',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    {activeView} View
+                  </span>
                 </div>
               );
             }
             return (
-              <div style={{ height: 300, backgroundColor: 'var(--bg-surface)', border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div
+                style={{
+                  height: 300,
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '2px dashed var(--border-strong)',
+                  borderRadius: 'var(--radius-lg)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                }}
+              >
                 <User size={48} style={{ color: 'var(--text-tertiary)' }} />
-                <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 500 }}>{activeView} View</span>
-                <button type="button" onClick={() => toast.info('Generating preview...')} style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', fontSize: 12, fontWeight: 500, borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-border)', backgroundColor: 'var(--brand-dim)', color: 'var(--text-brand)', cursor: 'pointer', transition: 'background 150ms ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--brand)'; e.currentTarget.style.color = '#fff'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--brand-dim)'; e.currentTarget.style.color = 'var(--text-brand)'; }}>
+                <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                  {activeView} View
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Generating preview...')}
+                  style={{
+                    marginTop: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 16px',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--brand-border)',
+                    backgroundColor: 'var(--brand-dim)',
+                    color: 'var(--text-brand)',
+                    cursor: 'pointer',
+                    transition: 'background 150ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--brand)';
+                    e.currentTarget.style.color = '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--brand-dim)';
+                    e.currentTarget.style.color = 'var(--text-brand)';
+                  }}
+                >
                   <Zap size={13} /> Generate preview
                 </button>
               </div>
@@ -1144,7 +1828,8 @@ export default function CharacterDetailPage() {
                   fontSize: 13,
                   fontWeight: 500,
                   border: 'none',
-                  borderBottom: activeTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
+                  borderBottom:
+                    activeTab === tab ? '2px solid var(--brand)' : '2px solid transparent',
                   backgroundColor: 'transparent',
                   color: activeTab === tab ? 'var(--text-brand)' : 'var(--text-tertiary)',
                   cursor: 'pointer',
@@ -1157,9 +1842,7 @@ export default function CharacterDetailPage() {
           </div>
 
           {/* Tab Content */}
-          <div style={{ marginTop: 20, minHeight: 300 }}>
-            {renderTabContent()}
-          </div>
+          <div style={{ marginTop: 20, minHeight: 300 }}>{renderTabContent()}</div>
         </div>
 
         {/* ── RIGHT COLUMN (40%) ────────────────────────────────── */}
@@ -1213,7 +1896,9 @@ export default function CharacterDetailPage() {
                 style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                 onClick={() => setIsEditingName(true)}
               >
-                <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                <h1
+                  style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}
+                >
                   {editName}
                 </h1>
                 <Pencil size={14} style={{ color: 'var(--text-tertiary)' }} />
@@ -1293,8 +1978,7 @@ export default function CharacterDetailPage() {
                   character.consentStatus === 'verified'
                     ? 'rgba(52, 211, 153, 0.12)'
                     : 'rgba(234, 179, 8, 0.12)',
-                color:
-                  character.consentStatus === 'verified' ? '#6ee7b7' : '#fbbf24',
+                color: character.consentStatus === 'verified' ? '#6ee7b7' : '#fbbf24',
                 border: `1px solid ${
                   character.consentStatus === 'verified'
                     ? 'rgba(52, 211, 153, 0.3)'

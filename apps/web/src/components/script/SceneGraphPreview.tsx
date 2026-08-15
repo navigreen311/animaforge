@@ -49,9 +49,7 @@ export function SceneGraphPreview({ graph, onEdit }: SceneGraphPreviewProps) {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
               {field.label}
             </span>
-            <span className={`text-sm ${field.color}`}>
-              {graph[field.key] || '---'}
-            </span>
+            <span className={`text-sm ${field.color}`}>{graph[field.key] || '---'}</span>
           </div>
         ))}
       </div>

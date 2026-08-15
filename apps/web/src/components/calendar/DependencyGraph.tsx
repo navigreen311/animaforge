@@ -229,19 +229,18 @@ export default function DependencyGraph() {
   const [selected, setSelected] = useState<PositionedTask | null>(null);
 
   const positioned = useMemo(() => computeLayout(MOCK_TASKS), []);
-  const byId = useMemo(
-    () => new Map(positioned.map((t) => [t.id, t])),
-    [positioned]
-  );
+  const byId = useMemo(() => new Map(positioned.map((t) => [t.id, t])), [positioned]);
 
   const maxCol = Math.max(...positioned.map((t) => t.column));
   const maxRow = Math.max(
     ...Array.from(
-      positioned.reduce((m, t) => {
-        m.set(t.column, (m.get(t.column) ?? 0) + 1);
-        return m;
-      }, new Map<number, number>()).values()
-    )
+      positioned
+        .reduce((m, t) => {
+          m.set(t.column, (m.get(t.column) ?? 0) + 1);
+          return m;
+        }, new Map<number, number>())
+        .values(),
+    ),
   );
 
   const width = PAD_X * 2 + (maxCol + 1) * BOX_W + maxCol * COL_GAP;
@@ -299,8 +298,7 @@ export default function DependencyGraph() {
             const y1 = from.y + BOX_H / 2;
             const x2 = task.x;
             const y2 = task.y + BOX_H / 2;
-            const critical =
-              CRITICAL_PATH.has(depId) && CRITICAL_PATH.has(task.id);
+            const critical = CRITICAL_PATH.has(depId) && CRITICAL_PATH.has(task.id);
             return (
               <path
                 key={`${depId}-${task.id}`}
@@ -312,7 +310,7 @@ export default function DependencyGraph() {
                 opacity={0.85}
               />
             );
-          })
+          }),
         )}
 
         {/* Task boxes */}
@@ -335,30 +333,14 @@ export default function DependencyGraph() {
                 stroke={critical ? '#ef4444' : c.stroke}
                 strokeWidth={critical ? 3 : 1.5}
               />
-              <text
-                x={14}
-                y={22}
-                fill="var(--text, #f1f5f9)"
-                fontSize={13}
-                fontWeight={600}
-              >
+              <text x={14} y={22} fill="var(--text, #f1f5f9)" fontSize={13} fontWeight={600}>
                 {task.name}
               </text>
-              <text
-                x={14}
-                y={42}
-                fill="var(--text-muted, #94a3b8)"
-                fontSize={11}
-              >
+              <text x={14} y={42} fill="var(--text-muted, #94a3b8)" fontSize={11}>
                 {task.durationDays}d · {c.label}
               </text>
               {/* Owner avatar */}
-              <circle
-                cx={BOX_W - 20}
-                cy={BOX_H / 2}
-                r={13}
-                fill="var(--accent, #a855f7)"
-              />
+              <circle cx={BOX_W - 20} cy={BOX_H / 2} r={13} fill="var(--accent, #a855f7)" />
               <text
                 x={BOX_W - 20}
                 y={BOX_H / 2 + 4}
@@ -386,28 +368,23 @@ export default function DependencyGraph() {
           color: 'var(--text-muted, #94a3b8)',
         }}
       >
-        {(['done', 'in_progress', 'blocked', 'pending'] as TaskStatus[]).map(
-          (s) => {
-            const c = statusColor(s);
-            return (
+        {(['done', 'in_progress', 'blocked', 'pending'] as TaskStatus[]).map((s) => {
+          const c = statusColor(s);
+          return (
+            <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <span
-                key={s}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              >
-                <span
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 3,
-                    background: c.fill,
-                    border: `1.5px solid ${c.stroke}`,
-                  }}
-                />
-                {c.label}
-              </span>
-            );
-          }
-        )}
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  background: c.fill,
+                  border: `1.5px solid ${c.stroke}`,
+                }}
+              />
+              {c.label}
+            </span>
+          );
+        })}
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span
             style={{
@@ -489,19 +466,13 @@ export default function DependencyGraph() {
               color: 'var(--text, #f1f5f9)',
             }}
           >
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <UserIcon size={14} /> {selected.owner}
             </div>
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CalendarIcon size={14} /> Due {selected.dueDate}
             </div>
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Clock size={14} /> {selected.durationDays} days
             </div>
           </div>

@@ -27,7 +27,11 @@ export async function getElectronVersion(): Promise<string | null> {
 export async function showNativeNotification(title: string, body: string): Promise<void> {
   if (isElectron()) {
     await window.electronAPI!.showNotification({ title, body });
-  } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+  } else if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission === 'granted'
+  ) {
     new Notification(title, { body });
   }
 }

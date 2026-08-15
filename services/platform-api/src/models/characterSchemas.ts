@@ -1,20 +1,9 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const StyleMode = z.enum([
-  "realistic",
-  "anime",
-  "cartoon",
-  "cel",
-  "pixel",
-]);
+export const StyleMode = z.enum(['realistic', 'anime', 'cartoon', 'cel', 'pixel']);
 export type StyleMode = z.infer<typeof StyleMode>;
 
-export const RightsStatus = z.enum([
-  "original",
-  "licensed",
-  "pending_clearance",
-  "restricted",
-]);
+export const RightsStatus = z.enum(['original', 'licensed', 'pending_clearance', 'restricted']);
 export type RightsStatus = z.infer<typeof RightsStatus>;
 
 /**

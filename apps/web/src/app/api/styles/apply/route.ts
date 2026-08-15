@@ -11,17 +11,11 @@ export async function POST(request: NextRequest) {
   };
 
   if (!styleId) {
-    return NextResponse.json(
-      { error: 'styleId is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'styleId is required' }, { status: 400 });
   }
 
   if (!projectId) {
-    return NextResponse.json(
-      { error: 'projectId is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
   }
 
   const appliedCount = shotIds?.length ?? 9;

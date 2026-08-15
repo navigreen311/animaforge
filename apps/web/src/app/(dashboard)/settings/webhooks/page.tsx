@@ -12,9 +12,24 @@ interface Webhook {
 }
 
 const MOCK_WEBHOOKS: Webhook[] = [
-  { id: 'wh_1', url: 'https://hooks.myapp.com/animaforge/production', events: ['job.complete', 'shot.approved'], active: true },
-  { id: 'wh_2', url: 'https://api.internal.team/webhooks/animaforge-staging', events: ['job.complete'], active: true },
-  { id: 'wh_3', url: 'https://discord.com/api/webhooks/1234567890/abcdef', events: ['shot.approved'], active: false },
+  {
+    id: 'wh_1',
+    url: 'https://hooks.myapp.com/animaforge/production',
+    events: ['job.complete', 'shot.approved'],
+    active: true,
+  },
+  {
+    id: 'wh_2',
+    url: 'https://api.internal.team/webhooks/animaforge-staging',
+    events: ['job.complete'],
+    active: true,
+  },
+  {
+    id: 'wh_3',
+    url: 'https://discord.com/api/webhooks/1234567890/abcdef',
+    events: ['shot.approved'],
+    active: false,
+  },
 ];
 
 function truncateUrl(url: string, max = 48): string {
@@ -29,12 +44,29 @@ export default function WebhooksPage() {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 24px', fontFamily: 'var(--font-sans)', color: 'var(--text-primary)' }}>
+    <div
+      style={{
+        maxWidth: 900,
+        margin: '0 auto',
+        padding: '48px 24px',
+        fontFamily: 'var(--font-sans)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 32,
+        }}
+      >
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Webhooks</h1>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Manage webhook endpoints and review delivery logs.</p>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+            Manage webhook endpoints and review delivery logs.
+          </p>
         </div>
         <button
           style={{
@@ -79,7 +111,11 @@ export default function WebhooksPage() {
               }}
               onClick={() => toggle(wh.id)}
             >
-              {expandedId === wh.id ? <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} /> : <ChevronRight size={16} style={{ color: 'var(--text-secondary)' }} />}
+              {expandedId === wh.id ? (
+                <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+              ) : (
+                <ChevronRight size={16} style={{ color: 'var(--text-secondary)' }} />
+              )}
 
               {/* Status dot */}
               <div
@@ -93,7 +129,14 @@ export default function WebhooksPage() {
               />
 
               {/* URL */}
-              <code style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flex: 1 }}>
+              <code
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-primary)',
+                  flex: 1,
+                }}
+              >
                 {truncateUrl(wh.url)}
               </code>
 
@@ -117,7 +160,10 @@ export default function WebhooksPage() {
               </div>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: 6, marginLeft: 8 }} onClick={(e) => e.stopPropagation()}>
+              <div
+                style={{ display: 'flex', gap: 6, marginLeft: 8 }}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   style={{
                     display: 'flex',
@@ -171,7 +217,13 @@ export default function WebhooksPage() {
 
             {/* Delivery logs (expanded) */}
             {expandedId === wh.id && (
-              <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg-elevated)' }}>
+              <div
+                style={{
+                  borderTop: '1px solid var(--border)',
+                  padding: '16px 20px',
+                  background: 'var(--bg-elevated)',
+                }}
+              >
                 <WebhookDeliveryLogs webhookId={wh.id} />
               </div>
             )}

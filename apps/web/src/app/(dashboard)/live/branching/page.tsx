@@ -71,7 +71,16 @@ export default function BranchingNarrativesPage() {
           >
             Saved narratives
           </div>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
             {SAVED_NARRATIVES.map((n) => (
               <li key={n.id}>
                 <button

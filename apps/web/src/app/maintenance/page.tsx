@@ -36,7 +36,9 @@ export default function MaintenancePage() {
         >
           A
         </div>
-        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>AnimaForge</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
+          AnimaForge
+        </span>
       </div>
 
       {/* Icon */}
@@ -77,7 +79,8 @@ export default function MaintenancePage() {
           lineHeight: 1.6,
         }}
       >
-        We&apos;re performing upgrades to improve performance and reliability. We&apos;ll be back shortly.
+        We&apos;re performing upgrades to improve performance and reliability. We&apos;ll be back
+        shortly.
       </p>
 
       {/* Estimated time */}

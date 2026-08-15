@@ -1,17 +1,17 @@
-import { v4 as uuidv4 } from "uuid";
-import { isDatabaseReachable, requirePrisma } from "../db.js";
+import { v4 as uuidv4 } from 'uuid';
+import { isDatabaseReachable, requirePrisma } from '../db.js';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 // ── Types ───────────────────────────────────────────────────────────
 export type ReceiptAction =
-  | "generation_started"
-  | "generation_completed"
-  | "generation_failed"
-  | "export_completed"
-  | "review_submitted"
-  | "payment_processed"
-  | "consent_granted"
-  | "consent_revoked";
+  | 'generation_started'
+  | 'generation_completed'
+  | 'generation_failed'
+  | 'export_completed'
+  | 'review_submitted'
+  | 'payment_processed'
+  | 'consent_granted'
+  | 'consent_revoked';
 
 export interface Receipt {
   receiptId: string;
@@ -19,7 +19,7 @@ export interface Receipt {
   action: ReceiptAction;
   timestamp: string;
   details: Record<string, unknown>;
-  status: "confirmed" | "pending" | "failed";
+  status: 'confirmed' | 'pending' | 'failed';
   projectId?: string;
 }
 
@@ -36,14 +36,14 @@ export interface ReceiptSummary {
 const receipts = new Map<string, Receipt>();
 
 const VALID_ACTIONS: ReceiptAction[] = [
-  "generation_started",
-  "generation_completed",
-  "generation_failed",
-  "export_completed",
-  "review_submitted",
-  "payment_processed",
-  "consent_granted",
-  "consent_revoked",
+  'generation_started',
+  'generation_completed',
+  'generation_failed',
+  'export_completed',
+  'review_submitted',
+  'payment_processed',
+  'consent_granted',
+  'consent_revoked',
 ];
 
 export const receiptService = {
@@ -69,7 +69,7 @@ export const receiptService = {
             // `details` is a Json column; Prisma types its input as
             // JsonNull | InputJsonValue, which Record<string, unknown> is not.
             details: details as Prisma.InputJsonValue,
-            status: "confirmed",
+            status: 'confirmed',
           },
         });
         if (row) {
@@ -80,7 +80,7 @@ export const receiptService = {
             action: row.action as ReceiptAction,
             timestamp: row.createdAt.toISOString(),
             details: (row.details ?? {}) as Record<string, unknown>,
-            status: row.status as Receipt["status"],
+            status: row.status as Receipt['status'],
             projectId: row.projectId ?? undefined,
           };
         }
@@ -95,7 +95,7 @@ export const receiptService = {
       action,
       timestamp: new Date().toISOString(),
       details,
-      status: "confirmed",
+      status: 'confirmed',
       projectId: (details.projectId as string) ?? undefined,
     };
     receipts.set(receipt.receiptId, receipt);
@@ -140,34 +140,27 @@ export const receiptService = {
   /**
    * Generate a summary of user activity for a given period.
    */
-  async generateSummary(
-    userId: string,
-    period: string = "all",
-  ): Promise<ReceiptSummary> {
-    let userReceipts = Array.from(receipts.values()).filter(
-      (r) => r.userId === userId,
-    );
+  async generateSummary(userId: string, period: string = 'all'): Promise<ReceiptSummary> {
+    let userReceipts = Array.from(receipts.values()).filter((r) => r.userId === userId);
 
     // Filter by period if not "all"
-    if (period !== "all") {
+    if (period !== 'all') {
       const now = new Date();
       let cutoff: Date;
       switch (period) {
-        case "day":
+        case 'day':
           cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
           break;
-        case "week":
+        case 'week':
           cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           break;
-        case "month":
+        case 'month':
           cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           break;
         default:
           cutoff = new Date(0);
       }
-      userReceipts = userReceipts.filter(
-        (r) => new Date(r.timestamp) >= cutoff,
-      );
+      userReceipts = userReceipts.filter((r) => new Date(r.timestamp) >= cutoff);
     }
 
     const actionsBreakdown: Record<string, number> = {};
@@ -178,11 +171,11 @@ export const receiptService = {
     for (const r of userReceipts) {
       actionsBreakdown[r.action] = (actionsBreakdown[r.action] ?? 0) + 1;
 
-      if (r.action === "generation_completed") {
+      if (r.action === 'generation_completed') {
         totalGenerations++;
         creditsUsed += (r.details.credits as number) ?? 1;
       }
-      if (r.action === "export_completed") {
+      if (r.action === 'export_completed') {
         totalExports++;
       }
     }

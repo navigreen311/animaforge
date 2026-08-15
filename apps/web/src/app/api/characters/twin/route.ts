@@ -9,17 +9,11 @@ export async function POST(request: NextRequest) {
   const consent = formData.get('consent') as string | null;
 
   if (!name || name.trim().length === 0) {
-    return NextResponse.json(
-      { error: 'Name is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
   if (!photos || photos.length === 0) {
-    return NextResponse.json(
-      { error: 'At least one photo is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'At least one photo is required' }, { status: 400 });
   }
 
   if (consent !== 'true') {

@@ -39,7 +39,13 @@ const TABS = ['Clone Style', 'Cartoon Pro', 'Style Library', 'Image to Cartoon']
 type Tab = (typeof TABS)[number];
 
 type CloneSubTab = 'upload' | 'discovery';
-type CloneStage = 'idle' | 'uploading' | 'analyzing-colors' | 'extracting-motion' | 'building-fingerprint' | 'done';
+type CloneStage =
+  | 'idle'
+  | 'uploading'
+  | 'analyzing-colors'
+  | 'extracting-motion'
+  | 'building-fingerprint'
+  | 'done';
 
 interface StylePack {
   id: string;
@@ -62,15 +68,70 @@ interface DiscoveryResult {
 /* ── Sample Data ─────────────────────────────────────────────── */
 
 const STYLE_PACKS: StylePack[] = [
-  { id: 'cyberpunk-neon', title: 'Cyberpunk Neon', description: 'Glowing neon edges, dark backgrounds', gradientFrom: '#0f0a2e', gradientTo: '#1a0a3e', downloads: 12_840, category: 'Digital' },
-  { id: 'watercolor-dream', title: 'Watercolor Dream', description: 'Soft watercolor strokes', gradientFrom: '#0a1f0a', gradientTo: '#0d2b0d', downloads: 9_320, category: 'Painterly' },
-  { id: 'anime-classic', title: 'Anime Classic', description: 'Clean line art, cel shading', gradientFrom: '#1a0a2e', gradientTo: '#2e0a1a', downloads: 18_560, category: 'Anime' },
-  { id: 'film-noir', title: 'Film Noir', description: 'High contrast, dramatic shadows', gradientFrom: '#0a0a0f', gradientTo: '#1a1a1a', downloads: 7_150, category: 'Cinematic' },
-  { id: 'pixel-retro', title: 'Pixel Retro', description: '8-bit style, sharp pixels', gradientFrom: '#0a2e0a', gradientTo: '#1a3e1a', downloads: 5_980, category: 'Digital' },
-  { id: 'oil-painting', title: 'Oil Painting', description: 'Rich textures, visible brushstrokes', gradientFrom: '#2e1a0a', gradientTo: '#3e2a1a', downloads: 11_200, category: 'Painterly' },
+  {
+    id: 'cyberpunk-neon',
+    title: 'Cyberpunk Neon',
+    description: 'Glowing neon edges, dark backgrounds',
+    gradientFrom: '#0f0a2e',
+    gradientTo: '#1a0a3e',
+    downloads: 12_840,
+    category: 'Digital',
+  },
+  {
+    id: 'watercolor-dream',
+    title: 'Watercolor Dream',
+    description: 'Soft watercolor strokes',
+    gradientFrom: '#0a1f0a',
+    gradientTo: '#0d2b0d',
+    downloads: 9_320,
+    category: 'Painterly',
+  },
+  {
+    id: 'anime-classic',
+    title: 'Anime Classic',
+    description: 'Clean line art, cel shading',
+    gradientFrom: '#1a0a2e',
+    gradientTo: '#2e0a1a',
+    downloads: 18_560,
+    category: 'Anime',
+  },
+  {
+    id: 'film-noir',
+    title: 'Film Noir',
+    description: 'High contrast, dramatic shadows',
+    gradientFrom: '#0a0a0f',
+    gradientTo: '#1a1a1a',
+    downloads: 7_150,
+    category: 'Cinematic',
+  },
+  {
+    id: 'pixel-retro',
+    title: 'Pixel Retro',
+    description: '8-bit style, sharp pixels',
+    gradientFrom: '#0a2e0a',
+    gradientTo: '#1a3e1a',
+    downloads: 5_980,
+    category: 'Digital',
+  },
+  {
+    id: 'oil-painting',
+    title: 'Oil Painting',
+    description: 'Rich textures, visible brushstrokes',
+    gradientFrom: '#2e1a0a',
+    gradientTo: '#3e2a1a',
+    downloads: 11_200,
+    category: 'Painterly',
+  },
 ];
 
-const LIBRARY_CATEGORIES = ['All', 'Cinematic', 'Cartoon', 'Anime', 'Painterly', 'Digital'] as const;
+const LIBRARY_CATEGORIES = [
+  'All',
+  'Cinematic',
+  'Cartoon',
+  'Anime',
+  'Painterly',
+  'Digital',
+] as const;
 const SORT_OPTIONS = ['Most Popular', 'Newest', 'Highest Rated', 'Name A-Z'] as const;
 
 const MOCK_PROJECTS = [
@@ -87,16 +148,92 @@ const MOCK_SHOTS = [
   { id: 's5', name: 'Closing CTA' },
 ];
 
-const STYLE_DETAILS: Record<string, { creator: string; rating: number; usedBy: number; palette: string[]; contrast: string; grain: string; camera: string; editRhythm: string }> = {
-  'cyberpunk-neon': { creator: 'NeonWorks', rating: 4.8, usedBy: 342, palette: ['#0f0a2e', '#e94560', '#00d4ff', '#7b2ff7', '#ff6b9d'], contrast: 'High', grain: 'None', camera: 'Tracking', editRhythm: '1.8s avg' },
-  'watercolor-dream': { creator: 'AquaBrush', rating: 4.5, usedBy: 218, palette: ['#0a1f0a', '#7ec8a0', '#f4d35e', '#ee964b', '#c4a882'], contrast: 'Low', grain: 'Light (15%)', camera: 'Static', editRhythm: '4.2s avg' },
-  'anime-classic': { creator: 'TokyoFrame', rating: 4.9, usedBy: 567, palette: ['#1a0a2e', '#ff6b9d', '#00d4ff', '#ffd460', '#ffffff'], contrast: 'Medium', grain: 'None', camera: 'Pan', editRhythm: '2.5s avg' },
-  'film-noir': { creator: 'ShadowLens', rating: 4.7, usedBy: 189, palette: ['#0a0a0f', '#1a1a1a', '#333333', '#666666', '#cccccc'], contrast: 'Very High', grain: 'Heavy (60%)', camera: 'Slow Dolly', editRhythm: '3.8s avg' },
-  'pixel-retro': { creator: 'Bit8Studio', rating: 4.3, usedBy: 134, palette: ['#0a2e0a', '#00ff00', '#ff0000', '#ffff00', '#0000ff'], contrast: 'High', grain: 'None', camera: 'Fixed', editRhythm: '1.2s avg' },
-  'oil-painting': { creator: 'BrushMaster', rating: 4.6, usedBy: 276, palette: ['#2e1a0a', '#c4793a', '#8b4513', '#daa520', '#f5deb3'], contrast: 'Medium', grain: 'Texture (40%)', camera: 'Slow Pan', editRhythm: '5.0s avg' },
+const STYLE_DETAILS: Record<
+  string,
+  {
+    creator: string;
+    rating: number;
+    usedBy: number;
+    palette: string[];
+    contrast: string;
+    grain: string;
+    camera: string;
+    editRhythm: string;
+  }
+> = {
+  'cyberpunk-neon': {
+    creator: 'NeonWorks',
+    rating: 4.8,
+    usedBy: 342,
+    palette: ['#0f0a2e', '#e94560', '#00d4ff', '#7b2ff7', '#ff6b9d'],
+    contrast: 'High',
+    grain: 'None',
+    camera: 'Tracking',
+    editRhythm: '1.8s avg',
+  },
+  'watercolor-dream': {
+    creator: 'AquaBrush',
+    rating: 4.5,
+    usedBy: 218,
+    palette: ['#0a1f0a', '#7ec8a0', '#f4d35e', '#ee964b', '#c4a882'],
+    contrast: 'Low',
+    grain: 'Light (15%)',
+    camera: 'Static',
+    editRhythm: '4.2s avg',
+  },
+  'anime-classic': {
+    creator: 'TokyoFrame',
+    rating: 4.9,
+    usedBy: 567,
+    palette: ['#1a0a2e', '#ff6b9d', '#00d4ff', '#ffd460', '#ffffff'],
+    contrast: 'Medium',
+    grain: 'None',
+    camera: 'Pan',
+    editRhythm: '2.5s avg',
+  },
+  'film-noir': {
+    creator: 'ShadowLens',
+    rating: 4.7,
+    usedBy: 189,
+    palette: ['#0a0a0f', '#1a1a1a', '#333333', '#666666', '#cccccc'],
+    contrast: 'Very High',
+    grain: 'Heavy (60%)',
+    camera: 'Slow Dolly',
+    editRhythm: '3.8s avg',
+  },
+  'pixel-retro': {
+    creator: 'Bit8Studio',
+    rating: 4.3,
+    usedBy: 134,
+    palette: ['#0a2e0a', '#00ff00', '#ff0000', '#ffff00', '#0000ff'],
+    contrast: 'High',
+    grain: 'None',
+    camera: 'Fixed',
+    editRhythm: '1.2s avg',
+  },
+  'oil-painting': {
+    creator: 'BrushMaster',
+    rating: 4.6,
+    usedBy: 276,
+    palette: ['#2e1a0a', '#c4793a', '#8b4513', '#daa520', '#f5deb3'],
+    contrast: 'Medium',
+    grain: 'Texture (40%)',
+    camera: 'Slow Pan',
+    editRhythm: '5.0s avg',
+  },
 };
 
-const CARTOON_STYLES = ['Anime', 'Western Toon', 'Disney', 'Flat Vector', 'Comic Book', 'Chibi', 'Pixel Art', 'Watercolor', '3D Stylized'] as const;
+const CARTOON_STYLES = [
+  'Anime',
+  'Western Toon',
+  'Disney',
+  'Flat Vector',
+  'Comic Book',
+  'Chibi',
+  'Pixel Art',
+  'Watercolor',
+  '3D Stylized',
+] as const;
 
 const CARTOON_PRESETS = ['Anime Standard', 'Classic Toon', 'Disney 24', 'Manga BW'] as const;
 
@@ -105,9 +242,24 @@ const ANIMATION_STYLES = ['Snappy', 'Smooth', 'Elastic', 'Linear'] as const;
 const VISEME_STYLES = ['Anime', 'Western', 'Realistic', 'Simple'] as const;
 
 const MOCK_DISCOVERY_RESULTS: DiscoveryResult[] = [
-  { id: 'd1', title: 'Wes Anderson Palette', description: 'Symmetrical, pastel tones, high saturation', thumbnail: '#c4a882' },
-  { id: 'd2', title: 'Vintage Film Look', description: 'Warm grain, lifted blacks, faded highlights', thumbnail: '#8b7355' },
-  { id: 'd3', title: 'Clean Studio Style', description: 'Crisp colors, even lighting, minimal grain', thumbnail: '#5a7d9a' },
+  {
+    id: 'd1',
+    title: 'Wes Anderson Palette',
+    description: 'Symmetrical, pastel tones, high saturation',
+    thumbnail: '#c4a882',
+  },
+  {
+    id: 'd2',
+    title: 'Vintage Film Look',
+    description: 'Warm grain, lifted blacks, faded highlights',
+    thumbnail: '#8b7355',
+  },
+  {
+    id: 'd3',
+    title: 'Clean Studio Style',
+    description: 'Crisp colors, even lighting, minimal grain',
+    thumbnail: '#5a7d9a',
+  },
 ];
 
 const FINGERPRINT_COLORS = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#ffd460'];
@@ -273,7 +425,13 @@ export default function StyleStudioPage() {
   /* ── Clone Style Handlers ─────────────────────────────── */
 
   const simulateCloneProcess = useCallback(() => {
-    const stages: CloneStage[] = ['uploading', 'analyzing-colors', 'extracting-motion', 'building-fingerprint', 'done'];
+    const stages: CloneStage[] = [
+      'uploading',
+      'analyzing-colors',
+      'extracting-motion',
+      'building-fingerprint',
+      'done',
+    ];
     let i = 0;
     setCloneStage(stages[0]);
     const interval = setInterval(() => {
@@ -289,20 +447,23 @@ export default function StyleStudioPage() {
     }, 1500);
   }, []);
 
-  const handleFileDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const valid = ['video/mp4', 'video/quicktime', 'image/gif', 'video/webm'];
-      if (!valid.includes(file.type)) {
-        toast.error('Unsupported format. Use MP4, MOV, GIF, or WEBM.');
-        return;
+  const handleFileDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const valid = ['video/mp4', 'video/quicktime', 'image/gif', 'video/webm'];
+        if (!valid.includes(file.type)) {
+          toast.error('Unsupported format. Use MP4, MOV, GIF, or WEBM.');
+          return;
+        }
+        toast.info(`Processing: ${file.name}`);
+        simulateCloneProcess();
       }
-      toast.info(`Processing: ${file.name}`);
-      simulateCloneProcess();
-    }
-  }, [simulateCloneProcess]);
+    },
+    [simulateCloneProcess],
+  );
 
   const handleDiscoverySearch = useCallback(() => {
     if (!discoveryQuery.trim()) return;
@@ -315,7 +476,11 @@ export default function StyleStudioPage() {
   function handleApply(id: string) {
     setAppliedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
     toast.success(appliedIds.has(id) ? 'Style removed' : 'Style applied');
@@ -336,22 +501,33 @@ export default function StyleStudioPage() {
 
   function cloneProgressLabel(): string {
     switch (cloneStage) {
-      case 'uploading': return 'Uploading file...';
-      case 'analyzing-colors': return 'Analyzing color palette...';
-      case 'extracting-motion': return 'Extracting motion language...';
-      case 'building-fingerprint': return 'Building fingerprint...';
-      default: return '';
+      case 'uploading':
+        return 'Uploading file...';
+      case 'analyzing-colors':
+        return 'Analyzing color palette...';
+      case 'extracting-motion':
+        return 'Extracting motion language...';
+      case 'building-fingerprint':
+        return 'Building fingerprint...';
+      default:
+        return '';
     }
   }
 
   function cloneProgressPercent(): number {
     switch (cloneStage) {
-      case 'uploading': return 20;
-      case 'analyzing-colors': return 45;
-      case 'extracting-motion': return 70;
-      case 'building-fingerprint': return 90;
-      case 'done': return 100;
-      default: return 0;
+      case 'uploading':
+        return 20;
+      case 'analyzing-colors':
+        return 45;
+      case 'extracting-motion':
+        return 70;
+      case 'building-fingerprint':
+        return 90;
+      case 'done':
+        return 100;
+      default:
+        return 0;
     }
   }
 
@@ -386,7 +562,14 @@ export default function StyleStudioPage() {
         </div>
 
         {/* ── Tab Bar ───────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid var(--border)', paddingBottom: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 4,
+            borderBottom: '0.5px solid var(--border)',
+            paddingBottom: 0,
+          }}
+        >
           {TABS.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -444,7 +627,9 @@ export default function StyleStudioPage() {
                       onClick={() => setCloneSubTab(st)}
                       style={{
                         background: active ? 'var(--brand-dim)' : 'transparent',
-                        border: active ? '0.5px solid var(--brand-border)' : '0.5px solid var(--border)',
+                        border: active
+                          ? '0.5px solid var(--brand-border)'
+                          : '0.5px solid var(--border)',
                         color: active ? 'var(--text-brand)' : 'var(--text-secondary)',
                         padding: '6px 14px',
                         borderRadius: 'var(--radius-md)',
@@ -464,7 +649,10 @@ export default function StyleStudioPage() {
                 <>
                   {/* Drag-drop zone */}
                   <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(true);
+                    }}
                     onDragLeave={() => setIsDragOver(false)}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}
@@ -484,7 +672,14 @@ export default function StyleStudioPage() {
                     }}
                   >
                     <Upload size={28} style={{ color: 'var(--text-tertiary)' }} />
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, textAlign: 'center' }}>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        margin: 0,
+                        textAlign: 'center',
+                      }}
+                    >
                       Drag & drop a video file here
                     </p>
                     <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>
@@ -506,7 +701,14 @@ export default function StyleStudioPage() {
 
                   {/* URL input */}
                   <div>
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 6px', textAlign: 'center' }}>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-tertiary)',
+                        margin: '0 0 6px',
+                        textAlign: 'center',
+                      }}
+                    >
                       or enter URL
                     </p>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -522,7 +724,10 @@ export default function StyleStudioPage() {
                         type="button"
                         aria-label="Fetch video from URL"
                         onClick={() => {
-                          if (!cloneUrl.trim()) { toast.error('Enter a URL'); return; }
+                          if (!cloneUrl.trim()) {
+                            toast.error('Enter a URL');
+                            return;
+                          }
                           toast.info('Fetching video from URL...');
                           simulateCloneProcess();
                         }}
@@ -544,7 +749,12 @@ export default function StyleStudioPage() {
                       aria-label="Describe style to clone"
                       value={discoveryQuery}
                       onChange={(e) => setDiscoveryQuery(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDiscoverySearch(); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleDiscoverySearch();
+                        }
+                      }}
                       rows={3}
                       style={{ ...inputStyle, resize: 'vertical' as const, minHeight: 60 }}
                     />
@@ -554,14 +764,21 @@ export default function StyleStudioPage() {
                       <button
                         key={ex}
                         type="button"
-                        onClick={() => { setDiscoveryQuery(ex); }}
+                        onClick={() => {
+                          setDiscoveryQuery(ex);
+                        }}
                         style={{
                           ...badgeStyle,
                           cursor: 'pointer',
                           transition: 'border-color 0.15s ease',
                         }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand)'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.borderColor =
+                            'var(--border)';
+                        }}
                       >
                         {ex}
                       </button>
@@ -593,10 +810,35 @@ export default function StyleStudioPage() {
                             border: '0.5px solid var(--border)',
                           }}
                         >
-                          <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: r.thumbnail, flexShrink: 0 }} />
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 'var(--radius-md)',
+                              background: r.thumbnail,
+                              flexShrink: 0,
+                            }}
+                          />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{r.title}</p>
-                            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{r.description}</p>
+                            <p
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                margin: 0,
+                              }}
+                            >
+                              {r.title}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: 10,
+                                color: 'var(--text-tertiary)',
+                                margin: '2px 0 0',
+                              }}
+                            >
+                              {r.description}
+                            </p>
                           </div>
                           <button
                             type="button"
@@ -622,8 +864,13 @@ export default function StyleStudioPage() {
               {/* Progress indicator */}
               {cloneStage !== 'idle' && cloneStage !== 'done' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
-                  <Loader size={14} style={{ color: 'var(--text-brand)', animation: 'spin 1s linear infinite' }} />
-                  <p style={{ fontSize: 11, color: 'var(--text-brand)', margin: 0, fontWeight: 500 }}>
+                  <Loader
+                    size={14}
+                    style={{ color: 'var(--text-brand)', animation: 'spin 1s linear infinite' }}
+                  />
+                  <p
+                    style={{ fontSize: 11, color: 'var(--text-brand)', margin: 0, fontWeight: 500 }}
+                  >
                     {cloneProgressLabel()}
                   </p>
                 </div>
@@ -633,15 +880,38 @@ export default function StyleStudioPage() {
             {/* RIGHT: Extraction Result Panel */}
             <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {cloneStage !== 'done' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 8 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1,
+                    gap: 8,
+                  }}
+                >
                   <Palette size={32} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
-                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0, textAlign: 'center' }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-tertiary)',
+                      margin: 0,
+                      textAlign: 'center',
+                    }}
+                  >
                     Upload or discover a style to extract its fingerprint
                   </p>
                 </div>
               ) : (
                 <>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                    }}
+                  >
                     Style Fingerprint
                   </p>
 
@@ -662,8 +932,12 @@ export default function StyleStudioPage() {
                             transition: 'transform 0.15s ease',
                           }}
                           title={c}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+                          }}
                         />
                       ))}
                     </div>
@@ -672,8 +946,23 @@ export default function StyleStudioPage() {
                   {/* Contrast */}
                   <div>
                     <p style={labelStyle}>Contrast</p>
-                    <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-sunken)', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ width: '68%', height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, var(--brand), #E74C3C)' }} />
+                    <div
+                      style={{
+                        height: 6,
+                        borderRadius: 3,
+                        background: 'var(--bg-sunken)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '68%',
+                          height: '100%',
+                          borderRadius: 3,
+                          background: 'linear-gradient(90deg, var(--brand), #E74C3C)',
+                        }}
+                      />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
                       <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>Low</span>
@@ -703,10 +992,28 @@ export default function StyleStudioPage() {
                   {/* Confidence */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <p style={{ ...labelStyle, margin: 0 }}>Confidence</p>
-                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--bg-sunken)', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ width: '87%', height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, var(--brand), #34d399)' }} />
+                    <div
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        borderRadius: 3,
+                        background: 'var(--bg-sunken)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '87%',
+                          height: '100%',
+                          borderRadius: 3,
+                          background: 'linear-gradient(90deg, var(--brand), #34d399)',
+                        }}
+                      />
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--text-brand)', fontWeight: 700 }}>87%</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-brand)', fontWeight: 700 }}>
+                      87%
+                    </span>
                   </div>
 
                   {/* Style Name + Strength */}
@@ -723,9 +1030,17 @@ export default function StyleStudioPage() {
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <p style={labelStyle}>Strength</p>
-                      <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{styleStrength}%</span>
+                      <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                        {styleStrength}%
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -769,7 +1084,16 @@ export default function StyleStudioPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Presets Bar */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, marginRight: 4 }}>PRESETS:</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-tertiary)',
+                  fontWeight: 600,
+                  marginRight: 4,
+                }}
+              >
+                PRESETS:
+              </span>
               {CARTOON_PRESETS.map((p) => (
                 <button
                   key={p}
@@ -779,7 +1103,9 @@ export default function StyleStudioPage() {
                     toast.success(`Loaded preset: ${p}`);
                   }}
                   style={{
-                    ...(activePreset === p ? { ...btnPrimary, padding: '5px 12px', fontSize: 10 } : { ...badgeStyle, cursor: 'pointer' }),
+                    ...(activePreset === p
+                      ? { ...btnPrimary, padding: '5px 12px', fontSize: 10 }
+                      : { ...badgeStyle, cursor: 'pointer' }),
                   }}
                 >
                   {p}
@@ -795,29 +1121,84 @@ export default function StyleStudioPage() {
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, minHeight: 420 }}>
+            <div
+              style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, minHeight: 420 }}
+            >
               {/* LEFT: Controls */}
-              <div style={{ ...panelStyle, overflowY: 'auto', maxHeight: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
+              <div
+                style={{
+                  ...panelStyle,
+                  overflowY: 'auto',
+                  maxHeight: 520,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}
+              >
                 {/* Line Art */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Line Art</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Line Art
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Thickness</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{lineThickness}px</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {lineThickness}px
+                        </span>
                       </div>
-                      <input type="range" min={1} max={8} value={lineThickness} onChange={(e) => setLineThickness(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={1}
+                        max={8}
+                        value={lineThickness}
+                        onChange={(e) => setLineThickness(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={lineCleanup} onChange={(e) => setLineCleanup(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={lineCleanup}
+                          onChange={(e) => setLineCleanup(e.target.checked)}
+                          style={{ accentColor: 'var(--brand)' }}
+                        />
                         Cleanup
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
                         Color
-                        <input type="color" value={lineColor} onChange={(e) => setLineColor(e.target.value)} style={{ width: 20, height: 20, border: 'none', cursor: 'pointer', borderRadius: 4 }} />
+                        <input
+                          type="color"
+                          value={lineColor}
+                          onChange={(e) => setLineColor(e.target.value)}
+                          style={{
+                            width: 20,
+                            height: 20,
+                            border: 'none',
+                            cursor: 'pointer',
+                            borderRadius: 4,
+                          }}
+                        />
                       </label>
                     </div>
                   </div>
@@ -827,7 +1208,9 @@ export default function StyleStudioPage() {
 
                 {/* Shading Style */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Shading Style</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Shading Style
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {SHADING_MODES.map((m) => (
@@ -836,7 +1219,17 @@ export default function StyleStudioPage() {
                           type="button"
                           onClick={() => setShadingMode(m)}
                           style={{
-                            ...(shadingMode === m ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' } : { background: 'var(--bg-sunken)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                            ...(shadingMode === m
+                              ? {
+                                  background: 'var(--brand-dim)',
+                                  border: '0.5px solid var(--brand-border)',
+                                  color: 'var(--text-brand)',
+                                }
+                              : {
+                                  background: 'var(--bg-sunken)',
+                                  border: '0.5px solid var(--border)',
+                                  color: 'var(--text-secondary)',
+                                }),
                             padding: '5px 10px',
                             borderRadius: 'var(--radius-md)',
                             fontSize: 10,
@@ -852,18 +1245,49 @@ export default function StyleStudioPage() {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Shadow Intensity</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{shadowIntensity}%</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {shadowIntensity}%
+                        </span>
                       </div>
-                      <input type="range" min={0} max={100} value={shadowIntensity} onChange={(e) => setShadowIntensity(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={shadowIntensity}
+                        onChange={(e) => setShadowIntensity(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <span style={labelStyle}>Light Direction</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{lightDirection}°</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {lightDirection}°
+                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Compass size={14} style={{ color: 'var(--text-tertiary)', transform: `rotate(${lightDirection}deg)`, transition: 'transform 0.2s ease' }} />
-                        <input type="range" min={0} max={360} value={lightDirection} onChange={(e) => setLightDirection(Number(e.target.value))} style={{ ...sliderTrack, flex: 1 }} />
+                        <Compass
+                          size={14}
+                          style={{
+                            color: 'var(--text-tertiary)',
+                            transform: `rotate(${lightDirection}deg)`,
+                            transition: 'transform 0.2s ease',
+                          }}
+                        />
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          value={lightDirection}
+                          onChange={(e) => setLightDirection(Number(e.target.value))}
+                          style={{ ...sliderTrack, flex: 1 }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -873,31 +1297,79 @@ export default function StyleStudioPage() {
 
                 {/* Character Animation */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Character Animation</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Character Animation
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Squash & Stretch</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{squashStretch}%</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {squashStretch}%
+                        </span>
                       </div>
-                      <input type="range" min={0} max={100} value={squashStretch} onChange={(e) => setSquashStretch(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={squashStretch}
+                        onChange={(e) => setSquashStretch(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={smearFrames} onChange={(e) => setSmearFrames(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={smearFrames}
+                          onChange={(e) => setSmearFrames(e.target.checked)}
+                          style={{ accentColor: 'var(--brand)' }}
+                        />
                         Smear Frames
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={anticipation} onChange={(e) => setAnticipation(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={anticipation}
+                          onChange={(e) => setAnticipation(e.target.checked)}
+                          style={{ accentColor: 'var(--brand)' }}
+                        />
                         Anticipation
                       </label>
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Pose Exaggeration</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{poseExaggeration}%</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {poseExaggeration}%
+                        </span>
                       </div>
-                      <input type="range" min={0} max={100} value={poseExaggeration} onChange={(e) => setPoseExaggeration(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={poseExaggeration}
+                        onChange={(e) => setPoseExaggeration(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                   </div>
                 </div>
@@ -906,7 +1378,9 @@ export default function StyleStudioPage() {
 
                 {/* Timing */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Timing</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Timing
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
                       <span style={labelStyle}>Animation Style</span>
@@ -917,7 +1391,17 @@ export default function StyleStudioPage() {
                             type="button"
                             onClick={() => setAnimStyle(s)}
                             style={{
-                              ...(animStyle === s ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' } : { background: 'var(--bg-sunken)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                              ...(animStyle === s
+                                ? {
+                                    background: 'var(--brand-dim)',
+                                    border: '0.5px solid var(--brand-border)',
+                                    color: 'var(--text-brand)',
+                                  }
+                                : {
+                                    background: 'var(--bg-sunken)',
+                                    border: '0.5px solid var(--border)',
+                                    color: 'var(--text-secondary)',
+                                  }),
                               padding: '5px 10px',
                               borderRadius: 'var(--radius-md)',
                               fontSize: 10,
@@ -934,16 +1418,34 @@ export default function StyleStudioPage() {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Hold Frames</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{holdFrames}f</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {holdFrames}f
+                        </span>
                       </div>
-                      <input type="range" min={0} max={6} value={holdFrames} onChange={(e) => setHoldFrames(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={0}
+                        max={6}
+                        value={holdFrames}
+                        onChange={(e) => setHoldFrames(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={labelStyle}>Inbetween Quality</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{inbetweenQuality}%</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                          {inbetweenQuality}%
+                        </span>
                       </div>
-                      <input type="range" min={10} max={100} value={inbetweenQuality} onChange={(e) => setInbetweenQuality(Number(e.target.value))} style={sliderTrack} />
+                      <input
+                        type="range"
+                        min={10}
+                        max={100}
+                        value={inbetweenQuality}
+                        onChange={(e) => setInbetweenQuality(Number(e.target.value))}
+                        style={sliderTrack}
+                      />
                     </div>
                   </div>
                 </div>
@@ -952,7 +1454,9 @@ export default function StyleStudioPage() {
 
                 {/* Mouth / Dialogue */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Mouth / Dialogue</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Mouth / Dialogue
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
                       <span style={labelStyle}>Viseme Style</span>
@@ -963,7 +1467,17 @@ export default function StyleStudioPage() {
                             type="button"
                             onClick={() => setVisemeStyle(v)}
                             style={{
-                              ...(visemeStyle === v ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' } : { background: 'var(--bg-sunken)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                              ...(visemeStyle === v
+                                ? {
+                                    background: 'var(--brand-dim)',
+                                    border: '0.5px solid var(--brand-border)',
+                                    color: 'var(--text-brand)',
+                                  }
+                                : {
+                                    background: 'var(--bg-sunken)',
+                                    border: '0.5px solid var(--border)',
+                                    color: 'var(--text-secondary)',
+                                  }),
                               padding: '5px 10px',
                               borderRadius: 'var(--radius-md)',
                               fontSize: 10,
@@ -1009,14 +1523,44 @@ export default function StyleStudioPage() {
 
                 {/* Special Modes */}
                 <div>
-                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>Special Modes</p>
+                  <p style={{ ...labelStyle, fontSize: 11, color: 'var(--text-primary)' }}>
+                    Special Modes
+                  </p>
                   <div style={{ display: 'flex', gap: 12 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={comicPanel} onChange={(e) => setComicPanel(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 11,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={comicPanel}
+                        onChange={(e) => setComicPanel(e.target.checked)}
+                        style={{ accentColor: 'var(--brand)' }}
+                      />
                       Comic Panel Mode
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={onionSkin} onChange={(e) => setOnionSkin(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 11,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={onionSkin}
+                        onChange={(e) => setOnionSkin(e.target.checked)}
+                        style={{ accentColor: 'var(--brand)' }}
+                      />
                       Onion Skin
                     </label>
                   </div>
@@ -1025,7 +1569,11 @@ export default function StyleStudioPage() {
 
               {/* RIGHT: Preview */}
               <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Preview</p>
+                <p
+                  style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+                >
+                  Preview
+                </p>
                 <div
                   style={{
                     flex: 1,
@@ -1040,7 +1588,14 @@ export default function StyleStudioPage() {
                   }}
                 >
                   {/* SVG Cartoon Character - responds to settings */}
-                  <svg viewBox="0 0 200 280" width="160" height="224" style={{ filter: `drop-shadow(${Math.round(Math.cos(lightDirection * Math.PI / 180) * 4)}px ${Math.round(Math.sin(lightDirection * Math.PI / 180) * 4)}px 6px rgba(0,0,0,${shadowIntensity / 100}))` }}>
+                  <svg
+                    viewBox="0 0 200 280"
+                    width="160"
+                    height="224"
+                    style={{
+                      filter: `drop-shadow(${Math.round(Math.cos((lightDirection * Math.PI) / 180) * 4)}px ${Math.round(Math.sin((lightDirection * Math.PI) / 180) * 4)}px 6px rgba(0,0,0,${shadowIntensity / 100}))`,
+                    }}
+                  >
                     {/* Head */}
                     <ellipse
                       cx="100"
@@ -1055,8 +1610,8 @@ export default function StyleStudioPage() {
                     {/* Shadow on face */}
                     {shadingMode !== 'Flat' && (
                       <ellipse
-                        cx={100 + Math.cos(lightDirection * Math.PI / 180) * 15}
-                        cy={80 + Math.sin(lightDirection * Math.PI / 180) * 15}
+                        cx={100 + Math.cos((lightDirection * Math.PI) / 180) * 15}
+                        cy={80 + Math.sin((lightDirection * Math.PI) / 180) * 15}
                         rx="30"
                         ry="35"
                         fill={`rgba(0,0,0,${shadowIntensity / 500})`}
@@ -1064,22 +1619,81 @@ export default function StyleStudioPage() {
                       />
                     )}
                     {/* Eyes */}
-                    <ellipse cx="80" cy="70" rx="8" ry={10 + poseExaggeration * 0.05} fill="white" stroke={lineColor} strokeWidth={lineThickness * 0.7} />
-                    <ellipse cx="120" cy="70" rx="8" ry={10 + poseExaggeration * 0.05} fill="white" stroke={lineColor} strokeWidth={lineThickness * 0.7} />
+                    <ellipse
+                      cx="80"
+                      cy="70"
+                      rx="8"
+                      ry={10 + poseExaggeration * 0.05}
+                      fill="white"
+                      stroke={lineColor}
+                      strokeWidth={lineThickness * 0.7}
+                    />
+                    <ellipse
+                      cx="120"
+                      cy="70"
+                      rx="8"
+                      ry={10 + poseExaggeration * 0.05}
+                      fill="white"
+                      stroke={lineColor}
+                      strokeWidth={lineThickness * 0.7}
+                    />
                     <circle cx="80" cy="72" r="4" fill={lineColor} />
                     <circle cx="120" cy="72" r="4" fill={lineColor} />
                     {/* Eyebrows */}
-                    <line x1="72" y1={56 - poseExaggeration * 0.05} x2="88" y2="58" stroke={lineColor} strokeWidth={lineThickness} strokeLinecap="round" />
-                    <line x1="112" y1="58" x2="128" y2={56 - poseExaggeration * 0.05} stroke={lineColor} strokeWidth={lineThickness} strokeLinecap="round" />
+                    <line
+                      x1="72"
+                      y1={56 - poseExaggeration * 0.05}
+                      x2="88"
+                      y2="58"
+                      stroke={lineColor}
+                      strokeWidth={lineThickness}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="112"
+                      y1="58"
+                      x2="128"
+                      y2={56 - poseExaggeration * 0.05}
+                      stroke={lineColor}
+                      strokeWidth={lineThickness}
+                      strokeLinecap="round"
+                    />
                     {/* Mouth - changes with viseme */}
                     {visemeStyle === 'Anime' ? (
-                      <path d="M 85 100 Q 100 115 115 100" fill="none" stroke={lineColor} strokeWidth={lineThickness} strokeLinecap="round" />
+                      <path
+                        d="M 85 100 Q 100 115 115 100"
+                        fill="none"
+                        stroke={lineColor}
+                        strokeWidth={lineThickness}
+                        strokeLinecap="round"
+                      />
                     ) : visemeStyle === 'Western' ? (
-                      <ellipse cx="100" cy="102" rx="12" ry="6" fill="#e55" stroke={lineColor} strokeWidth={lineThickness * 0.7} />
+                      <ellipse
+                        cx="100"
+                        cy="102"
+                        rx="12"
+                        ry="6"
+                        fill="#e55"
+                        stroke={lineColor}
+                        strokeWidth={lineThickness * 0.7}
+                      />
                     ) : visemeStyle === 'Realistic' ? (
-                      <path d="M 88 100 Q 94 98 100 100 Q 106 98 112 100 Q 106 108 100 110 Q 94 108 88 100" fill="#d44" stroke={lineColor} strokeWidth={lineThickness * 0.5} />
+                      <path
+                        d="M 88 100 Q 94 98 100 100 Q 106 98 112 100 Q 106 108 100 110 Q 94 108 88 100"
+                        fill="#d44"
+                        stroke={lineColor}
+                        strokeWidth={lineThickness * 0.5}
+                      />
                     ) : (
-                      <line x1="90" y1="102" x2="110" y2="102" stroke={lineColor} strokeWidth={lineThickness} strokeLinecap="round" />
+                      <line
+                        x1="90"
+                        y1="102"
+                        x2="110"
+                        y2="102"
+                        stroke={lineColor}
+                        strokeWidth={lineThickness}
+                        strokeLinecap="round"
+                      />
                     )}
                     {/* Body */}
                     <rect
@@ -1094,24 +1708,81 @@ export default function StyleStudioPage() {
                       style={{ transition: 'all 0.3s ease' }}
                     />
                     {/* Arms */}
-                    <line x1="70" y1="155" x2={48 - poseExaggeration * 0.1} y2={185 + poseExaggeration * 0.1} stroke={lineColor} strokeWidth={lineThickness + 1} strokeLinecap="round" />
-                    <line x1="130" y1="155" x2={152 + poseExaggeration * 0.1} y2={185 + poseExaggeration * 0.1} stroke={lineColor} strokeWidth={lineThickness + 1} strokeLinecap="round" />
+                    <line
+                      x1="70"
+                      y1="155"
+                      x2={48 - poseExaggeration * 0.1}
+                      y2={185 + poseExaggeration * 0.1}
+                      stroke={lineColor}
+                      strokeWidth={lineThickness + 1}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="130"
+                      y1="155"
+                      x2={152 + poseExaggeration * 0.1}
+                      y2={185 + poseExaggeration * 0.1}
+                      stroke={lineColor}
+                      strokeWidth={lineThickness + 1}
+                      strokeLinecap="round"
+                    />
                     {/* Legs */}
-                    <line x1="88" y1="205" x2="82" y2="250" stroke={lineColor} strokeWidth={lineThickness + 1} strokeLinecap="round" />
-                    <line x1="112" y1="205" x2="118" y2="250" stroke={lineColor} strokeWidth={lineThickness + 1} strokeLinecap="round" />
+                    <line
+                      x1="88"
+                      y1="205"
+                      x2="82"
+                      y2="250"
+                      stroke={lineColor}
+                      strokeWidth={lineThickness + 1}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="112"
+                      y1="205"
+                      x2="118"
+                      y2="250"
+                      stroke={lineColor}
+                      strokeWidth={lineThickness + 1}
+                      strokeLinecap="round"
+                    />
                     {/* Hatching overlay */}
                     {shadingMode === 'Hatching' && (
                       <g opacity={shadowIntensity / 200}>
                         {[0, 8, 16, 24, 32].map((offset) => (
-                          <line key={offset} x1={75 + offset} y1="140" x2={70 + offset} y2="200" stroke={lineColor} strokeWidth={0.5} />
+                          <line
+                            key={offset}
+                            x1={75 + offset}
+                            y1="140"
+                            x2={70 + offset}
+                            y2="200"
+                            stroke={lineColor}
+                            strokeWidth={0.5}
+                          />
                         ))}
                       </g>
                     )}
                     {/* Onion skin ghost */}
                     {onionSkin && (
                       <g opacity={0.2} transform="translate(6, 0)">
-                        <ellipse cx="100" cy="80" rx="50" ry="60" fill="none" stroke="#00d4ff" strokeWidth={1} />
-                        <rect x="70" y="135" width="60" height="70" rx="12" fill="none" stroke="#00d4ff" strokeWidth={1} />
+                        <ellipse
+                          cx="100"
+                          cy="80"
+                          rx="50"
+                          ry="60"
+                          fill="none"
+                          stroke="#00d4ff"
+                          strokeWidth={1}
+                        />
+                        <rect
+                          x="70"
+                          y="135"
+                          width="60"
+                          height="70"
+                          rx="12"
+                          fill="none"
+                          stroke="#00d4ff"
+                          strokeWidth={1}
+                        />
                       </g>
                     )}
                   </svg>
@@ -1139,16 +1810,48 @@ export default function StyleStudioPage() {
                       >
                         <svg viewBox="0 0 20 14" width="16" height="11">
                           {i < 2 ? (
-                            <ellipse cx="10" cy="7" rx={6 + i * 2} ry={4 + i} fill="#e55" stroke={lineColor} strokeWidth={0.8} />
+                            <ellipse
+                              cx="10"
+                              cy="7"
+                              rx={6 + i * 2}
+                              ry={4 + i}
+                              fill="#e55"
+                              stroke={lineColor}
+                              strokeWidth={0.8}
+                            />
                           ) : i < 4 ? (
-                            <circle cx="10" cy="7" r={4 + (i - 2)} fill="#e55" stroke={lineColor} strokeWidth={0.8} />
+                            <circle
+                              cx="10"
+                              cy="7"
+                              r={4 + (i - 2)}
+                              fill="#e55"
+                              stroke={lineColor}
+                              strokeWidth={0.8}
+                            />
                           ) : i < 6 ? (
-                            <path d={`M 4 ${8 - i * 0.3} Q 10 ${10 + i * 0.5} 16 ${8 - i * 0.3}`} fill="none" stroke={lineColor} strokeWidth={1} />
+                            <path
+                              d={`M 4 ${8 - i * 0.3} Q 10 ${10 + i * 0.5} 16 ${8 - i * 0.3}`}
+                              fill="none"
+                              stroke={lineColor}
+                              strokeWidth={1}
+                            />
                           ) : (
-                            <line x1="5" y1="7" x2="15" y2="7" stroke={lineColor} strokeWidth={1.2} strokeLinecap="round" />
+                            <line
+                              x1="5"
+                              y1="7"
+                              x2="15"
+                              y2="7"
+                              stroke={lineColor}
+                              strokeWidth={1.2}
+                              strokeLinecap="round"
+                            />
                           )}
                         </svg>
-                        <span style={{ fontSize: 7, fontWeight: 600, color: 'var(--text-tertiary)' }}>{ms}</span>
+                        <span
+                          style={{ fontSize: 7, fontWeight: 600, color: 'var(--text-tertiary)' }}
+                        >
+                          {ms}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1186,7 +1889,16 @@ export default function StyleStudioPage() {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               {/* Search */}
               <div style={{ position: 'relative', flex: '1 1 180px', minWidth: 140 }}>
-                <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                <Search
+                  size={12}
+                  style={{
+                    position: 'absolute',
+                    left: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                />
                 <input
                   type="text"
                   placeholder="Search styles..."
@@ -1206,8 +1918,16 @@ export default function StyleStudioPage() {
                     onClick={() => setLibraryCategory(cat)}
                     style={{
                       ...(libraryCategory === cat
-                        ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' }
-                        : { background: 'transparent', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                        ? {
+                            background: 'var(--brand-dim)',
+                            border: '0.5px solid var(--brand-border)',
+                            color: 'var(--text-brand)',
+                          }
+                        : {
+                            background: 'transparent',
+                            border: '0.5px solid var(--border)',
+                            color: 'var(--text-secondary)',
+                          }),
                       padding: '5px 10px',
                       borderRadius: 'var(--radius-md)',
                       fontSize: 10,
@@ -1234,7 +1954,9 @@ export default function StyleStudioPage() {
                 }}
               >
                 {SORT_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
 
@@ -1245,7 +1967,11 @@ export default function StyleStudioPage() {
                 onClick={() => setShowMyStyles(!showMyStyles)}
                 style={{
                   ...(showMyStyles
-                    ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' }
+                    ? {
+                        background: 'var(--brand-dim)',
+                        border: '0.5px solid var(--brand-border)',
+                        color: 'var(--text-brand)',
+                      }
                     : { ...btnSecondary }),
                   padding: '5px 12px',
                   fontSize: 10,
@@ -1258,8 +1984,9 @@ export default function StyleStudioPage() {
               </button>
 
               {/* Create Style Pack */}
-              <UnavailableButton feature="style.createPack"
-                                style={{ ...btnPrimary, padding: '5px 12px', fontSize: 10 }}
+              <UnavailableButton
+                feature="style.createPack"
+                style={{ ...btnPrimary, padding: '5px 12px', fontSize: 10 }}
               >
                 <Plus size={10} />
                 Create Style Pack
@@ -1276,7 +2003,9 @@ export default function StyleStudioPage() {
             >
               {filteredPacks.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0' }}>
-                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>No styles found</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+                    No styles found
+                  </p>
                 </div>
               ) : (
                 filteredPacks.map((pack) => {
@@ -1296,7 +2025,8 @@ export default function StyleStudioPage() {
                       }}
                       onMouseEnter={(e) => {
                         setHoveredCardId(pack.id);
-                        (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-brand)';
+                        (e.currentTarget as HTMLDivElement).style.borderColor =
+                          'var(--border-brand)';
                       }}
                       onMouseLeave={(e) => {
                         setHoveredCardId(null);
@@ -1346,7 +2076,10 @@ export default function StyleStudioPage() {
                           >
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); toast.info(`Preview: ${pack.title}`); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.info(`Preview: ${pack.title}`);
+                              }}
                               style={{
                                 background: 'rgba(255,255,255,0.15)',
                                 backdropFilter: 'blur(4px)',
@@ -1366,7 +2099,11 @@ export default function StyleStudioPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); setApplyModalStyleId(pack.id); setApplyModalOpen(true); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setApplyModalStyleId(pack.id);
+                                setApplyModalOpen(true);
+                              }}
                               style={{
                                 background: 'rgba(255,255,255,0.15)',
                                 backdropFilter: 'blur(4px)',
@@ -1386,7 +2123,10 @@ export default function StyleStudioPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); setDetailPanelStyleId(pack.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailPanelStyleId(pack.id);
+                              }}
                               style={{
                                 background: 'rgba(255,255,255,0.15)',
                                 backdropFilter: 'blur(4px)',
@@ -1410,20 +2150,55 @@ export default function StyleStudioPage() {
 
                       {/* Card Body */}
                       <div style={{ padding: '10px 12px 12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: 'var(--text-primary)',
+                              margin: 0,
+                            }}
+                          >
                             {pack.title}
                           </p>
-                          <span style={{ fontSize: 9, color: 'var(--text-tertiary)', background: 'var(--bg-sunken)', padding: '2px 6px', borderRadius: 'var(--radius-md)' }}>
+                          <span
+                            style={{
+                              fontSize: 9,
+                              color: 'var(--text-tertiary)',
+                              background: 'var(--bg-sunken)',
+                              padding: '2px 6px',
+                              borderRadius: 'var(--radius-md)',
+                            }}
+                          >
                             {pack.category}
                           </span>
                         </div>
-                        <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                        <p
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--text-secondary)',
+                            margin: '4px 0 0',
+                            lineHeight: 1.4,
+                          }}
+                        >
                           {pack.description}
                         </p>
 
                         {/* Footer */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginTop: 10,
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => handleApply(pack.id)}
@@ -1441,12 +2216,30 @@ export default function StyleStudioPage() {
                               gap: 4,
                               transition: 'opacity 0.15s ease',
                             }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85'; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.opacity = '0.85';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                            }}
                           >
-                            {isApplied ? (<><Check size={10} /> Applied</>) : 'Apply'}
+                            {isApplied ? (
+                              <>
+                                <Check size={10} /> Applied
+                              </>
+                            ) : (
+                              'Apply'
+                            )}
                           </button>
-                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: 'var(--text-tertiary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 3,
+                            }}
+                          >
                             <Download size={10} />
                             {formatDownloads(pack.downloads)}
                           </span>
@@ -1469,25 +2262,32 @@ export default function StyleStudioPage() {
             <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* Upload Zone */}
               {i2cUploaded ? (
-                <div style={{
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  border: '0.5px solid var(--border)',
-                  position: 'relative',
-                }}>
+                <div
+                  style={{
+                    borderRadius: 'var(--radius-xl)',
+                    overflow: 'hidden',
+                    border: '0.5px solid var(--border)',
+                    position: 'relative',
+                  }}
+                >
                   {/* Mock image preview */}
-                  <div style={{
-                    height: 120,
-                    background: 'linear-gradient(135deg, #2a1a3e, #1a2a3e)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
+                  <div
+                    style={{
+                      height: 120,
+                      background: 'linear-gradient(135deg, #2a1a3e, #1a2a3e)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <Image size={32} style={{ color: 'rgba(255,255,255,0.3)' }} />
                   </div>
                   <button
                     type="button"
-                    onClick={() => { setI2cUploaded(false); setI2cConverted(false); }}
+                    onClick={() => {
+                      setI2cUploaded(false);
+                      setI2cConverted(false);
+                    }}
                     style={{
                       position: 'absolute',
                       top: 8,
@@ -1524,12 +2324,20 @@ export default function StyleStudioPage() {
                     transition: 'border-color 0.2s ease',
                     background: 'transparent',
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--brand)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--brand)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)';
+                  }}
                 >
                   <Upload size={24} style={{ color: 'var(--text-tertiary)' }} />
-                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0 }}>Drop an image here or click to upload</p>
-                  <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>PNG, JPG, WEBP</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0 }}>
+                    Drop an image here or click to upload
+                  </p>
+                  <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>
+                    PNG, JPG, WEBP
+                  </p>
                 </div>
               )}
               <input
@@ -1557,8 +2365,16 @@ export default function StyleStudioPage() {
                       onClick={() => setI2cStyle(s)}
                       style={{
                         ...(i2cStyle === s
-                          ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' }
-                          : { background: 'var(--bg-sunken)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                          ? {
+                              background: 'var(--brand-dim)',
+                              border: '0.5px solid var(--brand-border)',
+                              color: 'var(--text-brand)',
+                            }
+                          : {
+                              background: 'var(--bg-sunken)',
+                              border: '0.5px solid var(--border)',
+                              color: 'var(--text-secondary)',
+                            }),
                         padding: '8px 6px',
                         borderRadius: 'var(--radius-md)',
                         fontSize: 10,
@@ -1578,24 +2394,75 @@ export default function StyleStudioPage() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <p style={labelStyle}>Stylization Strength</p>
-                  <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{i2cStrength}%</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                    {i2cStrength}%
+                  </span>
                 </div>
-                <input type="range" min={10} max={100} value={i2cStrength} onChange={(e) => setI2cStrength(Number(e.target.value))} style={sliderTrack} />
+                <input
+                  type="range"
+                  min={10}
+                  max={100}
+                  value={i2cStrength}
+                  onChange={(e) => setI2cStrength(Number(e.target.value))}
+                  style={sliderTrack}
+                />
               </div>
 
               {/* Options */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <p style={labelStyle}>Options</p>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={i2cPreserveDetails} onChange={(e) => setI2cPreserveDetails(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={i2cPreserveDetails}
+                    onChange={(e) => setI2cPreserveDetails(e.target.checked)}
+                    style={{ accentColor: 'var(--brand)' }}
+                  />
                   Preserve fine details
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={i2cEnhanceEdges} onChange={(e) => setI2cEnhanceEdges(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={i2cEnhanceEdges}
+                    onChange={(e) => setI2cEnhanceEdges(e.target.checked)}
+                    style={{ accentColor: 'var(--brand)' }}
+                  />
                   Enhance edges
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={i2cColorCorrect} onChange={(e) => setI2cColorCorrect(e.target.checked)} style={{ accentColor: 'var(--brand)' }} />
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={i2cColorCorrect}
+                    onChange={(e) => setI2cColorCorrect(e.target.checked)}
+                    style={{ accentColor: 'var(--brand)' }}
+                  />
                   Color correction
                 </label>
               </div>
@@ -1604,7 +2471,10 @@ export default function StyleStudioPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!i2cUploaded) { toast.error('Upload an image first'); return; }
+                  if (!i2cUploaded) {
+                    toast.error('Upload an image first');
+                    return;
+                  }
                   toast.info('Converting to cartoon...');
                   setTimeout(() => {
                     setI2cConverted(true);
@@ -1640,7 +2510,10 @@ export default function StyleStudioPage() {
                 onMouseMove={(e) => {
                   if (!i2cDragging) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const pct = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+                  const pct = Math.min(
+                    100,
+                    Math.max(0, ((e.clientX - rect.left) / rect.width) * 100),
+                  );
                   setI2cSliderPos(pct);
                 }}
                 onMouseUp={() => setI2cDragging(false)}
@@ -1649,12 +2522,39 @@ export default function StyleStudioPage() {
                 {i2cConverted ? (
                   <>
                     {/* Before side (full background) */}
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #2a1a3e, #1a2a3e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>ORIGINAL</span>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(135deg, #2a1a3e, #1a2a3e)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}
+                      >
+                        ORIGINAL
+                      </span>
                     </div>
                     {/* After side (clipped) */}
-                    <div style={{ position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - i2cSliderPos}% 0 0)`, background: 'linear-gradient(135deg, #4a2a6e, #2a4a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>CARTOON</span>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        clipPath: `inset(0 ${100 - i2cSliderPos}% 0 0)`,
+                        background: 'linear-gradient(135deg, #4a2a6e, #2a4a6e)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}
+                      >
+                        CARTOON
+                      </span>
                     </div>
                     {/* Drag handle */}
                     <div
@@ -1693,15 +2593,38 @@ export default function StyleStudioPage() {
                     </div>
                     {/* Labels */}
                     <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 5 }}>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', background: 'rgba(0,0,0,0.4)', padding: '2px 6px', borderRadius: 4 }}>Before</span>
+                      <span
+                        style={{
+                          fontSize: 9,
+                          color: 'rgba(255,255,255,0.6)',
+                          background: 'rgba(0,0,0,0.4)',
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        Before
+                      </span>
                     </div>
                     <div style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 5 }}>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', background: 'rgba(0,0,0,0.4)', padding: '2px 6px', borderRadius: 4 }}>After</span>
+                      <span
+                        style={{
+                          fontSize: 9,
+                          color: 'rgba(255,255,255,0.6)',
+                          background: 'rgba(0,0,0,0.4)',
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        After
+                      </span>
                     </div>
                   </>
                 ) : (
                   <div style={{ textAlign: 'center' }}>
-                    <Image size={32} style={{ color: 'var(--text-tertiary)', opacity: 0.4, marginBottom: 8 }} />
+                    <Image
+                      size={32}
+                      style={{ color: 'var(--text-tertiary)', opacity: 0.4, marginBottom: 8 }}
+                    />
                     <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
                       Upload an image and convert to see comparison
                     </p>
@@ -1714,7 +2637,10 @@ export default function StyleStudioPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!i2cConverted) { toast.error('Convert an image first'); return; }
+                    if (!i2cConverted) {
+                      toast.error('Convert an image first');
+                      return;
+                    }
                     toast.success('Image downloaded');
                   }}
                   style={{ ...btnSecondary, flex: 1, justifyContent: 'center' }}
@@ -1725,7 +2651,10 @@ export default function StyleStudioPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!i2cConverted) { toast.error('Convert an image first'); return; }
+                    if (!i2cConverted) {
+                      toast.error('Convert an image first');
+                      return;
+                    }
                     router.push('/characters/new');
                   }}
                   style={{ ...btnPrimary, flex: 1, justifyContent: 'center' }}
@@ -1776,15 +2705,25 @@ export default function StyleStudioPage() {
               }}
             >
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <p
+                  style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
+                >
                   Apply Style: {STYLE_PACKS.find((p) => p.id === applyModalStyleId)?.title}
                 </p>
                 <button
                   type="button"
                   aria-label="Close"
                   onClick={() => setApplyModalOpen(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-tertiary)',
+                    padding: 4,
+                  }}
                 >
                   <X size={16} />
                 </button>
@@ -1801,8 +2740,16 @@ export default function StyleStudioPage() {
                       onClick={() => setApplyTarget(t)}
                       style={{
                         ...(applyTarget === t
-                          ? { background: 'var(--brand-dim)', border: '0.5px solid var(--brand-border)', color: 'var(--text-brand)' }
-                          : { background: 'var(--bg-sunken)', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }),
+                          ? {
+                              background: 'var(--brand-dim)',
+                              border: '0.5px solid var(--brand-border)',
+                              color: 'var(--text-brand)',
+                            }
+                          : {
+                              background: 'var(--bg-sunken)',
+                              border: '0.5px solid var(--border)',
+                              color: 'var(--text-secondary)',
+                            }),
                         padding: '6px 16px',
                         borderRadius: 'var(--radius-md)',
                         fontSize: 11,
@@ -1827,7 +2774,9 @@ export default function StyleStudioPage() {
                   style={{ ...inputStyle, cursor: 'pointer' }}
                 >
                   {MOCK_PROJECTS.map((proj) => (
-                    <option key={proj.id} value={proj.id}>{proj.name}</option>
+                    <option key={proj.id} value={proj.id}>
+                      {proj.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1862,7 +2811,11 @@ export default function StyleStudioPage() {
                             onChange={() => {
                               setApplySelectedShots((prev) => {
                                 const next = new Set(prev);
-                                if (next.has(shot.id)) { next.delete(shot.id); } else { next.add(shot.id); }
+                                if (next.has(shot.id)) {
+                                  next.delete(shot.id);
+                                } else {
+                                  next.add(shot.id);
+                                }
                                 return next;
                               });
                             }}
@@ -1878,9 +2831,13 @@ export default function StyleStudioPage() {
 
               {/* Strength slider */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <p style={labelStyle}>Strength</p>
-                  <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>{applyStrength}%</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-brand)', fontWeight: 600 }}>
+                    {applyStrength}%
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -1893,14 +2850,16 @@ export default function StyleStudioPage() {
               </div>
 
               {/* Blend toggle */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 11,
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-              }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={applyBlend}
@@ -1920,7 +2879,9 @@ export default function StyleStudioPage() {
                     toast.error('Select at least one shot');
                     return;
                   }
-                  toast.success(`Applied "${styleName}" to ${applyTarget === 'project' ? projectName : `${applySelectedShots.size} shot(s)`} at ${applyStrength}%`);
+                  toast.success(
+                    `Applied "${styleName}" to ${applyTarget === 'project' ? projectName : `${applySelectedShots.size} shot(s)`} at ${applyStrength}%`,
+                  );
                   setApplyModalOpen(false);
                 }}
                 style={{ ...btnPrimary, justifyContent: 'center', padding: '10px 16px' }}
@@ -1937,193 +2898,240 @@ export default function StyleStudioPage() {
           SS-4: Style Detail Panel (slides from right)
          ══════════════════════════════════════════════════ */}
       <AnimatePresence>
-        {detailPanelStyleId && (() => {
-          const pack = STYLE_PACKS.find((p) => p.id === detailPanelStyleId);
-          const details = STYLE_DETAILS[detailPanelStyleId];
-          if (!pack || !details) return null;
-          return (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  position: 'fixed',
-                  inset: 0,
-                  background: 'rgba(0,0,0,0.3)',
-                  zIndex: 900,
-                }}
-                onClick={() => setDetailPanelStyleId(null)}
-              />
-              {/* Panel */}
-              <motion.div
-                initial={{ x: 380 }}
-                animate={{ x: 0 }}
-                exit={{ x: 380 }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  width: 380,
-                  background: 'var(--bg-elevated)',
-                  borderLeft: '0.5px solid var(--border)',
-                  zIndex: 950,
-                  overflowY: 'auto',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 16,
-                  padding: 20,
-                  boxShadow: '-8px 0 30px rgba(0,0,0,0.3)',
-                }}
-              >
-                {/* Close */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                    {pack.title}
-                  </p>
-                  <button
-                    type="button"
-                    aria-label="Close"
-                    onClick={() => setDetailPanelStyleId(null)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                {/* Preview gradient */}
-                <div style={{
-                  height: 100,
-                  borderRadius: 'var(--radius-xl)',
-                  background: `linear-gradient(135deg, ${pack.gradientFrom}, ${pack.gradientTo})`,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  <div className="style-hover-shimmer" style={{ position: 'absolute', inset: 0 }} />
-                </div>
-
-                <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                  {pack.description}
-                </p>
-
-                {/* Creator info */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: 10,
-                  background: 'var(--bg-sunken)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '0.5px solid var(--border)',
-                }}>
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: 'var(--brand-dim)',
+        {detailPanelStyleId &&
+          (() => {
+            const pack = STYLE_PACKS.find((p) => p.id === detailPanelStyleId);
+            const details = STYLE_DETAILS[detailPanelStyleId];
+            if (!pack || !details) return null;
+            return (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.3)',
+                    zIndex: 900,
+                  }}
+                  onClick={() => setDetailPanelStyleId(null)}
+                />
+                {/* Panel */}
+                <motion.div
+                  initial={{ x: 380 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: 380 }}
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: 380,
+                    background: 'var(--bg-elevated)',
+                    borderLeft: '0.5px solid var(--border)',
+                    zIndex: 950,
+                    overflowY: 'auto',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Users size={14} style={{ color: 'var(--text-brand)' }} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                      {details.creator}
+                    flexDirection: 'column',
+                    gap: 16,
+                    padding: 20,
+                    boxShadow: '-8px 0 30px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  {/* Close */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                      }}
+                    >
+                      {pack.title}
                     </p>
-                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
-                      Used by {details.usedBy} creators
-                    </p>
+                    <button
+                      type="button"
+                      aria-label="Close"
+                      onClick={() => setDetailPanelStyleId(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-tertiary)',
+                        padding: 4,
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Star size={10} style={{ color: '#fbbf24', fill: '#fbbf24' }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{details.rating}</span>
-                  </div>
-                </div>
 
-                {/* Fingerprint data */}
-                <div>
-                  <p style={labelStyle}>Color Palette</p>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {details.palette.map((c) => (
-                      <div
-                        key={c}
+                  {/* Preview gradient */}
+                  <div
+                    style={{
+                      height: 100,
+                      borderRadius: 'var(--radius-xl)',
+                      background: `linear-gradient(135deg, ${pack.gradientFrom}, ${pack.gradientTo})`,
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      className="style-hover-shimmer"
+                      style={{ position: 'absolute', inset: 0 }}
+                    />
+                  </div>
+
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--text-secondary)',
+                      margin: 0,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {pack.description}
+                  </p>
+
+                  {/* Creator info */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: 10,
+                      background: 'var(--bg-sunken)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '0.5px solid var(--border)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'var(--brand-dim)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Users size={14} style={{ color: 'var(--text-brand)' }} />
+                    </div>
+                    <div>
+                      <p
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 'var(--radius-md)',
-                          background: c,
-                          border: '2px solid var(--border)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          margin: 0,
                         }}
-                        title={c}
-                      />
-                    ))}
+                      >
+                        {details.creator}
+                      </p>
+                      <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
+                        Used by {details.usedBy} creators
+                      </p>
+                    </div>
+                    <div
+                      style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}
+                    >
+                      <Star size={10} style={{ color: '#fbbf24', fill: '#fbbf24' }} />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {details.rating}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {/* Fingerprint data */}
                   <div>
-                    <p style={labelStyle}>Contrast</p>
-                    <span style={badgeStyle}>{details.contrast}</span>
+                    <p style={labelStyle}>Color Palette</p>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {details.palette.map((c) => (
+                        <div
+                          key={c}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 'var(--radius-md)',
+                            background: c,
+                            border: '2px solid var(--border)',
+                          }}
+                          title={c}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <p style={labelStyle}>Film Grain</p>
-                    <span style={badgeStyle}>{details.grain}</span>
-                  </div>
-                  <div>
-                    <p style={labelStyle}>Camera Motion</p>
-                    <span style={badgeStyle}>{details.camera}</span>
-                  </div>
-                  <div>
-                    <p style={labelStyle}>Edit Rhythm</p>
-                    <span style={badgeStyle}>{details.editRhythm}</span>
-                  </div>
-                </div>
 
-                <div>
-                  <p style={labelStyle}>Category</p>
-                  <span style={badgeStyle}>{pack.category}</span>
-                </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <p style={labelStyle}>Contrast</p>
+                      <span style={badgeStyle}>{details.contrast}</span>
+                    </div>
+                    <div>
+                      <p style={labelStyle}>Film Grain</p>
+                      <span style={badgeStyle}>{details.grain}</span>
+                    </div>
+                    <div>
+                      <p style={labelStyle}>Camera Motion</p>
+                      <span style={badgeStyle}>{details.camera}</span>
+                    </div>
+                    <div>
+                      <p style={labelStyle}>Edit Rhythm</p>
+                      <span style={badgeStyle}>{details.editRhythm}</span>
+                    </div>
+                  </div>
 
-                <div>
-                  <p style={labelStyle}>Downloads</p>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
-                    {formatDownloads(pack.downloads)}
-                  </span>
-                </div>
+                  <div>
+                    <p style={labelStyle}>Category</p>
+                    <span style={badgeStyle}>{pack.category}</span>
+                  </div>
 
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setApplyModalStyleId(pack.id);
-                      setApplyModalOpen(true);
-                      setDetailPanelStyleId(null);
-                    }}
-                    style={{ ...btnPrimary, flex: 1, justifyContent: 'center' }}
-                  >
-                    <Check size={12} />
-                    Apply
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.success(`${pack.title} added to library`);
-                    }}
-                    style={{ ...btnSecondary, flex: 1, justifyContent: 'center' }}
-                  >
-                    <Bookmark size={12} />
-                    Add to Library
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          );
-        })()}
+                  <div>
+                    <p style={labelStyle}>Downloads</p>
+                    <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
+                      {formatDownloads(pack.downloads)}
+                    </span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setApplyModalStyleId(pack.id);
+                        setApplyModalOpen(true);
+                        setDetailPanelStyleId(null);
+                      }}
+                      style={{ ...btnPrimary, flex: 1, justifyContent: 'center' }}
+                    >
+                      <Check size={12} />
+                      Apply
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.success(`${pack.title} added to library`);
+                      }}
+                      style={{ ...btnSecondary, flex: 1, justifyContent: 'center' }}
+                    >
+                      <Bookmark size={12} />
+                      Add to Library
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            );
+          })()}
       </AnimatePresence>
 
       {/* Keyframe animation for loader spinner */}

@@ -25,17 +25,11 @@ export async function POST(request: NextRequest) {
   };
 
   if (!url || !url.startsWith('https://')) {
-    return NextResponse.json(
-      { error: 'A valid HTTPS URL is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'A valid HTTPS URL is required' }, { status: 400 });
   }
 
   if (!events || events.length === 0) {
-    return NextResponse.json(
-      { error: 'At least one event type is required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'At least one event type is required' }, { status: 400 });
   }
 
   const newWebhook = {

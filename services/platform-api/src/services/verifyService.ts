@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface VerificationManifest {
   generator: string;
@@ -17,7 +17,7 @@ export interface VerificationResult {
 export interface VerificationBadge {
   badgeUrl: string;
   embedCode: string;
-  status: "verified" | "unverified";
+  status: 'verified' | 'unverified';
 }
 
 export interface VerificationHistoryEntry {
@@ -38,8 +38,8 @@ export function verifyOutput(outputId: string): VerificationResult {
   const verified = true;
 
   const manifest: VerificationManifest = {
-    generator: "AnimaForge",
-    version: "1.0.0",
+    generator: 'AnimaForge',
+    version: '1.0.0',
     createdAt: now,
     modelId: `model-${outputId.substring(0, 8)}`,
   };
@@ -47,8 +47,8 @@ export function verifyOutput(outputId: string): VerificationResult {
   // Record in history
   const entry: VerificationHistoryEntry = {
     checkedAt: now,
-    result: verified ? "verified" : "unverified",
-    checkedBy: "system",
+    result: verified ? 'verified' : 'unverified',
+    checkedBy: 'system',
   };
 
   const history = verificationHistory.get(outputId) ?? [];
@@ -58,16 +58,17 @@ export function verifyOutput(outputId: string): VerificationResult {
   return {
     verified,
     manifest,
-    consentStatus: "valid",
+    consentStatus: 'valid',
     watermarkDetected: true,
   };
 }
 
 export function generateVerificationBadge(outputId: string): VerificationBadge {
   const history = verificationHistory.get(outputId);
-  const isVerified = history && history.length > 0 && history[history.length - 1].result === "verified";
+  const isVerified =
+    history && history.length > 0 && history[history.length - 1].result === 'verified';
 
-  const status = isVerified ? "verified" : "unverified";
+  const status = isVerified ? 'verified' : 'unverified';
   const badgeUrl = `https://cdn.animaforge.com/badges/${status}/${outputId}.svg`;
   const embedCode = `<img src="${badgeUrl}" alt="AnimaForge ${status}" />`;
 

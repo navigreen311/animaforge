@@ -1,8 +1,4 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
@@ -95,9 +91,7 @@ export async function getPresignedUploadUrl(
  * - VIDEO  → extract a single frame via ffmpeg, then resize
  * - AUDIO  → return waveform sample data (placeholder)
  */
-export async function generateThumbnail(
-  params: ThumbnailParams,
-): Promise<ThumbnailResult> {
+export async function generateThumbnail(params: ThumbnailParams): Promise<ThumbnailResult> {
   const { assetId, s3Key, contentType } = params;
   const thumbnailKey = `thumbnails/${assetId}.webp`;
 
@@ -159,9 +153,7 @@ export async function generateThumbnail(
 
   if (contentType.startsWith('audio/')) {
     // Return placeholder waveform data (128 sample points normalised 0-1)
-    const waveform = Array.from({ length: 128 }, () =>
-      Math.round(Math.random() * 100) / 100,
-    );
+    const waveform = Array.from({ length: 128 }, () => Math.round(Math.random() * 100) / 100);
 
     return {
       thumbnailKey: `waveforms/${assetId}.json`,
@@ -180,11 +172,7 @@ export async function generateThumbnail(
 /**
  * Upload a buffer to S3 at the given key.
  */
-export async function uploadToS3(
-  buffer: Buffer,
-  contentType: string,
-  key: string,
-): Promise<void> {
+export async function uploadToS3(buffer: Buffer, contentType: string, key: string): Promise<void> {
   const command = new PutObjectCommand({
     Bucket: AWS_S3_BUCKET,
     Key: key,

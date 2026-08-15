@@ -20,11 +20,56 @@ interface Connection {
 }
 
 const INITIAL_SCENES: SceneNode[] = [
-  { id: 's1', name: 'Opening', x: 60, y: 60, tone: 'neutral', pose: 'idle', emotion: 'calm', trigger: 'timer' },
-  { id: 's2', name: 'Crisis', x: 340, y: 60, tone: 'tense', pose: 'alert', emotion: 'worried', trigger: 'keyword detected' },
-  { id: 's3', name: 'Resolution Path A', x: 620, y: 0, tone: 'hopeful', pose: 'confident', emotion: 'determined', trigger: 'audience vote' },
-  { id: 's4', name: 'Resolution Path B', x: 620, y: 140, tone: 'somber', pose: 'slumped', emotion: 'resigned', trigger: 'audience vote' },
-  { id: 's5', name: 'Outro', x: 900, y: 60, tone: 'joyful', pose: 'wave', emotion: 'grateful', trigger: 'timer' },
+  {
+    id: 's1',
+    name: 'Opening',
+    x: 60,
+    y: 60,
+    tone: 'neutral',
+    pose: 'idle',
+    emotion: 'calm',
+    trigger: 'timer',
+  },
+  {
+    id: 's2',
+    name: 'Crisis',
+    x: 340,
+    y: 60,
+    tone: 'tense',
+    pose: 'alert',
+    emotion: 'worried',
+    trigger: 'keyword detected',
+  },
+  {
+    id: 's3',
+    name: 'Resolution Path A',
+    x: 620,
+    y: 0,
+    tone: 'hopeful',
+    pose: 'confident',
+    emotion: 'determined',
+    trigger: 'audience vote',
+  },
+  {
+    id: 's4',
+    name: 'Resolution Path B',
+    x: 620,
+    y: 140,
+    tone: 'somber',
+    pose: 'slumped',
+    emotion: 'resigned',
+    trigger: 'audience vote',
+  },
+  {
+    id: 's5',
+    name: 'Outro',
+    x: 900,
+    y: 60,
+    tone: 'joyful',
+    pose: 'wave',
+    emotion: 'grateful',
+    trigger: 'timer',
+  },
 ];
 
 const INITIAL_CONNECTIONS: Connection[] = [
@@ -161,7 +206,9 @@ export default function BranchingNarrativeEditor() {
                   gap: 6,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <strong style={{ fontSize: 13 }}>{s.name}</strong>
                   <span
                     style={{
@@ -285,7 +332,9 @@ export default function BranchingNarrativeEditor() {
               Trigger condition
               <select
                 value={selected.trigger}
-                onChange={(e) => updateSelected({ trigger: e.target.value as SceneNode['trigger'] })}
+                onChange={(e) =>
+                  updateSelected({ trigger: e.target.value as SceneNode['trigger'] })
+                }
                 style={{
                   width: '100%',
                   marginTop: 4,
@@ -302,7 +351,9 @@ export default function BranchingNarrativeEditor() {
               </select>
             </label>
 
-            <fieldset style={{ border: '1px solid var(--border, #262631)', borderRadius: 8, padding: 10 }}>
+            <fieldset
+              style={{ border: '1px solid var(--border, #262631)', borderRadius: 8, padding: 10 }}
+            >
               <legend style={{ fontSize: 12, color: 'var(--muted, #9ca3af)', padding: '0 6px' }}>
                 <Smile size={12} style={{ display: 'inline', marginRight: 4 }} />
                 Avatar response
@@ -324,7 +375,14 @@ export default function BranchingNarrativeEditor() {
                   }}
                 />
               </label>
-              <label style={{ fontSize: 12, color: 'var(--muted, #9ca3af)', marginTop: 8, display: 'block' }}>
+              <label
+                style={{
+                  fontSize: 12,
+                  color: 'var(--muted, #9ca3af)',
+                  marginTop: 8,
+                  display: 'block',
+                }}
+              >
                 Pose
                 <input
                   type="text"

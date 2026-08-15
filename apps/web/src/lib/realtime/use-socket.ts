@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { io, type Socket } from 'socket.io-client';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:3002";
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:3002';
 
 interface UseSocketReturn {
   socket: Socket | null;
@@ -27,7 +27,7 @@ export function useSocket(): UseSocketReturn {
 
   useEffect(() => {
     const sock = io(WS_URL, {
-      transports: ["websocket", "polling"],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -37,9 +37,9 @@ export function useSocket(): UseSocketReturn {
 
     socketRef.current = sock;
 
-    sock.on("connect", () => setConnected(true));
-    sock.on("disconnect", () => setConnected(false));
-    sock.on("reconnect", () => setConnected(true));
+    sock.on('connect', () => setConnected(true));
+    sock.on('disconnect', () => setConnected(false));
+    sock.on('reconnect', () => setConnected(true));
 
     return () => {
       sock.disconnect();
@@ -48,29 +48,26 @@ export function useSocket(): UseSocketReturn {
     };
   }, []);
 
-  const subscribe = useCallback(
-    <T = unknown>(event: string, handler: (data: T) => void) => {
-      const sock = socketRef.current;
-      if (!sock) return () => {};
+  const subscribe = useCallback(<T = unknown>(event: string, handler: (data: T) => void) => {
+    const sock = socketRef.current;
+    if (!sock) return () => {};
 
-      sock.on(event as any, handler as any);
-      return () => {
-        sock.off(event as any, handler as any);
-      };
-    },
-    [],
-  );
+    sock.on(event as any, handler as any);
+    return () => {
+      sock.off(event as any, handler as any);
+    };
+  }, []);
 
   const emit = useCallback((event: string, data?: unknown) => {
     socketRef.current?.emit(event, data);
   }, []);
 
   const joinProject = useCallback((projectId: string) => {
-    socketRef.current?.emit("collab:join", { projectId });
+    socketRef.current?.emit('collab:join', { projectId });
   }, []);
 
   const leaveProject = useCallback((projectId: string) => {
-    socketRef.current?.emit("collab:leave", { projectId });
+    socketRef.current?.emit('collab:leave', { projectId });
   }, []);
 
   return {

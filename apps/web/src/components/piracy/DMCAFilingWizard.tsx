@@ -227,16 +227,9 @@ function StepIndicator({ current }: { current: number }) {
                   justifyContent: 'center',
                   fontSize: 10,
                   fontWeight: 600,
-                  background: done
-                    ? 'var(--brand)'
-                    : active
-                    ? 'var(--brand)'
-                    : 'var(--bg-surface)',
+                  background: done ? 'var(--brand)' : active ? 'var(--brand)' : 'var(--bg-surface)',
                   color: done || active ? '#fff' : 'var(--text-tertiary)',
-                  border:
-                    done || active
-                      ? 'none'
-                      : '0.5px solid var(--border)',
+                  border: done || active ? 'none' : '0.5px solid var(--border)',
                 }}
               >
                 {done ? <Check size={12} /> : step.id}
@@ -244,9 +237,7 @@ function StepIndicator({ current }: { current: number }) {
               <span
                 style={{
                   fontSize: 11,
-                  color: active
-                    ? 'var(--text-primary)'
-                    : 'var(--text-tertiary)',
+                  color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
                   fontWeight: active ? 600 : 400,
                 }}
               >
@@ -448,10 +439,7 @@ export default function DMCAFilingWizard({
                   >
                     {caseNumber}
                   </strong>
-                  <Copy
-                    size={12}
-                    style={{ cursor: 'pointer', color: 'var(--text-tertiary)' }}
-                  />
+                  <Copy size={12} style={{ cursor: 'pointer', color: 'var(--text-tertiary)' }} />
                 </div>
                 <p
                   style={{
@@ -488,8 +476,7 @@ export default function DMCAFilingWizard({
                     margin: '0 0 16px',
                   }}
                 >
-                  We'll verify your ownership via the C2PA manifest attached to
-                  the original render.
+                  We'll verify your ownership via the C2PA manifest attached to the original render.
                 </p>
 
                 <div
@@ -506,8 +493,7 @@ export default function DMCAFilingWizard({
                       width: 110,
                       height: 62,
                       borderRadius: 'var(--radius-sm)',
-                      background:
-                        'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
                       flexShrink: 0,
                     }}
                   />
@@ -562,8 +548,8 @@ export default function DMCAFilingWizard({
                       lineHeight: 1.5,
                     }}
                   >
-                    I am the copyright holder of this work, or am authorized to
-                    act on behalf of the copyright holder.
+                    I am the copyright holder of this work, or am authorized to act on behalf of the
+                    copyright holder.
                   </span>
                 </label>
               </motion.div>
@@ -606,9 +592,7 @@ export default function DMCAFilingWizard({
                 >
                   <div>
                     <label style={labelStyle}>Platform</label>
-                    <div style={{ ...inputStyle, padding: '8px 12px' }}>
-                      {match.platform}
-                    </div>
+                    <div style={{ ...inputStyle, padding: '8px 12px' }}>{match.platform}</div>
                   </div>
                   <div>
                     <label style={labelStyle}>Match Strength</label>
@@ -639,8 +623,7 @@ export default function DMCAFilingWizard({
                       style={{
                         height: 100,
                         borderRadius: 'var(--radius-md)',
-                        background:
-                          'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
                         border: '0.5px solid var(--border)',
                       }}
                     />
@@ -651,8 +634,7 @@ export default function DMCAFilingWizard({
                       style={{
                         height: 100,
                         borderRadius: 'var(--radius-md)',
-                        background:
-                          'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
+                        background: 'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
                         border: '0.5px solid var(--border)',
                       }}
                     />
@@ -703,9 +685,7 @@ export default function DMCAFilingWizard({
                     <input
                       type="text"
                       value={form.fullName}
-                      onChange={(e) =>
-                        setForm({ ...form, fullName: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                       style={inputStyle}
                     />
                   </div>
@@ -716,9 +696,7 @@ export default function DMCAFilingWizard({
                     <input
                       type="text"
                       value={form.address}
-                      onChange={(e) =>
-                        setForm({ ...form, address: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
                       style={inputStyle}
                     />
                   </div>
@@ -727,9 +705,7 @@ export default function DMCAFilingWizard({
                     <input
                       type="tel"
                       value={form.phone}
-                      onChange={(e) =>
-                        setForm({ ...form, phone: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       style={inputStyle}
                     />
                   </div>
@@ -774,23 +750,19 @@ export default function DMCAFilingWizard({
                       style={{ marginTop: 2 }}
                     />
                     <span>
-                      I swear, under penalty of perjury, that the information in
-                      this notification is accurate and that I am the copyright
-                      owner or authorized to act on behalf of the copyright
-                      owner.
+                      I swear, under penalty of perjury, that the information in this notification
+                      is accurate and that I am the copyright owner or authorized to act on behalf
+                      of the copyright owner.
                     </span>
                   </label>
                   <div>
                     <label style={labelStyle}>
-                      Electronic Signature{' '}
-                      <span style={{ color: '#f87171' }}>*</span>
+                      Electronic Signature <span style={{ color: '#f87171' }}>*</span>
                     </label>
                     <input
                       type="text"
                       value={form.signature}
-                      onChange={(e) =>
-                        setForm({ ...form, signature: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, signature: e.target.value })}
                       placeholder="Type your full name"
                       style={{
                         ...inputStyle,
@@ -842,9 +814,7 @@ export default function DMCAFilingWizard({
                   >
                     {match.originalTitle}
                   </div>
-                  <div
-                    style={{ fontSize: 11, color: 'var(--text-tertiary)' }}
-                  >
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                     {match.originalProject}
                   </div>
                 </div>
@@ -871,9 +841,7 @@ export default function DMCAFilingWizard({
                   >
                     {match.matchUrl}
                   </div>
-                  <div
-                    style={{ fontSize: 11, color: 'var(--text-tertiary)' }}
-                  >
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                     {match.platform} • {match.matchStrength}% match
                   </div>
                 </div>
@@ -899,11 +867,7 @@ export default function DMCAFilingWizard({
                   >
                     {form.fullName}
                   </div>
-                  <div
-                    style={{ fontSize: 11, color: 'var(--text-tertiary)' }}
-                  >
-                    {form.address}
-                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{form.address}</div>
                   {form.phone && (
                     <div
                       style={{
@@ -928,9 +892,7 @@ export default function DMCAFilingWizard({
                   }}
                 >
                   <AlertTriangle size={14} style={{ color: '#fbbf24' }} />
-                  <div
-                    style={{ fontSize: 11, color: 'var(--text-secondary)' }}
-                  >
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                     Estimated response time: 24-48 hours
                   </div>
                 </div>

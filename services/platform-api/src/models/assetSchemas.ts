@@ -1,13 +1,13 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const AssetType = z.enum([
-  "image",
-  "video",
-  "audio",
-  "3d_model",
-  "texture",
-  "motion_capture",
-  "other",
+  'image',
+  'video',
+  'audio',
+  '3d_model',
+  'texture',
+  'motion_capture',
+  'other',
 ]);
 export type AssetType = z.infer<typeof AssetType>;
 

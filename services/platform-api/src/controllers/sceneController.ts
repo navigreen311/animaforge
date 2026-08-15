@@ -1,7 +1,7 @@
-import type { Request, Response } from "express";
-import { sceneService } from "../services/sceneService.js";
-import { CreateSceneSchema, UpdateSceneSchema } from "../models/sceneSchemas.js";
-import * as apiResponse from "../utils/apiResponse.js";
+import type { Request, Response } from 'express';
+import { sceneService } from '../services/sceneService.js';
+import { CreateSceneSchema, UpdateSceneSchema } from '../models/sceneSchemas.js';
+import * as apiResponse from '../utils/apiResponse.js';
 
 export const sceneController = {
   create(req: Request, res: Response): void {
@@ -22,7 +22,7 @@ export const sceneController = {
     const input = UpdateSceneSchema.parse(req.body);
     const scene = sceneService.update(id, input);
     if (!scene) {
-      apiResponse.error(res, "NOT_FOUND", "Scene not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Scene not found', 404);
       return;
     }
     apiResponse.success(res, scene);
@@ -32,7 +32,7 @@ export const sceneController = {
     const { id } = req.params;
     const deleted = sceneService.delete(id);
     if (!deleted) {
-      apiResponse.error(res, "NOT_FOUND", "Scene not found", 404);
+      apiResponse.error(res, 'NOT_FOUND', 'Scene not found', 404);
       return;
     }
     apiResponse.success(res, { deleted: true });

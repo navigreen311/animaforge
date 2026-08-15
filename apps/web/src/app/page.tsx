@@ -59,10 +59,30 @@ const productFeatures = [
 ];
 
 const howItWorks = [
-  { step: 1, icon: <PenTool className="h-6 w-6" />, label: 'Write', desc: 'Describe your scene or paste a script' },
-  { step: 2, icon: <Wand2 className="h-6 w-6" />, label: 'Generate', desc: 'AI creates video, audio & effects' },
-  { step: 3, icon: <Eye className="h-6 w-6" />, label: 'Review', desc: 'Refine with the timeline editor' },
-  { step: 4, icon: <Download className="h-6 w-6" />, label: 'Export', desc: 'Publish in 4K or share instantly' },
+  {
+    step: 1,
+    icon: <PenTool className="h-6 w-6" />,
+    label: 'Write',
+    desc: 'Describe your scene or paste a script',
+  },
+  {
+    step: 2,
+    icon: <Wand2 className="h-6 w-6" />,
+    label: 'Generate',
+    desc: 'AI creates video, audio & effects',
+  },
+  {
+    step: 3,
+    icon: <Eye className="h-6 w-6" />,
+    label: 'Review',
+    desc: 'Refine with the timeline editor',
+  },
+  {
+    step: 4,
+    icon: <Download className="h-6 w-6" />,
+    label: 'Export',
+    desc: 'Publish in 4K or share instantly',
+  },
 ];
 
 const styleShowcase = [
@@ -112,13 +132,24 @@ export default function LandingPage() {
             <span className="text-violet-400">Anima</span>Forge
           </Link>
           <div className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
-            <a href="#features" className="transition-colors hover:text-white">Features</a>
-            <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
-            <a href="#styles" className="transition-colors hover:text-white">Styles</a>
-            <a href="#" className="transition-colors hover:text-white">Developers</a>
+            <a href="#features" className="transition-colors hover:text-white">
+              Features
+            </a>
+            <Link href="/pricing" className="transition-colors hover:text-white">
+              Pricing
+            </Link>
+            <a href="#styles" className="transition-colors hover:text-white">
+              Styles
+            </a>
+            <a href="#" className="transition-colors hover:text-white">
+              Developers
+            </a>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-zinc-400 transition-colors hover:text-white">
+            <Link
+              href="/login"
+              className="text-sm text-zinc-400 transition-colors hover:text-white"
+            >
               Sign in
             </Link>
             <Link
@@ -140,11 +171,13 @@ export default function LandingPage() {
           </span>
           <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
             The AI animation studio that works like a{' '}
-            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">studio</span>
+            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+              studio
+            </span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-            From script to screen in minutes. AnimaForge orchestrates video generation, style transfer, avatars, audio,
-            and editing — so you can focus on storytelling.
+            From script to screen in minutes. AnimaForge orchestrates video generation, style
+            transfer, avatars, audio, and editing — so you can focus on storytelling.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -170,7 +203,9 @@ export default function LandingPage() {
         <p className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-violet-400">
           Product Tour
         </p>
-        <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">Everything you need to create</h2>
+        <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">
+          Everything you need to create
+        </h2>
         <p className="mx-auto mb-16 max-w-2xl text-center text-zinc-400">
           Six integrated AI tools that replace an entire production pipeline.
         </p>
@@ -196,7 +231,9 @@ export default function LandingPage() {
           <p className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-violet-400">
             How It Works
           </p>
-          <h2 className="mb-16 text-center text-3xl font-bold sm:text-4xl">Four steps. Zero complexity.</h2>
+          <h2 className="mb-16 text-center text-3xl font-bold sm:text-4xl">
+            Four steps. Zero complexity.
+          </h2>
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {howItWorks.map((s) => (
               <div key={s.label} className="text-center">
@@ -220,7 +257,9 @@ export default function LandingPage() {
           <p className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-violet-400">
             Style Library
           </p>
-          <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">Infinite visual styles</h2>
+          <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">
+            Infinite visual styles
+          </h2>
           <p className="mx-auto mb-12 max-w-xl text-center text-zinc-400">
             From cyberpunk to watercolor — pick a style, remix it, or create your own.
           </p>
@@ -228,10 +267,7 @@ export default function LandingPage() {
         <div className="relative">
           <div className="no-scrollbar flex gap-5 overflow-x-auto px-6 pb-4">
             {styleShowcase.map((style) => (
-              <div
-                key={style.name}
-                className="flex-none"
-              >
+              <div key={style.name} className="flex-none">
                 <div
                   className={`h-48 w-72 rounded-xl bg-gradient-to-br ${style.gradient} opacity-80 transition-opacity hover:opacity-100`}
                 />
@@ -247,7 +283,9 @@ export default function LandingPage() {
         <p className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-violet-400">
           Pricing
         </p>
-        <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">Simple, transparent pricing</h2>
+        <h2 className="mb-4 text-center text-3xl font-bold sm:text-4xl">
+          Simple, transparent pricing
+        </h2>
         <p className="mx-auto mb-14 max-w-lg text-center text-zinc-400">
           Start free, scale as you grow. No hidden fees.
         </p>
@@ -281,7 +319,11 @@ export default function LandingPage() {
                       stroke="currentColor"
                       strokeWidth={2}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m4.5 12.75 6 6 9-13.5"
+                      />
                     </svg>
                     {f}
                   </li>
@@ -345,7 +387,10 @@ export default function LandingPage() {
                 <ul className="flex flex-col gap-2.5">
                   {links.map((link) => (
                     <li key={link}>
-                      <a href="#" className="text-sm text-zinc-500 transition-colors hover:text-zinc-300">
+                      <a
+                        href="#"
+                        className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                      >
                         {link}
                       </a>
                     </li>
@@ -355,11 +400,19 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-zinc-800/50 pt-8 sm:flex-row">
-            <p className="text-sm text-zinc-600">&copy; 2026 Green Companies LLC. All rights reserved.</p>
+            <p className="text-sm text-zinc-600">
+              &copy; 2026 Green Companies LLC. All rights reserved.
+            </p>
             <div className="flex gap-6 text-sm text-zinc-500">
-              <a href="#" className="transition-colors hover:text-zinc-300">Terms</a>
-              <a href="#" className="transition-colors hover:text-zinc-300">Privacy</a>
-              <a href="#" className="transition-colors hover:text-zinc-300">AI Policy</a>
+              <a href="#" className="transition-colors hover:text-zinc-300">
+                Terms
+              </a>
+              <a href="#" className="transition-colors hover:text-zinc-300">
+                Privacy
+              </a>
+              <a href="#" className="transition-colors hover:text-zinc-300">
+                AI Policy
+              </a>
             </div>
           </div>
         </div>

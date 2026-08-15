@@ -28,20 +28,104 @@ interface SearchResult {
 }
 
 const MOCK_RESULTS: SearchResult[] = [
-  { id: 's1', type: 'shot', name: 'Hero entrance — wide angle', metadata: 'Scene 3 · 24 frames', updatedAt: '2026-04-09T08:30:00Z' },
-  { id: 's2', type: 'shot', name: 'Sunset fly-over establishing', metadata: 'Scene 1 · 48 frames', updatedAt: '2026-04-08T14:00:00Z' },
-  { id: 's3', type: 'shot', name: 'Close-up reaction shot', metadata: 'Scene 5 · 12 frames', updatedAt: '2026-04-07T10:20:00Z' },
-  { id: 's4', type: 'shot', name: 'Chase sequence — rooftop', metadata: 'Scene 7 · 36 frames', updatedAt: '2026-04-06T11:00:00Z' },
-  { id: 'c1', type: 'character', name: 'Luna — protagonist', metadata: 'Anime style · 12 variants', updatedAt: '2026-04-09T06:00:00Z' },
-  { id: 'c2', type: 'character', name: 'Rex — antagonist', metadata: '3D Render · 8 variants', updatedAt: '2026-04-06T18:00:00Z' },
-  { id: 'c3', type: 'character', name: 'Sage — mentor', metadata: 'Watercolor · 4 variants', updatedAt: '2026-04-03T08:00:00Z' },
-  { id: 'a1', type: 'asset', name: 'Enchanted Forest BG', metadata: 'Background · 4096x2160', updatedAt: '2026-04-08T09:00:00Z' },
-  { id: 'a2', type: 'asset', name: 'Magic particle FX', metadata: 'VFX · Loopable', updatedAt: '2026-04-05T12:00:00Z' },
-  { id: 'a3', type: 'asset', name: 'Spaceship interior', metadata: 'Background · 3840x2160', updatedAt: '2026-04-04T15:30:00Z' },
-  { id: 'a4', type: 'asset', name: 'Rain overlay loop', metadata: 'VFX · 60fps', updatedAt: '2026-04-02T09:00:00Z' },
-  { id: 'p1', type: 'project', name: 'Midnight Fable', metadata: '24 shots · In progress', updatedAt: '2026-04-09T09:00:00Z' },
-  { id: 'p2', type: 'project', name: 'Product Launch Ad', metadata: '8 shots · Draft', updatedAt: '2026-04-07T16:00:00Z' },
-  { id: 'p3', type: 'project', name: 'Explainer — Onboarding Flow', metadata: '12 shots · Complete', updatedAt: '2026-04-01T10:00:00Z' },
+  {
+    id: 's1',
+    type: 'shot',
+    name: 'Hero entrance — wide angle',
+    metadata: 'Scene 3 · 24 frames',
+    updatedAt: '2026-04-09T08:30:00Z',
+  },
+  {
+    id: 's2',
+    type: 'shot',
+    name: 'Sunset fly-over establishing',
+    metadata: 'Scene 1 · 48 frames',
+    updatedAt: '2026-04-08T14:00:00Z',
+  },
+  {
+    id: 's3',
+    type: 'shot',
+    name: 'Close-up reaction shot',
+    metadata: 'Scene 5 · 12 frames',
+    updatedAt: '2026-04-07T10:20:00Z',
+  },
+  {
+    id: 's4',
+    type: 'shot',
+    name: 'Chase sequence — rooftop',
+    metadata: 'Scene 7 · 36 frames',
+    updatedAt: '2026-04-06T11:00:00Z',
+  },
+  {
+    id: 'c1',
+    type: 'character',
+    name: 'Luna — protagonist',
+    metadata: 'Anime style · 12 variants',
+    updatedAt: '2026-04-09T06:00:00Z',
+  },
+  {
+    id: 'c2',
+    type: 'character',
+    name: 'Rex — antagonist',
+    metadata: '3D Render · 8 variants',
+    updatedAt: '2026-04-06T18:00:00Z',
+  },
+  {
+    id: 'c3',
+    type: 'character',
+    name: 'Sage — mentor',
+    metadata: 'Watercolor · 4 variants',
+    updatedAt: '2026-04-03T08:00:00Z',
+  },
+  {
+    id: 'a1',
+    type: 'asset',
+    name: 'Enchanted Forest BG',
+    metadata: 'Background · 4096x2160',
+    updatedAt: '2026-04-08T09:00:00Z',
+  },
+  {
+    id: 'a2',
+    type: 'asset',
+    name: 'Magic particle FX',
+    metadata: 'VFX · Loopable',
+    updatedAt: '2026-04-05T12:00:00Z',
+  },
+  {
+    id: 'a3',
+    type: 'asset',
+    name: 'Spaceship interior',
+    metadata: 'Background · 3840x2160',
+    updatedAt: '2026-04-04T15:30:00Z',
+  },
+  {
+    id: 'a4',
+    type: 'asset',
+    name: 'Rain overlay loop',
+    metadata: 'VFX · 60fps',
+    updatedAt: '2026-04-02T09:00:00Z',
+  },
+  {
+    id: 'p1',
+    type: 'project',
+    name: 'Midnight Fable',
+    metadata: '24 shots · In progress',
+    updatedAt: '2026-04-09T09:00:00Z',
+  },
+  {
+    id: 'p2',
+    type: 'project',
+    name: 'Product Launch Ad',
+    metadata: '8 shots · Draft',
+    updatedAt: '2026-04-07T16:00:00Z',
+  },
+  {
+    id: 'p3',
+    type: 'project',
+    name: 'Explainer — Onboarding Flow',
+    metadata: '12 shots · Complete',
+    updatedAt: '2026-04-01T10:00:00Z',
+  },
 ];
 
 const TYPE_META: Record<ResultType, { label: string; icon: typeof Film }> = {
@@ -183,7 +267,16 @@ function SearchPageContent() {
             flexShrink: 0,
           }}
         >
-          <div style={{ padding: '0 16px 8px', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <div
+            style={{
+              padding: '0 16px 8px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'var(--text-tertiary)',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
             <SlidersHorizontal size={11} style={{ marginRight: 4, verticalAlign: -1 }} />
             Filter by type
           </div>
@@ -198,12 +291,22 @@ function SearchPageContent() {
               justifyContent: 'space-between',
               alignItems: 'center',
               background: selectedType === null ? 'var(--bg-active)' : 'transparent',
-              borderLeft: selectedType === null ? '2px solid var(--brand)' : '2px solid transparent',
+              borderLeft:
+                selectedType === null ? '2px solid var(--brand)' : '2px solid transparent',
               transition: 'all 120ms',
             }}
           >
-            <span style={{ fontSize: 13, color: selectedType === null ? 'var(--text-brand)' : 'var(--text-primary)' }}>All</span>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{facetCounts.all || 0}</span>
+            <span
+              style={{
+                fontSize: 13,
+                color: selectedType === null ? 'var(--text-brand)' : 'var(--text-primary)',
+              }}
+            >
+              All
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              {facetCounts.all || 0}
+            </span>
           </div>
 
           {(['shot', 'character', 'asset', 'project'] as const).map((type) => {
@@ -225,11 +328,21 @@ function SearchPageContent() {
                   transition: 'all 120ms',
                 }}
               >
-                <span style={{ fontSize: 13, color: isActive ? 'var(--text-brand)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: isActive ? 'var(--text-brand)' : 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
                   <Icon size={13} />
                   {meta.label}
                 </span>
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{facetCounts[type] || 0}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  {facetCounts[type] || 0}
+                </span>
               </div>
             );
           })}
@@ -238,7 +351,14 @@ function SearchPageContent() {
         {/* Main results area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
           {/* Sort dropdown */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16, position: 'relative' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: 16,
+              position: 'relative',
+            }}
+          >
             <button
               type="button"
               onClick={() => setSortOpen(!sortOpen)}
@@ -277,7 +397,10 @@ function SearchPageContent() {
                 {(['relevance', 'recent', 'name'] as const).map((opt) => (
                   <div
                     key={opt}
-                    onClick={() => { setSort(opt); setSortOpen(false); }}
+                    onClick={() => {
+                      setSort(opt);
+                      setSortOpen(false);
+                    }}
                     style={{
                       padding: '8px 14px',
                       fontSize: 12,
@@ -285,8 +408,12 @@ function SearchPageContent() {
                       cursor: 'pointer',
                       background: sort === opt ? 'var(--bg-active)' : 'transparent',
                     }}
-                    onMouseEnter={(e) => { if (sort !== opt) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                    onMouseLeave={(e) => { if (sort !== opt) e.currentTarget.style.background = 'transparent'; }}
+                    onMouseEnter={(e) => {
+                      if (sort !== opt) e.currentTarget.style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (sort !== opt) e.currentTarget.style.background = 'transparent';
+                    }}
                   >
                     {sortLabels[opt]}
                   </div>
@@ -340,8 +467,12 @@ function SearchPageContent() {
                           textDecoration: 'none',
                           transition: 'background 100ms',
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
                       >
                         <div
                           style={{
@@ -358,10 +489,25 @@ function SearchPageContent() {
                           <Icon size={15} color="var(--text-secondary)" />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{r.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{r.metadata}</div>
+                          <div
+                            style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}
+                          >
+                            {r.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                            {r.metadata}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11,
+                            color: 'var(--text-tertiary)',
+                            flexShrink: 0,
+                          }}
+                        >
                           <Clock size={10} />
                           {timeAgo(r.updatedAt)}
                         </div>

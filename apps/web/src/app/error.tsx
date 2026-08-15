@@ -49,7 +49,9 @@ export default function GlobalError({
         >
           A
         </div>
-        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>AnimaForge</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
+          AnimaForge
+        </span>
       </div>
 
       {/* Error heading */}
@@ -74,7 +76,8 @@ export default function GlobalError({
           lineHeight: 1.6,
         }}
       >
-        We hit an unexpected error. Our team has been notified. You can try again or head back to the dashboard.
+        We hit an unexpected error. Our team has been notified. You can try again or head back to
+        the dashboard.
       </p>
 
       {/* Error digest */}
@@ -94,7 +97,15 @@ export default function GlobalError({
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 12,
+          marginTop: 28,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}
+      >
         <button
           onClick={reset}
           style={{

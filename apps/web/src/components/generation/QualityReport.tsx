@@ -48,8 +48,8 @@ const METRICS: Record<keyof QualityScores, MetricConfig> = {
 type Verdict = 'PASS' | 'REVIEW' | 'FAIL';
 
 function computeVerdict(scores: QualityScores): Verdict {
-  const results = (Object.keys(METRICS) as (keyof QualityScores)[]).map(
-    (key) => METRICS[key].isGood(scores[key]),
+  const results = (Object.keys(METRICS) as (keyof QualityScores)[]).map((key) =>
+    METRICS[key].isGood(scores[key]),
   );
   const passing = results.filter(Boolean).length;
 
@@ -113,9 +113,7 @@ export function QualityReport({ scores, onRequestQC }: QualityReportProps) {
                   }`}
                   aria-label={good ? 'Good' : 'Needs attention'}
                 />
-                <span className="text-xs font-medium text-zinc-300">
-                  {config.label}
-                </span>
+                <span className="text-xs font-medium text-zinc-300">{config.label}</span>
               </div>
 
               <div className="flex items-center gap-2">

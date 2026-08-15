@@ -107,16 +107,20 @@ function renderShotsWebGL(
     if (isMajor) {
       const minutes = Math.floor(sec / 60);
       const secs = sec % 60;
-      const label = minutes > 0
-        ? minutes + ':' + secs.toString().padStart(2, '0')
-        : sec + 's';
+      const label = minutes > 0 ? minutes + ':' + secs.toString().padStart(2, '0') : sec + 's';
       renderer.drawText(label, x + 4 * dpr, 3 * dpr, [0.631, 0.631, 0.667, 1.0], 10 * dpr);
     }
   }
 
   // Shot track label
   renderer.drawRect(0, rulerH, labelW, shotH, hexToGL('#18181b'));
-  renderer.drawText('Shots', 8 * dpr, rulerH + shotH / 2 - 4 * dpr, [0.631, 0.631, 0.667, 1.0], 11 * dpr);
+  renderer.drawText(
+    'Shots',
+    8 * dpr,
+    rulerH + shotH / 2 - 4 * dpr,
+    [0.631, 0.631, 0.667, 1.0],
+    11 * dpr,
+  );
   renderer.drawLine(labelW, rulerH, labelW, rulerH + shotH, hexToGL('#27272a'), 1);
 
   // Shot blocks
@@ -132,26 +136,69 @@ function renderShotsWebGL(
       const rw = Math.min(drawX + widthPx, canvasW) - rx;
 
       const bgColor = STATUS_COLORS[shot.status] || STATUS_COLORS.draft;
-      renderer.drawRect(rx + 1 * dpr, rulerH + 2 * dpr, rw - 2 * dpr, shotH - 4 * dpr, hexToGL(bgColor));
+      renderer.drawRect(
+        rx + 1 * dpr,
+        rulerH + 2 * dpr,
+        rw - 2 * dpr,
+        shotH - 4 * dpr,
+        hexToGL(bgColor),
+      );
 
-      const borderColor = isSelected ? '#a78bfa' : (STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft);
+      const borderColor = isSelected
+        ? '#a78bfa'
+        : STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft;
       const borderWidth = isSelected ? 2 * dpr : 1;
-      renderer.drawRectOutline(rx + 1 * dpr, rulerH + 2 * dpr, rw - 2 * dpr, shotH - 4 * dpr, hexToGL(borderColor), borderWidth);
+      renderer.drawRectOutline(
+        rx + 1 * dpr,
+        rulerH + 2 * dpr,
+        rw - 2 * dpr,
+        shotH - 4 * dpr,
+        hexToGL(borderColor),
+        borderWidth,
+      );
 
       if (isSelected) {
-        renderer.drawRectOutline(rx - 1 * dpr, rulerH, rw + 2 * dpr, shotH, hexToGL('#a78bfa', 0.4), 3 * dpr);
+        renderer.drawRectOutline(
+          rx - 1 * dpr,
+          rulerH,
+          rw + 2 * dpr,
+          shotH,
+          hexToGL('#a78bfa', 0.4),
+          3 * dpr,
+        );
       }
 
       if (rw > 40 * dpr) {
-        renderer.drawRect(rx + 6 * dpr, rulerH + 8 * dpr, Math.min(rw - 12 * dpr, 60 * dpr), 32 * dpr, [0, 0, 0, 0.2]);
+        renderer.drawRect(
+          rx + 6 * dpr,
+          rulerH + 8 * dpr,
+          Math.min(rw - 12 * dpr, 60 * dpr),
+          32 * dpr,
+          [0, 0, 0, 0.2],
+        );
       }
 
       if (rw > 30 * dpr) {
-        renderer.drawText('#' + shot.shotNumber, rx + 6 * dpr, rulerH + shotH - 18 * dpr, [1, 1, 1, 0.9], 10 * dpr, 'left', true);
+        renderer.drawText(
+          '#' + shot.shotNumber,
+          rx + 6 * dpr,
+          rulerH + shotH - 18 * dpr,
+          [1, 1, 1, 0.9],
+          10 * dpr,
+          'left',
+          true,
+        );
       }
 
       if (rw > 60 * dpr) {
-        renderer.drawText(durationSec.toFixed(1) + 's', rx + rw - 6 * dpr, rulerH + shotH - 18 * dpr, [1, 1, 1, 0.6], 10 * dpr, 'right');
+        renderer.drawText(
+          durationSec.toFixed(1) + 's',
+          rx + rw - 6 * dpr,
+          rulerH + shotH - 18 * dpr,
+          [1, 1, 1, 0.6],
+          10 * dpr,
+          'right',
+        );
       }
     }
     offsetX += widthPx;
@@ -251,7 +298,9 @@ function renderShots2D(
       ctx.fillStyle = STATUS_COLORS[shot.status] || STATUS_COLORS.draft;
       ctx.fillRect(rx + 1, RULER_HEIGHT + 2, rw - 2, SHOT_TRACK_HEIGHT - 4);
 
-      ctx.strokeStyle = isSelected ? '#a78bfa' : (STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft);
+      ctx.strokeStyle = isSelected
+        ? '#a78bfa'
+        : STATUS_BORDER_COLORS[shot.status] || STATUS_BORDER_COLORS.draft;
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.strokeRect(rx + 1, RULER_HEIGHT + 2, rw - 2, SHOT_TRACK_HEIGHT - 4);
 
@@ -280,7 +329,11 @@ function renderShots2D(
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.font = '10px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(durationSec.toFixed(1) + 's', rx + rw - 6, RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10);
+        ctx.fillText(
+          durationSec.toFixed(1) + 's',
+          rx + rw - 6,
+          RULER_HEIGHT + SHOT_TRACK_HEIGHT - 10,
+        );
       }
     }
     offsetX += widthPx;
@@ -337,12 +390,7 @@ function hitTestShot(
   return null;
 }
 
-function hitTestPlayhead(
-  x: number,
-  playheadMs: number,
-  zoom: number,
-  scrollX: number,
-): boolean {
+function hitTestPlayhead(x: number, playheadMs: number, zoom: number, scrollX: number): boolean {
   const scale = pxPerSec(zoom);
   const phX = msToSec(playheadMs) * scale - scrollX;
   return Math.abs(x - phX) < 8;
@@ -414,7 +462,16 @@ export default function ThreeScene({
     const render = () => {
       if (renderer && gl) {
         renderer.setViewport(canvas.width, canvas.height);
-        renderShotsWebGL(renderer, shots, zoom, playhead, selectedShotId, scrollX, canvas.width, canvas.height);
+        renderShotsWebGL(
+          renderer,
+          shots,
+          zoom,
+          playhead,
+          selectedShotId,
+          scrollX,
+          canvas.width,
+          canvas.height,
+        );
       } else if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         renderShots2D(ctx, shots, zoom, playhead, selectedShotId, scrollX);
@@ -500,9 +557,7 @@ export default function ThreeScene({
           0,
           msToSec(totalDurationMs) * pxPerSec(zoom) - (canvasSize.width - TRACK_LABEL_WIDTH),
         );
-        setScrollX((prev) =>
-          Math.max(0, Math.min(prev + e.deltaY + e.deltaX, maxScroll)),
-        );
+        setScrollX((prev) => Math.max(0, Math.min(prev + e.deltaY + e.deltaX, maxScroll)));
       }
     },
     [zoom, totalDurationMs, canvasSize.width],

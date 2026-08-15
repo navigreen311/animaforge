@@ -7,7 +7,10 @@ const CHANGELOG = [
     status: 'stable',
     changes: [
       { type: 'added', description: 'Initial v1 stable release' },
-      { type: 'added', description: 'All core endpoints (projects, shots, characters, assets, jobs)' },
+      {
+        type: 'added',
+        description: 'All core endpoints (projects, shots, characters, assets, jobs)',
+      },
       { type: 'added', description: 'Audio generation endpoints (music, voice, SFX)' },
       { type: 'added', description: 'Style cloning and apply endpoints' },
       { type: 'added', description: 'Marketplace browse and purchase' },

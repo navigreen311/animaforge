@@ -44,14 +44,44 @@ interface BatchShotProgress {
 /* ------------------------------------------------------------------ */
 
 const MOCK_SHOTS: MockShot[] = [
-  { id: 's1', number: 1, name: 'Wide Establishing — City Skyline', status: 'draft', estimatedCredits: 12 },
+  {
+    id: 's1',
+    number: 1,
+    name: 'Wide Establishing — City Skyline',
+    status: 'draft',
+    estimatedCredits: 12,
+  },
   { id: 's2', number: 2, name: 'Medium — Hero Enters Frame', status: 'draft', estimatedCredits: 8 },
-  { id: 's3', number: 3, name: 'Close-up — Hero Expression', status: 'approved', estimatedCredits: 6 },
-  { id: 's4', number: 4, name: 'Over-the-Shoulder — Dialogue A', status: 'draft', estimatedCredits: 10 },
+  {
+    id: 's3',
+    number: 3,
+    name: 'Close-up — Hero Expression',
+    status: 'approved',
+    estimatedCredits: 6,
+  },
+  {
+    id: 's4',
+    number: 4,
+    name: 'Over-the-Shoulder — Dialogue A',
+    status: 'draft',
+    estimatedCredits: 10,
+  },
   { id: 's5', number: 5, name: 'Reverse — Dialogue B', status: 'draft', estimatedCredits: 10 },
   { id: 's6', number: 6, name: 'Wide — Chase Sequence', status: 'rejected', estimatedCredits: 18 },
-  { id: 's7', number: 7, name: 'Aerial — Rooftop Transition', status: 'draft', estimatedCredits: 15 },
-  { id: 's8', number: 8, name: 'Close-up — Object Insert', status: 'approved', estimatedCredits: 4 },
+  {
+    id: 's7',
+    number: 7,
+    name: 'Aerial — Rooftop Transition',
+    status: 'draft',
+    estimatedCredits: 15,
+  },
+  {
+    id: 's8',
+    number: 8,
+    name: 'Close-up — Object Insert',
+    status: 'approved',
+    estimatedCredits: 4,
+  },
   { id: 's9', number: 9, name: 'Medium — Crowd Reaction', status: 'draft', estimatedCredits: 12 },
   { id: 's10', number: 10, name: 'Wide — Sunset Finale', status: 'draft', estimatedCredits: 14 },
 ];
@@ -107,7 +137,10 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
     return Math.round(sum);
   }, [selectedIds, tier]);
 
-  const estimatedMinutes = useMemo(() => Math.max(1, Math.round(selectedCount * 1.5 * TIER_MULTIPLIER[tier])), [selectedCount, tier]);
+  const estimatedMinutes = useMemo(
+    () => Math.max(1, Math.round(selectedCount * 1.5 * TIER_MULTIPLIER[tier])),
+    [selectedCount, tier],
+  );
 
   const allDraftsSelected = draftShots.length > 0 && draftShots.every((s) => selectedIds.has(s.id));
   const someDraftsSelected = draftShots.some((s) => selectedIds.has(s.id));
@@ -136,24 +169,22 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
     toast.success(`${selectedCount} shots queued for batch generation`);
 
     // Switch to progress view
-    const progressItems: BatchShotProgress[] = MOCK_SHOTS
-      .filter((s) => selectedIds.has(s.id))
-      .map((s, i) => ({
+    const progressItems: BatchShotProgress[] = MOCK_SHOTS.filter((s) => selectedIds.has(s.id)).map(
+      (s, i) => ({
         id: s.id,
         number: s.number,
         name: s.name,
         progress: i === 0 ? 'rendering' : 'queued',
         percent: i === 0 ? 23 : 0,
-      }));
+      }),
+    );
     setBatchProgress(progressItems);
     setPhase('progress');
   }, [selectedCount, selectedIds]);
 
   const handleCancelRemaining = useCallback(() => {
     setBatchProgress((prev) =>
-      prev.map((s) =>
-        s.progress === 'queued' ? { ...s, progress: 'cancelled' } : s,
-      ),
+      prev.map((s) => (s.progress === 'queued' ? { ...s, progress: 'cancelled' } : s)),
     );
     toast('Remaining shots cancelled');
   }, []);
@@ -173,7 +204,11 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
       rejected: { bg: 'bg-red-600', text: 'Rejected' },
     };
     const s = map[status];
-    return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${s.bg}`}>{s.text}</span>;
+    return (
+      <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${s.bg}`}>
+        {s.text}
+      </span>
+    );
   };
 
   const progressBadge = (p: BatchShotProgress['progress']) => {
@@ -185,7 +220,11 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
       cancelled: { bg: 'bg-zinc-500', text: 'Cancelled' },
     };
     const s = map[p];
-    return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${s.bg}`}>{s.text}</span>;
+    return (
+      <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${s.bg}`}>
+        {s.text}
+      </span>
+    );
   };
 
   /* ---- Render --------------------------------------------------- */
@@ -200,7 +239,10 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
             <Layers className="h-5 w-5 text-violet-400" />
             <h2 className="text-lg font-semibold text-zinc-100">Batch Generate Shots</h2>
           </div>
-          <button onClick={handleClose} className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200">
+          <button
+            onClick={handleClose}
+            className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -209,7 +251,10 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
           <>
             {/* Select all */}
             <div className="border-b border-zinc-800 px-6 py-3">
-              <button onClick={toggleAll} className="flex items-center gap-2 text-sm text-zinc-300 hover:text-zinc-100">
+              <button
+                onClick={toggleAll}
+                className="flex items-center gap-2 text-sm text-zinc-300 hover:text-zinc-100"
+              >
                 {allDraftsSelected ? (
                   <CheckSquare className="h-4 w-4 text-violet-400" />
                 ) : someDraftsSelected ? (
@@ -250,7 +295,9 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
                           <Square className="h-4 w-4 shrink-0 text-zinc-500" />
                         )}
 
-                        <span className="w-8 shrink-0 text-xs font-mono text-zinc-500">#{shot.number}</span>
+                        <span className="w-8 shrink-0 text-xs font-mono text-zinc-500">
+                          #{shot.number}
+                        </span>
                         <span className="flex-1 truncate text-sm text-zinc-200">{shot.name}</span>
                         {statusBadge(shot.status)}
                         <span className="w-16 text-right text-xs text-zinc-500">
@@ -265,7 +312,9 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
 
             {/* Render tier selector */}
             <div className="border-t border-zinc-800 px-6 py-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-400">Render Tier</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                Render Tier
+              </p>
               <div className="flex gap-3">
                 {(['preview', 'standard', 'final'] as RenderTier[]).map((t) => (
                   <label
@@ -350,7 +399,8 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <p className="mb-3 text-sm text-zinc-400">
                 Batch generation in progress &mdash;{' '}
-                {batchProgress.filter((s) => s.progress === 'complete').length}/{batchProgress.length} complete
+                {batchProgress.filter((s) => s.progress === 'complete').length}/
+                {batchProgress.length} complete
               </p>
               <ul className="flex flex-col gap-2">
                 {batchProgress.map((shot) => (
@@ -358,7 +408,9 @@ export function BatchGenerateModal({ open, onClose }: BatchGenerateModalProps) {
                     key={shot.id}
                     className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-800/50 px-4 py-3"
                   >
-                    <span className="w-8 shrink-0 text-xs font-mono text-zinc-500">#{shot.number}</span>
+                    <span className="w-8 shrink-0 text-xs font-mono text-zinc-500">
+                      #{shot.number}
+                    </span>
                     <span className="flex-1 truncate text-sm text-zinc-200">{shot.name}</span>
                     {progressBadge(shot.progress)}
                     {shot.progress === 'rendering' && (

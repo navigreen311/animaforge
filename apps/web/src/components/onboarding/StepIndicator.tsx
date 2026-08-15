@@ -5,10 +5,7 @@ interface StepIndicatorProps {
   totalSteps?: number;
 }
 
-export default function StepIndicator({
-  currentStep,
-  totalSteps = 3,
-}: StepIndicatorProps) {
+export default function StepIndicator({ currentStep, totalSteps = 3 }: StepIndicatorProps) {
   return (
     <div className="flex items-center gap-3">
       {Array.from({ length: totalSteps }, (_, i) => {

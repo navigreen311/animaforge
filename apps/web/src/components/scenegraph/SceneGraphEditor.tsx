@@ -4,7 +4,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { NodeTree } from './NodeTree';
 import type { SceneNode, NodeKind } from './NodeTree';
 import { NodeProperties } from './NodeProperties';
-import type { NodeData, Vec3, TransformData, CameraProps, CharacterProps, LightProps } from './NodeProperties';
+import type {
+  NodeData,
+  Vec3,
+  TransformData,
+  CameraProps,
+  CharacterProps,
+  LightProps,
+} from './NodeProperties';
 import { SceneViewport } from './SceneViewport';
 import { CameraPath } from './CameraPath';
 import type { CameraKeyframe } from './CameraPath';
@@ -31,7 +38,9 @@ function defaultProps(kind: NodeKind) {
     case 'camera':
       return { camera: { focalLength: 50, angle: 0, movementType: 'static' } as CameraProps };
     case 'character':
-      return { character: { expression: 'neutral', pose: 'standing', action: 'idle' } as CharacterProps };
+      return {
+        character: { expression: 'neutral', pose: 'standing', action: 'idle' } as CharacterProps,
+      };
     case 'light':
       return { light: { type: 'key', intensity: 1, color: '#ffffff' } as LightProps };
     default:
@@ -94,16 +103,46 @@ function flattenNodes(nodes: FullNode[]): NodeData[] {
 /* ------------------------------------------------------------------ */
 
 const INITIAL_NODES: FullNode[] = [
-  { ...createNode('camera', 'Main Camera'), transform: { ...defaultTransform(), position: { x: -3, y: 2, z: 4 } } },
-  { ...createNode('character', 'Hero'), transform: { ...defaultTransform(), position: { x: 0, y: 0, z: 0 } } },
-  { ...createNode('light', 'Key Light'), transform: { ...defaultTransform(), position: { x: 2, y: 3, z: 2 } } },
-  { ...createNode('prop', 'Table'), transform: { ...defaultTransform(), position: { x: 1.5, y: 0, z: -1 } } },
+  {
+    ...createNode('camera', 'Main Camera'),
+    transform: { ...defaultTransform(), position: { x: -3, y: 2, z: 4 } },
+  },
+  {
+    ...createNode('character', 'Hero'),
+    transform: { ...defaultTransform(), position: { x: 0, y: 0, z: 0 } },
+  },
+  {
+    ...createNode('light', 'Key Light'),
+    transform: { ...defaultTransform(), position: { x: 2, y: 3, z: 2 } },
+  },
+  {
+    ...createNode('prop', 'Table'),
+    transform: { ...defaultTransform(), position: { x: 1.5, y: 0, z: -1 } },
+  },
 ];
 
 const INITIAL_KEYFRAMES: CameraKeyframe[] = [
-  { id: 'kf1', time: 0, position: { x: -3, y: 2, z: 4 }, lookAt: { x: 0, y: 0, z: 0 }, focalLength: 50 },
-  { id: 'kf2', time: 2, position: { x: 0, y: 2, z: 4 }, lookAt: { x: 0, y: 0, z: 0 }, focalLength: 50 },
-  { id: 'kf3', time: 4, position: { x: 2, y: 1, z: 3 }, lookAt: { x: 0, y: 0, z: 0 }, focalLength: 35 },
+  {
+    id: 'kf1',
+    time: 0,
+    position: { x: -3, y: 2, z: 4 },
+    lookAt: { x: 0, y: 0, z: 0 },
+    focalLength: 50,
+  },
+  {
+    id: 'kf2',
+    time: 2,
+    position: { x: 0, y: 2, z: 4 },
+    lookAt: { x: 0, y: 0, z: 0 },
+    focalLength: 50,
+  },
+  {
+    id: 'kf3',
+    time: 4,
+    position: { x: 2, y: 1, z: 3 },
+    lookAt: { x: 0, y: 0, z: 0 },
+    focalLength: 35,
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -117,7 +156,7 @@ export function SceneGraphEditor() {
   const [selectedKf, setSelectedKf] = useState<string | null>(null);
 
   const selectedNode = useMemo(
-    () => (selectedId ? findNode(nodes, selectedId) ?? null : null),
+    () => (selectedId ? (findNode(nodes, selectedId) ?? null) : null),
     [nodes, selectedId],
   );
 
@@ -209,7 +248,9 @@ export function SceneGraphEditor() {
     <div className="flex flex-col h-full w-full bg-zinc-950 text-white">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 bg-zinc-900/60 flex-shrink-0">
-        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mr-2">Scene Graph</span>
+        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mr-2">
+          Scene Graph
+        </span>
         {(['camera', 'character', 'light', 'prop'] as NodeKind[]).map((kind) => (
           <button
             key={kind}

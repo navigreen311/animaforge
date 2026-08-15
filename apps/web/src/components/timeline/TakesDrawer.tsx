@@ -128,19 +128,23 @@ export function TakesDrawer({
           }}
         >
           {/* ── Header ──────────────────────────────────────── */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            borderBottom: '1px solid var(--border)',
-          }}>
-            <h3 style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              margin: 0,
-            }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                margin: 0,
+              }}
+            >
               Shot {shotNumber} &mdash; All Takes
             </h3>
             <button
@@ -164,35 +168,41 @@ export function TakesDrawer({
           {/* ── Takes list ──────────────────────────────────── */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
             {isEmpty ? (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '48px 24px',
-                textAlign: 'center',
-                gap: 12,
-              }}>
-                <div style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
+              <div
+                style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--text-tertiary)',
-                  fontSize: 20,
-                }}>
+                  padding: '48px 24px',
+                  textAlign: 'center',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-tertiary)',
+                    fontSize: 20,
+                  }}
+                >
                   ?
                 </div>
-                <p style={{
-                  fontSize: 12,
-                  color: 'var(--text-tertiary)',
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-tertiary)',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
                   No takes yet. Generate this shot to create the first take.
                 </p>
               </div>
@@ -210,112 +220,137 @@ export function TakesDrawer({
                       gap: 10,
                       padding: '10px 16px',
                       cursor: take.isActive ? 'default' : 'pointer',
-                      borderLeft: take.isActive ? '2px solid var(--brand)' : '2px solid transparent',
+                      borderLeft: take.isActive
+                        ? '2px solid var(--brand)'
+                        : '2px solid transparent',
                       background: take.isActive ? 'rgba(124,58,237,0.06)' : 'transparent',
                       transition: 'background 120ms',
                     }}
                     onMouseEnter={(e) => {
-                      if (!take.isActive) (e.currentTarget.style.background = 'rgba(255,255,255,0.03)');
+                      if (!take.isActive)
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!take.isActive) (e.currentTarget.style.background = 'transparent');
+                      if (!take.isActive) e.currentTarget.style.background = 'transparent';
                     }}
                   >
                     {/* Thumbnail */}
-                    <div style={{
-                      width: 60,
-                      height: 34,
-                      borderRadius: 4,
-                      background: take.thumbnailGradient,
-                      border: take.isActive
-                        ? '1.5px solid var(--brand)'
-                        : '1px solid var(--border)',
-                      flexShrink: 0,
-                    }} />
+                    <div
+                      style={{
+                        width: 60,
+                        height: 34,
+                        borderRadius: 4,
+                        background: take.thumbnailGradient,
+                        border: take.isActive
+                          ? '1.5px solid var(--brand)'
+                          : '1px solid var(--border)',
+                        flexShrink: 0,
+                      }}
+                    />
 
                     {/* Info */}
-                    <div style={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 3,
-                      minWidth: 0,
-                    }}>
-                      {/* Row 1: Take number + tier badge + active badge */}
-                      <div style={{
+                    <div
+                      style={{
+                        flex: 1,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}>
-                        <span style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                        }}>
+                        flexDirection: 'column',
+                        gap: 3,
+                        minWidth: 0,
+                      }}
+                    >
+                      {/* Row 1: Take number + tier badge + active badge */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                          }}
+                        >
                           Take {take.number}
                         </span>
-                        <span style={{
-                          fontSize: 9,
-                          fontWeight: 600,
-                          padding: '1px 5px',
-                          borderRadius: 3,
-                          background: badge.bg,
-                          color: badge.fg,
-                          textTransform: 'uppercase',
-                        }}>
-                          {take.tier}
-                        </span>
-                        {take.isActive && (
-                          <span style={{
+                        <span
+                          style={{
                             fontSize: 9,
                             fontWeight: 600,
                             padding: '1px 5px',
                             borderRadius: 3,
-                            background: 'rgba(124,58,237,0.2)',
-                            color: 'var(--brand-light)',
+                            background: badge.bg,
+                            color: badge.fg,
                             textTransform: 'uppercase',
-                          }}>
+                          }}
+                        >
+                          {take.tier}
+                        </span>
+                        {take.isActive && (
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 600,
+                              padding: '1px 5px',
+                              borderRadius: 3,
+                              background: 'rgba(124,58,237,0.2)',
+                              color: 'var(--brand-light)',
+                              textTransform: 'uppercase',
+                            }}
+                          >
                             Active
                           </span>
                         )}
                       </div>
 
                       {/* Row 2: Date */}
-                      <span style={{
-                        fontSize: 10,
-                        color: 'var(--text-tertiary)',
-                      }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--text-tertiary)',
+                        }}
+                      >
                         {take.date}
                       </span>
 
                       {/* Row 3: Stability score bar */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}>
-                        <div style={{
-                          flex: 1,
-                          height: 3,
-                          borderRadius: 2,
-                          background: 'var(--bg-elevated)',
-                          overflow: 'hidden',
-                        }}>
-                          <div style={{
-                            width: `${take.stabilityScore}%`,
-                            height: '100%',
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 3,
                             borderRadius: 2,
-                            background: sc,
-                            transition: 'width 300ms ease',
-                          }} />
+                            background: 'var(--bg-elevated)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${take.stabilityScore}%`,
+                              height: '100%',
+                              borderRadius: 2,
+                              background: sc,
+                              transition: 'width 300ms ease',
+                            }}
+                          />
                         </div>
-                        <span style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          color: sc,
-                          minWidth: 28,
-                          textAlign: 'right',
-                        }}>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: sc,
+                            minWidth: 28,
+                            textAlign: 'right',
+                          }}
+                        >
                           {take.stabilityScore}%
                         </span>
                       </div>
@@ -327,13 +362,15 @@ export function TakesDrawer({
           </div>
 
           {/* ── Bottom: Generate New Take ────────────────────── */}
-          <div style={{
-            padding: '12px 16px',
-            borderTop: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}>
+          <div
+            style={{
+              padding: '12px 16px',
+              borderTop: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
             {/* Tier selector */}
             <div style={{ position: 'relative' }}>
               <button
@@ -358,18 +395,20 @@ export function TakesDrawer({
                 <ChevronDown size={12} />
               </button>
               {tierDropdownOpen && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  left: 0,
-                  right: 0,
-                  marginBottom: 4,
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  overflow: 'hidden',
-                  zIndex: 60,
-                }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: 0,
+                    right: 0,
+                    marginBottom: 4,
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden',
+                    zIndex: 60,
+                  }}
+                >
                   {TIER_OPTIONS.map((tier) => (
                     <button
                       key={tier}
@@ -384,7 +423,8 @@ export function TakesDrawer({
                         fontSize: 11,
                         border: 'none',
                         background: selectedTier === tier ? 'rgba(124,58,237,0.15)' : 'transparent',
-                        color: selectedTier === tier ? 'var(--brand-light)' : 'var(--text-secondary)',
+                        color:
+                          selectedTier === tier ? 'var(--brand-light)' : 'var(--text-secondary)',
                         cursor: 'pointer',
                         textAlign: 'left',
                       }}
