@@ -8,6 +8,7 @@ import type {
   UserTier,
 } from "../models/authSchemas";
 import prisma from "../db";
+import { requirePrisma } from "../db";
 import {
   createSession,
   invalidateSession,
@@ -31,7 +32,7 @@ let prismaAvailable: boolean | null = null;
 async function isPrismaAvailable(): Promise<boolean> {
   if (prismaAvailable !== null) return prismaAvailable;
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await requirePrisma().$queryRaw`SELECT 1`;
     prismaAvailable = true;
   } catch {
     console.warn("Prisma unavailable — falling back to in-memory store");
@@ -132,10 +133,10 @@ export async function createUser(
   if (await isPrismaAvailable()) {
     try {
       // Check for existing user in Prisma
-      const existing = await prisma.user.findUnique({ where: { email } });
+      const existing = await requirePrisma().user.findUnique({ where: { email } });
       if (existing) throw new Error("Email already registered");
 
-      const dbUser = await prisma.user.create({
+      const dbUser = await requirePrisma().user.create({
         data: {
           email,
           displayName,
@@ -195,7 +196,7 @@ export async function findUserByEmail(
 ): Promise<User | undefined> {
   if (await isPrismaAvailable()) {
     try {
-      const dbUser = await prisma.user.findUnique({ where: { email } });
+      const dbUser = await requirePrisma().user.findUnique({ where: { email } });
       if (!dbUser) return undefined;
 
       const genMemory = (dbUser.genMemory as Record<string, any>) ?? {};
@@ -222,7 +223,7 @@ export async function findUserByEmail(
 export async function findUserById(id: string): Promise<User | undefined> {
   if (await isPrismaAvailable()) {
     try {
-      const dbUser = await prisma.user.findUnique({ where: { id } });
+      const dbUser = await requirePrisma().user.findUnique({ where: { id } });
       if (!dbUser) return undefined;
 
       const genMemory = (dbUser.genMemory as Record<string, any>) ?? {};
@@ -249,7 +250,7 @@ export async function updateUser(
 ): Promise<User | undefined> {
   if (await isPrismaAvailable()) {
     try {
-      const dbUser = await prisma.user.update({
+      const dbUser = await requirePrisma().user.update({
         where: { id },
         data: {
           ...(data.displayName !== undefined && {

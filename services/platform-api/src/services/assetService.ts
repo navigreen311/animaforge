@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../db.js";
 import type { Asset, CreateAssetInput } from "../models/assetSchemas.js";
 
+import type { Prisma } from "@prisma/client";
 // In-memory fallback store
 const assets: Map<string, Asset> = new Map();
 
@@ -11,11 +12,14 @@ export function clearAssets(): void {
 
 export async function createAsset(input: CreateAssetInput, ownerId: string): Promise<Asset> {
   if (prisma) {
+    // The Asset model has no ownerId column (id, projectId, type, name, url,
+    // metadata, createdAt). Writing one would fail at runtime, so ownership is
+    // recorded in the Json metadata field instead.
     return prisma.asset.create({
       data: {
         ...input,
-        ownerId,
-      },
+        metadata: { ...(input.metadata ?? {}), ownerId },
+      } as Prisma.AssetUncheckedCreateInput,
     }) as unknown as Asset;
   }
 

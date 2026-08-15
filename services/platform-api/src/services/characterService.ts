@@ -9,6 +9,7 @@ import type {
   WardrobeInput,
 } from "../models/characterSchemas.js";
 
+import type { Prisma } from "@prisma/client";
 // In-memory fallback store
 const characters: Map<string, Character> = new Map();
 
@@ -28,7 +29,10 @@ export async function createCharacter(
         rightsStatus: "original",
         styleMode: input.styleMode ?? undefined,
         isDigitalTwin: input.isDigitalTwin ?? false,
-      },
+        // bodyParams, hairParams and wardrobe are Json columns. Prisma types
+        // their input as JsonNull | InputJsonValue, which structured objects do
+        // not satisfy; the cast is the boundary between our types and theirs.
+      } as Prisma.CharacterUncheckedCreateInput,
     }) as unknown as Character;
   }
 
@@ -118,7 +122,7 @@ export async function updateCharacter(
         id: undefined,
         ownerId: undefined,
         createdAt: undefined,
-      },
+      } as Prisma.CharacterUncheckedUpdateInput,
     });
     return updated as unknown as Character;
   }

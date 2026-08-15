@@ -97,16 +97,12 @@ export function indexDocument(data: {
   };
   documents.set(doc.id, doc);
 
-  // Persist to Prisma
-  if (prisma?.searchDocument) {
-    prisma.searchDocument
-      .upsert({
-        where: { id: doc.id },
-        update: { type: doc.type, content: doc.content, metadata: doc.metadata, embedding: doc.embedding, indexedAt: doc.indexedAt },
-        create: { id: doc.id, type: doc.type, content: doc.content, metadata: doc.metadata, embedding: doc.embedding, indexedAt: doc.indexedAt },
-      })
-      .catch(() => {});
-  }
+  // Not persisted to Postgres. packages/db/prisma/schema.prisma has no
+  // SearchDocument model, so `prisma.searchDocument` is undefined and the
+  // guard that used to sit here was never true — the upsert it protected has
+  // never run. Documents live in the in-memory `documents` map and in
+  // Elasticsearch below; both are lost on restart unless ES is reachable.
+  // Restoring durable persistence needs a SearchDocument model and a migration.
 
   // Index to Elasticsearch
   esIndexDocument("animaforge_search", doc.id, {
@@ -144,9 +140,7 @@ export function bulkIndex(
 export function removeDocument(id: string): boolean {
   const removed = documents.delete(id);
   if (removed) {
-    if (prisma?.searchDocument) {
-      prisma.searchDocument.delete({ where: { id } }).catch(() => {});
-    }
+    // No SearchDocument model exists to delete from — see indexDocument above.
     esDeleteDocument("animaforge_search", id).catch(() => {});
   }
   return removed;

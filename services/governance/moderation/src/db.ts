@@ -18,3 +18,20 @@ try {
 export default prisma;
 export { prisma };
 export function isPrismaAvailable(): boolean { return prisma !== null; }
+
+/**
+ * The client, or a thrown error explaining why there isn't one.
+ *
+ * Callers that can degrade gracefully should test `prisma` or
+ * `isPrismaAvailable()` first. Callers inside a try/catch can use this: it
+ * fails in the same place a null dereference would, but says why.
+ */
+export function requirePrisma(): PrismaClient {
+  if (!prisma) {
+    throw new Error(
+      'Database unavailable: PrismaClient could not be constructed. Check ' +
+        'DATABASE_URL and that `prisma generate` has run.',
+    );
+  }
+  return prisma;
+}

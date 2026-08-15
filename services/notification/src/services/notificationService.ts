@@ -65,23 +65,29 @@ function defaultPreferences(): ChannelPreferences {
 async function persistNotification(notification: Notification): Promise<void> {
   if (!prisma?.notification) return;
   try {
+    // The schema stores read state as `isRead`; category, delivery status and
+    // retry count have no columns, so they live in the Json `metadata` field
+    // rather than being written to columns that do not exist.
+    const metadata = {
+      category: notification.category ?? null,
+      status: notification.status,
+      retryCount: notification.retryCount,
+    };
+
     await prisma.notification.upsert({
       where: { id: notification.id },
       update: {
-        read: notification.read,
-        status: notification.status,
-        retryCount: notification.retryCount,
+        isRead: notification.read,
+        metadata,
       },
       create: {
         id: notification.id,
         userId: notification.userId,
         type: notification.type,
-        category: notification.category ?? null,
         title: notification.title,
         body: notification.body,
-        read: notification.read,
-        status: notification.status,
-        retryCount: notification.retryCount,
+        isRead: notification.read,
+        metadata,
         createdAt: notification.createdAt,
       },
     });
@@ -319,15 +325,10 @@ export function updatePreferences(
   };
   preferences.set(userId, updated);
 
-  if (prisma?.channelPreference) {
-    prisma.channelPreference
-      .upsert({
-        where: { userId },
-        update: { ...updated },
-        create: { userId, ...updated },
-      })
-      .catch(() => {});
-  }
+  // Not persisted. packages/db/prisma/schema.prisma has no ChannelPreference
+  // model, so `prisma.channelPreference` is undefined and the guard that stood
+  // here was never true — preferences have only ever lived in the in-memory
+  // `preferences` map and are lost on restart.
 
   return updated;
 }

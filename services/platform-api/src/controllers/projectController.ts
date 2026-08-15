@@ -13,7 +13,7 @@ import * as apiResponse from "../utils/apiResponse.js";
 export const projectController = {
   create(req: Request, res: Response): void {
     const input = createProjectSchema.parse(req.body);
-    const project = projectService.create(input);
+    const project = projectService.create(input, req.user?.id);
     apiResponse.success(res, project, 201);
   },
 
