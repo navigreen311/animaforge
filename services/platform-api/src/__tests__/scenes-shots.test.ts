@@ -46,7 +46,7 @@ const VALID_SHOT_BODY = {
 };
 
 describe('Scenes CRUD', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     sceneService._clear();
     shotService._clear();
   });
@@ -77,7 +77,7 @@ describe('Scenes CRUD', () => {
   });
 
   it('PUT /api/v1/scenes/:id — updates a scene', async () => {
-    const scene = sceneService.create(PROJECT_ID, { title: 'Draft', order: 0 });
+    const scene = await sceneService.create(PROJECT_ID, { title: 'Draft', order: 0 });
 
     const res = await request(app)
       .put(`/api/v1/scenes/${scene.id}`)
@@ -89,7 +89,7 @@ describe('Scenes CRUD', () => {
   });
 
   it('DELETE /api/v1/scenes/:id — deletes a scene', async () => {
-    const scene = sceneService.create(PROJECT_ID, { title: 'To Remove', order: 0 });
+    const scene = await sceneService.create(PROJECT_ID, { title: 'To Remove', order: 0 });
 
     const res = await request(app).delete(`/api/v1/scenes/${scene.id}`).set(AUTH);
 
@@ -118,10 +118,10 @@ describe('Scenes CRUD', () => {
 describe('Shots CRUD', () => {
   let sceneId: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     sceneService._clear();
     shotService._clear();
-    const scene = sceneService.create(PROJECT_ID, { title: 'Test Scene', order: 0 });
+    const scene = await sceneService.create(PROJECT_ID, { title: 'Test Scene', order: 0 });
     sceneId = scene.id;
   });
 
@@ -151,7 +151,7 @@ describe('Shots CRUD', () => {
   });
 
   it('GET /api/v1/shots/:id — returns a single shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -163,7 +163,7 @@ describe('Shots CRUD', () => {
   });
 
   it('PUT /api/v1/shots/:id — updates a shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -178,7 +178,7 @@ describe('Shots CRUD', () => {
   });
 
   it('DELETE /api/v1/shots/:id — deletes a shot', async () => {
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
@@ -207,12 +207,12 @@ describe('Shot Approval & Lock Flow', () => {
   let sceneId: string;
   let shotId: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     sceneService._clear();
     shotService._clear();
-    const scene = sceneService.create(PROJECT_ID, { title: 'Approval Scene', order: 0 });
+    const scene = await sceneService.create(PROJECT_ID, { title: 'Approval Scene', order: 0 });
     sceneId = scene.id;
-    const shot = shotService.create(sceneId, PROJECT_ID, {
+    const shot = await shotService.create(sceneId, PROJECT_ID, {
       ...VALID_SHOT_BODY,
       sceneGraph: VALID_SCENE_GRAPH,
     } as any);
