@@ -1,0 +1,143 @@
+name: Schema Drift
+
+# Compares packages/db/prisma/migrations against schema.prisma using a
+# throwaway Postgres, and emits the SQL that closes the gap.
+#
+# `prisma migrate diff --from-migrations` needs a real database: it replays the
+# migration history into a shadow database, introspects the result, and diffs
+# that against the datamodel. There is no offline mode — which is why the drift
+# tracked in #68 could not be quantified from a checkout alone.
+#
+# Manual only. It provisions its own Postgres and writes nothing outside the
+# artifact, so it is safe to re-run; it is not on a schedule because the answer
+# only changes when the schema or the migrations do.
+on:
+  # TEMPORARY: workflow_dispatch only works from the default branch, so this
+  # cannot be exercised until it is merged. Removed before merge.
+  push:
+    branches: [ai-ci/schema-drift-migration]
+  workflow_dispatch:
+    inputs:
+      apply_check:
+        description: "Also verify `migrate deploy` applies cleanly from scratch"
+        type: boolean
+        default: true
+
+concurrency:
+  group: schema-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  drift:
+    name: Generate drift migration
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: animaforge_drift
+          POSTGRES_USER: animaforge
+          POSTGRES_PASSWORD: drift_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # The target: migrations get replayed here, then introspected.
+      DATABASE_URL: postgresql://animaforge:drift_password@localhost:5432/animaforge_drift
+      # Prisma resets the shadow database on every use, so it must be separate
+      # from the one above — pointing both at the same database makes the diff
+      # compare the history against itself and always report no drift.
+      SHADOW_DATABASE_URL: postgresql://animaforge:drift_password@localhost:5432/animaforge_shadow
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Create the shadow database
+        run: |
+          PGPASSWORD=drift_password psql -h localhost -U animaforge -d animaforge_drift \
+            -c 'CREATE DATABASE animaforge_shadow;'
+
+      # The diff that answers #68. --from-migrations replays the committed
+      # history; --to-schema-datamodel reads schema.prisma. The output is every
+      # statement the history is missing.
+      - name: Diff migrations against schema.prisma
+        working-directory: packages/db
+        run: |
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url "$SHADOW_DATABASE_URL" \
+            --script > /tmp/drift.sql
+          echo "--- generated SQL ---"
+          cat /tmp/drift.sql
+
+      # --exit-code turns the same comparison into a pass/fail signal: 0 when
+      # the history already produces schema.prisma, 2 when it does not. Reported
+      # rather than enforced, so this run always produces its artifact.
+      - name: Summarise
+        if: always()
+        working-directory: packages/db
+        run: |
+          set +e
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url "$SHADOW_DATABASE_URL" \
+            --exit-code > /dev/null 2>&1
+          code=$?
+          set -e
+
+          {
+            echo "## Schema drift"
+            echo
+            if [ "$code" -eq 0 ]; then
+              echo "No drift. \`migrate deploy\` reproduces \`schema.prisma\` exactly."
+            else
+              echo "**Drift present** (\`migrate diff --exit-code\` returned $code)."
+              echo
+              echo "| statement | count |"
+              echo "| --- | --- |"
+              for kind in "ALTER TABLE" "CREATE TABLE" "CREATE INDEX" "DROP"; do
+                n=$(grep -c "^$kind" /tmp/drift.sql || true)
+                echo "| \`$kind\` | $n |"
+              done
+              echo
+              echo "Full SQL in the \`drift-migration\` artifact."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Proves the committed history is applicable at all — distinct from
+      # whether it is complete. A history that errors halfway leaves a database
+      # no amount of appended SQL will fix.
+      - name: Verify migrate deploy applies from scratch
+        if: ${{ inputs.apply_check }}
+        working-directory: packages/db
+        run: npx prisma migrate deploy
+
+      - name: Upload the generated migration
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: drift-migration
+          path: /tmp/drift.sql
+          if-no-files-found: warn
