@@ -22,4 +22,10 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 4000
 
 ENV NODE_ENV=production
+
+# Drop to the unprivileged `node` user (uid 1000, ships with the base image).
+# /app stays root-owned and read-only to the process, which is all the gateway
+# needs at runtime.
+USER node
+
 CMD ["node", "dist/index.js"]

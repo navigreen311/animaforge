@@ -116,7 +116,7 @@ const MILESTONES: { threshold: number; label: string; tips: string[] }[] = [
     tips: [
       'You qualify for enterprise-tier features',
       'Contact us about custom model training',
-      'Share your journey — we'd love to feature you',
+      "Share your journey — we'd love to feature you",
     ],
   },
 ];

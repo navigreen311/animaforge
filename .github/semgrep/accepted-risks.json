@@ -1,0 +1,122 @@
+{
+  "$comment": [
+    "Accepted-risk register for the Semgrep SAST gate.",
+    "",
+    "Every entry here is a REAL finding that is knowingly not fixed yet. Nothing is",
+    "hidden: the gate prints this whole register into the job summary on every run,",
+    "and any finding NOT listed here fails the build. Entries match on (rule, path)",
+    "pairs only, so a listed file is still fully scanned by every other rule.",
+    "",
+    "To retire an entry: fix the finding, then delete the entry. The gate warns when",
+    "a listed finding no longer reproduces, so stale entries surface on their own.",
+    "",
+    "Do not add an entry to silence a finding you introduced. Fix it."
+  ],
+  "accepted": [
+    {
+      "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
+      "path": "apps/web/src/components/developer/CodeBlock.tsx",
+      "reason": "Syntax highlighter injects pre-rendered HTML. Needs sanitisation or a DOM-based highlighter; not a drive-by fix.",
+      "owner": "apps/web owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "javascript.jsonwebtoken.security.jwt-hardcode.hardcoded-jwt-secret",
+      "path": "services/realtime/src/__tests__/realtime.test.ts",
+      "reason": "Hardcoded secret is test-only fixture data, never loaded by a running service.",
+      "owner": "services/realtime owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "python.fastapi.security.wildcard-cors.wildcard-cors",
+      "path": "services/ai-api/src/main.py",
+      "reason": "Wildcard CORS on the inference API. Genuine issue — needs a deploy-env-driven allowlist.",
+      "owner": "services/ai-api owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "python.lang.security.insecure-hash-algorithms-md5.insecure-hash-algorithm-md5",
+      "path": "services/ai-api/src/services/music_service.py",
+      "reason": "MD5 used as a cache key, not a security boundary — but should move to sha256 to clear the rule.",
+      "owner": "services/ai-api owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/ai-api/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive, but each image needs its own check that no runtime path requires root.",
+      "owner": "services/ai-api owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/auth/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/auth owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/billing/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/billing owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/governance/c2pa/Dockerfile",
+      "reason": "Container runs as root. C2PA signer touches key material — needs its own review before dropping privileges.",
+      "owner": "services/governance owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/governance/consent/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/governance owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/governance/moderation/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/governance owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/governance/watermark/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/governance owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/platform-api/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/platform-api owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/realtime/Dockerfile",
+      "reason": "Container runs as root. Fix is a USER directive after verifying runtime write paths.",
+      "owner": "services/realtime owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/storage/Dockerfile",
+      "reason": "Container runs as root. Storage service writes to mounted volumes — uid needs checking against volume ownership.",
+      "owner": "services/storage owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "dockerfile.security.missing-user.missing-user",
+      "path": "services/workers/Dockerfile",
+      "reason": "Container runs as root. Workers write scratch render output — uid needs checking against volume ownership.",
+      "owner": "services/workers owner",
+      "added": "2026-08-15"
+    }
+  ]
+}

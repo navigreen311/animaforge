@@ -73,19 +73,15 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   },
 
   cancel: async (jobId: string) => {
-    try {
-      await api.post(`/generations/${jobId}/cancel`);
-      set((state) => ({
-        activeJobs: state.activeJobs.map((j) =>
-          j.id === jobId ? { ...j, status: 'cancelled' as JobStatus } : j,
-        ),
-        isGenerating: state.activeJobs.filter(
-          (j) => j.id !== jobId && (j.status === 'queued' || j.status === 'processing'),
-        ).length > 0,
-      }));
-    } catch (error) {
-      throw error;
-    }
+    await api.post(`/generations/${jobId}/cancel`);
+    set((state) => ({
+      activeJobs: state.activeJobs.map((j) =>
+        j.id === jobId ? { ...j, status: 'cancelled' as JobStatus } : j,
+      ),
+      isGenerating: state.activeJobs.filter(
+        (j) => j.id !== jobId && (j.status === 'queued' || j.status === 'processing'),
+      ).length > 0,
+    }));
   },
 
   pollJob: async (jobId: string) => {

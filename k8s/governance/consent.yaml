@@ -18,9 +18,17 @@ spec:
         app.kubernetes.io/part-of: animaforge
     spec:
       serviceAccountName: consent
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: consent
           image: animaforge/consent:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8013
               name: http

@@ -594,7 +594,7 @@ export default function AssetsPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    let result = ASSETS.filter((a) => {
+    const result = ASSETS.filter((a) => {
       if (activeTab !== 'all' && a.type !== activeTab) return false;
       if (activeCategory && a.category !== activeCategory) return false;
       if (searchQuery.trim()) {
