@@ -39,6 +39,48 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
 # ── Core check functions ────────────────────────────────────────────────────
 
 
+def _with_provenance(result: dict, unmeasured: set[str]) -> dict:
+    """Attach how a score was arrived at.
+
+    A continuity score computed from pixels and one computed from a hash of two
+    URLs are not the same claim, and a caller acting on the second needs to
+    know that before it trusts it.
+    """
+    if unmeasured:
+        result["measured"] = False
+        result["measurement_note"] = (
+            "similarity fell back to identifier hashing for at least one pair; "
+            "the score does not compare images: " + "; ".join(sorted(unmeasured))
+        )
+    else:
+        result["measured"] = True
+    return result
+
+
+def _compare_refs(ref_a: str, ref_b: str) -> tuple[float, bool, str]:
+    """Similarity between two shot references, and whether it was measured.
+
+    Tries the real perceptual descriptor first: if both references resolve to
+    decodable images, the score compares pixels. Otherwise it falls back to the
+    identifier hash below and says so, because a hash of two URLs tells you
+    nothing about whether the shots match.
+    """
+    from src.services import continuity_embedding as ce
+
+    a = ce.describe_reference(ref_a)
+    b = ce.describe_reference(ref_b)
+    if a["measured"] and b["measured"]:
+        return (
+            round(ce.cosine_similarity(a["descriptor"], b["descriptor"]), 4),
+            True,
+            "",
+        )
+
+    reason = a["reason"] or b["reason"] or "reference is not a decodable image"
+    sim = round(_cosine_similarity(_mock_embedding(ref_a), _mock_embedding(ref_b)), 4)
+    return sim, False, reason
+
+
 def check_character_consistency(shots: list[dict]) -> dict:
     """Compare character_refs across shots and detect identity drift.
 
@@ -52,6 +94,7 @@ def check_character_consistency(shots: list[dict]) -> dict:
 
     issues: list[dict] = []
     pair_scores: list[float] = []
+    unmeasured_reasons: set[str] = set()
 
     for i in range(len(shots) - 1):
         ref_a = shots[i].get("character_ref", "")
@@ -61,10 +104,10 @@ def check_character_consistency(shots: list[dict]) -> dict:
             pair_scores.append(1.0)
             continue
 
-        emb_a = _mock_embedding(ref_a)
-        emb_b = _mock_embedding(ref_b)
-        sim = round(_cosine_similarity(emb_a, emb_b), 4)
+        sim, measured, reason = _compare_refs(ref_a, ref_b)
         pair_scores.append(sim)
+        if not measured:
+            unmeasured_reasons.add(reason)
 
         if sim < _CHARACTER_SIMILARITY_THRESHOLD:
             issues.append({
@@ -82,7 +125,9 @@ def check_character_consistency(shots: list[dict]) -> dict:
             })
 
     avg_score = sum(pair_scores) / len(pair_scores) if pair_scores else 1.0
-    return {"score": round(avg_score, 4), "issues": issues}
+    return _with_provenance(
+        {"score": round(avg_score, 4), "issues": issues}, unmeasured_reasons
+    )
 
 
 def check_style_consistency(shots: list[dict]) -> dict:
@@ -96,6 +141,7 @@ def check_style_consistency(shots: list[dict]) -> dict:
 
     issues: list[dict] = []
     pair_scores: list[float] = []
+    unmeasured_reasons: set[str] = set()
 
     for i in range(len(shots) - 1):
         style_a = shots[i].get("style_ref", "")
@@ -105,9 +151,9 @@ def check_style_consistency(shots: list[dict]) -> dict:
             pair_scores.append(1.0)
             continue
 
-        emb_a = _mock_embedding(style_a)
-        emb_b = _mock_embedding(style_b)
-        sim = round(_cosine_similarity(emb_a, emb_b), 4)
+        sim, measured, reason = _compare_refs(style_a, style_b)
+        if not measured:
+            unmeasured_reasons.add(reason)
         pair_scores.append(sim)
 
         if sim < _STYLE_SIMILARITY_THRESHOLD:
@@ -126,7 +172,9 @@ def check_style_consistency(shots: list[dict]) -> dict:
             })
 
     avg_score = sum(pair_scores) / len(pair_scores) if pair_scores else 1.0
-    return {"score": round(avg_score, 4), "issues": issues}
+    return _with_provenance(
+        {"score": round(avg_score, 4), "issues": issues}, unmeasured_reasons
+    )
 
 
 def check_temporal_continuity(shots: list[dict]) -> dict:
@@ -187,6 +235,7 @@ def check_audio_continuity(shots: list[dict]) -> dict:
 
     issues: list[dict] = []
     pair_scores: list[float] = []
+    unmeasured_reasons: set[str] = set()
 
     for i in range(len(shots) - 1):
         level_a = shots[i].get("audio_level_db")
@@ -217,7 +266,9 @@ def check_audio_continuity(shots: list[dict]) -> dict:
             })
 
     avg_score = sum(pair_scores) / len(pair_scores) if pair_scores else 1.0
-    return {"score": round(avg_score, 4), "issues": issues}
+    return _with_provenance(
+        {"score": round(avg_score, 4), "issues": issues}, unmeasured_reasons
+    )
 
 
 # ── Report & fix generation ─────────────────────────────────────────────────
