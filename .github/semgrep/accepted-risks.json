@@ -30,14 +30,14 @@
     {
       "rule": "python.fastapi.security.wildcard-cors.wildcard-cors",
       "path": "services/ai-api/src/main.py",
-      "reason": "Wildcard CORS on the inference API. Genuine issue — needs a deploy-env-driven allowlist.",
+      "reason": "Wildcard CORS on the inference API. Genuine issue \u2014 needs a deploy-env-driven allowlist.",
       "owner": "services/ai-api owner",
       "added": "2026-08-15"
     },
     {
       "rule": "python.lang.security.insecure-hash-algorithms-md5.insecure-hash-algorithm-md5",
       "path": "services/ai-api/src/services/music_service.py",
-      "reason": "MD5 used as a cache key, not a security boundary — but should move to sha256 to clear the rule.",
+      "reason": "MD5 used as a cache key, not a security boundary \u2014 but should move to sha256 to clear the rule.",
       "owner": "services/ai-api owner",
       "added": "2026-08-15"
     },
@@ -65,7 +65,7 @@
     {
       "rule": "dockerfile.security.missing-user.missing-user",
       "path": "services/governance/c2pa/Dockerfile",
-      "reason": "Container runs as root. C2PA signer touches key material — needs its own review before dropping privileges.",
+      "reason": "Container runs as root. C2PA signer touches key material \u2014 needs its own review before dropping privileges.",
       "owner": "services/governance owner",
       "added": "2026-08-15"
     },
@@ -107,15 +107,22 @@
     {
       "rule": "dockerfile.security.missing-user.missing-user",
       "path": "services/storage/Dockerfile",
-      "reason": "Container runs as root. Storage service writes to mounted volumes — uid needs checking against volume ownership.",
+      "reason": "Container runs as root. Storage service writes to mounted volumes \u2014 uid needs checking against volume ownership.",
       "owner": "services/storage owner",
       "added": "2026-08-15"
     },
     {
       "rule": "dockerfile.security.missing-user.missing-user",
       "path": "services/workers/Dockerfile",
-      "reason": "Container runs as root. Workers write scratch render output — uid needs checking against volume ownership.",
+      "reason": "Container runs as root. Workers write scratch render output \u2014 uid needs checking against volume ownership.",
       "owner": "services/workers owner",
+      "added": "2026-08-15"
+    },
+    {
+      "rule": "terraform.aws.security.aws-cloudfront-insecure-tls.aws-insecure-cloudfront-distribution-tls-version",
+      "path": "infra/terraform/modules/storage/main.tf",
+      "reason": "Applies only on the no-custom-domain path. CloudFront's default *.cloudfront.net certificate REQUIRES minimum_protocol_version = TLSv1; AWS rejects anything higher with it. Setting acm_certificate_arn switches the same resource to TLSv1.2_2021, which the config already does conditionally. Not fixable while the default certificate is supported.",
+      "owner": "infra track (this file) \u2014 clears itself once cdn_aliases + acm_certificate_arn are set",
       "added": "2026-08-15"
     }
   ]
