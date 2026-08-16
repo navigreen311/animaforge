@@ -1,0 +1,282 @@
+name: Verify Persistence
+
+# Evidence for the claims in
+# apps/web/src/app/(dashboard)/components/unavailable/featureStatus.ts.
+#
+# That file's doctrine is that every `detail` is "a claim about this repository
+# that was checked before being written down". Reading the route source is not
+# checking it -- a route can call Prisma and still lose the write. So this
+# writes through the real API and reads it back.
+#
+# The load-bearing detail is that platform-api is **restarted between the write
+# and the read**. Every service in this repo falls back to an in-memory Map when
+# the database is unreachable, and a Map answers a POST-then-GET in the same
+# process exactly like a database would. Only a restart tells them apart: the
+# Map is gone, so anything that comes back came from Postgres.
+#
+# Manual only. It provisions its own database and writes nothing outside the
+# artifact.
+on:
+  # TEMPORARY: workflow_dispatch only fires from the default branch, so this
+  # cannot be exercised until it lands. Removed before merge.
+  push:
+    branches: [ai-chore/console-truthfulness]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-persistence-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  verify:
+    name: Write, restart, read
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: animaforge_verify
+          POSTGRES_USER: animaforge
+          POSTGRES_PASSWORD: verify_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://animaforge:verify_password@localhost:5432/animaforge_verify
+      PORT: '4000'
+      API_BASE: http://127.0.0.1:4000
+      ACTOR_ID: 00000000-0000-4000-8000-00000000e2e1
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate the Prisma client and apply migrations
+        run: |
+          npx prisma generate --schema packages/db/prisma/schema.prisma
+          cd packages/db && npx prisma migrate deploy
+
+      # Ownership columns are foreign keys to users, so without a row here every
+      # write fails on the constraint rather than on anything being measured.
+      - name: Seed the acting user
+        run: |
+          PGPASSWORD=verify_password psql -h localhost -U animaforge -d animaforge_verify -c "
+            INSERT INTO users (id, email, display_name, role, tier, updated_at)
+            VALUES ('${{ env.ACTOR_ID }}'::uuid,
+                    'verify@animaforge.test', 'Verify User', 'admin', 'studio', NOW())
+            ON CONFLICT (id) DO NOTHING;"
+
+      # The script is inline rather than a checked-in file so the whole harness
+      # is one reviewable unit and stays inside .github/workflows.
+      - name: Write, restart, read
+        run: |
+          cat > /tmp/verify.mjs <<'SCRIPT'
+          import { spawn } from 'node:child_process';
+          import { writeFileSync, openSync } from 'node:fs';
+
+          const BASE = process.env.API_BASE;
+          const ACTOR = process.env.ACTOR_ID;
+
+          // platform-api's requireAuth base64-decodes the payload segment and
+          // trusts it without verifying a signature -- that is issue #82, and
+          // this token exists only because of it. When the auth fix lands this
+          // must become a properly signed JWT or every probe below 401s.
+          const claims = { sub: ACTOR, email: 'verify@animaforge.test', role: 'admin' };
+          const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+          const TOKEN = `${b64({ alg: 'none', typ: 'JWT' })}.${b64(claims)}.unsigned`;
+
+          const HEADERS = {
+            'content-type': 'application/json',
+            authorization: `Bearer ${TOKEN}`,
+          };
+
+          /**
+           * One probe: write something with a marker unique to this run, then
+           * look for that marker after the restart.
+           */
+          const MARK = `verify-${Date.now()}`;
+          const PROBES = [
+            { key: 'team.create/team.manage', write: ['POST', '/api/v1/teams', { name: `Team ${MARK}` }],
+              read: ['GET', '/api/v1/teams'] },
+            { key: 'team.invite', write: ['POST', '/api/v1/team/invitations', { email: `${MARK}@animaforge.test`, role: 'editor' }],
+              read: ['GET', '/api/v1/team/invitations'] },
+            { key: 'team.projectAccess', write: ['POST', '/api/v1/teams', { name: `Access ${MARK}` }],
+              read: ['GET', '/api/v1/team/members'] },
+            { key: 'team.activityLog', write: null, read: ['GET', '/api/v1/activity'] },
+            { key: 'settings.createWebhook', write: ['POST', '/api/v1/webhook-endpoints', { url: `https://example.test/${MARK}`, events: ['job.completed'] }],
+              read: ['GET', '/api/v1/webhook-endpoints'] },
+            { key: 'settings.memoryEditor', write: ['PATCH', '/api/v1/users/me/memory', { genMemory: { marker: MARK } }],
+              read: ['GET', '/api/v1/users/me/memory'] },
+            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify' }],
+              read: ['GET', '/api/v1/styles'] },
+            { key: 'projects.import/createFromScript', write: ['POST', '/api/v1/projects', { title: `Project ${MARK}` }],
+              read: ['GET', '/api/v1/projects'] },
+            { key: 'voice.uploadSample', write: ['POST', '/api/v1/voices', { name: `Voice ${MARK}` }],
+              read: ['GET', '/api/v1/voices'] },
+            { key: 'assets.upload/logoUpload (presign)', write: ['POST', '/api/v1/upload/signed-url', { filename: `${MARK}.png`, contentType: 'image/png', projectId: ACTOR }],
+              read: ['GET', '/api/v1/assets'] },
+            { key: 'assets.upload (asset record)', write: ['POST', '/api/v1/assets', { name: `Asset ${MARK}`, type: 'image', url: `https://cdn.test/${MARK}.png` }],
+              read: ['GET', '/api/v1/assets'] },
+            { key: 'settings.logoUpload (brand kit)', write: ['POST', '/api/v1/brand-kits', { name: `Kit ${MARK}` }],
+              read: ['GET', '/api/v1/brand-kits'] },
+          ];
+
+          async function call(method, path, body) {
+            try {
+              const res = await fetch(BASE + path, {
+                method,
+                headers: HEADERS,
+                body: body ? JSON.stringify(body) : undefined,
+              });
+              const text = await res.text();
+              let json = null;
+              try { json = JSON.parse(text); } catch { /* non-JSON body */ }
+              return { status: res.status, body: json, raw: text.slice(0, 300) };
+            } catch (err) {
+              return { status: 0, body: null, raw: String(err) };
+            }
+          }
+
+          function startApi(tag) {
+            const out = openSync(`/tmp/api-${tag}.log`, 'a');
+            const child = spawn('npx', ['tsx', 'src/index.ts'], {
+              cwd: 'services/platform-api',
+              env: process.env,
+              stdio: ['ignore', out, out],
+            });
+            return child;
+          }
+
+          async function waitForHealth(timeoutMs = 60000) {
+            const deadline = Date.now() + timeoutMs;
+            while (Date.now() < deadline) {
+              const res = await call('GET', '/api/v1/health');
+              if (res.status === 200) return true;
+              await new Promise((r) => setTimeout(r, 1000));
+            }
+            return false;
+          }
+
+          async function stop(child) {
+            child.kill('SIGTERM');
+            await new Promise((r) => {
+              child.on('exit', r);
+              setTimeout(() => { child.kill('SIGKILL'); r(); }, 8000);
+            });
+            // The port must actually be free before the next process binds it,
+            // or the "restart" silently keeps the old process and its Map.
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+
+          const results = [];
+
+          let api = startApi('write');
+          if (!(await waitForHealth())) {
+            console.error('platform-api did not become healthy');
+            process.exit(1);
+          }
+
+          for (const probe of PROBES) {
+            probe.writeResult = probe.write
+              ? await call(probe.write[0], probe.write[1], probe.write[2])
+              : { status: null, body: null, raw: '(read-only probe)' };
+          }
+
+          await stop(api);
+
+          // Fresh process: every in-memory Map in the service is now empty.
+          api = startApi('read');
+          if (!(await waitForHealth())) {
+            console.error('platform-api did not restart');
+            process.exit(1);
+          }
+
+          for (const probe of PROBES) {
+            const readResult = await call(probe.read[0], probe.read[1]);
+            const haystack = JSON.stringify(readResult.body ?? readResult.raw ?? '');
+            const survived = haystack.includes(MARK);
+
+            let verdict;
+            if (probe.writeResult.status !== null && probe.writeResult.status >= 400) {
+              verdict = 'write-rejected';
+            } else if (readResult.status >= 400) {
+              verdict = 'read-failed';
+            } else if (probe.write === null) {
+              verdict = 'read-only';
+            } else {
+              verdict = survived ? 'PERSISTS' : 'LOST';
+            }
+
+            results.push({
+              key: probe.key,
+              write: probe.write ? `${probe.write[0]} ${probe.write[1]}` : null,
+              writeStatus: probe.writeResult.status,
+              writeBody: probe.writeResult.raw,
+              read: `${probe.read[0]} ${probe.read[1]}`,
+              readStatus: readResult.status,
+              readBody: readResult.raw,
+              survivedRestart: survived,
+              verdict,
+            });
+          }
+
+          await stop(api);
+
+          writeFileSync('/tmp/persistence-report.json', JSON.stringify(results, null, 2));
+
+          const rows = results.map((r) =>
+            `| ${r.key} | ${r.write ?? '-'} | ${r.writeStatus ?? '-'} | ${r.read} | ${r.readStatus} | **${r.verdict}** |`,
+          );
+          const md = [
+            '## Persistence verification',
+            '',
+            `Marker \`${MARK}\`. platform-api restarted between write and read, so`,
+            'anything found afterwards came from Postgres and not from an in-process Map.',
+            '',
+            '| feature | write | status | read | status | verdict |',
+            '| --- | --- | --- | --- | --- | --- |',
+            ...rows,
+            '',
+          ].join('\n');
+          writeFileSync('/tmp/persistence-report.md', md);
+          console.log(md);
+
+          for (const r of results) {
+            if (r.verdict !== 'PERSISTS') {
+              console.log(`\n--- ${r.key} (${r.verdict})`);
+              console.log(`  write ${r.writeStatus}: ${r.writeBody}`);
+              console.log(`  read  ${r.readStatus}: ${r.readBody}`);
+            }
+          }
+          SCRIPT
+          node /tmp/verify.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: persistence-evidence
+          path: |
+            /tmp/persistence-report.json
+            /tmp/persistence-report.md
+            /tmp/api-*.log
+          if-no-files-found: warn
