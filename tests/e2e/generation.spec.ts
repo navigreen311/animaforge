@@ -1,79 +1,58 @@
-import { test, expect } from '@playwright/test';
-import { loginAsUser } from './fixtures/test-helpers';
+import { test, expect } from './fixtures/test';
+import { login } from './fixtures/test-helpers';
+import { FIXTURE_PROJECT } from './fixtures/test-data';
+
+const SHOT_EDITOR = `/projects/${FIXTURE_PROJECT.id}/shots/1`;
 
 test.describe('Generation flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsUser(page, 'user@example.com', 'password123');
+    await login(page);
   });
 
-  test('generation panel shows tier selector', async ({ page }) => {
-    // Navigate to shot editor which has the Generate button
-    await page.goto('/projects/1/shots/1');
+  test('generate is gated on the shot having a subject', async ({ page }) => {
+    await page.goto(SHOT_EDITOR);
 
-    // The shot editor page has a Generate Shot button
-    await expect(page.getByRole('button', { name: /generate/i })).toBeVisible();
+    const generate = page.getByRole('button', { name: 'Generate Shot' });
 
-    // If a standalone GenerationPanel is rendered, verify the tier selector
-    const tierSelect = page.getByLabel(/quality tier/i);
-    if (await tierSelect.isVisible().catch(() => false)) {
-      await expect(tierSelect).toBeVisible();
+    /* Disabled while Subject is empty, enabled once it is filled. */
+    await expect(generate).toBeVisible();
+    await expect(generate).toBeDisabled();
 
-      // Should have Draft, Standard, Premium options
-      const options = tierSelect.locator('option');
-      const optionTexts = await options.allTextContents();
-      expect(optionTexts.join(' ')).toContain('Draft');
-      expect(optionTexts.join(' ')).toContain('Standard');
-      expect(optionTexts.join(' ')).toContain('Premium');
-    }
+    await page.getByLabel('Subject', { exact: true }).fill('Hero walks through a neon alley');
+    await expect(generate).toBeEnabled();
   });
 
-  test('click generate shows progress indicator', async ({ page }) => {
-    await page.goto('/projects/1/shots/1');
+  test('generating a shot puts the button into its in-progress state', async ({ page }) => {
+    await page.goto(SHOT_EDITOR);
 
-    // Fill the subject field (required to enable the Generate button)
-    await page.getByLabel('Subject').fill('A cyberpunk street scene at night');
+    await page.getByLabel('Subject', { exact: true }).fill('Hero walks through a neon alley');
+    await page.getByRole('button', { name: 'Generate Shot' }).click();
 
-    // Click the Generate Shot button
-    await page.getByRole('button', { name: /generate/i }).click();
-
-    // Should see generating state — spinner or progress text
-    const generatingIndicator = page.getByText(/generating/i);
-    await expect(generatingIndicator).toBeVisible();
-
-    // The button should reflect the generating state
-    await expect(page.getByRole('button', { name: /generating/i })).toBeVisible();
+    /*
+     * The button relabels itself to "Generating...". Asserting that exact
+     * transition is the whole observable outcome of a generate click in this
+     * build: the request goes to the AI API, which is not part of this
+     * harness, so nothing further arrives.
+     *
+     * The old spec searched the page for /generating/i, which the sidebar's
+     * "Generating" project-status filter chip already matches on every route
+     * — so it passed without the button ever changing.
+     */
+    await expect(page.getByRole('button', { name: 'Generating...' })).toBeVisible();
   });
 
-  test('job queue shows running jobs', async ({ page }) => {
-    await page.goto('/projects/1/shots/1');
-
-    // Look for the Job Queue section
-    const jobQueueHeading = page.getByText('Job Queue');
-    if (await jobQueueHeading.isVisible().catch(() => false)) {
-      await expect(jobQueueHeading).toBeVisible();
-
-      // If there are no active jobs, it should say "No active jobs"
-      const noJobs = page.getByText('No active jobs');
-      const hasNoJobs = await noJobs.isVisible().catch(() => false);
-
-      if (hasNoJobs) {
-        // Trigger a generation to populate the queue
-        await page.getByLabel('Subject').fill('Test generation');
-        await page.getByRole('button', { name: /generate/i }).click();
-
-        // After triggering, the job queue should update
-        await expect(page.getByText(/queued|running/i)).toBeVisible({
-          timeout: 5000,
-        });
-      } else {
-        // Jobs are already present — verify status badges
-        await expect(page.getByText(/queued|running|complete/i).first()).toBeVisible();
-      }
-    } else {
-      // Job Queue component may not be on this page — verify the generate flow works
-      await page.getByLabel('Subject').fill('Test generation');
-      await page.getByRole('button', { name: /generate/i }).click();
-      await expect(page.getByText(/generating/i)).toBeVisible();
-    }
+  test.skip('a queued job appears in the job queue', async () => {
+    /*
+     * SKIPPED — nothing consumes the generate request in this harness.
+     *
+     * Submitting posts to the AI API on :8001, which the e2e stack does not
+     * start; the job queue is served from apps/web/src/lib/mockData.ts and
+     * never reflects a request made during a test run. The original spec hid
+     * this behind nested `if (isVisible)` branches that made it pass whether
+     * a job appeared or not.
+     *
+     * Enabling this needs the AI API in the harness and /api/jobs backed by
+     * real state. Tracked in #80.
+     */
   });
 });

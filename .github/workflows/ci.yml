@@ -388,29 +388,16 @@ jobs:
     runs-on: ubuntu-latest
     # test-api is known-red (see ci-passed); needing it would skip e2e entirely.
     needs: [test-frontend]
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: animaforge_test
-          POSTGRES_USER: animaforge
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    #
+    # No postgres or redis service any more, and no DATABASE_URL.
+    #
+    # Both were declared here and neither was ever reached. The pages under
+    # test are served by Next route handlers backed by
+    # apps/web/src/lib/mockData.ts, and the auth service the login specs use
+    # falls back to an in-memory user store when Prisma has no database. Worse
+    # than unused: exporting DATABASE_URL made the auth service try to reach a
+    # Postgres with no tables, so CI and a developer's machine took different
+    # code paths through login. Dropping them makes the two identical.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -438,15 +425,17 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      # playwright.config.ts starts both servers itself: the auth service on
+      # :3003 and apps/web on :3000 from a production build. The build is the
+      # slow part and runs inside the webServer command, which is why that
+      # entry allows 5 minutes.
+      #
+      # No --project flag: the config now declares chromium only, matching the
+      # single browser installed above. It used to declare firefox as well and
+      # rely on this flag to avoid launching a browser that was not on disk.
       - name: Run Playwright tests
-        # --project=chromium because the install steps above only fetch
-        # chromium; playwright.config.ts also declares a firefox project, which
-        # would fail to launch.
-        run: npx playwright test --project=chromium --reporter=html
+        run: npx playwright test --reporter=html
         env:
-          DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_test
-          REDIS_URL: redis://localhost:6379
-          NODE_ENV: test
           CI: true
 
       - name: Upload Playwright report

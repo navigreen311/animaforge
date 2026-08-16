@@ -1,62 +1,54 @@
-import { test, expect } from '@playwright/test';
-import { loginAsUser } from './fixtures/test-helpers';
+import { test, expect } from './fixtures/test';
+import { login } from './fixtures/test-helpers';
+import { FIXTURE_PROJECT, SIDEBAR_LINKS } from './fixtures/test-data';
 
 test.describe('App navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsUser(page, 'user@example.com', 'password123');
+    await login(page);
   });
 
-  test('sidebar links navigate correctly', async ({ page }) => {
+  test('every sidebar link navigates to its route', async ({ page }) => {
     await page.goto('/projects');
 
-    // Sidebar should be visible with navigation links
     const sidebar = page.locator('aside');
     await expect(sidebar).toBeVisible();
 
-    // Test navigation to each sidebar link
-    const sidebarLinks = [
-      { label: 'Projects', url: /\/projects/ },
-      { label: 'Characters', url: /\/characters/ },
-      { label: 'Style Studio', url: /\/style-studio/ },
-      { label: 'Script AI', url: /\/script-ai/ },
-      { label: 'Marketplace', url: /\/marketplace/ },
-    ];
-
-    for (const link of sidebarLinks) {
-      await sidebar.getByRole('link', { name: link.label }).click();
-      await expect(page).toHaveURL(link.url);
+    /*
+     * Label and destination are asserted as a pair, from test-data. Two of
+     * these do not match by name — "Script AI" goes to /script and "Style
+     * Studio" to /style — and the previous spec asserted /script-ai and
+     * /style-studio, both of which 404. It failed on the third link every run.
+     */
+    for (const { label, path } of SIDEBAR_LINKS) {
+      await sidebar.getByRole('link', { name: label, exact: false }).first().click();
+      await page.waitForURL(`**${path}`);
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
     }
   });
 
-  test('breadcrumbs show correct path', async ({ page }) => {
-    // Navigate to a nested route
-    await page.goto('/projects/1');
+  test('project detail is reachable and renders its title', async ({ page }) => {
+    await page.goto('/projects');
 
-    // TopBar breadcrumbs should show "Projects / 1" (or project name)
-    const breadcrumbNav = page.locator('header nav');
-    await expect(breadcrumbNav).toBeVisible();
+    await page.locator(`[aria-label="Project: ${FIXTURE_PROJECT.title}"]`).first().click();
 
-    // Should contain "Projects" as a breadcrumb segment
-    await expect(breadcrumbNav.getByText('Projects')).toBeVisible();
-
-    // The current segment should be present
-    const breadcrumbText = await breadcrumbNav.textContent();
-    expect(breadcrumbText).toContain('Projects');
+    await expect(page.getByRole('heading', { name: FIXTURE_PROJECT.title })).toBeVisible();
   });
 
-  test('back button works', async ({ page }) => {
-    // Navigate to projects first
+  test('browser back returns to the previous route', async ({ page }) => {
     await page.goto('/projects');
-    await expect(page).toHaveURL(/\/projects/);
+    await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
 
-    // Navigate deeper into a project
-    await page.goto('/projects/1');
-    await expect(page).toHaveURL(/\/projects\/1/);
+    await page.goto(`/projects/${FIXTURE_PROJECT.id}`);
+    await expect(page.getByRole('heading', { name: FIXTURE_PROJECT.title })).toBeVisible();
 
-    // Use browser back
     await page.goBack();
 
-    // Should return to projects list
-    await expect(page).toHaveURL(/\/projects/);
+    /*
+     * Waits for the destination heading rather than asserting the URL alone.
+     * The URL changes before the client-side transition finishes, so a
+     * URL-only assertion can pass while the previous page is still mounted.
+     */
+    await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
+    await expect(page).toHaveURL(/\/projects$/);
   });
 });
