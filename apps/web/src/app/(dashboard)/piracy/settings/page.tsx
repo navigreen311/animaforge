@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -75,18 +76,9 @@ const DEFAULT_SETTINGS: PiracySettings = {
   ],
   matchThreshold: 80,
   dmcaTemplate: DEFAULT_DMCA_TEMPLATE,
-  allowlist: [
-    {
-      id: 'a1',
-      value: 'https://youtube.com/@officialstudio',
-      label: 'Official studio channel',
-    },
-    {
-      id: 'a2',
-      value: '@partnerbrand',
-      label: 'Licensed partner',
-    },
-  ],
+  // Two allowlist entries pointing at a studio channel and a partner site
+  // were listed for every account. There is no allowlist table.
+  allowlist: [],
   emailAlerts: true,
   slackWebhook: '',
 };
@@ -226,7 +218,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 export default function PiracySettingsPage() {
   const [settings, setSettings] = useState<PiracySettings>(DEFAULT_SETTINGS);
   const [newAllowlistValue, setNewAllowlistValue] = useState('');
-  const [savedFlash, setSavedFlash] = useState(false);
+  const [savedFlash] = useState(false);
 
   const updatePlatform = (id: string, enabled: boolean) => {
     setSettings((s) => ({
@@ -264,8 +256,11 @@ export default function PiracySettingsPage() {
   };
 
   const saveSettings = () => {
-    setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 1800);
+    // This flashed "Saved" for 1.8 seconds and wrote nothing. Scan frequency,
+    // platform selection, match threshold, the DMCA template and the allowlist
+    // have no table: piracy_matches and dmca_notices are the only piracy
+    // models in the schema. Until one exists, the button says so.
+    toast.error('Scan settings cannot be saved yet — nothing in the schema stores them.');
   };
 
   return (
