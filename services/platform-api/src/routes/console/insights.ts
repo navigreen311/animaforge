@@ -77,7 +77,16 @@ router.get(
     const [jobs, projects, usage] = await Promise.all([
       requirePrisma().generationJob.findMany({
         where,
-        select: { status: true, jobType: true, tier: true, createdAt: true },
+        select: {
+          status: true,
+          jobType: true,
+          tier: true,
+          createdAt: true,
+          costCredits: true,
+          errorReason: true,
+          projectId: true,
+          project: { select: { id: true, title: true } },
+        },
       }),
       requirePrisma().project.count({ where: { ownerId: req.user!.id, deletedAt: null } }),
       requirePrisma().usageMeter.findMany({ where: { userId: req.user!.id } }),
@@ -90,6 +99,45 @@ router.get(
       byType[j.jobType] = (byType[j.jobType] ?? 0) + 1;
     }
 
+    // Credits by job type, tier mix and failure reasons all come off the jobs
+    // already loaded. Each is a real sum over real rows -- the console used to
+    // draw these breakdowns from literals, which is what issue #58 is about.
+    const creditsByType: Record<string, number> = {};
+    const byTier: Record<string, number> = {};
+    const failureReasons: Record<string, number> = {};
+    const perProject = new Map<
+      string,
+      { id: string; title: string; credits: number; renders: number; tiers: Record<string, number> }
+    >();
+
+    for (const j of jobs) {
+      const credits = j.costCredits ?? 0;
+      creditsByType[j.jobType] = (creditsByType[j.jobType] ?? 0) + credits;
+      byTier[j.tier] = (byTier[j.tier] ?? 0) + 1;
+      if (j.status === 'failed') {
+        // A failed job with no recorded reason is counted as unknown rather
+        // than assigned to a plausible one.
+        const reason = j.errorReason ?? 'unknown';
+        failureReasons[reason] = (failureReasons[reason] ?? 0) + 1;
+      }
+      const key = j.projectId;
+      const entry = perProject.get(key) ?? {
+        id: key,
+        title: j.project?.title ?? key,
+        credits: 0,
+        renders: 0,
+        tiers: {},
+      };
+      entry.credits += credits;
+      entry.renders += 1;
+      entry.tiers[j.tier] = (entry.tiers[j.tier] ?? 0) + 1;
+      perProject.set(key, entry);
+    }
+
+    const topProjects = [...perProject.values()]
+      .sort((a, b) => b.credits - a.credits || b.renders - a.renders)
+      .slice(0, 10);
+
     apiResponse.success(res, {
       period,
       projects,
@@ -98,6 +146,10 @@ router.get(
       failed: byStatus.failed ?? 0,
       byStatus,
       byType,
+      byTier,
+      creditsByType,
+      failureReasons,
+      topProjects,
       creditsUsed: usage.reduce((sum, u) => sum + u.credits, 0),
     });
   }),

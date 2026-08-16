@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, Suspense } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -27,106 +29,56 @@ interface SearchResult {
   updatedAt: string;
 }
 
-const MOCK_RESULTS: SearchResult[] = [
-  {
-    id: 's1',
-    type: 'shot',
-    name: 'Hero entrance — wide angle',
-    metadata: 'Scene 3 · 24 frames',
-    updatedAt: '2026-04-09T08:30:00Z',
-  },
-  {
-    id: 's2',
-    type: 'shot',
-    name: 'Sunset fly-over establishing',
-    metadata: 'Scene 1 · 48 frames',
-    updatedAt: '2026-04-08T14:00:00Z',
-  },
-  {
-    id: 's3',
-    type: 'shot',
-    name: 'Close-up reaction shot',
-    metadata: 'Scene 5 · 12 frames',
-    updatedAt: '2026-04-07T10:20:00Z',
-  },
-  {
-    id: 's4',
-    type: 'shot',
-    name: 'Chase sequence — rooftop',
-    metadata: 'Scene 7 · 36 frames',
-    updatedAt: '2026-04-06T11:00:00Z',
-  },
-  {
-    id: 'c1',
-    type: 'character',
-    name: 'Luna — protagonist',
-    metadata: 'Anime style · 12 variants',
-    updatedAt: '2026-04-09T06:00:00Z',
-  },
-  {
-    id: 'c2',
-    type: 'character',
-    name: 'Rex — antagonist',
-    metadata: '3D Render · 8 variants',
-    updatedAt: '2026-04-06T18:00:00Z',
-  },
-  {
-    id: 'c3',
-    type: 'character',
-    name: 'Sage — mentor',
-    metadata: 'Watercolor · 4 variants',
-    updatedAt: '2026-04-03T08:00:00Z',
-  },
-  {
-    id: 'a1',
-    type: 'asset',
-    name: 'Enchanted Forest BG',
-    metadata: 'Background · 4096x2160',
-    updatedAt: '2026-04-08T09:00:00Z',
-  },
-  {
-    id: 'a2',
-    type: 'asset',
-    name: 'Magic particle FX',
-    metadata: 'VFX · Loopable',
-    updatedAt: '2026-04-05T12:00:00Z',
-  },
-  {
-    id: 'a3',
-    type: 'asset',
-    name: 'Spaceship interior',
-    metadata: 'Background · 3840x2160',
-    updatedAt: '2026-04-04T15:30:00Z',
-  },
-  {
-    id: 'a4',
-    type: 'asset',
-    name: 'Rain overlay loop',
-    metadata: 'VFX · 60fps',
-    updatedAt: '2026-04-02T09:00:00Z',
-  },
-  {
-    id: 'p1',
-    type: 'project',
-    name: 'Midnight Fable',
-    metadata: '24 shots · In progress',
-    updatedAt: '2026-04-09T09:00:00Z',
-  },
-  {
-    id: 'p2',
-    type: 'project',
-    name: 'Product Launch Ad',
-    metadata: '8 shots · Draft',
-    updatedAt: '2026-04-07T16:00:00Z',
-  },
-  {
-    id: 'p3',
-    type: 'project',
-    name: 'Explainer — Onboarding Flow',
-    metadata: '12 shots · Complete',
-    updatedAt: '2026-04-01T10:00:00Z',
-  },
-];
+/** The shape GET /api/search returns: one array per entity type. */
+interface SearchResponse {
+  query: string;
+  projects: Array<{ id: string; title: string; status: string; updatedAt: string }>;
+  characters: Array<{ id: string; name: string; createdAt: string }>;
+  scripts: Array<{ id: string; title: string; status: string; updatedAt: string }>;
+  assets: Array<{ id: string; name: string; type: string; projectId: string; createdAt: string }>;
+  total: number;
+}
+
+/**
+ * Flatten the per-type arrays into the flat list this screen renders.
+ *
+ * The screen has a `shot` facet, but the API does not search shots: a shot has
+ * no title or name to match on, only a scene graph. The facet is left in place
+ * and simply returns nothing rather than being silently populated from
+ * something else.
+ */
+function toResults(data: SearchResponse): SearchResult[] {
+  return [
+    ...data.projects.map((r) => ({
+      id: r.id,
+      type: 'project' as ResultType,
+      name: r.title,
+      metadata: r.status,
+      updatedAt: r.updatedAt,
+    })),
+    ...data.characters.map((r) => ({
+      id: r.id,
+      type: 'character' as ResultType,
+      name: r.name,
+      metadata: 'Character',
+      updatedAt: r.createdAt,
+    })),
+    ...data.scripts.map((r) => ({
+      id: r.id,
+      type: 'project' as ResultType,
+      name: r.title,
+      metadata: `Script · ${r.status}`,
+      updatedAt: r.updatedAt,
+    })),
+    ...data.assets.map((r) => ({
+      id: r.id,
+      type: 'asset' as ResultType,
+      name: r.name,
+      metadata: r.type,
+      updatedAt: r.createdAt,
+    })),
+  ];
+}
 
 const TYPE_META: Record<ResultType, { label: string; icon: typeof Film }> = {
   shot: { label: 'Shots', icon: Film },
@@ -165,16 +117,17 @@ function SearchPageContent() {
   const [sort, setSort] = useState<SortOption>('relevance');
   const [sortOpen, setSortOpen] = useState(false);
 
+  // The server does the matching; the client only filters by facet and sorts.
+  const state = useResource<SearchResponse>(
+    query.trim() ? `/api/search?q=${encodeURIComponent(query.trim())}` : null,
+    [query],
+  );
+
+  const results = useMemo(() => (state.data ? toResults(state.data) : []), [state.data]);
+
   // Filter
   const filtered = useMemo(() => {
-    let items = [...MOCK_RESULTS];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      items = items.filter(
-        (r) => r.name.toLowerCase().includes(q) || r.metadata.toLowerCase().includes(q),
-      );
-    }
+    let items = [...results];
 
     if (selectedType) {
       items = items.filter((r) => r.type === selectedType);
@@ -188,23 +141,16 @@ function SearchPageContent() {
     }
 
     return items;
-  }, [query, selectedType, sort]);
+  }, [results, selectedType, sort]);
 
   // Facet counts
   const facetCounts = useMemo(() => {
-    const base = query.trim()
-      ? MOCK_RESULTS.filter((r) => {
-          const q = query.toLowerCase();
-          return r.name.toLowerCase().includes(q) || r.metadata.toLowerCase().includes(q);
-        })
-      : MOCK_RESULTS;
-
-    const counts: Record<string, number> = { all: base.length };
-    for (const r of base) {
+    const counts: Record<string, number> = { all: results.length };
+    for (const r of results) {
       counts[r.type] = (counts[r.type] || 0) + 1;
     }
     return counts;
-  }, [query]);
+  }, [results]);
 
   // Group results
   const grouped = useMemo(() => {
@@ -423,7 +369,15 @@ function SearchPageContent() {
           </div>
 
           {/* Grouped results */}
-          {filtered.length === 0 ? (
+          {state.loading ? (
+            <div style={{ padding: '24px 0' }}>
+              <LoadingState label="Searching…" />
+            </div>
+          ) : state.error ? (
+            <div style={{ padding: '24px 0' }}>
+              <ErrorState error={state.error} onRetry={state.reload} />
+            </div>
+          ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <Search size={32} color="var(--text-tertiary)" style={{ marginBottom: 12 }} />
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>

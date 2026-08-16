@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import {
   Bell,
   Film,
@@ -81,153 +84,54 @@ const TYPE_ICONS: Record<NotificationType, { icon: typeof Film; color: string }>
 const PAGE_SIZE = 8;
 
 /* ------------------------------------------------------------------ */
-/*  Mock Data                                                          */
+/*  Live data                                                          */
 /* ------------------------------------------------------------------ */
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'n1',
-    type: 'render_complete',
-    title: 'Render complete',
-    subtitle: 'Hero entrance shot — 1080p export ready for download',
-    createdAt: '2026-04-09T09:45:00Z',
-    read: false,
-    actionLabel: 'View',
-    actionHref: '/shots/s1',
-  },
-  {
-    id: 'n2',
-    type: 'comment',
-    title: 'New comment on Scene 3',
-    subtitle: 'Alex: "Love the lighting here, can we keep this direction?"',
-    createdAt: '2026-04-09T09:20:00Z',
-    read: false,
-    actionLabel: 'Reply',
-    actionHref: '/shots/s1',
-  },
-  {
-    id: 'n3',
-    type: 'shot_approved',
-    title: 'Shot approved',
-    subtitle: 'Sunset fly-over establishing shot was approved by Director',
-    createdAt: '2026-04-09T08:00:00Z',
-    read: false,
-  },
-  {
-    id: 'n4',
-    type: 'member_joined',
-    title: 'New team member',
-    subtitle: 'Sarah Chen joined project Midnight Fable as Animator',
-    createdAt: '2026-04-08T16:30:00Z',
-    read: true,
-  },
-  {
-    id: 'n5',
-    type: 'render_failed',
-    title: 'Render failed',
-    subtitle: 'Chase sequence rooftop — GPU timeout after 12 minutes',
-    createdAt: '2026-04-08T14:00:00Z',
-    read: true,
-    actionLabel: 'Retry',
-    actionHref: '/renders',
-  },
-  {
-    id: 'n6',
-    type: 'marketplace_sale',
-    title: 'Marketplace sale',
-    subtitle: 'Magic particle FX pack purchased for $12.00',
-    createdAt: '2026-04-08T10:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n7',
-    type: 'credits_low',
-    title: 'Credits running low',
-    subtitle: 'You have 150 credits remaining. Top up to avoid interruptions.',
-    createdAt: '2026-04-07T09:00:00Z',
-    read: true,
-    actionLabel: 'Top up',
-    actionHref: '/settings',
-  },
-  {
-    id: 'n8',
-    type: 'export_ready',
-    title: 'Export ready',
-    subtitle: 'Product Launch Ad — MP4 1080p download ready',
-    createdAt: '2026-04-06T15:00:00Z',
-    read: true,
-    actionLabel: 'Download',
-    actionHref: '/exports',
-  },
-  {
-    id: 'n9',
-    type: 'render_complete',
-    title: 'Render complete',
-    subtitle: 'Close-up reaction shot — 4K export',
-    createdAt: '2026-04-05T12:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n10',
-    type: 'comment',
-    title: 'New comment on Timeline',
-    subtitle: 'Mike: "Can we adjust the timing on the transition?"',
-    createdAt: '2026-04-04T18:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n11',
-    type: 'shot_approved',
-    title: 'Shot approved',
-    subtitle: 'Forest background pan approved by Art Director',
-    createdAt: '2026-04-03T11:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n12',
-    type: 'render_complete',
-    title: 'Render complete',
-    subtitle: 'Opening sequence — batch render finished',
-    createdAt: '2026-04-02T16:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n13',
-    type: 'marketplace_sale',
-    title: 'Marketplace sale',
-    subtitle: 'Anime character template sold for $8.00',
-    createdAt: '2026-04-01T10:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n14',
-    type: 'member_joined',
-    title: 'New team member',
-    subtitle: 'Jordan Lee joined project Product Launch Ad',
-    createdAt: '2026-03-30T14:00:00Z',
-    read: true,
-  },
-  {
-    id: 'n15',
-    type: 'export_ready',
-    title: 'Export ready',
-    subtitle: 'Explainer video — WebM format',
-    createdAt: '2026-03-28T09:00:00Z',
-    read: true,
-    actionLabel: 'Download',
-    actionHref: '/exports',
-  },
-  {
-    id: 'n16',
-    type: 'credits_low',
-    title: 'Credits depleted',
-    subtitle: 'All credits used. Renders are paused.',
-    createdAt: '2026-03-25T08:00:00Z',
-    read: true,
-    actionLabel: 'Top up',
-    actionHref: '/settings',
-  },
-];
+/** One row of GET /api/users/me/notifications. */
+interface NotificationRow {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  actionUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+interface NotificationFeed {
+  items: NotificationRow[];
+  unread: number;
+}
+
+/**
+ * The Notification table stores a free-text `type`; this screen groups by a
+ * fixed set. An unrecognised type falls into "system" rather than being
+ * dropped, so a new event type is still visible.
+ */
+const KNOWN_TYPES = new Set<string>([
+  'render_complete',
+  'render_failed',
+  'shot_approved',
+  'comment',
+  'member_joined',
+  'marketplace_sale',
+  'credits_low',
+  'export_ready',
+]);
+
+function toNotification(row: NotificationRow): Notification {
+  const type = (KNOWN_TYPES.has(row.type) ? row.type : 'credits_low') as NotificationType;
+  return {
+    id: row.id,
+    type,
+    title: row.title,
+    subtitle: row.body ?? '',
+    createdAt: row.createdAt,
+    read: row.isRead,
+    actionHref: row.actionUrl ?? undefined,
+    actionLabel: row.actionUrl ? 'Open' : undefined,
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -260,7 +164,11 @@ function getDateGroup(dateStr: string): string {
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [page, setPage] = useState(1);
-  const [allNotifications, setAllNotifications] = useState(MOCK_NOTIFICATIONS);
+  const state = useResource<NotificationFeed>('/api/users/me/notifications');
+  const allNotifications = useMemo(
+    () => (state.data?.items ?? []).map(toNotification),
+    [state.data],
+  );
 
   // Filter
   const filtered = useMemo(() => {
@@ -289,15 +197,39 @@ export default function NotificationsPage() {
 
   const unreadCount = allNotifications.filter((n) => !n.read).length;
 
-  const handleMarkAllRead = () => {
-    setAllNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    fetch('/api/v1/notifications/mark-all-read', { method: 'POST' }).catch(() => {});
+  // Both used to update local state first and fire a request at
+  // /api/v1/notifications/* — a path that does not exist — swallowing the
+  // failure, so the list looked cleared until the next load.
+  const handleMarkAllRead = async () => {
+    const { error } = await mutate('/api/users/me/notifications', 'PATCH', { isRead: true });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    state.reload();
   };
 
-  const handleClearAll = () => {
-    setAllNotifications([]);
-    fetch('/api/v1/notifications/clear', { method: 'POST' }).catch(() => {});
+  const handleClearAll = async () => {
+    // Marking every notification read is the only bulk operation the API
+    // offers. There is no delete endpoint, so this no longer claims to clear.
+    await handleMarkAllRead();
   };
+
+  if (state.loading && state.data === null) {
+    return (
+      <div style={{ padding: 24 }}>
+        <LoadingState label="Loading notifications…" />
+      </div>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <div style={{ padding: 24 }}>
+        <ErrorState error={state.error} onRetry={state.reload} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

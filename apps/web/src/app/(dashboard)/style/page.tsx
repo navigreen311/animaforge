@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useRouter } from 'next/navigation';
 import {
   Palette,
@@ -67,62 +69,52 @@ interface DiscoveryResult {
 
 /* ── Sample Data ─────────────────────────────────────────────── */
 
-const STYLE_PACKS: StylePack[] = [
-  {
-    id: 'cyberpunk-neon',
-    title: 'Cyberpunk Neon',
-    description: 'Glowing neon edges, dark backgrounds',
-    gradientFrom: '#0f0a2e',
-    gradientTo: '#1a0a3e',
-    downloads: 12_840,
-    category: 'Digital',
-  },
-  {
-    id: 'watercolor-dream',
-    title: 'Watercolor Dream',
-    description: 'Soft watercolor strokes',
-    gradientFrom: '#0a1f0a',
-    gradientTo: '#0d2b0d',
-    downloads: 9_320,
-    category: 'Painterly',
-  },
-  {
-    id: 'anime-classic',
-    title: 'Anime Classic',
-    description: 'Clean line art, cel shading',
-    gradientFrom: '#1a0a2e',
-    gradientTo: '#2e0a1a',
-    downloads: 18_560,
-    category: 'Anime',
-  },
-  {
-    id: 'film-noir',
-    title: 'Film Noir',
-    description: 'High contrast, dramatic shadows',
-    gradientFrom: '#0a0a0f',
-    gradientTo: '#1a1a1a',
-    downloads: 7_150,
-    category: 'Cinematic',
-  },
-  {
-    id: 'pixel-retro',
-    title: 'Pixel Retro',
-    description: '8-bit style, sharp pixels',
-    gradientFrom: '#0a2e0a',
-    gradientTo: '#1a3e1a',
-    downloads: 5_980,
-    category: 'Digital',
-  },
-  {
-    id: 'oil-painting',
-    title: 'Oil Painting',
-    description: 'Rich textures, visible brushstrokes',
-    gradientFrom: '#2e1a0a',
-    gradientTo: '#3e2a1a',
-    downloads: 11_200,
-    category: 'Painterly',
-  },
+/** One row of GET /api/styles. */
+interface StylePackRow {
+  id: string;
+  name: string;
+  creatorId: string;
+  sourceUrl: string;
+  sourceType: string;
+  isPublic: boolean;
+  price: number | null;
+  fingerprint: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface StylePackList {
+  items: StylePackRow[];
+  total: number;
+}
+
+const PACK_GRADIENTS: Array<[string, string]> = [
+  ['#7c3aed', '#ec4899'],
+  ['#06b6d4', '#3b82f6'],
+  ['#f59e0b', '#ef4444'],
+  ['#10b981', '#06b6d4'],
 ];
+
+/**
+ * Map a style pack row to the library card.
+ *
+ * Downloads, ratings and tags are not modelled on StylePack, so they are left
+ * at zero/empty rather than filled with plausible numbers. The thumbnail is a
+ * deterministic gradient: there is no preview pipeline yet.
+ */
+function toPack(row: StylePackRow): StylePack {
+  const hash = row.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
+  const [from, to] = PACK_GRADIENTS[hash % PACK_GRADIENTS.length];
+  return {
+    id: row.id,
+    title: row.name,
+    description: `${row.sourceType} style pack`,
+    gradientFrom: from,
+    gradientTo: to,
+    category: row.sourceType,
+    downloads: 0,
+    isUserStyle: !row.isPublic,
+  };
+}
 
 const LIBRARY_CATEGORIES = [
   'All',
@@ -134,19 +126,29 @@ const LIBRARY_CATEGORIES = [
 ] as const;
 const SORT_OPTIONS = ['Most Popular', 'Newest', 'Highest Rated', 'Name A-Z'] as const;
 
-const MOCK_PROJECTS = [
-  { id: 'p1', name: 'Summer Campaign' },
-  { id: 'p2', name: 'Product Launch Video' },
-  { id: 'p3', name: 'Brand Story' },
-];
+/** One row of GET /api/projects. */
+interface ProjectRow {
+  id: string;
+  title: string;
+  status: string;
+}
 
-const MOCK_SHOTS = [
-  { id: 's1', name: 'Opening Title' },
-  { id: 's2', name: 'Hero Shot' },
-  { id: 's3', name: 'Interview A' },
-  { id: 's4', name: 'B-Roll Montage' },
-  { id: 's5', name: 'Closing CTA' },
-];
+interface ProjectList {
+  items: ProjectRow[];
+  total: number;
+}
+
+/**
+ * Shots of the selected project, for the "apply to shots" picker.
+ *
+ * There is no console endpoint that lists shots, so this picker cannot be
+ * populated yet. It renders empty with an explanation rather than offering
+ * shots that do not exist.
+ */
+interface ShotOption {
+  id: string;
+  name: string;
+}
 
 const STYLE_DETAILS: Record<
   string,
@@ -240,27 +242,6 @@ const CARTOON_PRESETS = ['Anime Standard', 'Classic Toon', 'Disney 24', 'Manga B
 const SHADING_MODES = ['Cel', 'Gradient', 'Hatching', 'Flat'] as const;
 const ANIMATION_STYLES = ['Snappy', 'Smooth', 'Elastic', 'Linear'] as const;
 const VISEME_STYLES = ['Anime', 'Western', 'Realistic', 'Simple'] as const;
-
-const MOCK_DISCOVERY_RESULTS: DiscoveryResult[] = [
-  {
-    id: 'd1',
-    title: 'Wes Anderson Palette',
-    description: 'Symmetrical, pastel tones, high saturation',
-    thumbnail: '#c4a882',
-  },
-  {
-    id: 'd2',
-    title: 'Vintage Film Look',
-    description: 'Warm grain, lifted blacks, faded highlights',
-    thumbnail: '#8b7355',
-  },
-  {
-    id: 'd3',
-    title: 'Clean Studio Style',
-    description: 'Crisp colors, even lighting, minimal grain',
-    thumbnail: '#5a7d9a',
-  },
-];
 
 const FINGERPRINT_COLORS = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#ffd460'];
 
@@ -383,7 +364,16 @@ export default function StyleStudioPage() {
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applyModalStyleId, setApplyModalStyleId] = useState<string | null>(null);
   const [applyTarget, setApplyTarget] = useState<'project' | 'shots'>('project');
-  const [applyProject, setApplyProject] = useState(MOCK_PROJECTS[0].id);
+  const packState = useResource<StylePackList>('/api/styles');
+  const projectState = useResource<ProjectList>('/api/projects?limit=100');
+  const stylePacks = useMemo(() => (packState.data?.items ?? []).map(toPack), [packState.data]);
+  const projects = useMemo(() => projectState.data?.items ?? [], [projectState.data]);
+  const shots: ShotOption[] = [];
+  const [applyProject, setApplyProject] = useState('');
+
+  useEffect(() => {
+    if (!applyProject && projects.length > 0) setApplyProject(projects[0].id);
+  }, [projects, applyProject]);
   const [applySelectedShots, setApplySelectedShots] = useState<Set<string>>(new Set());
   const [applyStrength, setApplyStrength] = useState(75);
   const [applyBlend, setApplyBlend] = useState(false);
@@ -467,8 +457,12 @@ export default function StyleStudioPage() {
 
   const handleDiscoverySearch = useCallback(() => {
     if (!discoveryQuery.trim()) return;
-    setDiscoveryResults(MOCK_DISCOVERY_RESULTS);
-    toast.info('Found 3 style references');
+    // Any query returned the same three named references ("Wes Anderson
+    // Palette" and friends) and announced "Found 3 style references". There is
+    // no reference search: nothing indexes styles by description and no service
+    // answers a text query with matches.
+    setDiscoveryResults([]);
+    toast.error('Style reference search is not available yet.');
   }, [discoveryQuery]);
 
   /* ── Library Handlers ─────────────────────────────────── */
@@ -486,16 +480,19 @@ export default function StyleStudioPage() {
     toast.success(appliedIds.has(id) ? 'Style removed' : 'Style applied');
   }
 
-  const filteredPacks = STYLE_PACKS.filter((p) => {
-    if (libraryCategory !== 'All' && p.category !== libraryCategory) return false;
-    if (librarySearch && !p.title.toLowerCase().includes(librarySearch.toLowerCase())) return false;
-    if (showMyStyles && !p.isUserStyle) return false;
-    return true;
-  }).sort((a, b) => {
-    if (librarySort === 'Popular') return b.downloads - a.downloads;
-    if (librarySort === 'Name A-Z') return a.title.localeCompare(b.title);
-    return 0;
-  });
+  const filteredPacks = stylePacks
+    .filter((p) => {
+      if (libraryCategory !== 'All' && p.category !== libraryCategory) return false;
+      if (librarySearch && !p.title.toLowerCase().includes(librarySearch.toLowerCase()))
+        return false;
+      if (showMyStyles && !p.isUserStyle) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (librarySort === 'Popular') return b.downloads - a.downloads;
+      if (librarySort === 'Name A-Z') return a.title.localeCompare(b.title);
+      return 0;
+    });
 
   /* ── Progress Label ────────────────────────────────────── */
 
@@ -2711,7 +2708,7 @@ export default function StyleStudioPage() {
                 <p
                   style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
                 >
-                  Apply Style: {STYLE_PACKS.find((p) => p.id === applyModalStyleId)?.title}
+                  Apply Style: {stylePacks.find((p) => p.id === applyModalStyleId)?.title}
                 </p>
                 <button
                   type="button"
@@ -2773,9 +2770,9 @@ export default function StyleStudioPage() {
                   onChange={(e) => setApplyProject(e.target.value)}
                   style={{ ...inputStyle, cursor: 'pointer' }}
                 >
-                  {MOCK_PROJECTS.map((proj) => (
+                  {projects.map((proj) => (
                     <option key={proj.id} value={proj.id}>
-                      {proj.name}
+                      {proj.title}
                     </option>
                   ))}
                 </select>
@@ -2786,7 +2783,7 @@ export default function StyleStudioPage() {
                 <div>
                   <p style={labelStyle}>Shots</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {MOCK_SHOTS.map((shot) => {
+                    {shots.map((shot) => {
                       const isSelected = applySelectedShots.has(shot.id);
                       return (
                         <label
@@ -2873,8 +2870,8 @@ export default function StyleStudioPage() {
               <button
                 type="button"
                 onClick={() => {
-                  const styleName = STYLE_PACKS.find((p) => p.id === applyModalStyleId)?.title;
-                  const projectName = MOCK_PROJECTS.find((p) => p.id === applyProject)?.name;
+                  const styleName = stylePacks.find((p) => p.id === applyModalStyleId)?.title;
+                  const projectName = projects.find((p) => p.id === applyProject)?.title;
                   if (applyTarget === 'shots' && applySelectedShots.size === 0) {
                     toast.error('Select at least one shot');
                     return;
@@ -2900,7 +2897,7 @@ export default function StyleStudioPage() {
       <AnimatePresence>
         {detailPanelStyleId &&
           (() => {
-            const pack = STYLE_PACKS.find((p) => p.id === detailPanelStyleId);
+            const pack = stylePacks.find((p) => p.id === detailPanelStyleId);
             const details = STYLE_DETAILS[detailPanelStyleId];
             if (!pack || !details) return null;
             return (

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useResource, mutate } from '@/lib/api/useResource';
 import { useParams } from 'next/navigation';
 import ColorPicker from '@/components/brand/ColorPicker';
 import TypographyEditor, { type TypographyConfig } from '@/components/brand/TypographyEditor';
@@ -60,8 +62,24 @@ const DEFAULT_TEMPLATES: BrandTemplate[] = [
   },
 ];
 
+/** projects.brand_kit, as stored. */
+interface StoredBrandKit {
+  colors?: Record<string, string>;
+  typography?: TypographyConfig;
+  logo?: LogoConfig;
+  sonic?: SonicConfig;
+  watermark?: WatermarkConfig;
+}
+
 export default function BrandKitPage() {
   const params = useParams<{ id: string }>();
+
+  // The editor opened on a fixed default palette for every project and never
+  // read back what had been saved, because the save posted to /api/v1/... on
+  // the web origin -- a path with no route behind it -- inside a try/catch that
+  // swallowed the 404. It now loads and saves through the console's own proxy
+  // routes.
+  const kitState = useResource<StoredBrandKit>(`/api/projects/${params.id}/brand-kit`, [params.id]);
 
   const [activeTab, setActiveTab] = useState<Tab>('colors');
   const [saving, setSaving] = useState(false);
@@ -110,23 +128,34 @@ export default function BrandKitPage() {
   const [templates] = useState<BrandTemplate[]>(DEFAULT_TEMPLATES);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
 
+  // Seed the editor from the stored kit once it arrives.
+  useEffect(() => {
+    const kit = kitState.data;
+    if (!kit) return;
+    if (kit.colors) setColors((prev) => ({ ...prev, ...kit.colors }));
+    if (kit.typography) setTypography(kit.typography);
+    if (kit.logo) setLogo(kit.logo);
+    if (kit.sonic) setSonic(kit.sonic);
+    if (kit.watermark) setWatermark(kit.watermark);
+  }, [kitState.data]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch(`/api/v1/projects/${params.id}/brand-kit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          colors,
-          logo,
-          typography,
-          sonic,
-          watermark: { ...watermark },
-          templates: templates.map((t) => ({ ...t, snapshot: {} })),
-        }),
+      await mutate(`/api/projects/${params.id}/brand-kit`, 'PUT', {
+        colors,
+        logo,
+        typography,
+        sonic,
+        watermark: { ...watermark },
+        templates: templates.map((t) => ({ ...t, snapshot: {} })),
       });
-    } catch {
-      // Silently handle — would wire up toast notifications in production
+      toast.success('Brand kit saved.');
+      kitState.reload();
+    } catch (err) {
+      // This used to fail silently, so a save that never reached a route still
+      // looked like it worked.
+      toast.error(err instanceof Error ? err.message : 'Could not save the brand kit.');
     } finally {
       setSaving(false);
     }
@@ -134,32 +163,31 @@ export default function BrandKitPage() {
 
   const handleValidate = async () => {
     try {
-      const res = await fetch(`/api/v1/projects/${params.id}/brand-kit/validate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ outputUrl: 'mock://preview-output' }),
-      });
-      const data = await res.json();
-      alert(
+      // The old call passed outputUrl: 'mock://preview-output' -- a scheme
+      // nothing can fetch -- so whatever came back was a verdict on nothing.
+      // There is no rendered output selected on this screen to check against.
+      const data = (await mutate(`/api/projects/${params.id}/brand-kit/validate`, 'POST', {
+        outputUrl: '',
+      })) as { compliant?: boolean; violations?: { message: string }[] };
+      toast[data.compliant ? 'success' : 'error'](
         data.compliant
-          ? 'Brand is compliant!'
-          : `Violations: ${data.violations.map((v: { message: string }) => v.message).join(', ')}`,
+          ? 'Brand is compliant.'
+          : `Violations: ${(data.violations ?? []).map((v) => v.message).join(', ')}`,
       );
-    } catch {
-      // Handle error
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not validate the brand kit.');
     }
   };
 
   const handleGenerateGuide = async () => {
     try {
-      const res = await fetch(`/api/v1/projects/${params.id}/brand-kit/guide`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      alert(`Brand guide generated: ${data.guideUrl}`);
-    } catch {
-      // Handle error
+      const data = (await mutate(`/api/projects/${params.id}/brand-kit/guide`, 'POST', {})) as {
+        guideUrl?: string;
+      };
+      if (data.guideUrl) toast.success(`Brand guide generated: ${data.guideUrl}`);
+      else toast.error('The brand guide came back without a URL.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not generate a brand guide.');
     }
   };
 

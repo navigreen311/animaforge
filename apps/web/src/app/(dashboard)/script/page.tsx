@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
 import { useRouter } from 'next/navigation';
 import {
   Sparkles,
@@ -54,17 +55,43 @@ const CAMERA_TYPES = [
 
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 8, 10, 15] as const;
 
-const MOCK_PROJECTS = [
-  { id: 'proj-1', title: 'Neo-Tokyo Cyberpunk', status: 'In Progress', color: '#facc15' },
-  { id: 'proj-2', title: 'Nature Documentary S2', status: 'Active', color: '#4ade80' },
-  { id: 'proj-3', title: 'Brand Ad - Summer Campaign', status: 'Draft', color: '#94a3b8' },
-];
+/** One row of GET /api/projects. */
+interface ProjectRow {
+  id: string;
+  title: string;
+  status: string;
+}
 
-const MOCK_VERSIONS = [
-  { id: 'v3', label: 'Current', timestamp: new Date() },
-  { id: 'v2', label: 'Auto-save', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-  { id: 'v1', label: 'Initial draft', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-];
+interface ProjectList {
+  items: ProjectRow[];
+  total: number;
+}
+
+/** A colour per status, so the dot means something rather than being stored. */
+const STATUS_COLOR: Record<string, string> = {
+  active: '#4ade80',
+  in_progress: '#facc15',
+  draft: '#94a3b8',
+  archived: '#64748b',
+  deleted: '#ef4444',
+};
+
+function projectColor(status: string): string {
+  return STATUS_COLOR[status] ?? '#94a3b8';
+}
+
+/**
+ * Script version history.
+ *
+ * There is no version table: a Script row holds one body with a single
+ * updatedAt, so the only honest history is "current". The panel shows that one
+ * entry rather than three invented snapshots that no revert could restore.
+ */
+interface ScriptVersion {
+  id: string;
+  label: string;
+  timestamp: Date;
+}
 
 const EXPORT_OPTIONS = [
   { label: 'PDF', icon: FileText },
@@ -226,7 +253,25 @@ export default function ScriptPage() {
   /* Top bar state */
   const [scriptTitle, setScriptTitle] = useState('Untitled Script');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<string | null>(MOCK_PROJECTS[0].id);
+  const projectState = useResource<ProjectList>('/api/projects?limit=100');
+  const projects = useMemo(() => projectState.data?.items ?? [], [projectState.data]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  const scriptState = useResource<{
+    items: Array<{ id: string; title: string; updatedAt: string }>;
+  }>('/api/scripts?limit=50');
+
+  // Only "current" exists; see ScriptVersion.
+  const versions: ScriptVersion[] = useMemo(() => {
+    const latest = scriptState.data?.items?.[0];
+    return latest
+      ? [{ id: latest.id, label: 'Current', timestamp: new Date(latest.updatedAt) }]
+      : [];
+  }, [scriptState.data]);
+
+  useEffect(() => {
+    if (!selectedProject && projects.length > 0) setSelectedProject(projects[0].id);
+  }, [projects, selectedProject]);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -537,11 +582,12 @@ export default function ScriptPage() {
                   <span
                     className="inline-block h-2 w-2 rounded-full"
                     style={{
-                      backgroundColor:
-                        MOCK_PROJECTS.find((p) => p.id === selectedProject)?.color || '#94a3b8',
+                      backgroundColor: projectColor(
+                        projects.find((p) => p.id === selectedProject)?.status ?? '',
+                      ),
                     }}
                   />
-                  {MOCK_PROJECTS.find((p) => p.id === selectedProject)?.title}
+                  {projects.find((p) => p.id === selectedProject)?.title ?? 'No project selected'}
                 </>
               ) : (
                 <span style={{ color: 'var(--text-tertiary)' }}>No project</span>
@@ -596,47 +642,50 @@ export default function ScriptPage() {
                   </div>
                 </div>
                 {/* Project list */}
-                {MOCK_PROJECTS.filter((p) =>
-                  p.title.toLowerCase().includes(projectSearch.toLowerCase()),
-                ).map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setSelectedProject(p.id);
-                      setShowProjectDropdown(false);
-                      setProjectSearch('');
-                      toast.success(`Assigned to ${p.title}`);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
-                    style={{
-                      color:
-                        p.id === selectedProject ? 'var(--brand-light)' : 'var(--text-primary)',
-                      backgroundColor:
-                        p.id === selectedProject ? 'var(--brand-dim)' : 'transparent',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (p.id !== selectedProject)
-                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (p.id !== selectedProject)
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ backgroundColor: p.color }}
-                    />
-                    <span className="flex-1">{p.title}</span>
-                    <span
-                      className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
-                      style={{ backgroundColor: `${p.color}22`, color: p.color }}
+                {projects
+                  .filter((p) => p.title.toLowerCase().includes(projectSearch.toLowerCase()))
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedProject(p.id);
+                        setShowProjectDropdown(false);
+                        setProjectSearch('');
+                        toast.success(`Assigned to ${p.title}`);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors"
+                      style={{
+                        color:
+                          p.id === selectedProject ? 'var(--brand-light)' : 'var(--text-primary)',
+                        backgroundColor:
+                          p.id === selectedProject ? 'var(--brand-dim)' : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (p.id !== selectedProject)
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (p.id !== selectedProject)
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
-                      {p.status}
-                    </span>
-                    {p.id === selectedProject && <Check size={12} />}
-                  </button>
-                ))}
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: projectColor(p.status) }}
+                      />
+                      <span className="flex-1">{p.title}</span>
+                      <span
+                        className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
+                        style={{
+                          backgroundColor: `${projectColor(p.status)}22`,
+                          color: projectColor(p.status),
+                        }}
+                      >
+                        {p.status}
+                      </span>
+                      {p.id === selectedProject && <Check size={12} />}
+                    </button>
+                  ))}
                 {/* Create new project */}
                 <div className="border-t" style={{ borderColor: 'var(--border)' }}>
                   <UnavailableButton
@@ -1542,7 +1591,7 @@ export default function ScriptPage() {
 
               {/* Version list */}
               <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
-                {MOCK_VERSIONS.map((version, idx) => (
+                {versions.map((version, idx) => (
                   <div
                     key={version.id}
                     className="rounded-lg border p-3"

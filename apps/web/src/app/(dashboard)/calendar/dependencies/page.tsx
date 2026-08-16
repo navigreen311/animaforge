@@ -1,246 +1,113 @@
 'use client';
 
-import React, { useState } from 'react';
-import { GitBranch, ChevronDown, AlertTriangle, Zap } from 'lucide-react';
-import DependencyGraph, { MOCK_TASKS, CRITICAL_PATH } from '@/components/calendar/DependencyGraph';
+import React from 'react';
+import { GitBranch } from 'lucide-react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
-const PROJECTS = ['Project Aurora', 'Project Nova', 'Short Film: Echoes'];
+/**
+ * Task dependencies.
+ *
+ * The graph this page used to draw came from `MOCK_TASKS` and `CRITICAL_PATH`
+ * inside DependencyGraph: ten named tasks with owners, durations, statuses and
+ * a hand-written critical path, plus a three-project picker.
+ *
+ * `task_dependencies` is real and holds the edges — from_task_id, to_task_id,
+ * type. What it does not have is nodes: there is no task table anywhere in the
+ * schema, so the ids on either end of an edge resolve to nothing. Without a
+ * name, a duration or a status per node there is no box to draw, no lane to put
+ * it in and no critical path to compute (a critical path is the longest
+ * duration-weighted chain, and there are no durations).
+ *
+ * So this lists the edges that exist and says what is missing, instead of
+ * rendering a graph of invented tasks.
+ */
+
+interface DependencyRow {
+  id: string;
+  fromTaskId: string;
+  toTaskId: string;
+  type: string;
+  createdAt: string;
+}
+
+const cardStyle: React.CSSProperties = {
+  background: 'var(--surface, #0f0f14)',
+  border: '1px solid var(--border, #26263a)',
+  borderRadius: 12,
+  padding: 16,
+};
+
+const monospace = 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)';
 
 export default function DependenciesPage() {
-  const [project, setProject] = useState(PROJECTS[0]);
-
-  const criticalTasks = MOCK_TASKS.filter((t) => CRITICAL_PATH.has(t.id));
-  const blockedTasks = MOCK_TASKS.filter((t) => t.status === 'blocked');
-  const totalCriticalDays = criticalTasks.reduce((s, t) => s + t.durationDays, 0);
+  const state = useResource<{ items: DependencyRow[] }>('/api/calendar/dependencies');
+  const edges = state.data?.items ?? [];
 
   return (
     <div style={{ padding: 24 }}>
-      {/* Header */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <GitBranch size={24} color="var(--accent, #a855f7)" />
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 22,
-              color: 'var(--text, #f1f5f9)',
-            }}
-          >
-            Task Dependencies
-          </h1>
-        </div>
-        <label
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 14px',
-            background: 'var(--surface-elevated, #17172b)',
-            border: '1px solid var(--border, #26263a)',
-            borderRadius: 8,
-            color: 'var(--text, #f1f5f9)',
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{ color: 'var(--text-muted, #94a3b8)' }}>Project:</span>
-          <select
-            value={project}
-            onChange={(e) => setProject(e.target.value)}
-            aria-label="Project filter"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text, #f1f5f9)',
-              fontSize: 13,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            {PROJECTS.map((p) => (
-              <option key={p} value={p} style={{ background: '#17172b' }}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} />
-        </label>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <GitBranch size={24} color="var(--accent, #a855f7)" />
+        <h1 style={{ margin: 0, fontSize: 22, color: 'var(--text, #f1f5f9)' }}>
+          Task Dependencies
+        </h1>
       </header>
 
-      {/* Content */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0,1fr) 280px',
-          gap: 20,
-        }}
-      >
-        <DependencyGraph />
+      {state.loading && <LoadingState label="Loading dependencies" />}
+      {!state.loading && state.error && <ErrorState error={state.error} onRetry={state.reload} />}
 
-        <aside
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          {/* Critical path */}
-          <section
-            style={{
-              background: 'var(--surface, #0f0f14)',
-              border: '1px solid var(--border, #26263a)',
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <div
+      {!state.loading && !state.error && (
+        <section style={cardStyle}>
+          <h2 style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text, #f1f5f9)' }}>
+            Edges ({edges.length})
+          </h2>
+
+          {edges.length === 0 ? (
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted, #94a3b8)' }}>
+              No dependencies recorded.
+            </p>
+          ) : (
+            <table
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <Zap size={16} color="#ef4444" />
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  color: 'var(--text, #f1f5f9)',
-                }}
-              >
-                Critical Path
-              </h2>
-            </div>
-            <div
-              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
                 fontSize: 12,
-                color: 'var(--text-muted, #94a3b8)',
-                marginBottom: 10,
+                color: 'var(--text, #f1f5f9)',
               }}
             >
-              {criticalTasks.length} tasks · {totalCriticalDays} days total
-            </div>
-            <ol
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-              }}
-            >
-              {criticalTasks.map((t, i) => (
-                <li
-                  key={t.id}
+              <thead>
+                <tr
                   style={{
-                    fontSize: 12,
-                    padding: '6px 10px',
-                    background: 'var(--surface-elevated, #17172b)',
-                    borderLeft: '3px solid #ef4444',
-                    borderRadius: 4,
-                    color: 'var(--text, #f1f5f9)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
+                    textAlign: 'left',
+                    color: 'var(--text-muted, #94a3b8)',
+                    fontSize: 11,
+                    textTransform: 'uppercase',
                   }}
                 >
-                  <span>
-                    {i + 1}. {t.name}
-                  </span>
-                  <span style={{ color: 'var(--text-muted, #94a3b8)' }}>{t.durationDays}d</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {/* Blocked tasks */}
-          <section
-            style={{
-              background: 'var(--surface, #0f0f14)',
-              border: '1px solid var(--border, #26263a)',
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <AlertTriangle size={16} color="#ef4444" />
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  color: 'var(--text, #f1f5f9)',
-                }}
-              >
-                Blocked Tasks
-              </h2>
-            </div>
-            {blockedTasks.length === 0 ? (
-              <p
-                style={{
-                  fontSize: 12,
-                  color: 'var(--text-muted, #94a3b8)',
-                  margin: 0,
-                }}
-              >
-                No blocked tasks.
-              </p>
-            ) : (
-              <ul
-                style={{
-                  listStyle: 'none',
-                  margin: 0,
-                  padding: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                {blockedTasks.map((t) => (
-                  <li
-                    key={t.id}
-                    style={{
-                      fontSize: 12,
-                      padding: 10,
-                      background: 'rgba(239,68,68,0.08)',
-                      border: '1px solid rgba(239,68,68,0.3)',
-                      borderRadius: 6,
-                      color: 'var(--text, #f1f5f9)',
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>{t.name}</div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--text-muted, #94a3b8)',
-                        marginTop: 4,
-                      }}
-                    >
-                      Owner: {t.owner} · Due {t.dueDate}
-                    </div>
-                  </li>
+                  <th style={{ padding: '6px 8px' }}>From</th>
+                  <th style={{ padding: '6px 8px' }}>To</th>
+                  <th style={{ padding: '6px 8px' }}>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {edges.map((e) => (
+                  <tr key={e.id} style={{ borderTop: '1px solid var(--border, #26263a)' }}>
+                    <td style={{ padding: 8, fontFamily: monospace }}>{e.fromTaskId}</td>
+                    <td style={{ padding: 8, fontFamily: monospace }}>{e.toTaskId}</td>
+                    <td style={{ padding: 8 }}>{e.type}</td>
+                  </tr>
                 ))}
-              </ul>
-            )}
-          </section>
-        </aside>
-      </div>
+              </tbody>
+            </table>
+          )}
+
+          <p style={{ margin: '14px 0 0', fontSize: 11, color: 'var(--text-muted, #94a3b8)' }}>
+            Shown as ids: dependencies point at tasks, but the schema has no task table, so there is
+            no name, owner, duration or status to resolve them to — and no critical path to compute
+            without durations.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useParams } from 'next/navigation';
 import ReviewCard, { type ReviewShot } from '@/components/review/ReviewCard';
 import CommentThread from '@/components/review/CommentThread';
@@ -9,30 +12,21 @@ import type { BadgeStatus } from '@/components/shared/Badge';
 
 type FilterStatus = 'all' | 'review' | 'approved' | 'draft';
 
-const mockShots: ReviewShot[] = [
-  { id: 's1', shotNumber: 1, scene: 'INT-01', duration: '4.2s', status: 'review', commentCount: 3 },
-  {
-    id: 's2',
-    shotNumber: 2,
-    scene: 'INT-01',
-    duration: '3.8s',
-    status: 'approved',
-    commentCount: 1,
-  },
-  { id: 's3', shotNumber: 3, scene: 'EXT-02', duration: '6.1s', status: 'draft', commentCount: 0 },
-  { id: 's4', shotNumber: 4, scene: 'EXT-02', duration: '2.9s', status: 'review', commentCount: 5 },
-  { id: 's5', shotNumber: 5, scene: 'INT-03', duration: '5.5s', status: 'review', commentCount: 2 },
-  { id: 's6', shotNumber: 6, scene: 'INT-03', duration: '4.0s', status: 'locked', commentCount: 4 },
-  { id: 's7', shotNumber: 7, scene: 'EXT-04', duration: '3.3s', status: 'draft', commentCount: 0 },
-  {
-    id: 's8',
-    shotNumber: 8,
-    scene: 'EXT-04',
-    duration: '7.1s',
-    status: 'approved',
-    commentCount: 2,
-  },
-];
+/** One row of GET /api/projects/[id]/reviews. */
+interface ReviewRow {
+  id: string;
+  shotId: string;
+  projectId: string;
+  reviewerName: string;
+  action: string;
+  comment: string | null;
+  createdAt: string;
+}
+
+interface ReviewList {
+  items: ReviewRow[];
+  total: number;
+}
 
 const FILTERS: { value: FilterStatus; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -44,18 +38,51 @@ const FILTERS: { value: FilterStatus; label: string }[] = [
 export default function ReviewPage() {
   const params = useParams<{ id: string }>();
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const [shots, setShots] = useState<ReviewShot[]>(mockShots);
+  const state = useResource<ReviewList>(`/api/projects/${params.id}/reviews`, [params.id]);
+
+  /**
+   * Reviews are one row per decision, so group them by shot: the shot's status
+   * is its latest action and the comment count is how many carried a comment.
+   */
+  const shots: ReviewShot[] = useMemo(() => {
+    const byShot = new Map<string, ReviewRow[]>();
+    for (const row of state.data?.items ?? []) {
+      const list = byShot.get(row.shotId) ?? [];
+      list.push(row);
+      byShot.set(row.shotId, list);
+    }
+    return [...byShot.entries()].map(([shotId, rows], i) => {
+      const latest = rows[0];
+      // BadgeStatus has no "rejected": a rejected shot goes back to draft,
+      // which is what the shot pipeline does with one.
+      const status: BadgeStatus =
+        latest.action === 'approve' ? 'approved' : latest.action === 'reject' ? 'draft' : 'review';
+      return {
+        id: shotId,
+        shotNumber: i + 1,
+        // The review row records the shot id, not its scene; there is no join
+        // to a scene name here, so it is left blank rather than made up.
+        scene: '',
+        duration: '',
+        status,
+        commentCount: rows.filter((r) => r.comment).length,
+      };
+    });
+  }, [state.data]);
   const [commentShotId, setCommentShotId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const filtered = filter === 'all' ? shots : shots.filter((s) => s.status === filter);
 
-  const updateStatus = (id: string, status: BadgeStatus) => {
-    setShots((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+  // Reviews are submitted through the shared review link, not from this screen:
+  // there is no endpoint to record an approval here, so these report that
+  // rather than repainting a badge that no reload would keep.
+  const updateStatus = (_id: string, _status: BadgeStatus) => {
+    toast.error('Approving from this page is not wired up yet — use the review link.');
   };
 
-  const bulkUpdate = (status: BadgeStatus) => {
-    setShots((prev) => prev.map((s) => (selectedIds.has(s.id) ? { ...s, status } : s)));
+  const bulkUpdate = (_status: BadgeStatus) => {
+    toast.error('Bulk approval is not wired up yet — use the review link.');
     setSelectedIds(new Set());
   };
 

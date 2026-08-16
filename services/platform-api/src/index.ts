@@ -40,6 +40,7 @@ import consoleProductionRouter from './routes/console/production.js';
 import consoleTeamRouter from './routes/console/team.js';
 import consoleMarketRouter from './routes/console/market.js';
 import consoleInsightsRouter from './routes/console/insights.js';
+import consoleDiscoveryRouter from './routes/console/discovery.js';
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use('/api/v1', consoleProductionRouter);
 app.use('/api/v1', consoleTeamRouter);
 app.use('/api/v1', consoleMarketRouter);
 app.use('/api/v1', consoleInsightsRouter);
+app.use('/api/v1', consoleDiscoveryRouter);
 app.use('/api/v1', metricsRouter());
 
 // Global error handler (must be registered after routes)

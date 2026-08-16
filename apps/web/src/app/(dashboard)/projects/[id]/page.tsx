@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Badge, { type BadgeStatus } from '@/components/shared/Badge';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 interface Tab {
   id: string;
@@ -24,17 +26,34 @@ interface ProjectData {
   description: string;
 }
 
-const mockProject: ProjectData = {
-  title: 'Cyber Samurai: Origin',
-  status: 'generating',
-  description:
-    'A cyberpunk short film following a ronin through neon-lit streets of Neo-Tokyo in 2087.',
-};
+/** GET /api/projects/[id]. */
+interface ProjectRow {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+}
+
+const BADGE_STATUSES: BadgeStatus[] = ['draft', 'generating', 'review', 'approved', 'locked'];
+
+function toProjectData(row: ProjectRow): ProjectData {
+  return {
+    title: row.title,
+    // projects.status is a free-form string; anything the badge does not know
+    // falls back to draft rather than being displayed as a status that is not
+    // one.
+    status: BADGE_STATUSES.includes(row.status as BadgeStatus)
+      ? (row.status as BadgeStatus)
+      : 'draft',
+    description: row.description ?? '',
+  };
+}
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('timeline');
-  const project = mockProject;
+  const state = useResource<ProjectRow>(`/api/projects/${params.id}`, [params.id]);
+  const project = state.data ? toProjectData(state.data) : null;
 
   const tabPlaceholders: Record<string, { icon: string; title: string; desc: string }> = {
     timeline: {
@@ -70,6 +89,10 @@ export default function ProjectDetailPage() {
   };
 
   const current = tabPlaceholders[activeTab];
+
+  if (state.loading) return <LoadingState label="Loading project" />;
+  if (state.error) return <ErrorState error={state.error} onRetry={state.reload} />;
+  if (!project) return <ErrorState error={{ code: 'NOT_FOUND', message: 'No such project.' }} />;
 
   return (
     <div>

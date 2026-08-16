@@ -3,15 +3,36 @@
 import Link from 'next/link';
 import { ChevronRight, GitBranch, FileText } from 'lucide-react';
 import BranchingNarrativeEditor from '@/components/live/BranchingNarrativeEditor';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
-const SAVED_NARRATIVES = [
-  { id: 'n1', name: 'Midnight Mystery', scenes: 8, updatedAt: '2h ago' },
-  { id: 'n2', name: 'Cooking Show Pilot', scenes: 5, updatedAt: '1d ago' },
-  { id: 'n3', name: 'Interactive Q&A', scenes: 12, updatedAt: '3d ago' },
-  { id: 'n4', name: 'Choose Your Ending', scenes: 6, updatedAt: '1w ago' },
-];
+/**
+ * One narrative, as GET /api/live/narratives returns it.
+ *
+ * A narrative is not a table: it is the set of branching_scenes sharing a
+ * narrative_id, grouped server-side. That is why there is an id and a scene
+ * count but no name -- nothing stores one.
+ */
+interface NarrativeRow {
+  narrativeId: string;
+  sceneCount: number;
+  updatedAt: string | null;
+}
+
+function relativeTime(iso: string | null): string {
+  if (!iso) return 'never';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diff / 60_000);
+  if (mins < 60) return `${Math.max(mins, 0)}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
 
 export default function BranchingNarrativesPage() {
+  const state = useResource<{ items: NarrativeRow[] }>('/api/live/narratives');
+  const narratives = state.data?.items ?? [];
+
   return (
     <div style={{ padding: 24, color: 'var(--fg, #e5e7eb)' }}>
       <nav
@@ -81,8 +102,15 @@ export default function BranchingNarrativesPage() {
               gap: 6,
             }}
           >
-            {SAVED_NARRATIVES.map((n) => (
-              <li key={n.id}>
+            {state.loading && <LoadingState label="Loading narratives" />}
+            {!state.loading && state.error && (
+              <ErrorState error={state.error} onRetry={state.reload} />
+            )}
+            {!state.loading && !state.error && narratives.length === 0 && (
+              <li style={{ fontSize: 12, color: 'var(--muted, #9ca3af)' }}>No narratives yet.</li>
+            )}
+            {narratives.map((n) => (
+              <li key={n.narrativeId}>
                 <button
                   style={{
                     width: '100%',
@@ -100,9 +128,9 @@ export default function BranchingNarrativesPage() {
                 >
                   <FileText size={14} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13 }}>{n.name}</div>
+                    <div style={{ fontSize: 13 }}>{n.narrativeId}</div>
                     <div style={{ fontSize: 11, color: 'var(--muted, #9ca3af)' }}>
-                      {n.scenes} scenes | {n.updatedAt}
+                      {n.sceneCount} scenes | {relativeTime(n.updatedAt)}
                     </div>
                   </div>
                 </button>

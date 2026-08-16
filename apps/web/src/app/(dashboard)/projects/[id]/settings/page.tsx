@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { useResource, mutate } from '@/lib/api/useResource';
 
 /* ------------------------------------------------------------------ */
 /*  Mock data                                                         */
@@ -21,47 +23,36 @@ interface Character {
   description: string;
 }
 
-const mockProject = {
-  name: 'Neon Odyssey',
-  description:
-    'A cyberpunk short film exploring the boundary between human consciousness and AI sentience in a rain-soaked megacity.',
-  type: 'short-film' as const,
-  aspectRatio: '16:9' as const,
-  duration: 180,
-  thumbnail: null as string | null,
-  brandKitId: 'bk-1',
-};
+/** GET /api/projects/[id]. */
+interface ProjectRow {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  phase: string;
+  worldBible: WorldBible | null;
+  brandKit: Record<string, unknown> | null;
+}
 
-const mockTeam: TeamMember[] = [
-  { id: 't1', name: 'Alex Chen', email: 'alex@studio.io', role: 'owner', avatar: 'AC' },
-  { id: 't2', name: 'Maya Patel', email: 'maya@studio.io', role: 'editor', avatar: 'MP' },
-  { id: 't3', name: 'Jordan Lee', email: 'jordan@studio.io', role: 'reviewer', avatar: 'JL' },
-  { id: 't4', name: 'Sam Rivera', email: 'sam@studio.io', role: 'viewer', avatar: 'SR' },
-];
+/**
+ * The world bible, as stored.
+ *
+ * projects.world_bible is an open JSON column, which is where the characters,
+ * rules, constraints and drift list on this tab live. They used to be four
+ * literals -- a cyberpunk short with named characters -- shown for every
+ * project regardless of which one was open.
+ */
+interface WorldBible {
+  characters?: Character[];
+  worldRules?: string;
+  constraints?: string[];
+  forbiddenDrift?: string[];
+}
 
-const mockCharacters: Character[] = [
-  {
-    id: 'c1',
-    name: 'Kai',
-    description: 'Rogue hacker with cybernetic left arm; wears a tattered grey hoodie',
-  },
-  {
-    id: 'c2',
-    name: 'Nova',
-    description: 'AI entity manifesting as flickering holographic silhouette, blue-white glow',
-  },
-  {
-    id: 'c3',
-    name: 'Director Voss',
-    description: 'Corporate antagonist, sharp suit, chrome eye implant',
-  },
-];
-
-const mockBrandKits = [
-  { id: 'bk-1', name: 'Neon Studio Default' },
-  { id: 'bk-2', name: 'Client — Omnicorp' },
-  { id: 'bk-3', name: 'Minimalist Mono' },
-];
+interface BrandKitRow {
+  id: string;
+  name: string;
+}
 
 type Tab = 'general' | 'worldBible' | 'access' | 'brandKit' | 'danger';
 
@@ -95,45 +86,40 @@ export default function SettingsPage() {
   const params = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('general');
 
+  const projectState = useResource<ProjectRow>(`/api/projects/${params.id}`, [params.id]);
+  const project = projectState.data;
+  const kitState = useResource<{ items: BrandKitRow[] }>('/api/brand-kits');
+  const brandKits = kitState.data?.items ?? [];
+  const [saving, setSaving] = useState(false);
+
   // General
-  const [name, setName] = useState(mockProject.name);
-  const [description, setDescription] = useState(mockProject.description);
-  // Without the explicit parameter, useState infers the literal type of
-  // mockProject.type ("short-film"), so the setter rejects every other option
-  // the select can produce.
-  const [projectType, setProjectType] = useState<ProjectType>(mockProject.type as ProjectType);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(
-    mockProject.aspectRatio as AspectRatio,
-  );
-  const [duration, setDuration] = useState(mockProject.duration);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  // Type, aspect ratio and duration have no column on projects. They are kept
+  // as local pickers so the form still works, but "Save changes" cannot persist
+  // them and says so rather than reporting a save that stored two of five
+  // fields.
+  const [projectType, setProjectType] = useState<ProjectType>('short-film');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
+  const [duration, setDuration] = useState(0);
 
   // World Bible
-  const [characters, setCharacters] = useState<Character[]>(mockCharacters);
-  const [worldRules, setWorldRules] = useState(
-    'Rain never stops. Neon signage is in Japanese and English. Tech level: 2087. No magic — all abilities are cybernetic.',
-  );
-  const [constraints, setConstraints] = useState<string[]>([
-    'Kai always wears grey hoodie',
-    'Nova never touches physical objects',
-    'Night-only scenes — no daylight',
-  ]);
-  const [forbiddenDrift, setForbiddenDrift] = useState<string[]>([
-    'No fantasy creatures',
-    'No modern-day vehicles',
-    'No bright pastel color palettes',
-  ]);
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [worldRules, setWorldRules] = useState('');
+  const [constraints, setConstraints] = useState<string[]>([]);
+  const [forbiddenDrift, setForbiddenDrift] = useState<string[]>([]);
   const [newConstraint, setNewConstraint] = useState('');
   const [newForbidden, setNewForbidden] = useState('');
   const [newCharName, setNewCharName] = useState('');
   const [newCharDesc, setNewCharDesc] = useState('');
 
   // Access
-  const [team, setTeam] = useState<TeamMember[]>(mockTeam);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [reviewLink, setReviewLink] = useState<string | null>(null);
   const [reviewExpiry, setReviewExpiry] = useState<string | null>(null);
 
   // Brand Kit
-  const [selectedKit, setSelectedKit] = useState(mockProject.brandKitId);
+  const [selectedKit, setSelectedKit] = useState('');
   const [enforceColors, setEnforceColors] = useState(true);
   const [enforceTypography, setEnforceTypography] = useState(true);
   const [enforceLogo, setEnforceLogo] = useState(false);
@@ -141,6 +127,50 @@ export default function SettingsPage() {
   // Danger
   const [archiveConfirm, setArchiveConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
+
+  // Fill the form once the project arrives. Editing keeps working from there;
+  // this only seeds the fields.
+  useEffect(() => {
+    if (!project) return;
+    setName(project.title);
+    setDescription(project.description ?? '');
+    const wb = project.worldBible ?? {};
+    setCharacters(wb.characters ?? []);
+    setWorldRules(wb.worldRules ?? '');
+    setConstraints(wb.constraints ?? []);
+    setForbiddenDrift(wb.forbiddenDrift ?? []);
+  }, [project]);
+
+  const saveGeneral = async () => {
+    setSaving(true);
+    try {
+      await mutate(`/api/projects/${params.id}`, 'PATCH', { title: name, description });
+      toast.success('Project saved.');
+      projectState.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save the project.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveWorldBible = async () => {
+    setSaving(true);
+    try {
+      await mutate(`/api/projects/${params.id}/world-bible`, 'PUT', {
+        characters,
+        worldRules,
+        constraints,
+        forbiddenDrift,
+      });
+      toast.success('World bible saved.');
+      projectState.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save the world bible.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   /* helpers */
   const formatDuration = (s: number) => {
@@ -309,9 +339,13 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <button type="button" className={btnPrimary}>
-            Save Changes
+          <button type="button" className={btnPrimary} onClick={saveGeneral} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
+          <p className="text-xs text-gray-500 mt-2">
+            Title and description are saved. Type, aspect ratio, duration and thumbnail have no
+            column on the project and are not persisted.
+          </p>
         </div>
       )}
 
@@ -476,8 +510,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <button type="button" className={btnPrimary}>
-            Save World Bible
+          <button type="button" className={btnPrimary} onClick={saveWorldBible} disabled={saving}>
+            {saving ? 'Saving…' : 'Save World Bible'}
           </button>
         </div>
       )}
@@ -487,6 +521,15 @@ export default function SettingsPage() {
       {/* ============================================================ */}
       {activeTab === 'access' && (
         <div className="max-w-3xl space-y-5">
+          {/* Per-project access is not stored. A project has one owner column
+              and an optional org; there is no project-member table, so the four
+              named collaborators with per-project roles that used to fill this
+              table had nowhere to come from and nowhere to be written back to.
+              The workspace roster is on /team. */}
+          <p className="text-xs text-amber-400">
+            Per-project roles are not stored yet — a project records an owner and an organisation,
+            nothing more. Manage people on the workspace team page.
+          </p>
           <div className={card}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-200">Team Members</h2>
@@ -615,7 +658,7 @@ export default function SettingsPage() {
                   onChange={(e) => setSelectedKit(e.target.value)}
                   className={input}
                 >
-                  {mockBrandKits.map((k) => (
+                  {brandKits.map((k) => (
                     <option key={k.id} value={k.id}>
                       {k.name}
                     </option>
@@ -641,7 +684,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-200">
-                    {mockBrandKits.find((k) => k.id === selectedKit)?.name}
+                    {brandKits.find((k) => k.id === selectedKit)?.name}
                   </p>
                   <p className="text-[10px] text-gray-500">Currently applied</p>
                 </div>
@@ -732,19 +775,20 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">
-                  Type <span className="font-mono text-red-400">{mockProject.name}</span> to confirm
+                  Type <span className="font-mono text-red-400">{project?.title ?? ''}</span> to
+                  confirm
                 </label>
                 <input
                   type="text"
                   value={deleteInput}
                   onChange={(e) => setDeleteInput(e.target.value)}
-                  placeholder={mockProject.name}
+                  placeholder={project?.title ?? ''}
                   className={`${input} border-red-800/50 focus:border-red-500`}
                 />
               </div>
               <button
                 type="button"
-                disabled={deleteInput !== mockProject.name}
+                disabled={!project || deleteInput !== project.title}
                 className={`${btnDanger} disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 Permanently Delete Project

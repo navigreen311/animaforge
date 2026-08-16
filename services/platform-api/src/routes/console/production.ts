@@ -43,14 +43,32 @@ router.get(
       ...(query.projectId ? { projectId: query.projectId } : {}),
     };
 
-    const [items, total] = await Promise.all([
+    // The render queue shows a project name and a shot label, so join rather
+    // than making the console fetch each project by id.
+    const [rows, total] = await Promise.all([
       requirePrisma().generationJob.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: query.limit,
+        include: {
+          project: { select: { title: true } },
+          shot: { select: { shotNumber: true, sceneId: true } },
+        },
       }),
       requirePrisma().generationJob.count({ where }),
     ]);
+
+    const items = rows.map((job) => ({
+      ...job,
+      projectName: job.project?.title ?? null,
+      shotNumber: job.shot?.shotNumber ?? null,
+      // Elapsed time, derived rather than stored.
+      durationMs:
+        job.startedAt && job.completedAt
+          ? job.completedAt.getTime() - job.startedAt.getTime()
+          : null,
+    }));
+
     apiResponse.success(res, { items, total });
   }),
 );

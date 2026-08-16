@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
 import {
   Play,
   Pause,
@@ -67,152 +68,79 @@ interface CommentMarker {
   label: string;
 }
 
-// ── Mock Data ────────────────────────────────────────────────
-const INITIAL_TRACKS: Track[] = [
-  {
-    id: 'video',
-    name: 'Video',
-    clips: [
-      {
-        id: 'v1',
-        label: 'Shot 1 - Intro',
-        startSec: 0,
-        durationSec: 38,
-        color: '#7c3aed',
-        trackId: 'video',
-        shotNumber: 1,
-        status: 'approved',
-        prompt:
-          'A sweeping aerial view of the enchanted forest at dawn, golden light filtering through ancient trees.',
-        camera: 'Aerial',
-        motion: 'Dolly',
-        emotion: 'Mysterious',
-        characters: ['Aria', 'Kael'],
-      },
-      {
-        id: 'v2',
-        label: 'Shot 2 - Battle Scene',
-        startSec: 42,
-        durationSec: 55,
-        color: '#6d28d9',
-        trackId: 'video',
-        shotNumber: 2,
-        status: 'review',
-        prompt:
-          'Two warriors clash swords in a rain-soaked courtyard, sparks flying with each strike.',
-        camera: 'Medium',
-        motion: 'Handheld',
-        emotion: 'Dramatic',
-        characters: ['Kael', 'Morath'],
-      },
-      {
-        id: 'v3',
-        label: 'Shot 3 - Epilogue',
-        startSec: 102,
-        durationSec: 30,
-        color: '#8b5cf6',
-        trackId: 'video',
-        shotNumber: 3,
-        status: 'draft',
-        prompt: '',
-        camera: 'Wide',
-        motion: 'Static',
-        emotion: 'Melancholic',
-        characters: ['Aria'],
-      },
-      {
-        id: 'v4',
-        label: 'Shot 4 - Chase',
-        startSec: 136,
-        durationSec: 35,
-        color: '#7c3aed',
-        trackId: 'video',
-        shotNumber: 4,
-        status: 'generating',
-        prompt: 'A tense chase through narrow alleyways, dramatic lighting.',
-        camera: 'POV',
-        motion: 'Handheld',
-        emotion: 'Tense',
-        characters: ['Kael'],
-      },
-      {
-        id: 'v5',
-        label: 'Shot 5 - Failed Render',
-        startSec: 175,
-        durationSec: 25,
-        color: '#6d28d9',
-        trackId: 'video',
-        shotNumber: 5,
-        status: 'failed',
-        prompt: 'Wide establishing shot of the burning city at dusk.',
-        camera: 'Wide',
-        motion: 'Dolly',
-        emotion: 'Dramatic',
-        characters: ['Aria', 'Morath'],
-      },
-    ],
-  },
-  {
-    id: 'audio',
-    name: 'Audio',
-    clips: [
-      {
-        id: 'a1',
-        label: 'Background Music',
-        startSec: 0,
-        durationSec: 90,
-        color: '#0891b2',
-        trackId: 'audio',
-      },
-      {
-        id: 'a2',
-        label: 'Dialogue Track',
-        startSec: 95,
-        durationSec: 50,
-        color: '#0e7490',
-        trackId: 'audio',
-      },
-    ],
-  },
-  {
-    id: 'effects',
-    name: 'Effects',
-    clips: [
-      {
-        id: 'e1',
-        label: 'SFX - Explosion',
-        startSec: 44,
-        durationSec: 12,
-        color: '#c2410c',
-        trackId: 'effects',
-      },
-      {
-        id: 'e2',
-        label: 'SFX - Wind',
-        startSec: 70,
-        durationSec: 25,
-        color: '#ea580c',
-        trackId: 'effects',
-      },
-      {
-        id: 'e3',
-        label: 'Transition - Fade',
-        startSec: 100,
-        durationSec: 6,
-        color: '#d97706',
-        trackId: 'effects',
-      },
-    ],
-  },
-];
+// ── Data ───────────────────────────────────
 
-const COMMENT_MARKERS: CommentMarker[] = [
-  { id: 'cm1', timeSec: 22, color: '#eab308', label: 'Pacing note' },
-  { id: 'cm2', timeSec: 68, color: '#ef4444', label: 'Fix continuity' },
-  { id: 'cm3', timeSec: 115, color: '#22c55e', label: 'Looks great' },
-];
+/** One row of GET /api/markers. */
+interface MarkerRow {
+  id: string;
+  projectId: string;
+  shotId: string | null;
+  label: string;
+  timeMs: number;
+  color: string;
+  note: string | null;
+}
 
-const MOCK_CHARACTERS = ['Aria', 'Kael', 'Morath', 'Lyra', 'Dren'];
+/** One row of GET /api/projects/[id]/shots. */
+interface ShotRow {
+  id: string;
+  shotNumber: number;
+  prompt: string | null;
+  status: string;
+  durationMs: number | null;
+}
+
+/** One row of GET /api/characters. */
+interface CharacterRow {
+  id: string;
+  name: string;
+}
+
+const CLIP_COLORS = ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b'];
+
+/**
+ * Build the video track from the project's shots.
+ *
+ * The three tracks that used to be hardcoded here (video, audio and an
+ * "effects" lane) held clips with a prompt, a camera instruction, a motion
+ * type, an emotion and a character list per clip. Only the prompt, status and
+ * duration are columns on a shot, so the rest of the inspector fields start
+ * empty and are editable rather than pre-filled with invented craft notes.
+ *
+ * Audio and effects tracks are not built: nothing associates an audio track
+ * with a position on a project's timeline, and there is no effects table at
+ * all.
+ */
+function tracksFromShots(shots: ShotRow[]): Track[] {
+  let cursor = 0;
+  const clips: Clip[] = shots.map((shot, i) => {
+    const durationSec = shot.durationMs === null ? 0 : Math.round(shot.durationMs / 1000);
+    const clip: Clip = {
+      id: shot.id,
+      label: shot.prompt?.slice(0, 40) || `Shot ${shot.shotNumber}`,
+      startSec: cursor,
+      durationSec,
+      color: CLIP_COLORS[i % CLIP_COLORS.length],
+      trackId: 'video',
+      shotNumber: shot.shotNumber,
+      status: shot.status as ShotStatus,
+      prompt: shot.prompt ?? '',
+      characters: [],
+    };
+    cursor += durationSec;
+    return clip;
+  });
+  return [{ id: 'video', name: 'Video', clips }];
+}
+
+function toMarker(row: MarkerRow): CommentMarker {
+  return {
+    id: row.id,
+    timeSec: Math.round(row.timeMs / 1000),
+    color: row.color,
+    label: row.label,
+  };
+}
 
 const CAMERA_OPTIONS = ['Wide', 'Medium', 'Close-up', 'Extreme CU', 'Aerial', 'POV'];
 const MOTION_OPTIONS = ['Static', 'Pan', 'Tilt', 'Dolly', 'Orbit', 'Handheld'];
@@ -454,7 +382,41 @@ function SegmentedControl({
 export default function TimelinePage() {
   const [playing, setPlaying] = useState(false);
   const [zoom, setZoom] = useState(50);
-  const [tracks, setTracks] = useState<Track[]>(INITIAL_TRACKS);
+  // Everything on this screen belongs to one project, and there is no project
+  // picker on it, so it opens the caller's most recently updated project.
+  const projectState = useResource<{ items: { id: string; title: string }[] }>(
+    '/api/projects?limit=1',
+  );
+  const projectId = projectState.data?.items[0]?.id ?? null;
+  const shotState = useResource<{ items: ShotRow[] }>(
+    projectId ? `/api/projects/${projectId}/shots` : null,
+    [projectId],
+  );
+  // The markers collection lists the caller's own markers with no project
+  // filter (its list query takes page, limit and a text search), so the
+  // narrowing to this project happens below rather than in a parameter the API
+  // would ignore.
+  const markerState = useResource<{ items: MarkerRow[] }>('/api/markers?limit=200');
+  const characterState = useResource<{ items: CharacterRow[] }>('/api/characters?limit=100');
+
+  const COMMENT_MARKERS = useMemo(
+    () =>
+      (markerState.data?.items ?? [])
+        .filter((m) => !projectId || m.projectId === projectId)
+        .map(toMarker),
+    [markerState.data, projectId],
+  );
+  const characterNames = useMemo(
+    () => (characterState.data?.items ?? []).map((c) => c.name),
+    [characterState.data],
+  );
+
+  const [tracks, setTracks] = useState<Track[]>([]);
+
+  // Seed the timeline once the shots arrive; edits after that stay local.
+  useEffect(() => {
+    if (shotState.data) setTracks(tracksFromShots(shotState.data.items));
+  }, [shotState.data]);
   const [selectedClipId, setSelectedClipId] = useState<string>('v1');
   const [playheadSec] = useState(84);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
@@ -1148,7 +1110,7 @@ export default function TimelinePage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const available = MOCK_CHARACTERS.filter(
+                            const available = characterNames.filter(
                               (c) => !(selectedClip.characters ?? []).includes(c),
                             );
                             if (available.length > 0) {

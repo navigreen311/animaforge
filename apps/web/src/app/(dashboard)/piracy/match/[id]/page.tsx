@@ -20,6 +20,8 @@ import {
   Activity,
 } from 'lucide-react';
 import DMCAFilingWizard, { DMCAMatchData } from '@/components/piracy/DMCAFilingWizard';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -62,70 +64,110 @@ interface MatchDetail {
   }[];
 }
 
-// ══════════════════════════════════════════════════════════════
-// MOCK DATA
-// ══════════════════════════════════════════════════════════════
-
-function buildMock(id: string): MatchDetail {
-  return {
-    id,
-    status: 'Reviewing',
-    detectedAt: '2 hours ago',
-    original: {
-      title: 'Cyber Samurai — Opening Scene',
-      project: 'Cyber Samurai',
-      projectId: 'proj_cyber_samurai',
-      duration: '00:42',
-      c2paVerified: true,
-      watermarkEmbedded: true,
-      renderedAt: '2026-03-28',
-    },
-    infringing: {
-      url: 'https://www.youtube.com/watch?v=aB9xK2pLmNq',
-      platform: 'YouTube',
-      uploader: '@anonreupload',
-      uploadDate: '2026-04-07',
-      viewCount: 18423,
-      title: 'EPIC ANIME FIGHT SCENE (must watch!!)',
-    },
-    analysis: {
-      similarity: 92,
-      watermarkDetected: true,
-      audioMatch: 88,
-      visualMatch: 96,
-    },
-    timeline: [
-      {
-        id: 't1',
-        label: 'Match detected by automated scan',
-        at: '2026-04-09 06:12',
-        icon: 'detected',
-      },
-      {
-        id: 't2',
-        label: 'AnimaForge watermark extracted and verified',
-        at: '2026-04-09 06:13',
-        icon: 'flagged',
-      },
-      {
-        id: 't3',
-        label: 'Flagged for manual review',
-        at: '2026-04-09 06:14',
-        icon: 'reviewed',
-      },
-      {
-        id: 't4',
-        label: 'Opened by Alex Morgan',
-        at: '2026-04-09 07:45',
-        icon: 'reviewed',
-      },
-    ],
-  };
+/** GET /api/piracy/matches/[id]. */
+interface MatchRow {
+  id: string;
+  outputId: string;
+  platform: string;
+  matchUrl: string;
+  matchStrength: number;
+  watermarkFound: boolean;
+  matchMethod: string;
+  hammingDistance: number | null;
+  status: string;
+  detectedAt: string;
+  reviewedAt: string | null;
+  evidence: Record<string, unknown> | null;
+  notices: { id: string; status: string; createdAt: string }[];
 }
 
-// ══════════════════════════════════════════════════════════════
-// STYLES
-// ══════════════════════════════════════════════════════════════
+const STATUS_LABEL: Record<string, MatchStatus> = {
+  pending: 'New',
+  reviewing: 'Reviewing',
+  dismissed: 'Dismissed',
+  dmca_sent: 'Filed',
+};
+
+/**
+ * Map a stored match onto the detail view.
+ *
+ * `buildMock` used to return the same fabricated case for any id: a named
+ * project, a YouTube URL with a view count, an uploader handle, an upload date,
+ * separate audio and visual match percentages and a four-entry investigation
+ * timeline. A piracy_matches row has none of that. It records what was matched,
+ * where, how strongly, by which method, and whether a watermark was recovered.
+ *
+ * So the original side shows the output id rather than a title (nothing joins a
+ * match back to a project), the infringing side shows the URL and platform and
+ * omits uploader, upload date and view count, and the analysis shows the single
+ * real match strength instead of splitting it into an audio and a visual score
+ * that were never computed. The timeline is the timestamps that exist plus any
+ * DMCA notices filed.
+ */
+function toDetail(row: MatchRow): MatchDetail {
+  const timeline: MatchDetail['timeline'] = [
+    {
+      id: 'detected',
+      label: `Match detected by ${row.matchMethod || 'scan'}`,
+      at: new Date(row.detectedAt).toLocaleString(),
+      icon: 'detected',
+    },
+  ];
+  if (row.watermarkFound) {
+    timeline.push({
+      id: 'watermark',
+      label: 'AnimaForge watermark recovered from the copy',
+      at: new Date(row.detectedAt).toLocaleString(),
+      icon: 'flagged',
+    });
+  }
+  if (row.reviewedAt) {
+    timeline.push({
+      id: 'reviewed',
+      label: 'Reviewed',
+      at: new Date(row.reviewedAt).toLocaleString(),
+      icon: 'reviewed',
+    });
+  }
+  for (const notice of row.notices ?? []) {
+    timeline.push({
+      id: notice.id,
+      label: `DMCA notice ${notice.status}`,
+      at: new Date(notice.createdAt).toLocaleString(),
+      icon: 'filed',
+    });
+  }
+
+  return {
+    id: row.id,
+    status: STATUS_LABEL[row.status] ?? 'New',
+    detectedAt: new Date(row.detectedAt).toLocaleString(),
+    original: {
+      title: row.outputId,
+      project: '',
+      projectId: '',
+      duration: '',
+      c2paVerified: false,
+      watermarkEmbedded: row.watermarkFound,
+      renderedAt: '',
+    },
+    infringing: {
+      url: row.matchUrl,
+      platform: row.platform,
+      uploader: '',
+      uploadDate: '',
+      viewCount: 0,
+      title: '',
+    },
+    analysis: {
+      similarity: Math.round(row.matchStrength * 100),
+      watermarkDetected: row.watermarkFound,
+      audioMatch: 0,
+      visualMatch: 0,
+    },
+    timeline,
+  };
+}
 
 const pageStyle: React.CSSProperties = {
   padding: '24px 28px',
@@ -329,9 +371,15 @@ function AnalysisRow({
 export default function MatchDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? 'unknown';
-  const match = useMemo(() => buildMock(id), [id]);
+  const state = useResource<MatchRow>(`/api/piracy/matches/${id}`, [id]);
+  const detail = useMemo(() => (state.data ? toDetail(state.data) : null), [state.data]);
   const [wizardOpen, setWizardOpen] = useState(false);
 
+  if (state.loading) return <LoadingState label="Loading match" />;
+  if (state.error) return <ErrorState error={state.error} onRetry={state.reload} />;
+  if (!detail) return <ErrorState error={{ code: 'NOT_FOUND', message: 'No such match.' }} />;
+
+  const match = detail;
   const status = statusColors[match.status];
 
   const wizardData: DMCAMatchData = {

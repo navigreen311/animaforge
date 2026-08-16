@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
 import { useParams } from 'next/navigation';
 
 /* ------------------------------------------------------------------ */
@@ -35,16 +36,6 @@ const PRESETS: Record<
   custom: { container: 'MP4', codec: 'H.264', resolution: '1080p', fps: '24' },
 };
 
-const MOCK_QC: QCCheck[] = [
-  { label: 'Resolution match', status: 'pass', detail: '1920x1080 matches target' },
-  { label: 'Frame rate consistency', status: 'pass', detail: 'Stable 30fps across all shots' },
-  { label: 'Audio levels', status: 'warn', detail: 'Shot 4 peak at -1.2dB — consider limiting' },
-  { label: 'Color space', status: 'pass', detail: 'Rec. 709 consistent' },
-  { label: 'Aspect ratio', status: 'pass', detail: '16:9 uniform' },
-  { label: 'Codec compatibility', status: 'pass', detail: 'H.264 Level 4.1 — universal playback' },
-  { label: 'Duration', status: 'pass', detail: '3m 12s within target range' },
-];
-
 const EXPORT_STAGES = [
   'Preparing',
   'Encoding video',
@@ -63,14 +54,22 @@ const REPURPOSE_PLATFORMS = [
 ];
 const PUBLISH_PLATFORMS = ['YouTube', 'TikTok', 'Instagram', 'Twitter/X'];
 
-const MUSIC_TRACKS = [
-  'None',
-  'Ambient Pulse',
-  'Neon Drive',
-  'Cinematic Tension',
-  'Lo-Fi Drift',
-  'Epic Orchestral',
-];
+/** One row of GET /api/audio/tracks. */
+interface AudioRow {
+  id: string;
+  name: string;
+}
+
+/** One row of GET /api/projects/[id]/publish-jobs. */
+interface PublishJobRow {
+  id: string;
+  platform: string;
+  title: string;
+  status: string;
+  scheduledAt: string;
+  publishedAt: string | null;
+  error: string | null;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -107,6 +106,25 @@ export default function ExportPage() {
 
   // QC & progress
   const [qcRun, setQcRun] = useState(false);
+
+  // The music picker offered six named library tracks that do not exist. These
+  // are the caller's own audio tracks.
+  const musicState = useResource<{ items: AudioRow[] }>('/api/audio/tracks');
+  const musicTracks = useMemo(
+    () => ['None', ...(musicState.data?.items ?? []).map((t) => t.name)],
+    [musicState.data],
+  );
+
+  // Export history: publish jobs for this project.
+  const publishState = useResource<{ items: PublishJobRow[] }>(
+    `/api/projects/${params.id}/publish-jobs`,
+    [params.id],
+  );
+  const publishJobs = publishState.data?.items ?? [];
+
+  // No QC service exists, so there is never a check to show. Kept as a value
+  // rather than deleting the panel, so wiring one later is a one-line change.
+  const qcChecks: QCCheck[] = [];
   const [exporting, setExporting] = useState(false);
   const [exportStage, setExportStage] = useState(0);
   const [exportProgress, setExportProgress] = useState(0);
@@ -117,9 +135,10 @@ export default function ExportPage() {
 
   // Publish (P2-3)
   const [publishToggles, setPublishToggles] = useState<Set<string>>(new Set());
-  const [publishTitle, setPublishTitle] = useState('Neon Odyssey — Official Teaser');
+  // The title and tags were pre-filled with another project's copy.
+  const [publishTitle, setPublishTitle] = useState('');
   const [publishDesc, setPublishDesc] = useState('');
-  const [publishTags, setPublishTags] = useState('animation, cyberpunk, ai, short-film');
+  const [publishTags, setPublishTags] = useState('');
   const [publishSchedule, setPublishSchedule] = useState('');
 
   // Auto-edit (P2-1)
@@ -422,7 +441,7 @@ export default function ExportPage() {
                   onChange={(e) => setAutoMusicTrack(e.target.value)}
                   className={input}
                 >
-                  {MUSIC_TRACKS.map((t) => (
+                  {musicTracks.map((t) => (
                     <option key={t}>{t}</option>
                   ))}
                 </select>
@@ -568,6 +587,32 @@ export default function ExportPage() {
         {/*  RIGHT COLUMN                                              */}
         {/* ========================================================== */}
         <div className="space-y-5">
+          {/* Export history — the publish jobs this project actually has. */}
+          <div className={card}>
+            <h2 className="text-sm font-semibold text-gray-200 mb-4">Export History</h2>
+            {publishState.loading && <p className="text-xs text-gray-600">Loading…</p>}
+            {!publishState.loading && publishState.error && (
+              <p className="text-xs text-red-400">{publishState.error.message}</p>
+            )}
+            {!publishState.loading && !publishState.error && publishJobs.length === 0 && (
+              <p className="text-xs text-gray-600 py-2">No exports yet.</p>
+            )}
+            <div className="space-y-2">
+              {publishJobs.map((job) => (
+                <div key={job.id} className="p-2 rounded-lg bg-gray-800">
+                  <p className="text-xs font-medium text-gray-300">
+                    {job.title} — {job.platform}
+                  </p>
+                  <p className="text-[10px] text-gray-500">
+                    {job.status}
+                    {job.publishedAt ? ` · ${new Date(job.publishedAt).toLocaleString()}` : ''}
+                    {job.error ? ` · ${job.error}` : ''}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* QC Report */}
           <div className={card}>
             <h2 className="text-sm font-semibold text-gray-200 mb-4">QC Report</h2>
@@ -577,7 +622,17 @@ export default function ExportPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {MOCK_QC.map((check) => (
+                {/* Seven checks always passed here — a resolution match, a
+                    frame-rate reading, an audio peak in dB, a colour space —
+                    for any project, whether or not it had a single rendered
+                    shot. Nothing inspects an encoded file: there is no QC
+                    service, no probe output and no table to store a result in.
+                    The button now says so instead of printing a report. */}
+                <p className="text-xs text-amber-400">
+                  QC is not available: nothing probes the encoded output, so there are no checks to
+                  report.
+                </p>
+                {qcChecks.map((check) => (
                   <div
                     key={check.label}
                     className="flex items-start gap-2 p-2 rounded-lg bg-gray-800"

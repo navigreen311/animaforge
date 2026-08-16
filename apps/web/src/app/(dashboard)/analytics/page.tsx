@@ -42,6 +42,8 @@ import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -122,7 +124,7 @@ interface FailureAnalysis {
 
 function generateDateLabels(days: number): { date: string; label: string }[] {
   const out: { date: string; label: string }[] = [];
-  const now = new Date(2026, 2, 25); // Mar 25, 2026
+  const now = new Date();
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
@@ -136,55 +138,109 @@ function generateDateLabels(days: number): { date: string; label: string }[] {
   return out;
 }
 
-function seededRand(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
+/** One generation job, as GET /api/jobs returns it. */
+interface JobRow {
+  id: string;
+  projectId: string;
+  projectName: string | null;
+  shotNumber: number | null;
+  jobType: string;
+  tier: string;
+  status: string;
+  costCredits: number | null;
+  durationMs: number | null;
+  createdAt: string;
+  completedAt: string | null;
+  errorReason: string | null;
 }
 
-function generateSnapshots(days: number): DaySnapshot[] {
-  const dates = generateDateLabels(days);
-  const rand = seededRand(42);
-  let remaining = 10000;
-  return dates.map((d) => {
-    const completed = Math.floor(20 + rand() * 20);
-    const failed = Math.floor(rand() * 3);
-    const creditsUsed = Math.floor(100 + rand() * 80);
-    remaining = Math.max(0, remaining - creditsUsed);
+/** GET /api/analytics. */
+interface AnalyticsSummary {
+  period: string;
+  projects: number;
+  generations: number;
+  completed: number;
+  failed: number;
+  byStatus: Record<string, number>;
+  byType: Record<string, number>;
+  byTier: Record<string, number>;
+  creditsByType: Record<string, number>;
+  failureReasons: Record<string, number>;
+  topProjects: {
+    id: string;
+    title: string;
+    credits: number;
+    renders: number;
+    tiers: Record<string, number>;
+  }[];
+  creditsUsed: number;
+}
+
+/**
+ * Roll real jobs up into one row per day.
+ *
+ * This replaces `generateSnapshots`, which produced a seeded random walk: 20-40
+ * completions a day, a 95-99.5% success rate and a credit balance draining from
+ * 10,000. Every chart on this page was drawn from that.
+ *
+ * Two fields the old snapshot carried are gone rather than recomputed:
+ * `creditsRemaining` (usage_meters records credits spent per period, never a
+ * balance) is left at zero, and it is not charted. `avgRenderSec` is a real
+ * average of completed jobs' elapsed time, and is zero on a day where nothing
+ * completed -- not a filler value.
+ */
+function snapshotsFromJobs(jobs: JobRow[], days: number): DaySnapshot[] {
+  const buckets = new Map<string, JobRow[]>();
+  for (const j of jobs) {
+    const key = j.createdAt.slice(0, 10);
+    const list = buckets.get(key);
+    if (list) list.push(j);
+    else buckets.set(key, [j]);
+  }
+
+  return generateDateLabels(days).map((d) => {
+    const rows = buckets.get(d.date) ?? [];
+    const completed = rows.filter((r) => r.status === 'complete').length;
+    const failed = rows.filter((r) => r.status === 'failed').length;
+    const finished = completed + failed;
+    const timed = rows.filter((r) => r.status === 'complete' && r.durationMs !== null);
     return {
       date: d.date,
       label: d.label,
       completed,
       failed,
-      creditsUsed,
-      creditsRemaining: remaining,
-      avgRenderSec: Math.floor(120 + rand() * 80),
-      successRate: parseFloat((95 + rand() * 4.5).toFixed(1)),
+      creditsUsed: rows.reduce((sum, r) => sum + (r.costCredits ?? 0), 0),
+      creditsRemaining: 0,
+      avgRenderSec: timed.length
+        ? Math.round(timed.reduce((sum, r) => sum + (r.durationMs ?? 0), 0) / timed.length / 1000)
+        : 0,
+      successRate: finished ? parseFloat(((completed / finished) * 100).toFixed(1)) : 0,
     };
   });
 }
 
-const ALL_SNAPSHOTS_90 = generateSnapshots(90);
-const ALL_SNAPSHOTS_365 = generateSnapshots(365);
-
-function getSnapshots(range: DateRange, customFrom?: string, customTo?: string): DaySnapshot[] {
+function getSnapshots(
+  jobs: JobRow[],
+  range: DateRange,
+  customFrom?: string,
+  customTo?: string,
+): DaySnapshot[] {
   switch (range) {
     case '7d':
-      return ALL_SNAPSHOTS_90.slice(-7);
+      return snapshotsFromJobs(jobs, 7);
     case '30d':
-      return ALL_SNAPSHOTS_90.slice(-30);
+      return snapshotsFromJobs(jobs, 30);
     case '90d':
-      return ALL_SNAPSHOTS_90;
+      return snapshotsFromJobs(jobs, 90);
     case '1y':
-      return ALL_SNAPSHOTS_365;
+      return snapshotsFromJobs(jobs, 365);
     case 'custom': {
-      if (!customFrom || !customTo) return ALL_SNAPSHOTS_365;
-      return ALL_SNAPSHOTS_365.filter((s) => s.date >= customFrom && s.date <= customTo);
+      const all = snapshotsFromJobs(jobs, 365);
+      if (!customFrom || !customTo) return all;
+      return all.filter((s) => s.date >= customFrom && s.date <= customTo);
     }
     default:
-      return ALL_SNAPSHOTS_90.slice(-30);
+      return snapshotsFromJobs(jobs, 30);
   }
 }
 
@@ -194,7 +250,7 @@ function computeRangeDates(
   customFrom?: string,
   customTo?: string,
 ): { from: string; to: string } {
-  const now = new Date(2026, 2, 25);
+  const now = new Date();
   const to = now.toISOString().slice(0, 10);
   const from = new Date(now);
   switch (range) {
@@ -216,169 +272,46 @@ function computeRangeDates(
   return { from: from.toISOString().slice(0, 10), to };
 }
 
-const PROJECTS = [
-  'Hero Promo',
-  'Product Launch',
-  'Brand Story',
-  'Tutorial Series',
-  'Social Campaign',
-];
-const SHOTS = [
-  'Intro',
-  'Battle',
-  'Unboxing',
-  'CTA',
-  'Montage',
-  'Setup',
-  'Aerial',
-  'Finale',
-  'Close-Up',
-  'Transition',
-];
 const TIERS: RenderTier[] = ['Standard', 'Pro', 'Ultra'];
-const FAILURE_REASONS: FailureReason[] = [
-  'content_moderation',
-  'insufficient_credits',
-  'timeout',
-  'gpu_oom',
-  'model_error',
-];
 
-function generateRenderHistory(): RenderHistoryRow[] {
-  const rand = seededRand(99);
-  const rows: RenderHistoryRow[] = [];
-  const dates = generateDateLabels(30);
-  for (let i = 0; i < 120; i++) {
-    const d = dates[Math.floor(rand() * dates.length)];
-    const proj = PROJECTS[Math.floor(rand() * PROJECTS.length)];
-    const shot = SHOTS[Math.floor(rand() * SHOTS.length)];
-    const tier = TIERS[Math.floor(rand() * TIERS.length)];
-    const isFailed = rand() < 0.06;
-    const isRunning = !isFailed && rand() < 0.03;
-    const status: RenderStatus = isFailed ? 'Failed' : isRunning ? 'Running' : 'Complete';
-    const credits = status === 'Failed' ? 0 : Math.floor(40 + rand() * 200);
-    const mins = Math.floor(rand() * 5);
-    const secs = Math.floor(rand() * 60);
-    const projSlug = proj.toLowerCase().replace(/\s+/g, '-');
-    const shotNum = Math.floor(rand() * 15) + 1;
-    rows.push({
-      id: `r-${i}`,
-      date: d.label,
-      project: proj,
-      projectId: `proj-${projSlug}`,
-      shot: `Shot ${shotNum} - ${shot}`,
-      shotId: `shot-${projSlug}-${shotNum}`,
-      duration: status === 'Running' ? '\u2014' : `${mins}m ${secs.toString().padStart(2, '0')}s`,
-      credits,
-      tier,
+/**
+ * Map real jobs onto the render-history table.
+ *
+ * `generateRenderHistory` used to fabricate 120 rows: a random project from a
+ * list of five names, a random shot from a list of ten, a random tier, a 6%
+ * failure rate and a random failure reason. These are the caller's actual jobs.
+ */
+function toHistory(jobs: JobRow[]): RenderHistoryRow[] {
+  return jobs.map((j) => {
+    const status: RenderStatus =
+      j.status === 'complete'
+        ? 'Complete'
+        : j.status === 'failed'
+          ? 'Failed'
+          : j.status === 'processing' || j.status === 'queued'
+            ? 'Running'
+            : 'Complete';
+    const secs = j.durationMs === null ? null : Math.round(j.durationMs / 1000);
+    return {
+      id: j.id,
+      date: j.createdAt.slice(0, 10),
+      project: j.projectName ?? j.projectId,
+      projectId: j.projectId,
+      shot: j.shotNumber === null ? j.jobType : `Shot ${j.shotNumber}`,
+      shotId: j.id,
+      duration:
+        secs === null
+          ? '—'
+          : `${Math.floor(secs / 60)}m ${(secs % 60).toString().padStart(2, '0')}s`,
+      credits: j.costCredits ?? 0,
+      tier: (TIERS.find((t) => t.toLowerCase() === j.tier.toLowerCase()) ??
+        'Standard') as RenderTier,
       status,
-      failureReason: isFailed
-        ? FAILURE_REASONS[Math.floor(rand() * FAILURE_REASONS.length)]
-        : undefined,
-    });
-  }
-  // sort by date descending (reverse label order)
-  return rows.sort((a, b) => b.date.localeCompare(a.date));
+      // Only a reason the job actually recorded; no reason is left blank.
+      failureReason: (j.errorReason as FailureReason | null) ?? undefined,
+    };
+  });
 }
-
-const ALL_RENDER_HISTORY = generateRenderHistory();
-
-const CREDIT_CATEGORIES: CreditCategoryData[] = [
-  { category: 'Video', credits: 2100, pct: 50, trend: 12 },
-  { category: 'Audio', credits: 680, pct: 16.2, trend: -5 },
-  { category: 'Style', credits: 520, pct: 12.4, trend: 8 },
-  { category: 'Avatar', credits: 440, pct: 10.5, trend: 3 },
-  { category: 'Script', credits: 460, pct: 11, trend: -2 },
-];
-const CREDIT_TOTAL = CREDIT_CATEGORIES.reduce((s, c) => s + c.credits, 0);
-
-const TOP_PROJECTS_DATA: TopProjectData[] = [
-  {
-    id: 'proj-hero-promo',
-    name: 'Hero Promo',
-    credits: 1840,
-    renders: 124,
-    tierBreakdown: { standard: 620, pro: 740, ultra: 480 },
-    timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 6 + (i % 3) * 2 })),
-    topCharacter: 'Captain Nova',
-    firstPassApprovalRate: 0.82,
-    avgRenderSec: 184,
-    shotsOverTime: [
-      { day: 'D1', shots: 4 },
-      { day: 'D2', shots: 7 },
-      { day: 'D3', shots: 5 },
-      { day: 'D4', shots: 9 },
-      { day: 'D5', shots: 12 },
-      { day: 'D6', shots: 8 },
-      { day: 'D7', shots: 14 },
-      { day: 'D8', shots: 11 },
-    ],
-  },
-  {
-    id: 'proj-product-launch',
-    name: 'Product Launch',
-    credits: 1260,
-    renders: 89,
-    tierBreakdown: { standard: 480, pro: 520, ultra: 260 },
-    timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 4 + (i % 4) })),
-    topCharacter: 'Brand Bot',
-    firstPassApprovalRate: 0.74,
-    avgRenderSec: 212,
-    shotsOverTime: [
-      { day: 'D1', shots: 3 },
-      { day: 'D2', shots: 5 },
-      { day: 'D3', shots: 6 },
-      { day: 'D4', shots: 4 },
-      { day: 'D5', shots: 8 },
-      { day: 'D6', shots: 10 },
-      { day: 'D7', shots: 7 },
-      { day: 'D8', shots: 9 },
-    ],
-  },
-  {
-    id: 'proj-brand-story',
-    name: 'Brand Story',
-    credits: 780,
-    renders: 56,
-    tierBreakdown: { standard: 300, pro: 340, ultra: 140 },
-    timeline: generateDateLabels(14).map((d, i) => ({ day: d.label, count: 2 + (i % 5) })),
-    topCharacter: 'Maya',
-    firstPassApprovalRate: 0.68,
-    avgRenderSec: 158,
-    shotsOverTime: [
-      { day: 'D1', shots: 2 },
-      { day: 'D2', shots: 3 },
-      { day: 'D3', shots: 5 },
-      { day: 'D4', shots: 4 },
-      { day: 'D5', shots: 6 },
-      { day: 'D6', shots: 5 },
-      { day: 'D7', shots: 7 },
-      { day: 'D8', shots: 6 },
-    ],
-  },
-];
-
-const PLATFORM_DATA: PlatformData[] = [
-  {
-    platform: 'youtube',
-    connected: false,
-    bestVideo: {
-      title: 'AnimaForge Launch Trailer',
-      views: 124_500,
-      retention: [100, 92, 85, 78, 70, 62, 55, 48],
-    },
-  },
-  { platform: 'tiktok', connected: false },
-  { platform: 'meta', connected: false },
-];
-
-const FAILURE_ANALYSIS: FailureAnalysis[] = [
-  { reason: 'content_moderation', count: 12, retrySuccessRate: 0.25 },
-  { reason: 'insufficient_credits', count: 8, retrySuccessRate: 0.88 },
-  { reason: 'timeout', count: 5, retrySuccessRate: 0.92 },
-  { reason: 'gpu_oom', count: 3, retrySuccessRate: 0.67 },
-  { reason: 'model_error', count: 2, retrySuccessRate: 0.5 },
-];
 
 // ══════════════════════════════════════════════════════════════
 // SHARED STYLES
@@ -644,9 +577,144 @@ function useDropdown() {
 // COMPONENT
 // ══════════════════════════════════════════════════════════════
 
+const CREDIT_CATEGORY_FOR: Record<string, CreditCategory> = {
+  video: 'Video',
+  audio: 'Audio',
+  voice: 'Audio',
+  music: 'Audio',
+  style: 'Style',
+  avatar: 'Avatar',
+  script: 'Script',
+};
+
+/**
+ * Credits per category, summed from the caller's own jobs.
+ *
+ * `trend` is zero for every category. Comparing against a previous period needs
+ * a second aggregate the endpoint does not return, and the old +12 / -5 / +8
+ * arrows were literals, so no arrow is drawn rather than a wrong one.
+ */
+function creditCategories(creditsByType: Record<string, number>): CreditCategoryData[] {
+  const totals: Record<CreditCategory, number> = {
+    Video: 0,
+    Audio: 0,
+    Style: 0,
+    Avatar: 0,
+    Script: 0,
+  };
+  for (const [type, credits] of Object.entries(creditsByType)) {
+    const key = type.toLowerCase();
+    const category =
+      Object.entries(CREDIT_CATEGORY_FOR).find(([needle]) => key.includes(needle))?.[1] ?? 'Video';
+    totals[category] += credits;
+  }
+  const sum = Object.values(totals).reduce((a, b) => a + b, 0);
+  return (Object.keys(totals) as CreditCategory[])
+    .map((category) => ({
+      category,
+      credits: Math.round(totals[category]),
+      pct: sum ? parseFloat(((totals[category] / sum) * 100).toFixed(1)) : 0,
+      trend: 0,
+    }))
+    .sort((a, b) => b.credits - a.credits);
+}
+
+/**
+ * Top projects by credit spend.
+ *
+ * Four fields the drawer used to show are gone, because nothing records them:
+ * the top character per project (character_refs is an id array on a shot with
+ * no usage counter), the first-pass approval rate (shots carry approved_by but
+ * never a count of attempts), and both per-day series. `avgRenderSec` is real
+ * where jobs recorded start and end times.
+ */
+function topProjectsFrom(summary: AnalyticsSummary, jobs: JobRow[]): TopProjectData[] {
+  return summary.topProjects.map((p) => {
+    const timed = jobs.filter(
+      (j) => j.projectId === p.id && j.status === 'complete' && j.durationMs !== null,
+    );
+    return {
+      id: p.id,
+      name: p.title,
+      credits: Math.round(p.credits),
+      renders: p.renders,
+      tierBreakdown: {
+        standard: p.tiers.standard ?? p.tiers.preview ?? 0,
+        pro: p.tiers.pro ?? 0,
+        ultra: p.tiers.ultra ?? 0,
+      },
+      timeline: [],
+      topCharacter: '',
+      firstPassApprovalRate: 0,
+      avgRenderSec: timed.length
+        ? Math.round(timed.reduce((sum, j) => sum + (j.durationMs ?? 0), 0) / timed.length / 1000)
+        : 0,
+      shotsOverTime: [],
+    };
+  });
+}
+
+/**
+ * Failure counts, by the reason the job actually recorded.
+ *
+ * `retrySuccessRate` is zero throughout: a retry creates a new job row with no
+ * link back to the one it replaced, so there is no way to tell whether a retry
+ * succeeded. The old 25%-92% spread was invented.
+ */
+function failureAnalysisFrom(failureReasons: Record<string, number>): FailureAnalysis[] {
+  return Object.entries(failureReasons)
+    .map(([reason, count]) => ({
+      reason: reason as FailureReason,
+      count,
+      retrySuccessRate: 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Publishing platforms.
+ *
+ * `connected` is false for all three because no table records an OAuth
+ * connection to YouTube, TikTok or Meta -- the console has no credential store
+ * for them. `bestVideo` (a title, a view count and an eight-point retention
+ * curve) is gone: nothing ingests platform analytics.
+ */
+const PLATFORM_DATA: PlatformData[] = [
+  { platform: 'youtube', connected: false },
+  { platform: 'tiktok', connected: false },
+  { platform: 'meta', connected: false },
+];
+
 function AnalyticsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Everything on this page is derived from these two requests. The page used
+  // to compute all of it from seeded randomness -- see snapshotsFromJobs.
+  const jobState = useResource<{ items: JobRow[] }>('/api/jobs?limit=100');
+  const summaryState = useResource<AnalyticsSummary>('/api/analytics?period=month');
+  const jobs = useMemo(() => jobState.data?.items ?? [], [jobState.data]);
+  const summary = summaryState.data;
+
+  const CREDIT_CATEGORIES = useMemo(
+    () => (summary ? creditCategories(summary.creditsByType) : []),
+    [summary],
+  );
+  const CREDIT_TOTAL = CREDIT_CATEGORIES.reduce((sum, c) => sum + c.credits, 0);
+  // The project filter used to list five fixed names; these are the projects
+  // the caller's jobs actually belong to.
+  const projectNames = useMemo(
+    () => [...new Set(jobs.map((j) => j.projectName ?? j.projectId))].sort(),
+    [jobs],
+  );
+  const TOP_PROJECTS_DATA = useMemo(
+    () => (summary ? topProjectsFrom(summary, jobs) : []),
+    [summary, jobs],
+  );
+  const FAILURE_ANALYSIS = useMemo(
+    () => (summary ? failureAnalysisFrom(summary.failureReasons) : []),
+    [summary],
+  );
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   // ── State ───────────────────────────────────────────────────
   const [dateRange, setDateRange] = useState<DateRange>(() =>
@@ -693,24 +761,23 @@ function AnalyticsPageContent() {
 
   // ── Derived Data ────────────────────────────────────────────
   const snapshots = useMemo(
-    () => getSnapshots(dateRange, customFrom, customTo),
-    [dateRange, customFrom, customTo],
+    () => getSnapshots(jobs, dateRange, customFrom, customTo),
+    [jobs, dateRange, customFrom, customTo],
   );
   const rangeDates = useMemo(
     () => computeRangeDates(dateRange, customFrom, customTo),
     [dateRange, customFrom, customTo],
   );
-  // Re-slice mock render history differently per range
+  // The table shows the jobs that fall inside the selected range. It used to
+  // slice a fixed number of fabricated rows per range, which meant the row
+  // count changed with the picker while the underlying rows never did.
+  const renderHistory = useMemo(() => toHistory(jobs), [jobs]);
   const rangeFilteredHistory = useMemo(() => {
-    const limits: Record<DateRange, number> = {
-      '7d': 20,
-      '30d': 60,
-      '90d': 100,
-      '1y': 120,
-      custom: 80,
-    };
-    return ALL_RENDER_HISTORY.slice(0, limits[dateRange] ?? 60);
-  }, [dateRange]);
+    const from = rangeDates.from;
+    const to = rangeDates.to;
+    if (!from || !to) return renderHistory;
+    return renderHistory.filter((r) => r.date >= from && r.date <= to);
+  }, [renderHistory, rangeDates]);
 
   const kpis = useMemo(() => {
     const totalRenders = snapshots.reduce((s, d) => s + d.completed + d.failed, 0);
@@ -734,19 +801,28 @@ function AnalyticsPageContent() {
     };
   }, [snapshots]);
 
-  // Credit forecast
-  const CREDITS_REMAINING = 5800;
-  const DAILY_RATE = 140;
-  const daysLeft = Math.round(CREDITS_REMAINING / DAILY_RATE);
-  const depletionDate = new Date(2026, 2, 25);
-  depletionDate.setDate(depletionDate.getDate() + daysLeft);
+  // Credit forecast.
+  //
+  // usage_meters records credits *spent* per period; nothing records a balance
+  // or an allowance, so a remaining figure cannot be computed. The hardcoded
+  // 5,800-remaining / 140-a-day pair is gone. The burn rate below is real (an
+  // average over the days in range); the runway it would imply is not shown,
+  // because there is no starting balance to run down.
+  const dailyBurn = useMemo(() => {
+    if (snapshots.length === 0) return 0;
+    return snapshots.reduce((sum, d) => sum + d.creditsUsed, 0) / snapshots.length;
+  }, [snapshots]);
+  const CREDITS_REMAINING = 0;
+  const DAILY_RATE = Math.round(dailyBurn);
+  const daysLeft = 0;
+  const depletionDate = new Date();
   const depletionLabel = depletionDate.toLocaleDateString('en', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
-  const forecastColor = daysLeft < 7 ? RED : daysLeft < 30 ? RED : daysLeft < 60 ? AMBER : GREEN;
-  const forecastPulse = daysLeft < 7;
+  const forecastColor = AMBER;
+  const forecastPulse = false;
 
   // Render volume chart data (use last 30 from snapshots for line chart)
   const renderVolumeData = useMemo(() => {
@@ -758,38 +834,42 @@ function AnalyticsPageContent() {
     }));
   }, [snapshots]);
 
-  // Credit burn chart data
+  // Credit burn chart data.
+  //
+  // Cumulative spend, not a draining balance: the old chart started every
+  // account at 10,000 credits and subtracted from it, then projected 15 days
+  // forward from that invented number. Spend is recorded; the balance is not.
   const creditBurnData = useMemo(() => {
-    const slice = snapshots.slice(-30);
-    const startRemaining = 10000;
-    let running = startRemaining;
-    const actual = slice.map((d) => {
-      running -= d.creditsUsed;
-      return { name: d.label, remaining: Math.max(running, 0), projected: null as number | null };
+    let running = 0;
+    return snapshots.slice(-30).map((d) => {
+      running += d.creditsUsed;
+      return { name: d.label, remaining: running, projected: null as number | null };
     });
-    // add projection
-    const lastRemaining = actual[actual.length - 1]?.remaining ?? 0;
-    const avgBurn = slice.reduce((s, d) => s + d.creditsUsed, 0) / slice.length;
-    let proj = lastRemaining;
-    for (let i = 1; i <= 15; i++) {
-      proj -= avgBurn;
-      const futureDate = new Date(2026, 2, 25);
-      futureDate.setDate(futureDate.getDate() + i);
-      const label = futureDate.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-      actual.push({ name: label, remaining: null as any, projected: Math.max(proj, 0) });
-    }
-    return actual;
   }, [snapshots]);
 
-  const redZoneThreshold = 10000 * 0.2; // 20% of total
+  // No allowance is recorded, so there is no threshold to colour against.
+  const redZoneThreshold = Number.POSITIVE_INFINITY;
 
-  // Deterministically assign a credit category to each render row (mock mapping)
-  const rowCategory = useCallback((rowId: string): CreditCategory => {
-    let h = 0;
-    for (let i = 0; i < rowId.length; i++) h = (h * 31 + rowId.charCodeAt(i)) >>> 0;
-    const cats: CreditCategory[] = ['Video', 'Audio', 'Style', 'Avatar', 'Script'];
-    return cats[h % cats.length];
-  }, []);
+  // A row's credit category is its job type. This used to hash the row id into
+  // one of five categories, so the same render could be "Audio" in one build
+  // and "Style" in the next.
+  const jobTypeById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const j of jobs) map.set(j.id, j.jobType);
+    return map;
+  }, [jobs]);
+  const rowCategory = useCallback(
+    (rowId: string): CreditCategory => {
+      const type = (jobTypeById.get(rowId) ?? '').toLowerCase();
+      if (type.includes('audio') || type.includes('voice') || type.includes('music'))
+        return 'Audio';
+      if (type.includes('style')) return 'Style';
+      if (type.includes('avatar')) return 'Avatar';
+      if (type.includes('script')) return 'Script';
+      return 'Video';
+    },
+    [jobTypeById],
+  );
 
   // Table filtering
   const filteredHistory = useMemo(() => {
@@ -805,8 +885,8 @@ function AnalyticsPageContent() {
 
   // Running rows -> animated progress simulation
   const runningRowIds = useMemo(
-    () => ALL_RENDER_HISTORY.filter((r) => r.status === 'Running').map((r) => r.id),
-    [],
+    () => renderHistory.filter((r) => r.status === 'Running').map((r) => r.id),
+    [renderHistory],
   );
 
   useEffect(() => {
@@ -838,7 +918,7 @@ function AnalyticsPageContent() {
 
   const totalPages = Math.ceil(filteredHistory.length / perPage);
   const pageRows = filteredHistory.slice(tablePage * perPage, (tablePage + 1) * perPage);
-  const failedRows = ALL_RENDER_HISTORY.filter((r) => r.status === 'Failed');
+  const failedRows = renderHistory.filter((r) => r.status === 'Failed');
   const hasFailures = failedRows.length > 0;
 
   // Export handlers
@@ -898,6 +978,24 @@ function AnalyticsPageContent() {
       <div
         style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
+        {/* Every chart below is derived from these two requests. If either
+            failed, the charts are empty rather than wrong -- say which. */}
+        {(jobState.loading || summaryState.loading) && (
+          <div style={{ padding: '16px 24px 0' }}>
+            <LoadingState label="Loading analytics" />
+          </div>
+        )}
+        {!jobState.loading && jobState.error && (
+          <div style={{ padding: '16px 24px 0' }}>
+            <ErrorState error={jobState.error} onRetry={jobState.reload} />
+          </div>
+        )}
+        {!summaryState.loading && summaryState.error && (
+          <div style={{ padding: '16px 24px 0' }}>
+            <ErrorState error={summaryState.error} onRetry={summaryState.reload} />
+          </div>
+        )}
+
         {/* ═══ HEADER ═══════════════════════════════════════════ */}
         <div
           style={{
@@ -1385,7 +1483,9 @@ function AnalyticsPageContent() {
             <h2 style={secTitle}>Credit Usage by Category</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {CREDIT_CATEGORIES.map((cat) => {
-                const widthPct = (cat.credits / CREDIT_CATEGORIES[0].credits) * 100;
+                const widthPct = CREDIT_CATEGORIES[0]?.credits
+                  ? (cat.credits / CREDIT_CATEGORIES[0].credits) * 100
+                  : 0;
                 const isUp = cat.trend > 0;
                 const selected = categoryFilter === cat.category;
                 return (
@@ -1681,7 +1781,7 @@ function AnalyticsPageContent() {
                 }}
               >
                 <option value="">All Projects</option>
-                {PROJECTS.map((p) => (
+                {projectNames.map((p) => (
                   <option key={p} value={p}>
                     {p}
                   </option>
@@ -2163,7 +2263,7 @@ function AnalyticsPageContent() {
             <h2 style={secTitle}>Top Projects</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {TOP_PROJECTS_DATA.map((proj, i) => {
-                const maxCredits = TOP_PROJECTS_DATA[0].credits;
+                const maxCredits = TOP_PROJECTS_DATA[0]?.credits ?? 0;
                 const widthPct = (proj.credits / maxCredits) * 100;
                 return (
                   <div

@@ -1,15 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Layers, Package } from 'lucide-react';
+import { ChevronRight, Layers } from 'lucide-react';
 import BroadcastOverlayDesigner from '@/components/live/BroadcastOverlayDesigner';
-
-const SAVED_SETS = [
-  { id: 'set1', name: 'Gaming Stream', count: 4, updatedAt: '1h ago' },
-  { id: 'set2', name: 'Talk Show', count: 6, updatedAt: '5h ago' },
-  { id: 'set3', name: 'Charity Drive', count: 3, updatedAt: '2d ago' },
-  { id: 'set4', name: 'Music Session', count: 5, updatedAt: '1w ago' },
-];
 
 export default function BroadcastOverlaysPage() {
   return (
@@ -81,33 +74,13 @@ export default function BroadcastOverlaysPage() {
               gap: 6,
             }}
           >
-            {SAVED_SETS.map((s) => (
-              <li key={s.id}>
-                <button
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    background: 'var(--card, #14141b)',
-                    border: '1px solid var(--border, #262631)',
-                    color: 'var(--fg, #e5e7eb)',
-                    borderRadius: 8,
-                    padding: '10px 12px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <Package size={14} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13 }}>{s.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted, #9ca3af)' }}>
-                      {s.count} overlays | {s.updatedAt}
-                    </div>
-                  </div>
-                </button>
-              </li>
-            ))}
+            {/* Saved overlay sets listed four fixtures here. Nothing persists
+                an overlay or a set of them: the designer beside this list keeps
+                its layers in component state and there is no table to save them
+                to, so there is no list to render. */}
+            <li style={{ fontSize: 12, color: 'var(--muted, #9ca3af)', lineHeight: 1.5 }}>
+              Saving overlay sets is not available yet — nothing in the schema stores an overlay.
+            </li>
           </ul>
         </aside>
 

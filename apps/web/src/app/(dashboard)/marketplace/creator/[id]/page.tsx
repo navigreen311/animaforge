@@ -13,6 +13,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useResource } from '@/lib/api/useResource';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface CreatorItem {
@@ -37,123 +38,73 @@ interface CreatorProfile {
   items: CreatorItem[];
 }
 
-// ── Mock Data ──────────────────────────────────────────────────────
-const CREATOR_GRADIENTS: Record<string, string> = {
-  ArtBot: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-  StyleMaster: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-  AnimaForge: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-  CharacterLab: 'linear-gradient(135deg, #10b981, #065f46)',
-  SoundForge: 'linear-gradient(135deg, #3b82f6, #1e3a5f)',
-  RetroPixels: 'linear-gradient(135deg, #a855f7, #f472b6)',
-};
+// ── Data ────────────────────────────────────────────────
 
-const CREATOR_BIOS: Record<string, string> = {
-  ArtBot:
-    'Award-winning digital artist blending traditional painting with AI-assisted animation. Specializes in watercolor and impressionist styles.',
-  StyleMaster:
-    'Veteran anime-style artist with 10+ years in the industry. Creator of authentic cel-shaded aesthetics and classic Japanese looks.',
-  AnimaForge:
-    'Official AnimaForge creator account. Premium first-party packs crafted by the core studio team for maximum polish and compatibility.',
-  CharacterLab:
-    'Character design studio focused on rigged, production-ready models for animation, games, and interactive media.',
-  SoundForge:
-    'Independent music producer creating cinematic scores, foley, and sound design for animators and filmmakers worldwide.',
-  RetroPixels:
-    'Pixel art purist preserving the nostalgic beauty of 8-bit and 16-bit eras for modern creators.',
-};
+/** One row of GET /api/marketplace/items. */
+interface MarketItemRow {
+  id: string;
+  name: string;
+  type: string;
+  price: number;
+  description: string;
+  creatorId: string;
+  category: string;
+  purchaseCount: number;
+  createdAt: string;
+}
 
-function getCreatorProfile(id: string): CreatorProfile {
-  // id comes from the URL — decode it to use as display name
-  const decoded = decodeURIComponent(id);
-  const name = decoded;
-  const initials =
+const ITEM_GRADIENTS = [
+  'linear-gradient(135deg, #6366f1, #06b6d4)',
+  'linear-gradient(135deg, #ec4899, #8b5cf6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #10b981, #065f46)',
+];
+
+function initialsFor(name: string): string {
+  return (
     name
       .split(/[\s-_]+/)
       .map((w) => w[0])
       .filter(Boolean)
       .slice(0, 2)
       .join('')
-      .toUpperCase() || name.slice(0, 2).toUpperCase();
+      .toUpperCase() || name.slice(0, 2).toUpperCase()
+  );
+}
 
-  const gradient = CREATOR_GRADIENTS[name] ?? 'linear-gradient(135deg, #6366f1, #8b5cf6)';
-
-  const bio =
-    CREATOR_BIOS[name] ??
-    'Independent marketplace creator sharing original styles, templates, characters, and audio with the AnimaForge community.';
-
-  // Mock 6 items for this creator
-  const items: CreatorItem[] = [
-    {
-      id: `${id}-item-1`,
-      name: 'Signature Style Pack',
-      category: 'Style Pack',
-      price: 45,
-      rating: 4.6,
-      ratingCount: 142,
-      downloads: 980,
-      gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-    },
-    {
-      id: `${id}-item-2`,
-      name: 'Motion Template Kit',
-      category: 'Template',
-      price: null,
-      rating: 4.8,
-      ratingCount: 210,
-      downloads: 2400,
-      gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-    },
-    {
-      id: `${id}-item-3`,
-      name: 'Character Expressions',
-      category: 'Characters',
-      price: 80,
-      rating: 4.4,
-      ratingCount: 56,
-      downloads: 340,
-      gradient: 'linear-gradient(135deg, #10b981, #065f46)',
-    },
-    {
-      id: `${id}-item-4`,
-      name: 'Ambient Sound Library',
-      category: 'Audio',
-      price: 60,
-      rating: 4.5,
-      ratingCount: 89,
-      downloads: 670,
-      gradient: 'linear-gradient(135deg, #3b82f6, #1e3a5f)',
-    },
-    {
-      id: `${id}-item-5`,
-      name: 'Cinematic Overlay Pack',
-      category: 'Style Pack',
-      price: 35,
-      rating: 4.3,
-      ratingCount: 104,
-      downloads: 820,
-      gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-    },
-    {
-      id: `${id}-item-6`,
-      name: 'Hero Pose Collection',
-      category: 'Characters',
-      price: 95,
-      rating: 4.7,
-      ratingCount: 38,
-      downloads: 210,
-      gradient: 'linear-gradient(135deg, #a855f7, #f472b6)',
-    },
-  ];
-
+/**
+ * Build a creator profile from that creator's listings.
+ *
+ * `getCreatorProfile` used to invent one: a hand-written bio per known creator
+ * name, a "Joined March 2024" date for everyone, a verified badge for five
+ * hardcoded names and six fabricated listings with ratings and download counts.
+ *
+ * There is no creator table -- marketplace_items carries a creator_id and
+ * nothing else about the person -- so the profile is what the listings say.
+ * The bio, join date and verified badge are gone because nothing records them,
+ * ratings come from the reviews the item actually has (not shown here, so
+ * zero), and `downloads` is the item's real purchase count.
+ */
+function toProfile(id: string, rows: MarketItemRow[]): CreatorProfile {
+  const name = decodeURIComponent(id);
   return {
     id,
     name,
-    initials,
-    bio,
-    gradient,
-    joinedDate: 'Joined March 2024',
-    verified: ['ArtBot', 'StyleMaster', 'CharacterLab', 'SoundForge', 'AnimaForge'].includes(name),
-    items,
+    initials: initialsFor(name),
+    bio: '',
+    gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    joinedDate: '',
+    verified: false,
+    items: rows.map((row, i) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      price: row.price,
+      rating: 0,
+      ratingCount: 0,
+      downloads: row.purchaseCount,
+      gradient: ITEM_GRADIENTS[i % ITEM_GRADIENTS.length],
+    })),
   };
 }
 
@@ -187,7 +138,15 @@ function formatDownloads(n: number): string {
 export default function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const profile = useMemo(() => getCreatorProfile(id), [id]);
+  const state = useResource<{ items: MarketItemRow[] }>('/api/marketplace/items?limit=100');
+  const profile = useMemo(
+    () =>
+      toProfile(
+        id,
+        (state.data?.items ?? []).filter((row) => row.creatorId === id),
+      ),
+    [id, state.data],
+  );
   const [isFollowing, setIsFollowing] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
@@ -195,7 +154,9 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
   const stats = useMemo(() => {
     const itemCount = profile.items.length;
     const totalDownloads = profile.items.reduce((sum, i) => sum + i.downloads, 0);
-    const avgRating = profile.items.reduce((sum, i) => sum + i.rating, 0) / profile.items.length;
+    const avgRating = itemCount
+      ? profile.items.reduce((sum, i) => sum + i.rating, 0) / itemCount
+      : 0;
     return { itemCount, totalDownloads, avgRating };
   }, [profile]);
 

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -25,192 +28,77 @@ interface RenderJob {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
+/*  Live data                                                          */
 /* ------------------------------------------------------------------ */
 
-const INITIAL_JOBS: RenderJob[] = [
-  // Running
-  {
-    id: 'rj-001',
-    projectName: 'Neon Horizons',
-    shotLabel: 'Shot 3 / 10',
-    tier: 'priority',
-    status: 'running',
-    progress: 62,
-    eta: '~4 min',
-    resolution: '4K',
-    credits: 45,
-  },
-  {
-    id: 'rj-002',
-    projectName: 'Brand Intro',
-    shotLabel: 'Shot 1 / 5',
-    tier: 'express',
-    status: 'running',
-    progress: 28,
-    eta: '~9 min',
-    resolution: '4K',
-    credits: 60,
-  },
-  // Complete
-  {
-    id: 'rj-003',
-    projectName: 'Neon Horizons',
-    shotLabel: 'Shot 1 / 10',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '6m 12s',
-    completedAt: '2026-04-09T08:21:00Z',
-    resolution: '1080p',
-    credits: 20,
-  },
-  {
-    id: 'rj-004',
-    projectName: 'Neon Horizons',
-    shotLabel: 'Shot 2 / 10',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '5m 48s',
-    completedAt: '2026-04-09T08:15:00Z',
-    resolution: '1080p',
-    credits: 20,
-  },
-  {
-    id: 'rj-005',
-    projectName: 'Product Demo',
-    shotLabel: 'Shot 1 / 3',
-    tier: 'priority',
-    status: 'complete',
-    progress: 100,
-    duration: '4m 33s',
-    completedAt: '2026-04-09T07:50:00Z',
-    resolution: '4K',
-    credits: 45,
-  },
-  {
-    id: 'rj-006',
-    projectName: 'Product Demo',
-    shotLabel: 'Shot 2 / 3',
-    tier: 'priority',
-    status: 'complete',
-    progress: 100,
-    duration: '4m 50s',
-    completedAt: '2026-04-09T07:45:00Z',
-    resolution: '4K',
-    credits: 45,
-  },
-  {
-    id: 'rj-007',
-    projectName: 'Product Demo',
-    shotLabel: 'Shot 3 / 3',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '7m 20s',
-    completedAt: '2026-04-09T07:30:00Z',
-    resolution: '1080p',
-    credits: 20,
-  },
-  {
-    id: 'rj-008',
-    projectName: 'Social Clips',
-    shotLabel: 'Shot 1 / 4',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '3m 10s',
-    completedAt: '2026-04-09T06:55:00Z',
-    resolution: '720p',
-    credits: 12,
-  },
-  {
-    id: 'rj-009',
-    projectName: 'Social Clips',
-    shotLabel: 'Shot 2 / 4',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '3m 22s',
-    completedAt: '2026-04-09T06:50:00Z',
-    resolution: '720p',
-    credits: 12,
-  },
-  {
-    id: 'rj-010',
-    projectName: 'Social Clips',
-    shotLabel: 'Shot 3 / 4',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '2m 58s',
-    completedAt: '2026-04-09T06:40:00Z',
-    resolution: '720p',
-    credits: 12,
-  },
-  {
-    id: 'rj-011',
-    projectName: 'Social Clips',
-    shotLabel: 'Shot 4 / 4',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '3m 05s',
-    completedAt: '2026-04-09T06:35:00Z',
-    resolution: '720p',
-    credits: 12,
-  },
-  {
-    id: 'rj-012',
-    projectName: 'Music Video',
-    shotLabel: 'Shot 1 / 8',
-    tier: 'priority',
-    status: 'complete',
-    progress: 100,
-    duration: '5m 15s',
-    completedAt: '2026-04-09T06:20:00Z',
-    resolution: '4K',
-    credits: 45,
-  },
-  {
-    id: 'rj-013',
-    projectName: 'Music Video',
-    shotLabel: 'Shot 2 / 8',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '6m 40s',
-    completedAt: '2026-04-09T06:10:00Z',
-    resolution: '1080p',
-    credits: 20,
-  },
-  {
-    id: 'rj-014',
-    projectName: 'Music Video',
-    shotLabel: 'Shot 3 / 8',
-    tier: 'standard',
-    status: 'complete',
-    progress: 100,
-    duration: '7m 02s',
-    completedAt: '2026-04-09T06:00:00Z',
-    resolution: '1080p',
-    credits: 20,
-  },
-  // Failed
-  {
-    id: 'rj-015',
-    projectName: 'Brand Intro',
-    shotLabel: 'Shot 2 / 5',
-    tier: 'standard',
-    status: 'failed',
-    progress: 0,
-    resolution: '4K',
-    credits: 0,
-    errorReason:
-      'GPU memory exceeded during upscaling pass. Try reducing resolution to 1080p or splitting the shot into shorter segments.',
-  },
-];
+/** One row of GET /api/jobs. */
+interface JobRow {
+  id: string;
+  projectName: string | null;
+  shotNumber: number | null;
+  tier: string;
+  status: string;
+  progress: number;
+  costCredits: number | null;
+  durationMs: number | null;
+  completedAt: string | null;
+  errorReason: string | null;
+  inputParams: Record<string, unknown> | null;
+}
+
+interface JobList {
+  items: JobRow[];
+  total: number;
+}
+
+function formatDuration(ms: number | null): string | undefined {
+  if (ms === null) return undefined;
+  const total = Math.round(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function formatWhen(iso: string | null): string | undefined {
+  if (!iso) return undefined;
+  const then = new Date(iso).getTime();
+  const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`;
+}
+
+/**
+ * Map a generation job to the row this screen renders.
+ *
+ * `resolution` is read from the job's input parameters because the column does
+ * not exist; when the job did not record one it is left blank rather than
+ * defaulting to a value the job never used.
+ */
+function toRenderJob(job: JobRow): RenderJob {
+  const status: JobStatus =
+    job.status === 'complete'
+      ? 'complete'
+      : job.status === 'failed' || job.status === 'cancelled'
+        ? 'failed'
+        : job.status === 'running'
+          ? 'running'
+          : 'queued';
+
+  return {
+    id: job.id,
+    projectName: job.projectName ?? 'Untitled project',
+    shotLabel: job.shotNumber === null ? '—' : `Shot ${job.shotNumber}`,
+    tier: (job.tier as RenderTier) ?? 'standard',
+    status,
+    progress: job.progress ?? 0,
+    duration: formatDuration(job.durationMs),
+    completedAt: formatWhen(job.completedAt),
+    resolution: (job.inputParams?.resolution as string) ?? '—',
+    credits: job.costCredits ?? 0,
+    errorReason: job.errorReason ?? undefined,
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Tier badge                                                         */
@@ -341,7 +229,8 @@ function StatCard({
 /* ------------------------------------------------------------------ */
 
 export default function RenderQueuePage() {
-  const [jobs, setJobs] = useState<RenderJob[]>(INITIAL_JOBS);
+  const state = useResource<JobList>('/api/jobs?limit=100');
+  const jobs = useMemo(() => (state.data?.items ?? []).map(toRenderJob), [state.data]);
   const [activeTab, setActiveTab] = useState<'all' | JobStatus>('all');
   const [expandedFailed, setExpandedFailed] = useState<Set<string>>(new Set());
   const [completePage, setCompletePage] = useState(0);
@@ -351,18 +240,13 @@ export default function RenderQueuePage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const COMPLETE_PER_PAGE = 8;
 
-  // ── Simulated progress ────────────────────────────────────
+  // Progress comes from the server. The previous version advanced a local
+  // counter by a random amount every 1.2s, so the bar moved whether or not the
+  // job did; it also stopped at 99.5% and never completed. Poll instead.
   useEffect(() => {
-    const iv = setInterval(() => {
-      setJobs((prev) =>
-        prev.map((j) => {
-          if (j.status !== 'running') return j;
-          const next = Math.min(j.progress + Math.random() * 3, 99.5);
-          return { ...j, progress: Math.round(next * 10) / 10 };
-        }),
-      );
-    }, 1200);
+    const iv = setInterval(() => state.reload(), 5000);
     return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Derived stats ─────────────────────────────────────────
@@ -427,18 +311,28 @@ export default function RenderQueuePage() {
     }
   };
 
-  const handleCancel = (id: string) => {
-    setJobs((prev) => prev.filter((j) => j.id !== id));
+  // Cancel and retry hit the real endpoints. Previously cancel deleted the row
+  // from local state, so the job kept running on the server and reappeared on
+  // the next load; retry flipped the row to 'running' without queueing anything.
+  const handleCancel = async (id: string) => {
+    const { error } = await mutate(`/api/jobs/${id}`, 'DELETE');
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Job cancelled');
+    state.reload();
   };
 
-  const handleRetry = (id: string) => {
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === id
-          ? { ...j, status: 'running' as const, progress: 0, eta: '~8 min', errorReason: undefined }
-          : j,
-      ),
-    );
+  const handleRetry = async (id: string) => {
+    const { error } = await mutate(`/api/jobs/${id}/retry`, 'POST');
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    // A retry is a new job, so the original stays in the history.
+    toast.success('Retry queued');
+    state.reload();
   };
 
   const toggleExpandFailed = (id: string) => {
@@ -459,6 +353,24 @@ export default function RenderQueuePage() {
 
   const sortArrow = (col: typeof sortCol) =>
     sortCol === col ? (sortDir === 'asc' ? ' \u2191' : ' \u2193') : '';
+
+  // Loading and failure are rendered before the stats, because a stat row of
+  // zeros is indistinguishable from "you have no jobs" when the request failed.
+  if (state.loading && state.data === null) {
+    return (
+      <div style={{ padding: '20px 24px' }}>
+        <LoadingState label="Loading the render queue…" />
+      </div>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <div style={{ padding: '20px 24px' }}>
+        <ErrorState error={state.error} onRetry={state.reload} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '20px 24px', fontFamily: 'var(--font-sans, system-ui)' }}>

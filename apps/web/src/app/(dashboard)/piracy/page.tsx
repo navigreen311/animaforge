@@ -19,6 +19,8 @@ import {
   Fingerprint,
 } from 'lucide-react';
 import { fetchPiracyCapabilities, isUnavailable } from '@/lib/governance/c2pa';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState, ResourceView } from '@/components/api/ResourceStates';
 import type { PiracyCapabilities } from '@/lib/governance/c2pa';
 
 /* ------------------------------------------------------------------ */
@@ -71,157 +73,127 @@ interface ActivityEntry {
 /*  Mock Data                                                          */
 /* ------------------------------------------------------------------ */
 
-const MOCK_MATCHES: PiracyMatch[] = [
-  {
-    id: 'm1',
-    originalOutput: 'Cyberpunk Samurai — Shot 12',
-    originalShot: 'af_001',
-    platform: 'YouTube',
-    matchUrl: 'youtube.com/watch?v=xK8f2JqLm9n',
-    matchStrength: 92,
-    firstSeen: '2 hours ago',
-    watermarkDetected: true,
-    matchMethod: 'watermark',
-    hammingDistance: 3,
-    status: 'new',
-    gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
-  },
-  {
-    id: 'm2',
-    originalOutput: 'Neon Tokyo — Chase Sequence',
-    originalShot: 'af_002',
-    platform: 'TikTok',
-    matchUrl: 'tiktok.com/@user123/video/7284920193842',
-    matchStrength: 87,
-    firstSeen: '5 hours ago',
-    watermarkDetected: true,
-    matchMethod: 'watermark',
-    hammingDistance: 5,
-    status: 'investigating',
-    gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-  },
-  {
-    id: 'm3',
-    originalOutput: 'Midnight Fable — Opening',
-    originalShot: 'af_003',
-    platform: 'Reddit',
-    matchUrl: 'reddit.com/r/animation/comments/1b3k7d2',
-    matchStrength: 78,
-    firstSeen: '8 hours ago',
-    watermarkDetected: null,
-    matchMethod: 'perceptual-hash',
-    hammingDistance: 9,
-    status: 'new',
-    gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
-  },
-  {
-    id: 'm4',
-    originalOutput: 'Dragon Rider — Flight Scene',
-    originalShot: 'af_004',
-    platform: 'Twitter',
-    matchUrl: 'twitter.com/animeclips/status/1762839201847',
-    matchStrength: 95,
-    firstSeen: '1 day ago',
-    watermarkDetected: true,
-    matchMethod: 'watermark',
-    hammingDistance: 2,
-    status: 'filed',
-    gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-  },
-  {
-    id: 'm5',
-    originalOutput: 'Sunset Fly-over — Establishing',
-    originalShot: 'af_005',
-    platform: 'YouTube',
-    matchUrl: 'youtube.com/shorts/Qj9mKp3vLw2',
-    matchStrength: 84,
-    firstSeen: '1 day ago',
-    watermarkDetected: true,
-    matchMethod: 'watermark',
-    hammingDistance: 5,
-    status: 'investigating',
-    gradient: 'linear-gradient(135deg, #f97316 0%, #eab308 100%)',
-  },
-  {
-    id: 'm6',
-    originalOutput: 'Forest Spirit — Reveal',
-    originalShot: 'af_006',
-    platform: 'TikTok',
-    matchUrl: 'tiktok.com/@aifilms/video/7293847102938',
-    matchStrength: 81,
-    firstSeen: '2 days ago',
-    watermarkDetected: false,
-    matchMethod: 'perceptual-hash',
-    hammingDistance: 8,
-    status: 'resolved',
-    gradient: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
-  },
+/** One row of GET /api/piracy/matches. */
+interface MatchRow {
+  id: string;
+  outputId: string;
+  platform: string;
+  matchUrl: string;
+  matchStrength: number;
+  watermarkFound: boolean;
+  matchMethod: string;
+  hammingDistance: number | null;
+  status: string;
+  detectedAt: string;
+  evidence: Record<string, unknown> | null;
+}
+
+interface MatchList {
+  items: MatchRow[];
+  total: number;
+}
+
+/** One row of GET /api/activity (the audit trail). */
+interface ActivityRow {
+  id: string;
+  action: string;
+  resource: string;
+  resourceId: string;
+  createdAt: string;
+}
+
+interface ActivityList {
+  items: ActivityRow[];
+  total: number;
+}
+
+/**
+ * Scanner fleet status.
+ *
+ * There is no scanner-configuration model: the scanners live in
+ * services/piracy and expose no console endpoint, so /api/piracy/scanners
+ * answers 501. The panel renders that reason rather than a hardcoded fleet
+ * that always looks healthy.
+ */
+interface ScannerList {
+  items: Scanner[];
+}
+
+const MATCH_GRADIENTS = [
+  'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+  'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+  'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
 ];
 
-const MOCK_SCANNERS: Scanner[] = [
-  { id: 's1', platform: 'YouTube', status: 'active', lastScan: '5m ago' },
-  { id: 's2', platform: 'TikTok', status: 'active', lastScan: '12m ago' },
-  { id: 's3', platform: 'Reddit', status: 'rate_limited', lastScan: '45m ago', retryIn: '8m' },
-];
+function relativeTime(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `${mins} minutes ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hours ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? '1 day ago' : `${days} days ago`;
+}
 
-const MOCK_ACTIVITY: ActivityEntry[] = [
-  {
-    id: 'a1',
-    icon: AlertTriangle,
-    iconColor: '#fbbf24',
-    text: 'Match found on youtube.com/watch?v=xK8f2JqLm9n',
-    time: '5m ago',
-  },
-  {
-    id: 'a2',
-    icon: FileText,
-    iconColor: '#f87171',
-    text: 'DMCA filed for match #1247',
-    time: '15m ago',
-  },
-  {
-    id: 'a3',
-    icon: ShieldCheck,
-    iconColor: '#34d399',
-    text: 'Watermark verified for output af_001',
-    time: '1h ago',
-  },
-  {
-    id: 'a4',
-    icon: Search,
-    iconColor: '#a78bfa',
-    text: 'Scan completed for TikTok (0 new matches)',
-    time: '2h ago',
-  },
-  {
-    id: 'a5',
-    icon: AlertTriangle,
-    iconColor: '#fbbf24',
-    text: 'Match found on tiktok.com/@user123/video/7284920193842',
-    time: '2h ago',
-  },
-  {
-    id: 'a6',
-    icon: Check,
-    iconColor: '#34d399',
-    text: 'Match #1243 marked as authorized by creator',
-    time: '3h ago',
-  },
-  {
-    id: 'a7',
-    icon: ShieldAlert,
-    iconColor: '#f87171',
-    text: 'Reddit scanner rate limited — retrying in 8m',
-    time: '4h ago',
-  },
-  {
-    id: 'a8',
-    icon: FileText,
-    iconColor: '#f87171',
-    text: 'DMCA filed for match #1241 on Twitter',
-    time: '6h ago',
-  },
-];
+/**
+ * Map a stored match to the card this screen renders.
+ *
+ * `watermarkFound` is a boolean column, so the tri-state the card supports
+ * collapses: the API records "found" or "not found" and cannot express "not
+ * checked". The scan's evidence carries the method it used, so a match made
+ * without consulting the watermark service reports null rather than false.
+ */
+function toMatch(row: MatchRow): PiracyMatch {
+  const watermarkChecked =
+    typeof row.evidence?.watermark_method === 'string' &&
+    row.evidence.watermark_method !== 'not-configured' &&
+    row.evidence.watermark_method !== 'request-failed';
+
+  const status: MatchStatus =
+    row.status === 'dmca_sent'
+      ? 'filed'
+      : row.status === 'reviewing'
+        ? 'investigating'
+        : row.status === 'dismissed'
+          ? 'dismissed'
+          : 'new';
+
+  return {
+    id: row.id,
+    originalOutput: row.outputId,
+    originalShot: row.outputId.slice(0, 8),
+    platform: (row.platform.charAt(0).toUpperCase() + row.platform.slice(1)) as Platform,
+    matchUrl: row.matchUrl,
+    matchStrength: Math.round(row.matchStrength * 100),
+    firstSeen: relativeTime(row.detectedAt),
+    watermarkDetected: watermarkChecked ? row.watermarkFound : null,
+    matchMethod: row.matchMethod === 'watermark' ? 'watermark' : 'perceptual-hash',
+    hammingDistance: row.hammingDistance,
+    status,
+    gradient:
+      MATCH_GRADIENTS[Math.abs(row.id.charCodeAt(0) + row.id.length) % MATCH_GRADIENTS.length],
+  };
+}
+
+/** Pick an icon from the audit action. Unknown actions get a neutral one. */
+function activityIcon(action: string): { icon: typeof Shield; iconColor: string } {
+  if (action.includes('dmca')) return { icon: FileText, iconColor: '#f87171' };
+  if (action.includes('match')) return { icon: AlertTriangle, iconColor: '#fbbf24' };
+  if (action.includes('watermark')) return { icon: ShieldCheck, iconColor: '#34d399' };
+  if (action.includes('scan')) return { icon: Search, iconColor: '#a78bfa' };
+  return { icon: Shield, iconColor: 'var(--text-tertiary)' };
+}
+
+function toActivity(row: ActivityRow): ActivityEntry {
+  const { icon, iconColor } = activityIcon(row.action);
+  return {
+    id: row.id,
+    icon,
+    iconColor,
+    text: `${row.action} · ${row.resource} ${row.resourceId.slice(0, 8)}`,
+    time: relativeTime(row.createdAt),
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -402,14 +374,19 @@ export default function PiracyPage() {
   const [threshold, setThreshold] = useState(75);
   const [scanFrequency, setScanFrequency] = useState(SCAN_FREQUENCIES[1]);
 
+  const matchState = useResource<MatchList>('/api/piracy/matches?limit=200');
+  const activityState = useResource<ActivityList>('/api/activity?limit=20');
+  const scannerState = useResource<ScannerList>('/api/piracy/scanners');
+  const allMatches = useMemo(() => (matchState.data?.items ?? []).map(toMatch), [matchState.data]);
+
   const filteredMatches = useMemo(() => {
-    if (activeTab === 'all') return MOCK_MATCHES;
+    if (activeTab === 'all') return allMatches;
     if (activeTab === 'investigating')
-      return MOCK_MATCHES.filter((m) => m.status === 'investigating');
-    if (activeTab === 'filed') return MOCK_MATCHES.filter((m) => m.status === 'filed');
-    if (activeTab === 'resolved') return MOCK_MATCHES.filter((m) => m.status === 'resolved');
+      return allMatches.filter((m) => m.status === 'investigating');
+    if (activeTab === 'filed') return allMatches.filter((m) => m.status === 'filed');
+    if (activeTab === 'resolved') return allMatches.filter((m) => m.status === 'resolved');
     return [];
-  }, [activeTab]);
+  }, [activeTab, allMatches]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -559,7 +536,11 @@ export default function PiracyPage() {
             <SettingsPanel />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {filteredMatches.length === 0 ? (
+              {matchState.loading && matchState.data === null ? (
+                <LoadingState label="Loading matches…" />
+              ) : matchState.error ? (
+                <ErrorState error={matchState.error} onRetry={matchState.reload} />
+              ) : filteredMatches.length === 0 ? (
                 <EmptyState tab={activeTab} />
               ) : (
                 filteredMatches.map((match) => <MatchCard key={match.id} match={match} />)
@@ -590,59 +571,70 @@ export default function PiracyPage() {
               Recent Activity
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {MOCK_ACTIVITY.map((entry) => {
-                const Icon = entry.icon;
-                return (
-                  <div
-                    key={entry.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '8px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      transition: 'background 100ms',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: '50%',
-                        background: 'var(--bg-overlay)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Icon size={12} color={entry.iconColor} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+              <ResourceView
+                state={activityState}
+                isEmpty={(d) => d.items.length === 0}
+                emptyTitle="No recent activity"
+                loadingLabel="Loading activity…"
+              >
+                {(list) =>
+                  list.items.map(toActivity).map((entry) => {
+                    const Icon = entry.icon;
+                    return (
                       <div
+                        key={entry.id}
                         style={{
-                          fontSize: 12,
-                          color: 'var(--text-secondary)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '8px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          transition: 'background 100ms',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--bg-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
                         }}
                       >
-                        {entry.text}
+                        <div
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: '50%',
+                            background: 'var(--bg-overlay)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Icon size={12} color={entry.iconColor} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--text-secondary)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {entry.text}
+                          </div>
+                        </div>
+                        <span
+                          style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}
+                        >
+                          {entry.time}
+                        </span>
                       </div>
-                    </div>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>
-                      {entry.time}
-                    </span>
-                  </div>
-                );
-              })}
+                    );
+                  })
+                }
+              </ResourceView>
             </div>
           </div>
         </div>
@@ -672,9 +664,16 @@ export default function PiracyPage() {
               Active Scanners
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {MOCK_SCANNERS.map((scanner) => (
-                <ScannerCard key={scanner.id} scanner={scanner} />
-              ))}
+              <ResourceView
+                state={scannerState}
+                isEmpty={(d) => d.items.length === 0}
+                emptyTitle="No scanners configured"
+                loadingLabel="Loading scanners…"
+              >
+                {(list) =>
+                  list.items.map((scanner) => <ScannerCard key={scanner.id} scanner={scanner} />)
+                }
+              </ResourceView>
             </div>
 
             <button

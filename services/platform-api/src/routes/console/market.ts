@@ -162,8 +162,23 @@ router.get(
     const items = await requirePrisma().marketplaceItem.findMany({
       where: { creatorId: req.user!.id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        // Net of the platform fee: what the seller actually earned on this
+        // listing, rather than gross price times purchase count.
+        purchases: { select: { priceCents: true, feeCents: true, status: true } },
+      },
     });
-    apiResponse.success(res, { items, total: items.length });
+
+    apiResponse.success(res, {
+      items: items.map(({ purchases, ...item }) => ({
+        ...item,
+        revenueCents: purchases
+          .filter((p) => p.status === 'complete')
+          .reduce((sum, p) => sum + (p.priceCents - p.feeCents), 0),
+        salesCount: purchases.filter((p) => p.status === 'complete').length,
+      })),
+      total: items.length,
+    });
   }),
 );
 
