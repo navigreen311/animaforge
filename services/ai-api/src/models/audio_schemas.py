@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 # ── Request Schemas ──────────────────────────────────────────────────────────
@@ -30,6 +32,8 @@ class MusicScoreRequest(BaseModel):
 class GenerateAudioResponse(BaseModel):
     job_id: str
     estimated_seconds: float
+    #: Engine marker; ``is_mock`` is true while synthesis is unimplemented.
+    engine: dict[str, Any] | None = None
 
 
 class CueSheet(BaseModel):
@@ -52,6 +56,10 @@ class Phoneme(BaseModel):
     phoneme: str
     start_ms: int
     end_ms: int
+    #: Oculus viseme this phoneme maps to, for driving a mouth rig directly.
+    viseme: str | None = None
+    #: Word this phoneme belongs to, so a caller can group without re-parsing.
+    word: str | None = None
 
 
 class AudioJob(BaseModel):
@@ -61,3 +69,29 @@ class AudioJob(BaseModel):
     project_id: str | None = None
     estimated_seconds: float = 0.0
     cue_sheet: CueSheet | None = None
+    #: Engine marker. Carries ``is_mock`` so a caller never has to infer
+    #: whether the job represents real work. See ``src.services.engines``.
+    engine: dict[str, Any] | None = None
+
+
+class LipSyncRequest(BaseModel):
+    dialogue: str = Field(..., min_length=1, description="Line to be spoken")
+    speaking_rate: float = Field(
+        1.0, gt=0.0, le=4.0, description="Rate multiplier; 1.2 is 20% faster"
+    )
+    audio_path: str | None = Field(
+        None,
+        description=(
+            "Optional recording to force-align against. Requires the gated "
+            "audio engine; ignored with a note in the response otherwise."
+        ),
+    )
+
+
+class LipSyncResponse(BaseModel):
+    phonemes: list[Phoneme]
+    #: ``forced-alignment`` when measured from audio, ``duration-model`` when
+    #: modelled from text.
+    source: str
+    duration_ms: int
+    engine: dict[str, Any]

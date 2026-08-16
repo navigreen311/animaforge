@@ -157,9 +157,17 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="D4",
         name="audio",
         env_var="AUDIO_ENGINE",
-        summary="Speech synthesis and forced-alignment phoneme timing.",
+        summary=(
+            "Lip-sync phoneme timing. Rule-based ARPABET grapheme-to-phoneme "
+            "and a segmental duration model run on CPU by default with no "
+            "weights; CTC forced alignment against a real waveform is the "
+            "gated upgrade. Speech SYNTHESIS is not implemented -- that path "
+            "is still mock and says so in every response."
+        ),
         packages=("torch", "torchaudio"),
         weights_env="AUDIO_WEIGHTS_DIR",
+        real_by_default=True,
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="X6",
