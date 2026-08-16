@@ -12,6 +12,8 @@ import {
   Plus,
   X,
 } from 'lucide-react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -20,7 +22,6 @@ import {
 type EventType = 'shot' | 'milestone' | 'meeting' | 'review';
 type ViewMode = 'month' | 'week' | 'gantt' | 'list';
 type EventStatus = 'scheduled' | 'in_progress' | 'complete' | 'overdue';
-type Phase = 'pre-prod' | 'production' | 'post';
 type ListFilter = 'all' | 'shots' | 'milestones' | 'reviews';
 type SortKey = 'date' | 'event' | 'project' | 'type' | 'owner' | 'status';
 
@@ -37,15 +38,6 @@ interface CalendarEvent {
   description?: string;
 }
 
-interface GanttTask {
-  id: string;
-  name: string;
-  projectId: string;
-  startDay: number; // offset from Gantt start
-  duration: number; // days
-  phase: Phase;
-  dependencies?: string[];
-}
 
 interface TeamMember {
   id: string;
@@ -64,12 +56,33 @@ interface ProjectOption {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const PROJECTS: ProjectOption[] = [
-  { id: 'all', name: 'All Projects' },
-  { id: 'p1', name: 'Midnight Fable' },
-  { id: 'p2', name: 'Product Launch Ad' },
-  { id: 'p3', name: 'Explainer Video' },
-];
+const ALL_PROJECTS: ProjectOption = { id: 'all', name: 'All Projects' };
+
+/** One row of GET /api/team/members. */
+interface MemberRow {
+  id: string;
+  role: string;
+  user: { id: string; email: string; displayName: string | null } | null;
+}
+
+const MEMBER_COLORS = ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+
+/**
+ * Map a team member onto the workload strip.
+ *
+ * `workload` is zero for everyone because nothing measures it: no table records
+ * assigned hours, capacity or utilisation. The bar renders empty and the panel
+ * says so, rather than showing the invented 40-90% spread it used to.
+ */
+function toTeamMember(row: MemberRow, index: number): TeamMember {
+  return {
+    id: row.id,
+    name: row.user?.displayName ?? row.user?.email ?? row.id,
+    role: row.role,
+    workload: 0,
+    color: MEMBER_COLORS[index % MEMBER_COLORS.length],
+  };
+}
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: 'month', label: 'Month' },
@@ -101,11 +114,6 @@ const EVENT_COLORS: Record<EventType, { bg: string; text: string; border: string
     },
   };
 
-const PHASE_COLORS: Record<Phase, string> = {
-  'pre-prod': '#3b82f6',
-  production: '#7c3aed',
-  post: '#22c55e',
-};
 
 const STATUS_COLORS: Record<EventStatus, { bg: string; text: string }> = {
   scheduled: { bg: 'rgba(148, 163, 184, 0.15)', text: '#cbd5e1' },
@@ -122,282 +130,52 @@ const STATUS_COLORS: Record<EventStatus, { bg: string; text: string }> = {
 const YEAR = 2026;
 const MONTH = 3; // April (0-indexed)
 
-function iso(y: number, m: number, d: number, h = 9): string {
-  return new Date(Date.UTC(y, m, d, h, 0, 0)).toISOString();
+
+/** One row of GET /api/calendar/events. */
+interface CalendarEventRow {
+  id: string;
+  projectId: string | null;
+  title: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  ownerId: string | null;
+  status: string;
+  description: string | null;
 }
 
-const MOCK_EVENTS: CalendarEvent[] = [
-  {
-    id: 'e1',
-    title: 'Hero intro shot',
-    type: 'shot',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 3, 10),
-    startHour: 10,
-    durationHours: 2,
-    owner: 'Aria Chen',
-    status: 'complete',
-    description: 'Final render delivery for scene 1 hero shot.',
-  },
-  {
-    id: 'e2',
-    title: 'Daily standup',
-    type: 'meeting',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 6, 9),
-    startHour: 9,
-    durationHours: 1,
-    owner: 'Team',
-    status: 'complete',
-  },
-  {
-    id: 'e3',
-    title: 'Pre-prod sign-off',
-    type: 'milestone',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 7, 14),
-    owner: 'Director',
-    status: 'complete',
-    description: 'Pre-production phase officially closed.',
-  },
-  {
-    id: 'e4',
-    title: 'Scene 3 review',
-    type: 'review',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 8, 15),
-    startHour: 15,
-    durationHours: 1,
-    owner: 'Jordan Lee',
-    status: 'complete',
-  },
-  {
-    id: 'e5',
-    title: 'Shot 12 due',
-    type: 'shot',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 9, 12),
-    startHour: 12,
-    durationHours: 3,
-    owner: 'Mika Tanaka',
-    status: 'in_progress',
-    description: 'Chase sequence rooftop approach.',
-  },
-  {
-    id: 'e6',
-    title: 'Daily standup',
-    type: 'meeting',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 9, 9),
-    startHour: 9,
-    durationHours: 1,
-    owner: 'Team',
-    status: 'in_progress',
-  },
-  {
-    id: 'e7',
-    title: 'Render window',
-    type: 'meeting',
-    projectId: 'p3',
-    date: iso(YEAR, MONTH, 10, 13),
-    startHour: 13,
-    durationHours: 4,
-    owner: 'Render Farm',
-    status: 'scheduled',
-  },
-  {
-    id: 'e8',
-    title: 'Director review',
-    type: 'review',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 11, 16),
-    startHour: 16,
-    durationHours: 2,
-    owner: 'Director',
-    status: 'scheduled',
-  },
-  {
-    id: 'e9',
-    title: 'Shot 14 due',
-    type: 'shot',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 13, 11),
-    owner: 'Kael Rivers',
-    status: 'scheduled',
-  },
-  {
-    id: 'e10',
-    title: 'Animatic lock',
-    type: 'milestone',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 14, 10),
-    owner: 'Morath Vale',
-    status: 'scheduled',
-    description: 'Locked animatic ready for production handoff.',
-  },
-  {
-    id: 'e11',
-    title: 'Client review',
-    type: 'review',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 16, 14),
-    startHour: 14,
-    durationHours: 2,
-    owner: 'Sarah Chen',
-    status: 'scheduled',
-  },
-  {
-    id: 'e12',
-    title: 'Shot 17 due',
-    type: 'shot',
-    projectId: 'p3',
-    date: iso(YEAR, MONTH, 17, 15),
-    owner: 'Aria Chen',
-    status: 'scheduled',
-  },
-  {
-    id: 'e13',
-    title: 'Production kickoff',
-    type: 'milestone',
-    projectId: 'p3',
-    date: iso(YEAR, MONTH, 20, 9),
-    owner: 'Director',
-    status: 'scheduled',
-  },
-  {
-    id: 'e14',
-    title: 'Color pass review',
-    type: 'review',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 22, 13),
-    owner: 'Jordan Lee',
-    status: 'scheduled',
-  },
-  {
-    id: 'e15',
-    title: 'Shot 21 due',
-    type: 'shot',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 28, 12),
-    owner: 'Mika Tanaka',
-    status: 'scheduled',
-  },
-];
+const EVENT_TYPES: EventType[] = ['shot', 'milestone', 'meeting', 'review'];
+const EVENT_STATUSES: EventStatus[] = ['scheduled', 'in_progress', 'complete', 'overdue'];
 
-const MOCK_LIST_EVENTS: CalendarEvent[] = [
-  ...MOCK_EVENTS,
-  {
-    id: 'l1',
-    title: 'VO session',
-    type: 'meeting',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 4, 10),
-    owner: 'Aria Chen',
-    status: 'complete',
-  },
-  {
-    id: 'l2',
-    title: 'Shot 4 due',
-    type: 'shot',
-    projectId: 'p1',
-    date: iso(YEAR, MONTH, 5, 12),
-    owner: 'Kael Rivers',
-    status: 'complete',
-  },
-  {
-    id: 'l3',
-    title: 'Style review',
-    type: 'review',
-    projectId: 'p3',
-    date: iso(YEAR, MONTH, 12, 14),
-    owner: 'Sarah Chen',
-    status: 'scheduled',
-  },
-  {
-    id: 'l4',
-    title: 'Shot 9 due',
-    type: 'shot',
-    projectId: 'p3',
-    date: iso(YEAR, MONTH, 15, 11),
-    owner: 'Morath Vale',
-    status: 'scheduled',
-  },
-  {
-    id: 'l5',
-    title: 'Final delivery',
-    type: 'milestone',
-    projectId: 'p2',
-    date: iso(YEAR, MONTH, 30, 17),
-    owner: 'Director',
-    status: 'scheduled',
-  },
-];
+/**
+ * Map a stored event onto the calendar cell.
+ *
+ * `owner` is the raw owner id: calendar_events stores owner_id with no relation
+ * to users, so there is no name to resolve without a join the schema does not
+ * declare. Showing the id is at least true.
+ */
+function toEvent(row: CalendarEventRow): CalendarEvent {
+  const start = new Date(row.startDate);
+  const end = new Date(row.endDate);
+  const hours = Math.max(1, Math.round((end.getTime() - start.getTime()) / 3_600_000));
+  return {
+    id: row.id,
+    title: row.title,
+    type: EVENT_TYPES.includes(row.type as EventType) ? (row.type as EventType) : 'meeting',
+    projectId: row.projectId ?? 'unassigned',
+    date: row.startDate.slice(0, 10),
+    startHour: start.getHours(),
+    durationHours: hours,
+    owner: row.ownerId ?? '',
+    status: EVENT_STATUSES.includes(row.status as EventStatus)
+      ? (row.status as EventStatus)
+      : 'scheduled',
+    description: row.description ?? undefined,
+  };
+}
 
-const GANTT_TASKS: GanttTask[] = [
-  { id: 't1', name: 'Script lock', projectId: 'p1', startDay: 0, duration: 5, phase: 'pre-prod' },
-  {
-    id: 't2',
-    name: 'Storyboards',
-    projectId: 'p1',
-    startDay: 4,
-    duration: 7,
-    phase: 'pre-prod',
-    dependencies: ['t1'],
-  },
-  {
-    id: 't3',
-    name: 'Animatic',
-    projectId: 'p1',
-    startDay: 10,
-    duration: 5,
-    phase: 'pre-prod',
-    dependencies: ['t2'],
-  },
-  {
-    id: 't4',
-    name: 'Shot generation',
-    projectId: 'p1',
-    startDay: 14,
-    duration: 12,
-    phase: 'production',
-    dependencies: ['t3'],
-  },
-  {
-    id: 't5',
-    name: 'Character animation',
-    projectId: 'p2',
-    startDay: 6,
-    duration: 10,
-    phase: 'production',
-  },
-  {
-    id: 't6',
-    name: 'VFX integration',
-    projectId: 'p2',
-    startDay: 15,
-    duration: 8,
-    phase: 'production',
-    dependencies: ['t5'],
-  },
-  { id: 't7', name: 'Color grading', projectId: 'p3', startDay: 20, duration: 6, phase: 'post' },
-  {
-    id: 't8',
-    name: 'Final mix + deliver',
-    projectId: 'p3',
-    startDay: 24,
-    duration: 4,
-    phase: 'post',
-    dependencies: ['t7'],
-  },
-];
 
-const TEAM_MEMBERS: TeamMember[] = [
-  { id: 'm1', name: 'Aria Chen', role: 'Director', workload: 85, color: '#7c3aed' },
-  { id: 'm2', name: 'Kael Rivers', role: 'Lead Animator', workload: 92, color: '#3b82f6' },
-  { id: 'm3', name: 'Mika Tanaka', role: 'VFX Artist', workload: 64, color: '#22c55e' },
-  { id: 'm4', name: 'Morath Vale', role: 'Storyboard', workload: 45, color: '#fbbf24' },
-  { id: 'm5', name: 'Sarah Chen', role: 'Reviewer', workload: 30, color: '#f472b6' },
-];
+
 
 /* ------------------------------------------------------------------ */
 /*  Date helpers                                                       */
@@ -467,12 +245,33 @@ export default function CalendarPage() {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
+  const eventState = useResource<{ items: CalendarEventRow[] }>('/api/calendar/events?limit=500');
+  const projectState = useResource<{ items: { id: string; title: string }[] }>(
+    '/api/projects?limit=100',
+  );
+  const memberState = useResource<{ items: MemberRow[] }>('/api/team/members');
+
+  const allEvents = useMemo(
+    () => (eventState.data?.items ?? []).map(toEvent),
+    [eventState.data],
+  );
+  const PROJECTS = useMemo<ProjectOption[]>(
+    () => [ALL_PROJECTS, ...(projectState.data?.items ?? []).map((p) => ({ id: p.id, name: p.title }))],
+    [projectState.data],
+  );
+  const TEAM_MEMBERS = useMemo(
+    () => (memberState.data?.items ?? []).map(toTeamMember),
+    [memberState.data],
+  );
+
   const visibleEvents = useMemo(() => {
-    return MOCK_EVENTS.filter((e) => projectFilter === 'all' || e.projectId === projectFilter);
-  }, [projectFilter]);
+    return allEvents.filter((e) => projectFilter === 'all' || e.projectId === projectFilter);
+  }, [allEvents, projectFilter]);
 
   const visibleListEvents = useMemo(() => {
-    const filtered = MOCK_LIST_EVENTS.filter((e) => {
+    // The list used to read a second, separate mock array; both views are the
+    // same events now, filtered differently.
+    const filtered = allEvents.filter((e) => {
       if (projectFilter !== 'all' && e.projectId !== projectFilter) return false;
       if (listFilter === 'shots' && e.type !== 'shot') return false;
       if (listFilter === 'milestones' && e.type !== 'milestone') return false;
@@ -504,7 +303,7 @@ export default function CalendarPage() {
       return sortAsc ? cmp : -cmp;
     });
     return sorted;
-  }, [projectFilter, listFilter, sortKey, sortAsc]);
+  }, [allEvents, projectFilter, listFilter, sortKey, sortAsc]);
 
   const upcomingThisWeek = useMemo(() => {
     const weekStart = startOfWeek(today);
@@ -521,7 +320,7 @@ export default function CalendarPage() {
     const shots = visibleEvents.filter((e) => e.type === 'shot').length;
     const milestones = visibleEvents.filter((e) => e.type === 'milestone').length;
     return { shots, milestones, teamAssigned: TEAM_MEMBERS.length };
-  }, [visibleEvents]);
+  }, [visibleEvents, TEAM_MEMBERS]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -743,6 +542,12 @@ export default function CalendarPage() {
           </span>
         </div>
 
+        {/* A calendar that failed to load must not look like a free month. */}
+        {eventState.loading && <LoadingState label="Loading calendar" />}
+        {!eventState.loading && eventState.error && (
+          <ErrorState error={eventState.error} onRetry={eventState.reload} />
+        )}
+
         {/* ============== View body ============== */}
         {viewMode === 'month' && (
           <MonthView
@@ -764,7 +569,18 @@ export default function CalendarPage() {
           />
         )}
 
-        {viewMode === 'gantt' && <GanttView tasks={GANTT_TASKS} projects={PROJECTS} />}
+        {/* The Gantt chart drew a hardcoded task list with phases and
+            dependencies. Nothing in the schema models a production task, its
+            phase or what it blocks, so there is no data to draw. */}
+        {viewMode === 'gantt' && (
+          <ErrorState
+            error={{
+              code: 'NOT_IMPLEMENTED',
+              message:
+                'The Gantt view needs production tasks with phases and dependencies. No table records them yet.',
+            }}
+          />
+        )}
 
         {viewMode === 'list' && (
           <ListView
@@ -1333,192 +1149,6 @@ function WeekView({
 /*  Gantt view                                                         */
 /* ------------------------------------------------------------------ */
 
-function GanttView({ tasks, projects }: { tasks: GanttTask[]; projects: ProjectOption[] }) {
-  const totalDays = 30;
-  const colWidth = 26;
-  const rowHeight = 36;
-  const labelWidth = 180;
-  const chartWidth = totalDays * colWidth;
-
-  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
-
-  return (
-    <div
-      style={{
-        background: 'var(--bg-surface)',
-        border: '0.5px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        overflow: 'auto',
-      }}
-    >
-      {/* Header: day numbers */}
-      <div
-        style={{
-          display: 'flex',
-          borderBottom: '0.5px solid var(--border)',
-          background: 'var(--bg-base)',
-        }}
-      >
-        <div
-          style={{
-            width: labelWidth,
-            flexShrink: 0,
-            padding: '10px 12px',
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--text-tertiary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}
-        >
-          Task
-        </div>
-        <div style={{ display: 'flex', position: 'relative' }}>
-          {Array.from({ length: totalDays }, (_, i) => (
-            <div
-              key={i}
-              style={{
-                width: colWidth,
-                textAlign: 'center',
-                fontSize: 10,
-                color: 'var(--text-tertiary)',
-                padding: '10px 0',
-                borderLeft: i === 0 ? 'none' : '0.5px solid var(--border)',
-              }}
-            >
-              {i + 1}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Rows */}
-      <div style={{ position: 'relative' }}>
-        {tasks.map((t, idx) => {
-          const left = t.startDay * colWidth;
-          const width = t.duration * colWidth - 2;
-          return (
-            <div
-              key={t.id}
-              style={{
-                display: 'flex',
-                borderBottom: '0.5px solid var(--border)',
-                height: rowHeight,
-              }}
-            >
-              <div
-                style={{
-                  width: labelWidth,
-                  flexShrink: 0,
-                  padding: '0 12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                }}
-              >
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {t.name}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                  {projectName(t.projectId)}
-                </span>
-              </div>
-              <div style={{ position: 'relative', width: chartWidth, height: rowHeight }}>
-                {/* Grid lines */}
-                {Array.from({ length: totalDays }, (_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      left: i * colWidth,
-                      top: 0,
-                      bottom: 0,
-                      width: 1,
-                      background: 'var(--border)',
-                      opacity: 0.3,
-                    }}
-                  />
-                ))}
-                {/* Bar */}
-                <div
-                  title={`${t.name} (${t.duration}d)`}
-                  style={{
-                    position: 'absolute',
-                    left,
-                    top: 8,
-                    width,
-                    height: rowHeight - 16,
-                    background: PHASE_COLORS[t.phase],
-                    borderRadius: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 8px',
-                    fontSize: 10,
-                    color: '#fff',
-                    fontWeight: 500,
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {t.phase}
-                </div>
-                {/* Dependency arrows (simple right-angle) */}
-                {t.dependencies?.map((depId) => {
-                  const dep = tasks.find((x) => x.id === depId);
-                  if (!dep) return null;
-                  const depIdx = tasks.findIndex((x) => x.id === depId);
-                  const depEnd = (dep.startDay + dep.duration) * colWidth;
-                  const rowDiff = idx - depIdx;
-                  const midX = depEnd + 4;
-                  const startY = -rowDiff * rowHeight + rowHeight / 2;
-                  const endX = left;
-                  const endY = rowHeight / 2;
-                  return (
-                    <svg
-                      key={depId}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: chartWidth,
-                        height: rowHeight,
-                        overflow: 'visible',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <path
-                        d={`M ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`}
-                        stroke="var(--text-tertiary)"
-                        strokeWidth="1"
-                        fill="none"
-                      />
-                      <polygon
-                        points={`${endX},${endY} ${endX - 5},${endY - 3} ${endX - 5},${endY + 3}`}
-                        fill="var(--text-tertiary)"
-                      />
-                    </svg>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Legend */}
-      <div
-        style={{ display: 'flex', gap: 16, padding: 12, borderTop: '0.5px solid var(--border)' }}
-      >
-        {(Object.keys(PHASE_COLORS) as Phase[]).map((p) => (
-          <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: PHASE_COLORS[p] }} />
-            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{p}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  List view                                                          */

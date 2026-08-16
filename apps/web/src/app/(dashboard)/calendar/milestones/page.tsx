@@ -1,84 +1,52 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Flag, ChevronDown, AlertTriangle, CheckSquare, History } from 'lucide-react';
-import MilestoneBurndown from '@/components/calendar/MilestoneBurndown';
+import React, { useMemo, useState } from 'react';
+import { Flag, ChevronDown, History } from 'lucide-react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
-const MILESTONES = [
-  'M1: Pre-Production Complete',
-  'M2: Animatic Lock',
-  'M3: Animation Complete',
-  'M4: Final Delivery',
-];
-
-interface MilestoneHistoryRow {
+/** A milestone is a calendar event whose type is 'milestone'. */
+interface MilestoneRow {
   id: string;
-  name: string;
-  plannedDate: string;
-  actualDate: string;
-  status: 'done' | 'late' | 'on_track';
-  delta: string;
+  title: string;
+  type: string;
+  startDate: string;
+  status: string;
 }
 
-const HISTORY: MilestoneHistoryRow[] = [
-  {
-    id: 'h1',
-    name: 'Script Lock',
-    plannedDate: '2026-03-12',
-    actualDate: '2026-03-13',
-    status: 'done',
-    delta: '+1d',
-  },
-  {
-    id: 'h2',
-    name: 'Storyboard Complete',
-    plannedDate: '2026-03-20',
-    actualDate: '2026-03-19',
-    status: 'done',
-    delta: '-1d',
-  },
-  {
-    id: 'h3',
-    name: 'Asset Kick-off',
-    plannedDate: '2026-03-25',
-    actualDate: '2026-03-28',
-    status: 'late',
-    delta: '+3d',
-  },
-  {
-    id: 'h4',
-    name: 'Animatic Draft',
-    plannedDate: '2026-04-02',
-    actualDate: '2026-04-03',
-    status: 'done',
-    delta: '+1d',
-  },
-];
 
-const BLOCKERS = [
-  { id: 'b1', text: 'VO contracts with principal cast pending legal review', severity: 'high' },
-  { id: 'b2', text: 'Render farm capacity reduced 20% this week', severity: 'medium' },
-];
 
-const ACTION_ITEMS = [
-  { id: 'a1', text: 'Escalate VO contracts to production legal', owner: 'Alice', done: false },
-  { id: 'a2', text: 'Confirm render farm backup provider', owner: 'Ops', done: false },
-  { id: 'a3', text: 'Daily standup moved to 9:30am', owner: 'All', done: true },
-];
 
-function statusColor(s: MilestoneHistoryRow['status']): string {
+
+// calendar_events.status is a free-form string, so anything unrecognised keeps
+// the neutral colour instead of falling through to undefined.
+function statusColor(s: string): string {
   switch (s) {
     case 'done':
+    case 'complete':
       return '#22c55e';
     case 'late':
+    case 'overdue':
       return '#ef4444';
     case 'on_track':
+    case 'in_progress':
       return '#eab308';
+    default:
+      return 'var(--text-muted, #94a3b8)';
   }
 }
 
 export default function MilestonesPage() {
-  const [milestone, setMilestone] = useState(MILESTONES[1]);
+  // The events collection has no type filter (its list query takes page, limit
+  // and a text search only), so the narrowing happens here rather than sending
+  // a parameter the API would silently ignore and calling every meeting a
+  // milestone.
+  const state = useResource<{ items: MilestoneRow[] }>('/api/calendar/events?limit=200');
+  const milestones = useMemo(
+    () => (state.data?.items ?? []).filter((e) => e.type === 'milestone'),
+    [state.data],
+  );
+  const [milestone, setMilestone] = useState('');
 
   return (
     <div style={{ padding: 24 }}>
@@ -133,9 +101,9 @@ export default function MilestonesPage() {
               cursor: 'pointer',
             }}
           >
-            {MILESTONES.map((m) => (
-              <option key={m} value={m} style={{ background: '#17172b' }}>
-                {m}
+            {milestones.map((m) => (
+              <option key={m.id} value={m.id} style={{ background: '#17172b' }}>
+                {m.title}
               </option>
             ))}
           </select>
@@ -143,19 +111,24 @@ export default function MilestonesPage() {
         </label>
       </header>
 
-      {/* Burndown */}
-      <MilestoneBurndown />
+      {/* What this page used to draw, and why it no longer does.
 
-      {/* Below: history, blockers, actions */}
-      <div
-        style={{
-          marginTop: 24,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 20,
-        }}
-      >
-        {/* Milestone history table */}
+          The burndown chart generated its own curve — 25 tasks over 30 days,
+          with a sine-wave "actual" line drifting around the plan. The history
+          table compared planned against actual dates. Blockers and action items
+          were four more literals.
+
+          None of it has a table behind it. calendar_events records a title, a
+          type, a start and end and a status; it has no task count, no per-day
+          completion, no baseline to burn down against, no actual-vs-planned
+          delta, no blockers and no action items. So the panels are gone rather
+          than redrawn from invented numbers, and what is listed below is the
+          milestones that actually exist. */}
+      {state.loading && <LoadingState label="Loading milestones" />}
+      {!state.loading && state.error && (
+        <ErrorState error={state.error} onRetry={state.reload} />
+      )}
+      {!state.loading && !state.error && (
         <section
           style={{
             background: 'var(--surface, #0f0f14)',
@@ -164,214 +137,56 @@ export default function MilestonesPage() {
             padding: 16,
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <History size={16} color="var(--accent, #a855f7)" />
-            <h2
+            <h2 style={{ margin: 0, fontSize: 14, color: 'var(--text, #f1f5f9)' }}>Milestones</h2>
+          </div>
+
+          {milestones.length === 0 ? (
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted, #94a3b8)' }}>
+              No milestone events yet. Add one from the calendar.
+            </p>
+          ) : (
+            <table
               style={{
-                margin: 0,
-                fontSize: 14,
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: 12,
                 color: 'var(--text, #f1f5f9)',
               }}
             >
-              Milestone History
-            </h2>
-          </div>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: 12,
-              color: 'var(--text, #f1f5f9)',
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  textAlign: 'left',
-                  color: 'var(--text-muted, #94a3b8)',
-                  fontSize: 11,
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                }}
-              >
-                <th style={{ padding: '6px 8px' }}>Milestone</th>
-                <th style={{ padding: '6px 8px' }}>Planned</th>
-                <th style={{ padding: '6px 8px' }}>Actual</th>
-                <th style={{ padding: '6px 8px' }}>Δ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {HISTORY.map((h) => (
+              <thead>
                 <tr
-                  key={h.id}
                   style={{
-                    borderTop: '1px solid var(--border, #26263a)',
+                    textAlign: 'left',
+                    color: 'var(--text-muted, #94a3b8)',
+                    fontSize: 11,
+                    textTransform: 'uppercase',
                   }}
                 >
-                  <td style={{ padding: '8px' }}>{h.name}</td>
-                  <td style={{ padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>
-                    {h.plannedDate}
-                  </td>
-                  <td style={{ padding: '8px' }}>{h.actualDate}</td>
-                  <td
-                    style={{
-                      padding: '8px',
-                      color: statusColor(h.status),
-                      fontWeight: 600,
-                    }}
-                  >
-                    {h.delta}
-                  </td>
+                  <th style={{ padding: '6px 8px' }}>Milestone</th>
+                  <th style={{ padding: '6px 8px' }}>Date</th>
+                  <th style={{ padding: '6px 8px' }}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+              </thead>
+              <tbody>
+                {milestones.map((m) => (
+                  <tr key={m.id} style={{ borderTop: '1px solid var(--border, #26263a)' }}>
+                    <td style={{ padding: '8px' }}>{m.title}</td>
+                    <td style={{ padding: '8px' }}>{m.startDate.slice(0, 10)}</td>
+                    <td style={{ padding: '8px', color: statusColor(m.status) }}>{m.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
-        {/* Blockers */}
-        <section
-          style={{
-            background: 'var(--surface, #0f0f14)',
-            border: '1px solid var(--border, #26263a)',
-            borderRadius: 12,
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-            }}
-          >
-            <AlertTriangle size={16} color="#ef4444" />
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 14,
-                color: 'var(--text, #f1f5f9)',
-              }}
-            >
-              Blockers
-            </h2>
-          </div>
-          <ul
-            style={{
-              listStyle: 'none',
-              margin: 0,
-              padding: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-            }}
-          >
-            {BLOCKERS.map((b) => (
-              <li
-                key={b.id}
-                style={{
-                  padding: 10,
-                  background:
-                    b.severity === 'high' ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)',
-                  border: `1px solid ${
-                    b.severity === 'high' ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)'
-                  }`,
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: 'var(--text, #f1f5f9)',
-                  lineHeight: 1.5,
-                }}
-              >
-                {b.text}
-              </li>
-            ))}
-          </ul>
+          <p style={{ margin: '12px 0 0', fontSize: 11, color: 'var(--text-muted, #94a3b8)' }}>
+            Burndown, planned-vs-actual variance, blockers and action items need tables that do not
+            exist yet.
+          </p>
         </section>
-
-        {/* Action items */}
-        <section
-          style={{
-            background: 'var(--surface, #0f0f14)',
-            border: '1px solid var(--border, #26263a)',
-            borderRadius: 12,
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-            }}
-          >
-            <CheckSquare size={16} color="#22c55e" />
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 14,
-                color: 'var(--text, #f1f5f9)',
-              }}
-            >
-              Action Items
-            </h2>
-          </div>
-          <ul
-            style={{
-              listStyle: 'none',
-              margin: 0,
-              padding: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-            }}
-          >
-            {ACTION_ITEMS.map((a) => (
-              <li
-                key={a.id}
-                style={{
-                  padding: 10,
-                  background: 'var(--surface-elevated, #17172b)',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: 'var(--text, #f1f5f9)',
-                  display: 'flex',
-                  gap: 10,
-                  alignItems: 'flex-start',
-                  textDecoration: a.done ? 'line-through' : 'none',
-                  opacity: a.done ? 0.6 : 1,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  defaultChecked={a.done}
-                  aria-label={a.text}
-                  style={{ marginTop: 2 }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div>{a.text}</div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: 'var(--text-muted, #94a3b8)',
-                      marginTop: 2,
-                    }}
-                  >
-                    Owner: {a.owner}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      )}
     </div>
   );
 }
