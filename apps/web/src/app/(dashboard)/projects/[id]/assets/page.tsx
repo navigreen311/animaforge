@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useParams } from 'next/navigation';
 
 type AssetType = 'all' | 'images' | 'videos' | 'audio' | 'models';
@@ -16,113 +18,64 @@ interface Asset {
   thumbnail: string;
 }
 
-const MOCK_ASSETS: Asset[] = [
-  {
-    id: 'a1',
-    name: 'hero_pose_front.png',
-    type: 'images',
-    size: '2.4 MB',
-    dimensions: '2048x2048',
-    uploadedAt: '2026-03-24',
-    thumbnail: '/assets/thumb-1.webp',
-  },
-  {
-    id: 'a2',
-    name: 'city_establishing.mp4',
-    type: 'videos',
-    size: '48.2 MB',
-    duration: '0:12',
-    uploadedAt: '2026-03-24',
-    thumbnail: '/assets/thumb-2.webp',
-  },
-  {
-    id: 'a3',
-    name: 'ambient_rain.wav',
-    type: 'audio',
-    size: '8.1 MB',
-    duration: '1:30',
-    uploadedAt: '2026-03-23',
-    thumbnail: '/assets/thumb-3.webp',
-  },
-  {
-    id: 'a4',
-    name: 'katana_model.glb',
-    type: 'models',
-    size: '12.7 MB',
-    uploadedAt: '2026-03-23',
-    thumbnail: '/assets/thumb-4.webp',
-  },
-  {
-    id: 'a5',
-    name: 'neon_alley_bg.png',
-    type: 'images',
-    size: '5.1 MB',
-    dimensions: '4096x2160',
-    uploadedAt: '2026-03-22',
-    thumbnail: '/assets/thumb-5.webp',
-  },
-  {
-    id: 'a6',
-    name: 'sword_clash.wav',
-    type: 'audio',
-    size: '1.2 MB',
-    duration: '0:03',
-    uploadedAt: '2026-03-22',
-    thumbnail: '/assets/thumb-6.webp',
-  },
-  {
-    id: 'a7',
-    name: 'chase_sequence.mp4',
-    type: 'videos',
-    size: '124.5 MB',
-    duration: '0:45',
-    uploadedAt: '2026-03-21',
-    thumbnail: '/assets/thumb-7.webp',
-  },
-  {
-    id: 'a8',
-    name: 'character_turntable.glb',
-    type: 'models',
-    size: '34.2 MB',
-    uploadedAt: '2026-03-21',
-    thumbnail: '/assets/thumb-8.webp',
-  },
-  {
-    id: 'a9',
-    name: 'explosion_ref.png',
-    type: 'images',
-    size: '1.8 MB',
-    dimensions: '1920x1080',
-    uploadedAt: '2026-03-20',
-    thumbnail: '/assets/thumb-9.webp',
-  },
-  {
-    id: 'a10',
-    name: 'dramatic_score.wav',
-    type: 'audio',
-    size: '22.4 MB',
-    duration: '3:15',
-    uploadedAt: '2026-03-20',
-    thumbnail: '/assets/thumb-10.webp',
-  },
-  {
-    id: 'a11',
-    name: 'rooftop_pan.mp4',
-    type: 'videos',
-    size: '67.8 MB',
-    duration: '0:22',
-    uploadedAt: '2026-03-19',
-    thumbnail: '/assets/thumb-11.webp',
-  },
-  {
-    id: 'a12',
-    name: 'drone_model.glb',
-    type: 'models',
-    size: '8.9 MB',
-    uploadedAt: '2026-03-19',
-    thumbnail: '/assets/thumb-12.webp',
-  },
-];
+/** One row of GET /api/assets. */
+interface AssetRow {
+  id: string;
+  projectId: string;
+  type: string;
+  name: string;
+  url: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface AssetList {
+  items: AssetRow[];
+  total: number;
+}
+
+/** The stored `type` is singular; this screen groups by plural buckets. */
+const TYPE_BUCKET: Record<string, Asset['type']> = {
+  image: 'images',
+  video: 'videos',
+  audio: 'audio',
+  model: 'models',
+  style_pack: 'models',
+};
+
+function formatBytes(bytes: unknown): string {
+  if (typeof bytes !== 'number' || bytes <= 0) return '—';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) {
+    n /= 1024;
+    u += 1;
+  }
+  return `${n.toFixed(1)} ${units[u]}`;
+}
+
+/**
+ * Map an asset row to the tile.
+ *
+ * Size, dimensions and duration live in the metadata blob when the uploader
+ * recorded them; there are no columns for them, so an asset without metadata
+ * shows a dash rather than a plausible file size. The thumbnail is the asset's
+ * own URL — there is no separate thumbnail pipeline.
+ */
+function toAsset(row: AssetRow): Asset {
+  const meta = row.metadata ?? {};
+  return {
+    id: row.id,
+    type: TYPE_BUCKET[row.type] ?? 'models',
+    name: row.name,
+    size: formatBytes(meta.size),
+    dimensions: typeof meta.dimensions === 'string' ? meta.dimensions : undefined,
+    duration: typeof meta.duration === 'string' ? meta.duration : undefined,
+    uploadedAt: row.createdAt.slice(0, 10),
+    thumbnail: row.url,
+  };
+}
 
 const TYPE_TABS: { value: AssetType; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -155,13 +108,16 @@ export default function AssetsPage() {
   const [activeType, setActiveType] = useState<AssetType>('all');
   const [search, setSearch] = useState('');
 
-  const filtered = MOCK_ASSETS.filter((asset) => {
+  const state = useResource<AssetList>(`/api/assets?projectId=${params.id}`, [params.id]);
+  const assets = useMemo(() => (state.data?.items ?? []).map(toAsset), [state.data]);
+
+  const filtered = assets.filter((asset) => {
     const matchesType = activeType === 'all' || asset.type === activeType;
     const matchesSearch = search === '' || asset.name.toLowerCase().includes(search.toLowerCase());
     return matchesType && matchesSearch;
   });
 
-  const typeCounts = MOCK_ASSETS.reduce(
+  const typeCounts = assets.reduce(
     (acc, a) => {
       acc[a.type] = (acc[a.type] || 0) + 1;
       return acc;
@@ -176,7 +132,7 @@ export default function AssetsPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-100">Asset Library</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Project {params.id} &mdash; {MOCK_ASSETS.length} assets
+            Project {params.id} &mdash; {assets.length} assets
           </p>
         </div>
         <button
@@ -222,7 +178,7 @@ export default function AssetsPage() {
       {/* Type filter tabs */}
       <div className="flex gap-1 mb-6">
         {TYPE_TABS.map((tab) => {
-          const count = tab.value === 'all' ? MOCK_ASSETS.length : typeCounts[tab.value] || 0;
+          const count = tab.value === 'all' ? assets.length : typeCounts[tab.value] || 0;
           return (
             <button
               key={tab.value}

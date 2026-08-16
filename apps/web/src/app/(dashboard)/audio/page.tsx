@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
 import {
   Music,
   Play,
@@ -97,12 +98,30 @@ const TABS: { label: string; value: AudioTab; icon: React.ReactNode }[] = [
 const GENRES = ['Cinematic', 'Electronic', 'Ambient', 'Jazz', 'Rock', 'Classical'] as const;
 const MOODS = ['Tense', 'Peaceful', 'Epic', 'Mysterious', 'Romantic', 'Energetic'] as const;
 
-const CHARACTER_VOICES: VoiceOption[] = [
-  { id: 'voice-elena', name: 'Elena', gender: 'female', pitch: 'mid' },
-  { id: 'voice-kenji', name: 'Kenji', gender: 'male', pitch: 'low' },
-  { id: 'voice-aria', name: 'Aria', gender: 'female', pitch: 'high' },
-  { id: 'voice-marcus', name: 'Marcus', gender: 'male', pitch: 'mid' },
-];
+/** One row of GET /api/voices. */
+interface VoiceRow {
+  id: string;
+  name: string;
+  provider: string;
+  language: string;
+  gender: string | null;
+  previewUrl: string | null;
+  isCloned: boolean;
+}
+
+interface VoiceList {
+  items: VoiceRow[];
+  total: number;
+}
+
+/**
+ * Pitch is not a stored attribute of a voice, so it is reported as "mid" for
+ * every row rather than assigned a value per voice that nothing backs.
+ */
+function toVoice(row: VoiceRow): VoiceOption {
+  const gender = row.gender === 'female' || row.gender === 'male' ? row.gender : 'non-binary';
+  return { id: row.id, name: row.name, gender, pitch: 'mid' };
+}
 
 const SPEAKING_STYLES = ['Neutral', 'Dramatic', 'Whisper', 'Excited', 'Sad', 'Angry'] as const;
 
@@ -326,35 +345,48 @@ function generateBars(count: number): number[] {
 }
 
 // ── Mock Data ────────────────────────────────────────────────
-const MUSIC_TRACKS: MusicTrack[] = [
-  {
-    id: 'mt-1',
-    name: 'Neon Streets',
-    genre: 'Electronic',
-    mood: 'Tense',
-    duration: '0:32',
-    bpm: 128,
-    bars: generateBars(60),
-  },
-  {
-    id: 'mt-2',
-    name: 'Garden Lullaby',
-    genre: 'Ambient',
-    mood: 'Peaceful',
-    duration: '1:05',
-    bpm: 72,
-    bars: generateBars(60),
-  },
-  {
-    id: 'mt-3',
-    name: 'Final Battle',
-    genre: 'Cinematic',
-    mood: 'Epic',
-    duration: '0:48',
-    bpm: 140,
-    bars: generateBars(60),
-  },
-];
+/** One row of GET /api/audio/tracks. */
+interface TrackRow {
+  id: string;
+  projectId: string;
+  type: string;
+  url: string;
+  duration: number;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface TrackList {
+  items: TrackRow[];
+  total: number;
+}
+
+/**
+ * Map a stored track to the browser row.
+ *
+ * Genre, mood and BPM live in the track's metadata when the generator recorded
+ * them; there are no columns for them, so an unlabelled track says so instead
+ * of being assigned a genre. The waveform is a placeholder shape derived from
+ * the id: no peak data is stored, so this is decoration and is deterministic
+ * rather than re-randomised on every render.
+ */
+function toTrack(row: TrackRow): MusicTrack {
+  const meta = row.metadata ?? {};
+  let seed = row.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 3);
+  const bars = Array.from({ length: 60 }, () => {
+    seed = (seed * 1103515245 + 12345) >>> 0;
+    return 20 + (seed % 80);
+  });
+  return {
+    id: row.id,
+    name: (meta.name as string) ?? `${row.type} track`,
+    genre: (meta.genre as string) ?? '—',
+    mood: (meta.mood as string) ?? '—',
+    duration: formatDuration(row.duration / 1000),
+    bpm: typeof meta.bpm === 'number' ? (meta.bpm as number) : 0,
+    bars,
+  };
+}
 
 const VOICE_ENTRIES: VoiceEntry[] = [
   {
@@ -582,6 +614,16 @@ function DropdownMenu({
 
 // ── Component ────────────────────────────────────────────────
 export default function AudioStudioPage() {
+  const trackState = useResource<TrackList>('/api/audio/tracks');
+  const voiceState = useResource<VoiceList>('/api/voices');
+  const MUSIC_TRACKS = useMemo(
+    () => (trackState.data?.items ?? []).map(toTrack),
+    [trackState.data],
+  );
+  const CHARACTER_VOICES = useMemo(
+    () => (voiceState.data?.items ?? []).map(toVoice),
+    [voiceState.data],
+  );
   // Tab state
   const [activeTab, setActiveTab] = useState<AudioTab>('music');
 

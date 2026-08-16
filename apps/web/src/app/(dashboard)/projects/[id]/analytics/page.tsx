@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useParams } from 'next/navigation';
 
 interface StatCard {
@@ -11,61 +13,11 @@ interface StatCard {
   icon: string;
 }
 
-const STATS: StatCard[] = [
-  {
-    label: 'Total Generations',
-    value: '1,248',
-    change: '+12.5%',
-    positive: true,
-    icon: 'M13 10V3L4 14h7v7l9-11h-7z',
-  },
-  {
-    label: 'Credits Used',
-    value: '8,432',
-    change: '+8.2%',
-    positive: false,
-    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-  },
-  {
-    label: 'Avg Quality Score',
-    value: '94.2',
-    change: '+2.1%',
-    positive: true,
-    icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
-  },
-  {
-    label: 'Total Duration',
-    value: '47m 32s',
-    change: '+18.7%',
-    positive: true,
-    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-  },
-];
-
 interface BarData {
   label: string;
   value: number;
   color: string;
 }
-
-const WEEKLY_DATA: BarData[] = [
-  { label: 'Mon', value: 42, color: 'bg-violet-500' },
-  { label: 'Tue', value: 68, color: 'bg-violet-500' },
-  { label: 'Wed', value: 55, color: 'bg-violet-500' },
-  { label: 'Thu', value: 91, color: 'bg-violet-500' },
-  { label: 'Fri', value: 78, color: 'bg-violet-500' },
-  { label: 'Sat', value: 34, color: 'bg-violet-400' },
-  { label: 'Sun', value: 22, color: 'bg-violet-400' },
-];
-
-const MONTHLY_DATA: BarData[] = [
-  { label: 'Oct', value: 320, color: 'bg-violet-500' },
-  { label: 'Nov', value: 480, color: 'bg-violet-500' },
-  { label: 'Dec', value: 390, color: 'bg-violet-500' },
-  { label: 'Jan', value: 520, color: 'bg-violet-500' },
-  { label: 'Feb', value: 610, color: 'bg-violet-500' },
-  { label: 'Mar', value: 748, color: 'bg-violet-400' },
-];
 
 interface StyleRank {
   name: string;
@@ -73,23 +25,72 @@ interface StyleRank {
   percentage: number;
 }
 
-const TOP_STYLES: StyleRank[] = [
-  { name: 'Cinematic Realism', count: 312, percentage: 25 },
-  { name: 'Anime Cel Shade', count: 284, percentage: 23 },
-  { name: 'Cyberpunk Neon', count: 198, percentage: 16 },
-  { name: 'Watercolor Dream', count: 156, percentage: 12 },
-  { name: 'Pixel Retro', count: 124, percentage: 10 },
-  { name: 'Oil Painting', count: 98, percentage: 8 },
-  { name: 'Other', count: 76, percentage: 6 },
-];
-
 type ChartPeriod = 'weekly' | 'monthly';
+
+/** The shape GET /api/analytics/project/[id] returns. */
+interface ProjectAnalytics {
+  projectId: string;
+  title: string;
+  scenes: number;
+  shots: number;
+  generations: number;
+  byStatus: Record<string, number>;
+}
+
+const ICON_BOLT = 'M13 10V3L4 14h7v7l9-11h-7z';
+const ICON_FILM =
+  'M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z';
+const ICON_CHECK = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+const ICON_X = 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z';
+
+/**
+ * Build the stat row from real counts.
+ *
+ * The previous cards carried a percentage change per stat. Nothing records a
+ * previous period, so there is no change to compute and the cards no longer
+ * claim one — a made-up "+12.5%" is worse than no trend at all.
+ */
+function toStats(a: ProjectAnalytics): StatCard[] {
+  return [
+    {
+      label: 'Generations',
+      value: String(a.generations),
+      change: '',
+      positive: true,
+      icon: ICON_BOLT,
+    },
+    { label: 'Scenes', value: String(a.scenes), change: '', positive: true, icon: ICON_FILM },
+    {
+      label: 'Completed',
+      value: String(a.byStatus.complete ?? 0),
+      change: '',
+      positive: true,
+      icon: ICON_CHECK,
+    },
+    {
+      label: 'Failed',
+      value: String(a.byStatus.failed ?? 0),
+      change: '',
+      positive: false,
+      icon: ICON_X,
+    },
+  ];
+}
 
 export default function AnalyticsPage() {
   const params = useParams<{ id: string }>();
   const [period, setPeriod] = useState<ChartPeriod>('weekly');
 
-  const chartData = period === 'weekly' ? WEEKLY_DATA : MONTHLY_DATA;
+  const state = useResource<ProjectAnalytics>(`/api/analytics/project/${params.id}`, [params.id]);
+  const STATS = useMemo(() => (state.data ? toStats(state.data) : []), [state.data]);
+
+  /**
+   * Generation counts over time are not recorded per period: GenerationJob has
+   * a createdAt but the endpoint returns totals, so there is no series to plot.
+   * The chart renders empty rather than showing a shape nothing produced.
+   */
+  const chartData: BarData[] = [];
+  const TOP_STYLES: StyleRank[] = [];
   const maxValue = Math.max(...chartData.map((d) => d.value));
 
   return (

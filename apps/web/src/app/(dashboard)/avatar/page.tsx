@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { ResourceView } from '@/components/api/ResourceStates';
 import {
   Upload,
   User,
@@ -201,26 +203,51 @@ const VOICE_PRESETS = [
   { id: 'v4', name: 'Bloom', desc: 'Youthful, energetic' },
 ];
 
-const SAMPLE_AVATARS = [
-  {
-    id: 'avatar-1',
-    name: 'Luna Avatar',
-    status: 'complete' as const,
-    style: 'Realistic',
-    quality: 92,
-    gradient: 'linear-gradient(135deg, #10b981, #34d399)',
-    thumbnailUrl: null as string | null,
-  },
-  {
-    id: 'avatar-2',
-    name: 'Dr. Echo Avatar',
-    status: 'draft' as const,
-    style: 'Anime',
-    quality: 78,
-    gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-    thumbnailUrl: null as string | null,
-  },
+/** One row of GET /api/avatars. */
+interface AvatarRow {
+  id: string;
+  name: string;
+  status: string;
+  sourceType: string;
+  previewUrl: string | null;
+  modelUrl: string | null;
+  voiceId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface AvatarList {
+  items: AvatarRow[];
+  total: number;
+}
+
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #10b981, #34d399)',
+  'linear-gradient(135deg, #7c3aed, #ec4899)',
+  'linear-gradient(135deg, #06b6d4, #3b82f6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
 ];
+
+/**
+ * Map an avatar row to the gallery card.
+ *
+ * `quality` is a reconstruction score with no column; the metadata blob carries
+ * it when a reconstruction recorded one, and it is omitted otherwise rather
+ * than defaulting to a flattering number.
+ */
+function toAvatarCard(row: AvatarRow) {
+  const hash = row.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 5);
+  const status = row.status === 'ready' ? 'complete' : row.status === 'failed' ? 'failed' : 'draft';
+  return {
+    id: row.id,
+    name: row.name,
+    status: status as 'complete' | 'draft' | 'failed',
+    style: row.sourceType,
+    quality: typeof row.metadata?.quality === 'number' ? (row.metadata.quality as number) : null,
+    gradient: AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length],
+    thumbnailUrl: row.previewUrl,
+  };
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 function getStepStatus(stepIndex: number, currentIndex: number): StepStatus {
@@ -437,6 +464,7 @@ function Btn({
 
 // ── Main Component ───────────────────────────────────────────
 export default function AvatarStudioPage() {
+  const avatarState = useResource<AvatarList>('/api/avatars');
   // Pipeline state
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [processingStartTime, setProcessingStartTime] = useState<number | null>(null);
@@ -2826,182 +2854,194 @@ export default function AvatarStudioPage() {
             Recent Avatars
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-            {SAMPLE_AVATARS.map((avatar) => (
-              <div
-                key={avatar.id}
-                className="avatar-card"
-                onClick={() => {
-                  setAvatarName(avatar.name);
-                  setStyleMode(
-                    STYLE_MODES.find((m) => m.label === avatar.style)?.id ?? 'realistic',
-                  );
-                  setConsentChecked(true);
-                  if (avatar.status === 'complete') {
-                    setCurrentStepIndex(7);
-                    setPipelineComplete(true);
-                  } else {
-                    setCurrentStepIndex(0);
-                    setPipelineComplete(false);
-                  }
-                }}
-                style={{
-                  background: 'var(--bg-elevated)',
-                  border: '0.5px solid var(--border)',
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  transition: 'border-color 150ms ease',
-                  position: 'relative',
-                }}
-              >
-                <div
-                  style={{
-                    height: 80,
-                    background: avatar.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                  }}
-                >
-                  {avatar.thumbnailUrl ? (
-                    <img
-                      src={avatar.thumbnailUrl}
-                      alt={avatar.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <User size={28} style={{ color: 'rgba(255,255,255,0.6)' }} />
-                  )}
-
-                  {/* Hover actions overlay */}
+            <ResourceView
+              state={avatarState}
+              isEmpty={(d) => d.items.length === 0}
+              emptyTitle="No avatars yet"
+              emptyHint="Create an avatar from a photo or a generated likeness."
+              loadingLabel="Loading avatars…"
+            >
+              {(list) =>
+                list.items.map(toAvatarCard).map((avatar) => (
                   <div
-                    className="avatar-hover-actions"
+                    key={avatar.id}
+                    className="avatar-card"
+                    onClick={() => {
+                      setAvatarName(avatar.name);
+                      setStyleMode(
+                        STYLE_MODES.find((m) => m.label === avatar.style)?.id ?? 'realistic',
+                      );
+                      setConsentChecked(true);
+                      if (avatar.status === 'complete') {
+                        setCurrentStepIndex(7);
+                        setPipelineComplete(true);
+                      } else {
+                        setCurrentStepIndex(0);
+                        setPipelineComplete(false);
+                      }
+                    }}
                     style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'rgba(0,0,0,0.6)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      opacity: 0,
-                      transition: 'opacity 200ms ease',
+                      background: 'var(--bg-elevated)',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-xl)',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      transition: 'border-color 150ms ease',
+                      position: 'relative',
                     }}
                   >
-                    <button
-                      title="Edit"
-                      aria-label="Edit"
+                    <div
                       style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: '#fff',
-                        cursor: 'pointer',
+                        height: 80,
+                        background: avatar.gradient,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: 0,
+                        position: 'relative',
                       }}
                     >
-                      <Edit3 size={13} />
-                    </button>
-                    <button
-                      title="Use in Project"
-                      aria-label="Use in Project"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                      }}
-                    >
-                      <FolderOpen size={13} />
-                    </button>
-                    <button
-                      title="Export"
-                      aria-label="Export"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                      }}
-                    >
-                      <Download size={13} />
-                    </button>
-                    <button
-                      title="More"
-                      aria-label="More options"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                      }}
-                    >
-                      <MoreHorizontal size={13} />
-                    </button>
-                  </div>
-                </div>
+                      {avatar.thumbnailUrl ? (
+                        <img
+                          src={avatar.thumbnailUrl}
+                          alt={avatar.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <User size={28} style={{ color: 'rgba(255,255,255,0.6)' }} />
+                      )}
 
-                <div
-                  style={{
-                    padding: '10px 14px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {avatar.name}
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                      {avatar.style}
-                    </span>
+                      {/* Hover actions overlay */}
+                      <div
+                        className="avatar-hover-actions"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'rgba(0,0,0,0.6)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          opacity: 0,
+                          transition: 'opacity 200ms ease',
+                        }}
+                      >
+                        <button
+                          title="Edit"
+                          aria-label="Edit"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                          }}
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          title="Use in Project"
+                          aria-label="Use in Project"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                          }}
+                        >
+                          <FolderOpen size={13} />
+                        </button>
+                        <button
+                          title="Export"
+                          aria-label="Export"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                          }}
+                        >
+                          <Download size={13} />
+                        </button>
+                        <button
+                          title="More"
+                          aria-label="More options"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                          }}
+                        >
+                          <MoreHorizontal size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: '10px 14px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span
+                          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}
+                        >
+                          {avatar.name}
+                        </span>
+                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                          {avatar.style}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 500,
+                          color: avatar.status === 'complete' ? '#22c55e' : '#eab308',
+                          background:
+                            avatar.status === 'complete'
+                              ? 'rgba(34,197,94,0.1)'
+                              : 'rgba(234,179,8,0.1)',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-md)',
+                        }}
+                      >
+                        {avatar.status === 'complete' ? 'Complete' : 'Draft'}
+                      </span>
+                    </div>
                   </div>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 500,
-                      color: avatar.status === 'complete' ? '#22c55e' : '#eab308',
-                      background:
-                        avatar.status === 'complete'
-                          ? 'rgba(34,197,94,0.1)'
-                          : 'rgba(234,179,8,0.1)',
-                      padding: '2px 8px',
-                      borderRadius: 'var(--radius-md)',
-                    }}
-                  >
-                    {avatar.status === 'complete' ? 'Complete' : 'Draft'}
-                  </span>
-                </div>
-              </div>
-            ))}
+                ))
+              }
+            </ResourceView>
           </div>
         </div>
       </main>
