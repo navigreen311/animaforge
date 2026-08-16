@@ -329,6 +329,32 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NODE_ENV: test
 
+      # The gateway and collab suites ran in no job at all until now — both
+      # services were type-checked and neither was tested, which is how the
+      # gateway kept a test asserting its own auth bypass was correct behaviour
+      # (see docs/auth.md section 7).
+      #
+      # They matter here specifically: the JWT verifier is duplicated across
+      # platform-api, the gateway and collab because it cannot be extracted
+      # without restructuring three services' builds (TS6059 — same section).
+      # What holds the three copies in step is that each runs the same
+      # regression suite: forged unsigned, alg:none, wrong secret, expired, no
+      # exp, no sub. A copy that drifts fails its own tests — but only if those
+      # tests actually run.
+      #
+      # Neither needs Postgres or Redis; they are in this job because it is the
+      # service-side one, and they add about two seconds.
+      - name: Run gateway and collab tests
+        run: |
+          set -e
+          for svc in gateway collab; do
+            echo "::group::services/$svc"
+            ( cd "services/$svc" && npx vitest run --reporter=verbose )
+            echo "::endgroup::"
+          done
+        env:
+          NODE_ENV: test
+
       - name: Upload API coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
