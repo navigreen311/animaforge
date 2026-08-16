@@ -43,7 +43,10 @@ class GenerateDubRequest(BaseModel):
 
 class GenerateDubResponse(BaseModel):
     job_id: str
-    audio_url: str
+    #: Present only when audio was synthesised. Dubbing is not
+    #: implemented, so this is None and ``engine.is_mock`` is true.
+    audio_url: str | None = None
+    engine: dict[str, Any] | None = None
     duration_ms: int
 
 
@@ -55,7 +58,9 @@ class LipSyncRequest(BaseModel):
 
 class LipSyncResponse(BaseModel):
     job_id: str
-    synced_video_url: str
+    #: Present only when a remux actually happened.
+    synced_video_url: str | None = None
+    engine: dict[str, Any] | None = None
     sync_quality: float
 
 

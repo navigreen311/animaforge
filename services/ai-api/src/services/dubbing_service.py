@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from . import engines
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 SUPPORTED_LANGUAGES: list[dict[str, Any]] = [
@@ -89,7 +91,12 @@ def generate_dubbed_audio(
 
     return {
         "job_id": job_id,
-        "audio_url": f"https://cdn.animaforge.ai/dubs/{job_id}.wav",
+        # No audio_url: nothing was synthesised. Voice cloning needs a TTS
+        # model this tree does not contain.
+        "engine": engines.mock_marker(
+            "dubbing",
+            detail="Dubbing is not implemented; no audio was synthesised.",
+        ),
         "duration_ms": duration_ms,
     }
 
@@ -108,7 +115,11 @@ def lip_sync_adjust(
 
     return {
         "job_id": job_id,
-        "synced_video_url": f"https://cdn.animaforge.ai/synced/{job_id}.mp4",
+        # No synced_video_url: no muxing happened.
+        "engine": engines.mock_marker(
+            "dubbing",
+            detail="Lip-sync remux is not implemented; no video was written.",
+        ),
         "sync_quality": sync_quality,
     }
 
@@ -165,11 +176,15 @@ def preserve_timing(
 ) -> dict[str, Any]:
     """Match timing / pacing of dubbed audio to the original.
 
-    Returns the adjusted audio URL and a timing-accuracy score (0-1).
+    **Not implemented.** No audio is time-stretched and none is written, so no
+    URL is returned -- only the marker saying so.
     """
-    job_id = _new_job_id("timing")
     return {
-        "adjusted_audio_url": f"https://cdn.animaforge.ai/timed/{job_id}.wav",
+        # No adjusted_audio_url: no audio was time-stretched or written.
+        "engine": engines.mock_marker(
+            "dubbing",
+            detail="Timing adjustment is not implemented; no audio was written.",
+        ),
         "timing_accuracy": 0.94,
     }
 

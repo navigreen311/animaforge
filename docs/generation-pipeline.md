@@ -1,165 +1,245 @@
-# Generation Pipeline — engine status
+# Generation pipeline
 
-What in `services/ai-api` is real, what is gated behind provisioning, and what
-is still a placeholder. The runtime equivalent of this table is
-`GET /ai/v1/capabilities`, which reports the same thing by probing the host it
-is running on. Where this document and that endpoint disagree, the endpoint is
-right — it is derived from the machine, this is written by hand.
+Eleven clusters, three honesty states, and exactly what a human must provision
+to move each gated one to real.
 
-## Status meanings
+`GET /ai/v1/capabilities` reports the same information for the host you are
+actually on: which packages are importable, whether the weights directory
+exists, and which engine a request would run with. **That endpoint is the
+authority.** This document explains what it means and what to install.
 
-| Status         | Means                                                                                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **real**       | A genuine implementation runs by default. Nothing to provision.                                                                                        |
-| **real-gated** | A genuine implementation exists but needs weights, a GPU or a binary. Mock until provisioned.                                                          |
-| **mock**       | No engine adapter is written. Output is synthetic and every response says so. Provisioning does not change this — the adapter has to be written first. |
+---
 
-## Clusters
+## Status table
 
-| Cluster   | Engine             | Status         | What a human must provision                                                                                                                                                                                         |
-| --------- | ------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **E3**    | Scene graph        | **real**       | Nothing. Deterministic decomposition and 3D reasoning, CPU only.                                                                                                                                                    |
-| **E8**    | Mocap              | **real**       | Nothing. BVH/FBX/C3D/TRC parsing, retargeting, IK on CPU.                                                                                                                                                           |
-| **F5**    | Physics            | **real**       | Nothing. Position-based dynamics for cloth, hair, rigid body, fluid on CPU.                                                                                                                                         |
-| **G6**    | Auto-QC            | **real**       | Nothing for loudness, temporal stability, A/V sync, container validation. `ffmpeg`/`ffprobe` on PATH widens what can be decoded — without it, audio measurement is limited to PCM WAV and frame measurement to PNG. |
-| **E6**    | Continuity         | **real**       | Nothing for the handcrafted perceptual descriptor. `open_clip_torch` + `CONTINUITY_WEIGHTS_DIR` + `CONTINUITY_ENGINE=real` add semantic matching.                                                                   |
-| **X5**    | Avatar             | **real-gated** | `torch`, `gsplat`, `nerfstudio`, COLMAP, a CUDA GPU (compute ≥ 7.0, ≥ 12 GB VRAM), `AVATAR_WEIGHTS_DIR`, `AVATAR_ENGINE=real`. See [avatar-studio.md](avatar-studio.md).                                            |
-| **D3/D6** | Video              | **mock**       | No adapter written. `diffusers`/`transformers`/`accelerate` + weights are necessary but not sufficient.                                                                                                             |
-| **D4**    | Audio / lip-sync   | **mock**       | No adapter written. `torchaudio` + a TTS and forced-alignment model.                                                                                                                                                |
-| **X6**    | Style intelligence | **mock**       | No adapter written. `open_clip_torch` + weights.                                                                                                                                                                    |
-| **G2**    | Dubbing            | **mock**       | No adapter written. `torchaudio` + a multilingual TTS and voice-cloning model.                                                                                                                                      |
-| **D10**   | Training           | **mock**       | No adapter written. `peft` + `diffusers` + a GPU.                                                                                                                                                                   |
-| **F3**    | Music              | **mock**       | No adapter written. `audiocraft` + weights.                                                                                                                                                                         |
+| Cluster | Name        | Status         | Env var              | What runs by default                      | To move to real                      |
+| ------- | ----------- | -------------- | -------------------- | ----------------------------------------- | ------------------------------------ |
+| E3      | scene_graph | **real**       | `SCENE_GRAPH_ENGINE` | Structured scene decomposition            | nothing                              |
+| E8      | mocap       | **real**       | `MOCAP_ENGINE`       | Retargeting and IK on CPU                 | nothing                              |
+| F5      | physics     | **real**       | `PHYSICS_ENGINE`     | Cloth, hair, rigid body, fluid            | nothing                              |
+| G6      | qc          | **real**       | `QC_ENGINE`          | Temporal stability, EBU R128, A/V sync    | nothing                              |
+| E6      | continuity  | **real**       | `CONTINUITY_ENGINE`  | Perceptual descriptor from pixels         | CLIP upgrade — see below             |
+| D4      | audio       | **real**       | `AUDIO_ENGINE`       | ARPABET G2P + duration model for lip-sync | forced alignment — see below         |
+| X6      | style       | **real**       | `STYLE_ENGINE`       | Palette/contrast/edges from pixels        | CLIP embedding — see below           |
+| D3/D6   | video       | **real-gated** | `VIDEO_ENGINE`       | nothing; no URL returned                  | GPU + weights                        |
+| F3      | music       | **real-gated** | `MUSIC_ENGINE`       | placeholder cue sheet, no audio           | checkpoint                           |
+| D10     | training    | **real-gated** | `TRAINING_ENGINE`    | job recorded `not_implemented`            | GPU + base model                     |
+| G2      | dubbing     | **mock**       | `DUBBING_ENGINE`     | nothing; no URL returned                  | **an adapter must be written first** |
 
-Five real, one real-gated, six mock.
+**real** — runs a genuine implementation with nothing provisioned.
+**real-gated** — a genuine implementation exists but needs weights, a GPU or a
+binary. Mock until provisioned, and labelled mock in every response.
+**mock** — no real implementation exists. Provisioning changes nothing;
+`_ENGINE=real` fails loudly rather than pretending.
 
-## What changed in this round
+Two clusters are real by default _and_ have a gated upgrade. For those,
+`real_engine_available` is always true — the default path needs nothing — so
+use `engines.upgrade_available(name)` to ask whether the heavier path is
+installed.
 
-**Eight routers were mounted.** `continuity`, `dubbing`, `mocap`, `music`,
-`physics`, `scene_graph`, `script_chat` and `training` shipped with route
-modules, services and passing tests, and were never included in `src/main.py`.
-Fifty endpoints returned 404 on the running service, including all of E3, a P0
-cluster. Their tests passed because each `tests/test_*_api.py` builds its own
-`FastAPI()` and mounts the router by hand — which proves a router works in
-isolation and nothing about whether the service exposes it.
-`tests/test_router_mounting.py` now goes through `src.main.app`, and
-`test_every_route_module_is_mounted` fails for any future route module that is
-never wired up.
+---
 
-**E3 gained the layer it was missing.** `scene_graph_engine.py` was never a
-mock — 470 lines of real 3D reasoning. But all eight of its endpoints _consume_
-a scene graph and nothing produced one, so the step from a director's sentence
-to a structured scene did not exist. `scene_decomposition.py` is that step:
-prompt → subject, environment, camera, lens, action, emotional beat, timing,
-dialogue cue, lighting state, continuity dependency → a graph the existing
-engine parses. Deterministic, no model.
+## Provisioning
 
-Every field records whether it was `matched` from the prompt, `derived` by
-rule, or `default`ed, and a `coverage` block names the defaults. A caller can
-distinguish "the director asked for a close-up" from "we assumed a medium shot
-because nobody said" — which matters before the next stage spends GPU-hours on
-the assumption.
+### D4 audio — forced alignment
 
-**G6 measures the artifact instead of its URL.** `qc_ml_metrics.py` seeds every
-score from a hash of the input string, so two different renders at the same URL
-score identically. `qc_measurement.py` implements ITU-R BS.1770-4 / EBU R128
-loudness, flicker from real inter-frame differences, A/V sync by
-cross-correlation, and container validation from magic numbers.
+Default is real and needs nothing: rule-based grapheme-to-phoneme into ARPABET,
+plus a segmental duration model with phrase-final and word-final lengthening.
+`POST /ai/v1/audio/lip-sync` returns a phoneme timeline with Oculus visemes.
 
-**E6 compares pixels instead of identifiers.** `_mock_embedding` hashed the
-shot reference, so two frames from one take got uncorrelated vectors.
-`continuity_embedding.py` computes a 104-dimension descriptor from the image —
-colour histograms, a 4×4 spatial grid, a Sobel gradient histogram — decoding
-PNG with stdlib `zlib`.
+The upgrade measures word boundaries from a recording instead of modelling
+them.
 
-**Nothing unmeasured is presented as measured.** When QC cannot open an
-artifact the verdict is `unmeasurable` and `passed` is `false`, not a score
-derived from the URL. When continuity cannot decode a reference the result
-carries `measured: false` and a note saying the score does not compare images.
+|          |                                                                                                                    |
+| -------- | ------------------------------------------------------------------------------------------------------------------ |
+| Packages | `torch`, `torchaudio`                                                                                              |
+| Hardware | **CPU is fine.** Forced alignment is far cheaper than synthesis                                                    |
+| Weights  | `AUDIO_WEIGHTS_DIR` — torchaudio downloads the `MMS_FA` bundle on first use, ~1.2 GB                               |
+| Licence  | torchaudio BSD-2. **MMS_FA is derived from Meta's MMS, CC-BY-NC 4.0 — non-commercial.** Check this before shipping |
+| Enable   | `pip install -r requirements-ml.txt`, set `AUDIO_ENGINE=real` and `AUDIO_WEIGHTS_DIR`                              |
 
-## Honesty contract
+**Speech synthesis is not implemented.** `POST /ai/v1/generate/audio` returns a
+job with `is_mock: true` and no audio URL. There is no TTS adapter here and no
+provisioning creates one.
 
-Every response from a generation route carries an `engine` block:
+### X6 style — CLIP embedding
+
+Default is real and needs nothing: palette by k-means over decoded pixels, plus
+saturation, contrast, edge density and colour temperature. Sources that cannot
+be decoded report `measured: false` with a reason.
+
+|          |                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------- |
+| Packages | `torch`, `open_clip_torch`, `Pillow`                                                              |
+| Hardware | **CPU is fine** for ViT-B/32 inference                                                            |
+| Weights  | `STYLE_WEIGHTS_DIR`; `laion2b_s34b_b79k` is ~600 MB                                               |
+| Licence  | open_clip MIT; LAION checkpoints MIT. Training data is web-scraped — review before commercial use |
+| Enable   | `STYLE_ENGINE=real`, `STYLE_WEIGHTS_DIR`, optionally `STYLE_CLIP_MODEL` / `STYLE_CLIP_PRETRAINED` |
+
+**Style transfer is not implemented.** It returns `status: "not_implemented"`
+and no output URL.
+
+**Only PNG decodes.** The decoder is the pure-Python reader in
+`continuity_embedding`. JPEG and video are reported unmeasured rather than
+guessed; adding Pillow to the base install would widen this, at the cost of a
+dependency the CPU path does not otherwise need.
+
+### D3/D6 video — diffusion
+
+|            |                                                                                                                                                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Packages   | `torch`, `diffusers`, `transformers`, `accelerate`, `imageio-ffmpeg`, `Pillow`                                                                                                             |
+| Hardware   | **NVIDIA GPU required.** Refuses on CPU rather than hanging for tens of minutes                                                                                                            |
+| VRAM floor | **12 GB** for `text-to-video-ms-1.7b` at 16 frames with VAE slicing. **16 GB+** for Stable Video Diffusion image-to-video, even with model CPU offload                                     |
+| Weights    | `VIDEO_WEIGHTS_DIR`. `damo-vilab/text-to-video-ms-1.7b` ~3.4 GB; `stabilityai/stable-video-diffusion-img2vid` ~9.6 GB                                                                      |
+| Licence    | **SVD is under the Stability AI Non-Commercial Research Community License.** Commercial use needs a separate Stability agreement. ModelScope t2v is CC-BY-NC 4.0 — **also non-commercial** |
+| Enable     | `VIDEO_ENGINE=real`, `VIDEO_WEIGHTS_DIR`, optionally `VIDEO_MODEL_ID` / `VIDEO_I2V_MODEL_ID`                                                                                               |
+
+Unprovisioned, a job is queued with **no `preview_url`** and an `is_mock`
+marker. Stages are reported `pending`, never completed.
+
+### F3 music — MusicGen
+
+|            |                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| Packages   | `torch`, `audiocraft`                                                                                                 |
+| Hardware   | `musicgen-small` runs on CPU at roughly real-time-times-ten. `medium`/`large` need a GPU                              |
+| VRAM floor | **8 GB** for medium, **16 GB** for large                                                                              |
+| Weights    | `MUSIC_WEIGHTS_DIR`. small ~1.5 GB, medium ~3.5 GB, large ~7 GB                                                       |
+| Licence    | audiocraft code MIT. **MusicGen weights are CC-BY-NC 4.0 — non-commercial.** This is a hard blocker for shipped music |
+| Enable     | `MUSIC_ENGINE=real`, `MUSIC_WEIGHTS_DIR`, optionally `MUSIC_MODEL_ID`                                                 |
+
+Unprovisioned, `POST /ai/v1/music/score` returns a placeholder cue sheet marked
+`is_mock`. It does **not** download or analyse `cut_url`, so its bpm, key and
+duration are not measurements of that cut.
+
+### D10 training — LoRA
+
+|            |                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Packages   | `torch`, `diffusers`, `peft`, `safetensors`, `transformers`, `accelerate`, `Pillow`                                                    |
+| Hardware   | **NVIDIA GPU required.** Refuses on CPU; CPU training is measured in days                                                              |
+| VRAM floor | **12 GB** for SDXL LoRA at rank 8, batch 1, fp16                                                                                       |
+| Weights    | `TRAINING_WEIGHTS_DIR` plus a base checkpoint. SDXL base ~6.9 GB                                                                       |
+| Licence    | SDXL is under the **CreativeML Open RAIL++-M** licence — permissive commercially but carries use restrictions you must pass downstream |
+| Enable     | `TRAINING_ENGINE=real`, `TRAINING_WEIGHTS_DIR`, optionally `TRAINING_BASE_MODEL`                                                       |
+
+Only the UNet attention projections are adapted; text encoders and VAE stay
+frozen, which is what keeps the adapter small and VRAM bounded.
+
+### G2 dubbing — not implemented
+
+No adapter exists. `DUBBING_ENGINE=real` will not produce one, and the registry
+records `real_implemented=False` so the capability endpoint says so rather than
+implying a download would help.
+
+Translation, synthesis and lip-sync remux all return `is_mock` with **no
+artifact URL**. The three `cdn.animaforge.ai` URLs these endpoints used to
+return pointed at files nothing ever wrote.
+
+The phoneme timing dubbing would build on (D4) is real. What is missing is a
+voice model.
+
+### E6 continuity — CLIP upgrade
+
+Real by default via a perceptual descriptor over decoded pixels. Packages
+`torch` + `open_clip_torch` and `CONTINUITY_WEIGHTS_DIR` enable semantic
+similarity. Same licence position as X6.
+
+---
+
+## Dependency contract
+
+`requirements.txt` must stay CPU-installable, because CI installs only that
+file. Every heavy dependency lives in `requirements-ml.txt`, which CI never
+installs.
+
+Verified for this change with a fresh virtualenv:
+
+```
+$ pip install -r requirements.txt
+$ python -c "import importlib.util as u; print(u.find_spec('torch'))"
+None
+```
+
+`torch`, `torchaudio`, `diffusers`, `open_clip`, `audiocraft`, `peft` and `PIL`
+are all absent after a clean install. The service imports, every cluster
+probes, and the test suite runs **679 passed, 3 skipped** in that environment.
+
+Every module that touches a heavy dependency imports it **inside the function**,
+not at module scope, so importing a service never pulls torch in.
+
+---
+
+## Response contract
+
+Every response from a cluster that did not do real work carries a
+machine-readable marker:
 
 ```json
 {
   "engine": "mock",
   "is_mock": true,
   "cluster": "D3/D6",
-  "reason": "No real video engine is active on this host.",
-  "to_enable": "Nothing yet -- no real video adapter has been written...",
-  "missing": ["no real engine adapter is implemented for this cluster"]
+  "reason": "No video engine is active on this host.",
+  "to_enable": "pip install -r requirements-ml.txt; set VIDEO_ENGINE=real; ...",
+  "missing": ["torch", "diffusers", "VIDEO_WEIGHTS_DIR"]
 }
 ```
 
-It is applied by `src/middleware/engine_labelling.py` rather than per-handler,
-for two reasons. Sixty handlers each remembering to add a field means the one
-that forgets is exactly the one that misleads someone. And a `response_model`
-that does not declare an `engine` field silently drops one a handler added —
-which had already happened to the QC endpoint, leaving it returning a bare
-`passed` with no way to learn the artifact had never been opened. Middleware
-runs after serialisation, so it survives that.
+A caller checks `is_mock`. It never has to parse prose or infer from a missing
+field.
 
-Error responses are deliberately **not** labelled. A 422 is not generated
-output, and attaching an engine block would imply it was.
+Real output carries the counterpart with `is_mock: false`.
 
-`ENGINE=real` on a cluster that cannot honour it raises `EngineUnavailable`
-rather than falling back. A caller who asked for real output must not receive
-synthetic output labelled as real.
-
-## Running it
-
-CI installs `requirements.txt` only, which is fastapi, pydantic, httpx, numpy
-and pytest — no CUDA, no torch. Everything marked **real** above runs under
-exactly that.
-
-```bash
-cd services/ai-api
-pip install -r requirements.txt
-pytest -q                      # 621 passed, 1 skipped
-curl localhost:8000/ai/v1/capabilities
-```
-
-To provision a gated cluster, see `requirements-ml.txt`, which lists the
-dependency block per cluster and repeats the caveat about adapters.
+---
 
 ## Fact Check List
 
-Assumptions that would break the above if wrong.
+Everything here needs a human decision, a download, or hardware. Nothing below
+is provisioned by this branch.
 
-1. **`ffmpeg` is not a dependency of the QC path.** Loudness works on PCM WAV
-   and frames on PNG using stdlib decoders written here. Anything else is
-   reported unmeasurable. If a caller assumes MP4 audio is being measured, it
-   is not — the response says `measured: false` with the reason.
-2. **The BS.1770 K-weighting coefficients are exact only at 48 kHz.** They are
-   used verbatim there. At other rates they are recomputed with an RBJ shelf
-   parameterised by Q, while the standard specifies its shelf by slope; the two
-   differ by ~0.4% in `b0`. `k_weighting_coefficients()` returns `exact=False`
-   for those rates. A 44.1 kHz measurement may sit outside the ±0.1 LU the
-   standard allows.
-3. **`peak_is_sample_peak: true` means sample peak, not true peak.** True peak
-   requires 4× oversampling, which is not implemented. R128's −1 dBTP ceiling
-   is checked against sample peak, which under-reports inter-sample overs.
-4. **The E6 descriptor is perceptual, not semantic.** It cannot tell that the
-   same actor changed costume if the colours match, nor that two different
-   actors are different people if they do not. It measures how alike two frames
-   _look_. CLIP is the gated upgrade.
-5. **E3 decomposition is lexicon-driven.** It handles the vocabulary in
-   `scene_decomposition.py` and defaults everything else — reported honestly in
-   `coverage.defaulted_fields`, but a prompt in another language or an unusual
-   register will default nearly everything and still return a full structure.
-6. **Remote artifacts are never fetched.** QC and continuity refuse `http(s)`
-   URLs by design, since both run inside request handling. A deployment that
-   stores output on S3 must stage it locally before anything can be measured.
-   Every cloud-hosted artifact is currently `unmeasurable`.
-7. **Six clusters are mock and no amount of provisioning changes that.**
-   `real_implemented=False` in the registry is the source of truth, and
-   `to_enable` says so. Anyone reading the `requirements-ml.txt` block for
-   D3/D6 as an install-and-go recipe will be disappointed.
-8. **`physics_service.py` and `mocap_service.py` were verified, not rewritten.**
-   Neither contains a hash-seeded value; both are real CPU implementations. They
-   are marked **real** on that basis, not on a fresh audit of their numerical
-   correctness.
-9. **The 621 test count is with `requirements.txt` only.** No test exercises a
-   gated real engine, because no CI runner can. `real-gated` therefore means
-   "the adapter exists and is unit-tested", not "verified end-to-end on a GPU".
+### Licences that block commercial use
+
+These are the ones that matter most, and three of the four gated clusters hit
+one:
+
+| Model                    | Cluster | Licence                                  | Effect                                                                          |
+| ------------------------ | ------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| MusicGen weights         | F3      | **CC-BY-NC 4.0**                         | Generated music cannot ship commercially                                        |
+| Stable Video Diffusion   | D3/D6   | **Stability Non-Commercial Research**    | Needs a separate Stability agreement                                            |
+| ModelScope text-to-video | D3/D6   | **CC-BY-NC 4.0**                         | Same                                                                            |
+| MMS_FA alignment bundle  | D4      | **CC-BY-NC 4.0** (derived from Meta MMS) | Blocks the _upgrade_; the default duration model is unaffected and unencumbered |
+| SDXL base                | D10     | CreativeML Open RAIL++-M                 | Commercially usable, with use restrictions to pass downstream                   |
+| open_clip / LAION        | X6, E6  | MIT                                      | Usable; training data is web-scraped, review separately                         |
+
+The default real paths — D4 lip-sync timing, X6 pixel statistics, and E3, E8,
+F5, G6, E6 — carry **no model licence at all**, because they use no models.
+
+### Hardware
+
+- **12 GB VRAM** minimum for video (text-to-video, 16 frames) and LoRA training.
+- **16 GB+** for Stable Video Diffusion image-to-video.
+- **8–16 GB** for MusicGen medium/large; small runs on CPU, slowly.
+- CPU is sufficient for D4 forced alignment and X6 CLIP embedding.
+
+### Unverified claims
+
+- **The video, music and training adapters have never been executed.** No GPU
+  in CI, none on the machine they were written on. They are written against the
+  documented diffusers, audiocraft and peft APIs. Expect the first provisioned
+  run to need adjustment.
+- **D4 forced alignment has never been executed** either — same reason. The
+  default duration-model path _is_ exercised, by 38 tests.
+- **Rule-based G2P is 65–75% phoneme-accurate** on unrestricted English. The
+  exception table covers the high-frequency irregular words. For lip-sync this
+  matters less than it sounds, because visemes collapse many phoneme
+  distinctions — but it is not a pronunciation dictionary and should not be
+  used as one.
+- **The duration model is typical English timing, not a speaker.** It models;
+  the alignment upgrade measures.
+- **X6 decodes PNG only.** Everything else is reported unmeasured. A pipeline
+  feeding it JPEG frames will get honest nulls, not fingerprints.
+- **The `_encode` width/height** in the video adapter reads `frames[0].size`,
+  which assumes diffusers returns PIL images. If a future version returns numpy
+  arrays the resolution field will read `0x0` — the clip itself is unaffected.

@@ -12,7 +12,11 @@ from typing import Any
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-_BASE_URL = "https://cdn.animaforge.ai/audio"
+# Retained only so existing callers keep the same key shape. Nothing is
+# written to this host by this service -- see the engine marker on every
+# response. Real cues generated through MUSIC_ENGINE=real are stored by
+# src.services.music.generation and carry a URL that resolves.
+_BASE_URL = ""
 _DEFAULT_TEMPO = 120
 _DEFAULT_KEY = "C minor"
 _DEFAULT_TIME_SIG = "4/4"

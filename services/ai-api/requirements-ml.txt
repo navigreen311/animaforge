@@ -86,3 +86,40 @@ boto3>=1.34.0
 # container validation are numpy on CPU. ffmpeg on PATH widens what can be
 # decoded (currently WAV for audio, PNG for frames) but is not required -- what
 # cannot be decoded is reported unmeasurable rather than scored.
+
+# ---------------------------------------------------------------------------
+# Generation clusters (D3/D6 video, D4 audio, X6 style, F3 music, D10 training)
+# ---------------------------------------------------------------------------
+#
+# Same rule as above: none of this is installed by CI, and none of it may
+# become a transitive dependency of requirements.txt. Each cluster names the
+# packages it needs in the REGISTRY in src/services/engines.py, and
+# GET /ai/v1/capabilities reports which are actually importable here.
+#
+# Per-cluster hardware floors are in docs/generation-pipeline.md.
+
+# D4 audio -- CTC forced alignment. CPU is fine; this is the cheapest upgrade
+# in the set. Must match the torch version above.
+torchaudio==2.3.1
+
+# X6 style -- CLIP image embeddings. Inference is CPU-feasible for ViT-B/32.
+open_clip_torch==2.24.0
+
+# D3/D6 video and D10 training -- diffusion pipelines and LoRA adapters.
+# Both need a CUDA device; see the doc for VRAM.
+diffusers==0.27.2
+transformers==4.40.2
+accelerate==0.30.1
+peft==0.10.0
+safetensors==0.4.3
+
+# Video export muxes frames through imageio-ffmpeg, which ships its own
+# ffmpeg binary, so no system package is required for the encode step.
+imageio-ffmpeg==0.4.9
+
+# Image loading for the CLIP, image-to-video and LoRA paths.
+Pillow==10.3.0
+
+# F3 music -- MusicGen. Pulls its own torch pin; install after torch so the
+# resolver does not pick a different build.
+audiocraft==1.3.0

@@ -14,6 +14,8 @@ import time
 import uuid
 from typing import Any
 
+from . import engines
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -246,7 +248,17 @@ def get_finetune_status(job_id: str) -> dict[str, Any]:
             "epoch": epoch,
         }
     if elapsed > 10:
-        job["status"] = "completed"
+        # Not "completed": no training ran. The gated engine in
+        # src.services.training.lora is what completes a job, and it sets
+        # this itself once an adapter exists.
+        job["status"] = "not_implemented"
+        job["engine"] = engines.mock_marker(
+            "training",
+            detail=(
+                "LoRA training is not implemented on this host; the job "
+                "progressed on a timer, no adapter was produced."
+            ),
+        )
         job["progress"] = 1.0
         job["metrics"] = {
             "loss": 0.1523,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -32,7 +33,13 @@ class ImageToCartoonRequest(BaseModel):
 
 
 class StyleFingerprint(BaseModel):
-    """Full fingerprint extracted from a visual source."""
+    """Full fingerprint extracted from a visual source.
+
+    ``measured`` says whether the numbers came from decoded pixels. False means
+    the source could not be decoded and the attributes are defaults, not
+    observations -- do not compute drift or similarity from them and present
+    the result as a measurement.
+    """
 
     color_palette: list[str] = Field(
         ..., description="Dominant hex colours extracted from the source"
@@ -70,6 +77,12 @@ class StyleFingerprint(BaseModel):
         ..., ge=0.0, le=1.0, description="Overall confidence of the extraction"
     )
     created_at: datetime
+    #: True when the attributes were computed from decoded pixels.
+    measured: bool = False
+    #: Why the source could not be measured, when ``measured`` is False.
+    unmeasured_reason: str | None = None
+    #: Engine marker; see ``src.services.engines``.
+    engine: dict[str, Any] | None = None
 
 
 class StyleCloneResponse(BaseModel):
