@@ -971,8 +971,8 @@ function InviteMemberModal({ onClose, onSent }: { onClose: () => void; onSent: (
         )}
 
         <div style={{ marginBottom: 12, fontSize: 11, color: 'var(--text-tertiary)' }}>
-          The invitation is recorded and appears in Pending Invitations. No email is
-          sent — SMTP is not configured — so share the link from that list.
+          The invitation is recorded and appears in Pending Invitations. No email is sent — SMTP is
+          not configured — so share the link from that list.
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -2518,11 +2518,20 @@ export default function TeamPage() {
             )}
             {teamState.loading && <LoadingState label="Loading teams" />}
             {teamState.error && <ErrorState error={teamState.error} onRetry={teamState.reload} />}
-            {!teamState.loading && !teamState.error && (teamState.data?.items ?? []).length === 0 && (
-              <p style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
-                No sub-teams yet.
-              </p>
-            )}
+            {!teamState.loading &&
+              !teamState.error &&
+              (teamState.data?.items ?? []).length === 0 && (
+                <p
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: 12,
+                    color: 'var(--text-tertiary)',
+                    margin: 0,
+                  }}
+                >
+                  No sub-teams yet.
+                </p>
+              )}
             {(teamState.data?.items ?? []).map((team) => (
               <div
                 key={team.id}

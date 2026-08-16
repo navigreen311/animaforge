@@ -494,9 +494,7 @@ export default function SettingsPage() {
     }
   };
 
-  const memoryState = useResource<{ genMemory?: Record<string, unknown> }>(
-    '/api/users/me/memory',
-  );
+  const memoryState = useResource<{ genMemory?: Record<string, unknown> }>('/api/users/me/memory');
   const [memoryDraft, setMemoryDraft] = useState<string | null>(null);
   const [memoryError, setMemoryError] = useState<string | null>(null);
 

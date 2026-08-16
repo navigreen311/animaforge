@@ -568,7 +568,6 @@ function AssetThumbnail({ asset, height = 72 }: { asset: Asset; height?: number 
 export default function AssetsPage() {
   const assetState = useResource<AssetList>('/api/assets?limit=200');
 
-
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -620,7 +619,8 @@ export default function AssetsPage() {
     } finally {
       setUploadBusy(false);
     }
-  };  const projectState = useResource<{ items: ProjectOption[] }>('/api/projects?limit=100');
+  };
+  const projectState = useResource<{ items: ProjectOption[] }>('/api/projects?limit=100');
   const projectOptions = projectState.data?.items ?? [];
   const assets = useMemo(() => (assetState.data?.items ?? []).map(toAsset), [assetState.data]);
   // State

@@ -268,11 +268,9 @@ export default function ScriptPage() {
     const title = window.prompt('Name for the new project');
     if (!title?.trim()) return;
     setCreatingProject(true);
-    const { data, error } = await mutate<{ data?: { id?: string } }>(
-      '/api/projects',
-      'POST',
-      { title: title.trim() },
-    );
+    const { data, error } = await mutate<{ data?: { id?: string } }>('/api/projects', 'POST', {
+      title: title.trim(),
+    });
     setCreatingProject(false);
     if (error) {
       toast.error(`Could not create the project: ${error.message}`);
