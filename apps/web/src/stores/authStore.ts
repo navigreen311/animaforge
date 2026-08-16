@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { setToken, removeToken } from '@/lib/auth';
 
 export interface AuthUser {
   id: string;
@@ -24,16 +25,47 @@ interface AuthActions {
 
 const STORAGE_KEY = 'animaforge_auth';
 
+/**
+ * The cookie the Next middleware reads.
+ *
+ * Route protection runs on the server, before the page renders, and the server
+ * cannot see localStorage. So the token is mirrored into a cookie -- that is
+ * the only copy `middleware.ts` can check.
+ *
+ * Not HttpOnly: this is written by client code and read by client code as well
+ * as the middleware, and marking it HttpOnly would simply stop the browser from
+ * accepting it here. The real protection is that the token is signed and
+ * verified server-side (#82); the cookie is a transport, not a trust anchor.
+ * `SameSite=Lax` keeps it off cross-site requests.
+ */
+export const AUTH_COOKIE = 'animaforge_token';
+
+function setAuthCookie(token: string): void {
+  if (typeof document === 'undefined') return;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${AUTH_COOKIE}=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secure}`;
+}
+
+function clearAuthCookie(): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${AUTH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
 function persistAuth(user: AuthUser, token: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
-  }
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
+  // The console's API layer reads the bearer token through lib/auth's own key,
+  // which this store was not writing -- so every proxied request went out
+  // unauthenticated even while the store said the user was signed in.
+  setToken(token);
+  setAuthCookie(token);
 }
 
 function clearPersistedAuth(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(STORAGE_KEY);
-  }
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(STORAGE_KEY);
+  removeToken();
+  clearAuthCookie();
 }
 
 function getPersistedAuth(): { user: AuthUser; token: string } | null {
@@ -140,28 +172,30 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   loadFromStorage: () => {
     const persisted = getPersistedAuth();
     if (persisted) {
+      // Re-mirror on every load: a session persisted before the cookie existed
+      // would otherwise be invisible to the middleware and bounce the user to
+      // login despite being signed in.
+      persistAuth(persisted.user, persisted.token);
       set({
         user: persisted.user,
         token: persisted.token,
         isAuthenticated: true,
         isLoading: false,
       });
-    } else {
-      // Auto-create a demo session so the dashboard is always accessible
-      const demoUser: AuthUser = {
-        id: 'user_demo',
-        email: 'shadow@animaforge.io',
-        displayName: 'Shadow',
-        tier: 'pro',
-      };
-      const demoToken = 'demo_token_animaforge';
-      persistAuth(demoUser, demoToken);
-      set({
-        user: demoUser,
-        token: demoToken,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      return;
     }
+
+    // No session. This used to fabricate one -- a 'user_demo' account with the
+    // token 'demo_token_animaforge' -- which is why the dashboard was reachable
+    // signed out and why route protection had nothing to protect (#80). That
+    // token was also not a JWT, so since #82 every API call made with it is
+    // rejected: the console looked signed in and could load nothing.
+    clearPersistedAuth();
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
   },
 }));
