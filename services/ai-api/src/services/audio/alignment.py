@@ -22,7 +22,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from ..engines import EngineUnavailable, probe
+from ..engines import EngineUnavailable, probe, upgrade_available
 
 #: Sample rate the bundled acoustic models expect.
 TARGET_SAMPLE_RATE = 16_000
@@ -47,8 +47,14 @@ class AlignedToken:
 
 
 def alignment_available() -> bool:
-    """True when forced alignment can actually run on this host."""
-    return probe("audio").real_engine_available
+    """True when forced alignment can actually run on this host.
+
+    Deliberately :func:`~..engines.upgrade_available` rather than
+    ``real_engine_available``: D4 is real by default because the duration model
+    needs nothing, so the latter is always True and would send every request
+    down a path that immediately fails to import torch.
+    """
+    return upgrade_available("audio")
 
 
 def align(audio_path: str, transcript: str) -> list[AlignedToken]:
@@ -63,7 +69,7 @@ def align(audio_path: str, transcript: str) -> list[AlignedToken]:
         ValueError: if *transcript* has no alignable words.
     """
     status = probe("audio")
-    if not status.real_engine_available:
+    if not upgrade_available("audio"):
         raise EngineUnavailable(
             "Forced alignment needs the real audio engine. Missing: "
             + ", ".join(status.missing)

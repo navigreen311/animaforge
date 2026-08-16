@@ -173,9 +173,18 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="X6",
         name="style",
         env_var="STYLE_ENGINE",
-        summary="Style embedding and transfer.",
+        summary=(
+            "Style fingerprinting and transfer. Palette, contrast, saturation "
+            "and edge density are measured from decoded pixels on CPU with no "
+            "weights; sources that cannot be decoded are reported unmeasured "
+            "rather than invented. CLIP semantic embedding is the gated "
+            "upgrade. Style TRANSFER is not implemented -- it needs a "
+            "diffusion model and a GPU, and that path stays mock."
+        ),
         packages=("torch", "open_clip_torch"),
         weights_env="STYLE_WEIGHTS_DIR",
+        real_by_default=True,
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="G2",
@@ -297,8 +306,43 @@ def resolve_engine(name: str) -> str:
 
 
 def real_engine_available(name: str) -> bool:
-    """Convenience predicate, used by tests to skip provisioning-only cases."""
+    """True when this cluster can produce real output on this host.
+
+    Note that a ``real_by_default`` cluster is always available -- its default
+    path needs nothing. To ask whether the *gated upgrade* is provisioned, use
+    :func:`upgrade_available`, which is a different question.
+    """
     return probe(name).real_engine_available
+
+
+def upgrade_available(name: str) -> bool:
+    """True when a cluster's optional upgrade is fully provisioned.
+
+    Several clusters are real by default *and* have a heavier path behind
+    packages and weights: D4 models phoneme durations on CPU but measures them
+    from audio once torchaudio is present; X6 measures pixel statistics
+    anywhere but embeds with CLIP once open_clip is present.
+
+    For those, :attr:`EngineStatus.real_engine_available` is always True --
+    the default path needs nothing -- so it cannot answer "is the upgrade
+    installed?". This can: it ignores ``real_by_default`` and reports purely on
+    whether every declared package, binary and weights directory is present.
+
+    Clusters with nothing declared have no upgrade, so this returns False.
+    """
+    spec = spec_for(name)
+    if not (spec.packages or spec.binaries or spec.weights_env):
+        return False
+
+    if any(not _module_installed(pkg) for pkg in spec.packages):
+        return False
+    if any(shutil.which(binary) is None for binary in spec.binaries):
+        return False
+    if spec.weights_env:
+        directory = os.getenv(spec.weights_env, "").strip()
+        if not directory or not os.path.isdir(directory):
+            return False
+    return True
 
 
 # ---------------------------------------------------------------------------

@@ -172,8 +172,8 @@ class TestLipSyncService:
 
     def test_alignment_skipped_is_declared(self) -> None:
         """Asking for alignment without the engine must say so, not stay silent."""
-        if engines.real_engine_available("audio"):
-            pytest.skip("forced-alignment engine is provisioned on this host")
+        if engines.upgrade_available("audio"):
+            pytest.skip("forced-alignment upgrade is provisioned on this host")
 
         result = generate_lip_sync_data("Hello world", audio_path="/tmp/nope.wav")
         assert result["source"] == "duration-model"
