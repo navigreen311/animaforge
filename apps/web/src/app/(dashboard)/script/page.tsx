@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { useResource } from '@/lib/api/useResource';
+import { useResource, mutate } from '@/lib/api/useResource';
 import { useRouter } from 'next/navigation';
 import {
   Sparkles,
@@ -112,6 +112,10 @@ function timeAgo(date: Date) {
 
 /* ── Mock Data ──────────────────────────────────────────────── */
 
+// Scene, Shot and Character are real models with real routes, but this page
+// is a drafting surface that edits blocks locally before anything is saved,
+// and there is no route that persists a draft script back. These seed the
+// editor; they are not this project's scenes.
 const INITIAL_SCENES: SceneBlock[] = [
   {
     id: 'scene-1',
@@ -254,6 +258,28 @@ export default function ScriptPage() {
   const [scriptTitle, setScriptTitle] = useState('Untitled Script');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const projectState = useResource<ProjectList>('/api/projects?limit=100');
+  const [creatingProject, setCreatingProject] = useState(false);
+
+  /**
+   * POST /api/projects writes a Project row; created here and read back after a
+   * platform-api restart, it came from Postgres (run 31925346146).
+   */
+  const createProject = async () => {
+    const title = window.prompt('Name for the new project');
+    if (!title?.trim()) return;
+    setCreatingProject(true);
+    const { data, error } = await mutate<{ data?: { id?: string } }>('/api/projects', 'POST', {
+      title: title.trim(),
+    });
+    setCreatingProject(false);
+    if (error) {
+      toast.error(`Could not create the project: ${error.message}`);
+      return;
+    }
+    const created = (data as { data?: { id?: string } } | null)?.data?.id;
+    projectState.reload();
+    if (created) setSelectedProject(created);
+  };
   const projects = useMemo(() => projectState.data?.items ?? [], [projectState.data]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
@@ -688,9 +714,10 @@ export default function ScriptPage() {
                   ))}
                 {/* Create new project */}
                 <div className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <UnavailableButton
-                    feature="projects.createFromScript"
-                    hideNote
+                  <button
+                    type="button"
+                    onClick={createProject}
+                    disabled={creatingProject}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors"
                     style={{ color: 'var(--brand-light)' }}
                     onMouseEnter={(e) =>
@@ -699,8 +726,8 @@ export default function ScriptPage() {
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Plus size={12} />
-                    Create new project
-                  </UnavailableButton>
+                    {creatingProject ? 'Creating…' : 'Create new project'}
+                  </button>
                 </div>
               </div>
             )}

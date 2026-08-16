@@ -91,7 +91,11 @@ interface ProjectAccessEntry {
 // MOCK DATA
 // ══════════════════════════════════════════════════════════════
 
-const CURRENT_USER_ID = '1';
+// Seat and credit allowances are not modelled anywhere: Subscription carries
+// id, userId, stripeId, tier, status and currentPeriodEnd, and no table records
+// how many seats or credits a plan grants. These remain constants because the
+// alternative is inventing a table; the numbers below are a placeholder plan,
+// not this workspace's real entitlement. Reported in the PR that landed this.
 const TOTAL_SEATS = 10;
 const MONTHLY_CREDITS = 10_000;
 
@@ -177,11 +181,6 @@ function toInvite(row: InviteRow): PendingInvite {
     sentAt: row.createdAt,
   };
 }
-
-const SUB_TEAMS: SubTeam[] = [
-  { id: 'st-1', name: 'Animation Team', memberIds: ['1', '2', '3'] },
-  { id: 'st-2', name: 'Client Services', memberIds: ['4', '5'] },
-];
 
 // ══════════════════════════════════════════════════════════════
 // STYLE HELPERS
@@ -624,7 +623,7 @@ function CreditLimitModal({
 // INVITE MEMBER MODAL
 // ══════════════════════════════════════════════════════════════
 
-function InviteMemberModal({ onClose }: { onClose: () => void }) {
+function InviteMemberModal({ onClose, onSent }: { onClose: () => void; onSent: () => void }) {
   const inviteProjectState = useResource<{ items: { id: string; title: string }[] }>(
     '/api/projects?limit=100',
   );
@@ -655,10 +654,40 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
     setSelectedProjects((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   };
 
-  // No handleSend. POST /api/team/invite records nothing and sends no mail, so
-  // there is no honest implementation available here. This used to wait 1.2s
-  // and report "Invitation sent to …" for an email that never left the browser.
-  // The form stays visible so the intended flow is still legible.
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const addresses = entries.map((e) => e.email.trim()).filter(Boolean);
+  const canSend = addresses.length > 0 && !sending;
+
+  // POST /api/team/invite proxies to /api/v1/team/invitations, which writes an
+  // Invitation row. Verified by writing one, restarting platform-api and
+  // reading it back (run 31925346146), so a sent invitation survives.
+  //
+  // Delivery is a separate matter: nothing here sends mail, and the copy below
+  // says so rather than implying an email left the building.
+  const handleSend = async () => {
+    setSending(true);
+    setSendError(null);
+
+    const failures: string[] = [];
+    for (const email of addresses) {
+      const { error } = await mutate('/api/team/invite', 'POST', {
+        email,
+        role: role.toLowerCase(),
+        message: message.trim() || undefined,
+      });
+      if (error) failures.push(`${email}: ${error.message}`);
+    }
+
+    setSending(false);
+    if (failures.length > 0) {
+      setSendError(failures.join('; '));
+      return;
+    }
+    onSent();
+    onClose();
+  };
 
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
@@ -932,18 +961,33 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <UnavailableNotice feature="team.invite" />
+        {sendError && (
+          <div
+            role="alert"
+            style={{ marginBottom: 12, fontSize: 11, color: 'var(--danger, #dc2626)' }}
+          >
+            {sendError}
+          </div>
+        )}
+
+        <div style={{ marginBottom: 12, fontSize: 11, color: 'var(--text-tertiary)' }}>
+          The invitation is recorded and appears in Pending Invitations. No email is sent — SMTP is
+          not configured — so share the link from that list.
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button type="button" onClick={onClose} style={smallBtnStyle}>
             Cancel
           </button>
-          <UnavailableButton feature="team.invite" hideNote layout="inline" style={primaryBtnStyle}>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!canSend}
+            style={{ ...primaryBtnStyle, opacity: canSend ? 1 : 0.5 }}
+          >
             <Mail size={13} />
-            Send Invitation
-          </UnavailableButton>
+            {sending ? 'Recording…' : 'Create Invitation'}
+          </button>
         </div>
       </motion.div>
     </div>
@@ -1486,14 +1530,17 @@ function RowContextMenu({
   anchorRect,
   onClose,
   onAction,
+  currentUserId,
 }: {
   member: TeamMember;
   anchorRect: DOMRect;
   onClose: () => void;
   onAction: (action: string, member: TeamMember, payload?: unknown) => void;
+  /** Who is signed in, from GET /api/users/me. Was the constant '1'. */
+  currentUserId: string | null;
 }) {
   const [roleSubmenu, setRoleSubmenu] = useState(false);
-  const isOwnRow = member.id === CURRENT_USER_ID;
+  const isOwnRow = currentUserId !== null && member.id === currentUserId;
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1701,8 +1748,46 @@ export default function TeamPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
+  // Who is signed in. This was the constant CURRENT_USER_ID = '1', which made
+  // whichever member happened to have id '1' look like the viewer.
+  const meState = useResource<{ id?: string; data?: { id?: string } }>('/api/users/me');
+  const currentUserId = meState.data?.data?.id ?? meState.data?.id ?? null;
+
   const memberState = useResource<MemberList>('/api/team/members');
   const inviteState = useResource<InviteList>('/api/team/invitations');
+  // Replaces the two hardcoded SUB_TEAMS rows. Teams persist: created through
+  // this route, they survive a platform-api restart (run 31925346146).
+  const teamState = useResource<{ items: { id: string; name: string }[] }>('/api/team/teams');
+  const [teamBusy, setTeamBusy] = useState(false);
+  const [teamError, setTeamError] = useState<string | null>(null);
+
+  const createTeam = async () => {
+    const name = window.prompt('Name for the new team');
+    if (!name?.trim()) return;
+    setTeamBusy(true);
+    setTeamError(null);
+    const { error } = await mutate('/api/team/teams', 'POST', { name: name.trim() });
+    setTeamBusy(false);
+    if (error) {
+      setTeamError(error.message);
+      return;
+    }
+    teamState.reload();
+  };
+
+  const renameTeam = async (id: string, current: string) => {
+    const name = window.prompt('Rename team', current);
+    if (!name?.trim() || name.trim() === current) return;
+    setTeamBusy(true);
+    setTeamError(null);
+    const { error } = await mutate(`/api/team/teams/${id}`, 'PATCH', { name: name.trim() });
+    setTeamBusy(false);
+    if (error) {
+      setTeamError(error.message);
+      return;
+    }
+    teamState.reload();
+  };
   const members = useMemo(() => (memberState.data?.items ?? []).map(toMember), [memberState.data]);
   const pendingInvites = useMemo(
     () => (inviteState.data?.items ?? []).map(toInvite),
@@ -2401,8 +2486,10 @@ export default function TeamPage() {
                 <Users size={13} style={{ color: 'var(--text-tertiary)' }} />
                 <span style={sectionTitleStyle}>Sub-Teams</span>
               </div>
-              <UnavailableButton
-                feature="team.create"
+              <button
+                type="button"
+                onClick={createTeam}
+                disabled={teamBusy}
                 style={{
                   ...smallBtnStyle,
                   display: 'flex',
@@ -2418,10 +2505,34 @@ export default function TeamPage() {
               >
                 <Plus size={11} />
                 Create team
-              </UnavailableButton>
+              </button>
             </div>
 
-            {SUB_TEAMS.map((team) => (
+            {teamError && (
+              <div
+                role="alert"
+                style={{ padding: '8px 16px', fontSize: 11, color: 'var(--danger, #dc2626)' }}
+              >
+                {teamError}
+              </div>
+            )}
+            {teamState.loading && <LoadingState label="Loading teams" />}
+            {teamState.error && <ErrorState error={teamState.error} onRetry={teamState.reload} />}
+            {!teamState.loading &&
+              !teamState.error &&
+              (teamState.data?.items ?? []).length === 0 && (
+                <p
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: 12,
+                    color: 'var(--text-tertiary)',
+                    margin: 0,
+                  }}
+                >
+                  No sub-teams yet.
+                </p>
+              )}
+            {(teamState.data?.items ?? []).map((team) => (
               <div
                 key={team.id}
                 style={{
@@ -2443,18 +2554,17 @@ export default function TeamPage() {
                     {team.name}
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
-                    {team.memberIds.length} members
+                    Team
                   </p>
                 </div>
-                <AvatarStack memberIds={team.memberIds} allMembers={members} />
-                <UnavailableButton
-                  feature="team.manage"
-                  layout="inline"
-                  hideNote
+                <button
+                  type="button"
+                  onClick={() => renameTeam(team.id, team.name)}
+                  disabled={teamBusy}
                   style={{ ...smallBtnStyle, marginLeft: 12 }}
                 >
-                  Manage
-                </UnavailableButton>
+                  Rename
+                </button>
               </div>
             ))}
           </div>
@@ -2640,12 +2750,18 @@ export default function TeamPage() {
           anchorRect={contextMenu.rect}
           onClose={() => setContextMenu(null)}
           onAction={handleMenuAction}
+          currentUserId={currentUserId}
         />
       )}
 
       {/* ── Modals ──────────────────────────────────────── */}
       <AnimatePresence>
-        {showInviteModal && <InviteMemberModal onClose={() => setShowInviteModal(false)} />}
+        {showInviteModal && (
+          <InviteMemberModal
+            onClose={() => setShowInviteModal(false)}
+            onSent={() => inviteState.reload()}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

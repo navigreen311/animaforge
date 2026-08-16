@@ -41,7 +41,7 @@ import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import WaveformVisualizer from '@/components/ui/WaveformVisualizer';
 import UploadModal from '@/components/assets/UploadModal';
 import { audioPlayer } from '@/lib/audioPlayer';
-import { useResource } from '@/lib/api/useResource';
+import { useResource, mutate } from '@/lib/api/useResource';
 import { UnavailableNotice } from '../components/unavailable/UnavailableButton';
 import { explainFeature } from '../components/unavailable/featureStatus';
 
@@ -281,6 +281,10 @@ const ALL_TAG_SUGGESTIONS = [
 ];
 
 // ── Storage breakdown (mock) ─────────────────────────────────────
+// No endpoint reports storage usage and no table records it: Asset has no
+// size column, so neither the total nor the breakdown below can be derived
+// from anything real. These are placeholder figures, not this workspace's
+// usage. Wiring them needs a size on Asset and an aggregate route.
 const STORAGE = {
   total: 10 * 1024 * 1024 * 1024, // 10 GB
   used: 2.4 * 1024 * 1024 * 1024,
@@ -563,6 +567,59 @@ function AssetThumbnail({ asset, height = 72 }: { asset: Asset; height?: number 
 // ── Main Component ───────────────────────────────────────────────
 export default function AssetsPage() {
   const assetState = useResource<AssetList>('/api/assets?limit=200');
+
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  /**
+   * Presign, PUT to storage, then record the asset.
+   *
+   * All three steps persist: POST /api/upload/presign, the storage PUT, and
+   * POST /api/assets, with the asset read back after a platform-api restart
+   * (run 31925346146). Each failure is reported where it happens rather than
+   * collapsed into one "upload failed", because the recovery differs.
+   */
+  const uploadAsset = async (file: File) => {
+    setUploadBusy(true);
+    setUploadError(null);
+    try {
+      const presign = await mutate<{ data?: { uploadUrl?: string; publicUrl?: string } }>(
+        '/api/upload/presign',
+        'POST',
+        { filename: file.name, contentType: file.type || 'application/octet-stream' },
+      );
+      if (presign.error) throw new Error(presign.error.message);
+
+      const payload = presign.data as { data?: { uploadUrl?: string; publicUrl?: string } } | null;
+      const uploadUrl = payload?.data?.uploadUrl;
+      if (!uploadUrl) throw new Error('The presign response carried no upload URL.');
+
+      const put = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      });
+      if (!put.ok) throw new Error(`Storage rejected the upload (HTTP ${put.status}).`);
+
+      const record = await mutate('/api/assets', 'POST', {
+        name: file.name,
+        type: file.type.startsWith('audio') ? 'audio' : 'image',
+        url: payload?.data?.publicUrl ?? uploadUrl.split('?')[0],
+      });
+      if (record.error) {
+        throw new Error(
+          `The file uploaded but was not recorded: ${record.error.message}. It will not appear in this list.`,
+        );
+      }
+
+      assetState.reload();
+      toast.success(`Uploaded ${file.name}`);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setUploadBusy(false);
+    }
+  };
   const projectState = useResource<{ items: ProjectOption[] }>('/api/projects?limit=100');
   const projectOptions = projectState.data?.items ?? [];
   const assets = useMemo(() => (assetState.data?.items ?? []).map(toAsset), [assetState.data]);
@@ -1911,8 +1968,43 @@ export default function AssetsPage() {
               )}
               {!assetState.loading && !assetState.error && filtered.length === 0 && (
                 <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
-                  <UnavailableNotice feature="assets.upload" title="Uploading is not available" />
+                  <label
+                    htmlFor="asset-upload"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 12,
+                      cursor: uploadBusy ? 'progress' : 'pointer',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    <input
+                      id="asset-upload"
+                      type="file"
+                      disabled={uploadBusy}
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadAsset(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    <Upload size={13} />
+                    {uploadBusy ? 'Uploading…' : 'Upload an asset'}
+                  </label>
                 </div>
+              )}
+              {uploadError && (
+                <p
+                  role="alert"
+                  style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: '#ef4444' }}
+                >
+                  {uploadError}
+                </p>
               )}
             </div>
           </div>
