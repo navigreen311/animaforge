@@ -12,7 +12,6 @@ from src.services.music_service import (
     analyze_scene_for_music,
     detect_beat_grid,
     generate_score,
-    generate_sound_effects,
     generate_stems,
     mix_stems,
     sync_to_beats,

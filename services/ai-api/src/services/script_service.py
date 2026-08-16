@@ -1,14 +1,14 @@
-import os
 import json
+import os
+
 import httpx
-from typing import Optional
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-sonnet-4-6"
 
 
 async def generate_script(
-    project_id: str, scene_desc: str, char_ids: Optional[list] = None
+    project_id: str, scene_desc: str, char_ids: list | None = None
 ) -> dict:
     """Generate a script using Claude API with structured output."""
 
@@ -54,7 +54,11 @@ async def generate_script(
                 result = response.json()
                 content = result["content"][0]["text"]
                 return parse_script_response(content, scene_desc)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Deliberately broad. Any failure reaching Claude — transport,
+            # timeout, auth, an unexpected response shape — must degrade to the
+            # mock generator rather than surface as a 500. The fallback is the
+            # documented behaviour of this function.
             print(f"Claude API error, falling back to mock: {e}")
 
     return generate_mock_script(scene_desc, char_ids)
@@ -74,7 +78,7 @@ def parse_script_response(content: str, scene_desc: str) -> dict:
         return {"script": content, "shot_breakdown": [], "scene_graphs": []}
 
 
-def generate_mock_script(scene_desc: str, char_ids: Optional[list] = None) -> dict:
+def generate_mock_script(scene_desc: str, char_ids: list | None = None) -> dict:
     """Fallback mock script generation."""
     return {
         "script": (

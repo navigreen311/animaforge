@@ -7,11 +7,10 @@ presets, evolution tracking, and consistency correction suggestions.
 from __future__ import annotations
 
 import hashlib
-import math
 import random
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from ..models.style_schemas import StyleFingerprint
 
@@ -19,7 +18,7 @@ from ..models.style_schemas import StyleFingerprint
 # Constants
 # ---------------------------------------------------------------------------
 
-STYLE_DIMENSIONS: List[str] = [
+STYLE_DIMENSIONS: list[str] = [
     "color",
     "contrast",
     "grain",
@@ -32,10 +31,10 @@ STYLE_DIMENSIONS: List[str] = [
 ]
 
 # In-memory preset store (production would use a database)
-_preset_store: Dict[str, Dict[str, Any]] = {}
+_preset_store: dict[str, dict[str, Any]] = {}
 
 # In-memory project style history (production would use a database)
-_project_style_history: Dict[str, List[Dict[str, Any]]] = {}
+_project_style_history: dict[str, list[dict[str, Any]]] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -47,11 +46,11 @@ def _seed_from_url(url: str) -> int:
     return int(hashlib.sha256(url.encode()).hexdigest()[:8], 16)
 
 
-def _random_palette(rng: random.Random, count: int = 5) -> List[str]:
+def _random_palette(rng: random.Random, count: int = 5) -> list[str]:
     return [f"#{rng.randint(0, 0xFFFFFF):06X}" for _ in range(count)]
 
 
-def _pick(rng: random.Random, options: List[str]) -> str:
+def _pick(rng: random.Random, options: list[str]) -> str:
     return options[rng.randint(0, len(options) - 1)]
 
 
@@ -86,11 +85,11 @@ def extract_video_fingerprint(video_url: str) -> StyleFingerprint:
         source_url=video_url,
         source_type="video",
         confidence=round(rng.uniform(0.70, 0.98), 2),
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
-def extract_animation_fingerprint(video_url: str) -> Dict[str, Any]:
+def extract_animation_fingerprint(video_url: str) -> dict[str, Any]:
     """Extract animation-specific fingerprint from an animation source.
 
     Returns both a base StyleFingerprint and animation-specific metadata
@@ -113,7 +112,7 @@ def extract_animation_fingerprint(video_url: str) -> Dict[str, Any]:
         source_url=video_url,
         source_type="animation",
         confidence=round(rng.uniform(0.72, 0.96), 2),
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
     animation_meta = {
@@ -174,12 +173,12 @@ def _dimension_similarity(fp_a: StyleFingerprint, fp_b: StyleFingerprint, dim: s
     return 0.0
 
 
-def compare_fingerprints(fp_a: StyleFingerprint, fp_b: StyleFingerprint) -> Dict[str, Any]:
+def compare_fingerprints(fp_a: StyleFingerprint, fp_b: StyleFingerprint) -> dict[str, Any]:
     """Compare two fingerprints across all style dimensions.
 
     Returns overall similarity (0-1) and per-dimension scores.
     """
-    dimension_scores: Dict[str, float] = {}
+    dimension_scores: dict[str, float] = {}
     for dim in STYLE_DIMENSIONS:
         dimension_scores[dim] = _dimension_similarity(fp_a, fp_b, dim)
 
@@ -195,8 +194,8 @@ def compare_fingerprints(fp_a: StyleFingerprint, fp_b: StyleFingerprint) -> Dict
 # ---------------------------------------------------------------------------
 
 def blend_fingerprints(
-    fingerprints: List[StyleFingerprint],
-    weights: List[float],
+    fingerprints: list[StyleFingerprint],
+    weights: list[float],
 ) -> StyleFingerprint:
     """Create a weighted blend of multiple style fingerprints.
 
@@ -225,13 +224,13 @@ def blend_fingerprints(
     blended_confidence = _clamp(round(sum(fp.confidence * w for fp, w in zip(fingerprints, norm)), 2))
 
     # Merge colour palettes, weighted — take more colours from higher-weighted fps
-    merged_colors: List[str] = []
+    merged_colors: list[str] = []
     for fp, w in zip(fingerprints, norm):
         count = max(1, round(len(fp.color_palette) * w))
         merged_colors.extend(fp.color_palette[:count])
     # De-duplicate while preserving order
     seen: set[str] = set()
-    unique_colors: List[str] = []
+    unique_colors: list[str] = []
     for c in merged_colors:
         if c not in seen:
             seen.add(c)
@@ -251,7 +250,7 @@ def blend_fingerprints(
         source_url="blend",
         source_type="blend",
         confidence=blended_confidence,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -264,7 +263,7 @@ def apply_style_transfer(
     fingerprint: StyleFingerprint,
     strength: float = 0.8,
     preserve_content: float = 0.5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Simulate applying a style fingerprint to content.
 
     Returns a mock job result with the applied parameters and a generated
@@ -289,7 +288,7 @@ def apply_style_transfer(
             "color_palette": fingerprint.color_palette,
             "grain_noise": round(fingerprint.grain_noise * strength, 2),
         },
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -300,8 +299,8 @@ def apply_style_transfer(
 def create_style_preset(
     name: str,
     fingerprint: StyleFingerprint,
-    variations: Optional[List[float]] = None,
-) -> Dict[str, Any]:
+    variations: list[float] | None = None,
+) -> dict[str, Any]:
     """Save a fingerprint as a reusable preset with strength variations.
 
     Each variation is a pre-computed snapshot at a given strength level.
@@ -323,13 +322,13 @@ def create_style_preset(
         "name": name,
         "fingerprint": fingerprint.model_dump(mode="json"),
         "variations": variation_entries,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     _preset_store[preset_id] = preset
     return preset
 
 
-def list_style_presets() -> List[Dict[str, Any]]:
+def list_style_presets() -> list[dict[str, Any]]:
     """Return all saved style presets."""
     return list(_preset_store.values())
 
@@ -343,7 +342,7 @@ def clear_presets() -> None:
 # Evolution & Consistency
 # ---------------------------------------------------------------------------
 
-def analyze_style_evolution(project_id: str) -> Dict[str, Any]:
+def analyze_style_evolution(project_id: str) -> dict[str, Any]:
     """Track how style changes across shots in a project.
 
     In production this iterates over rendered shots, extracts per-shot
@@ -381,11 +380,11 @@ def analyze_style_evolution(project_id: str) -> Dict[str, Any]:
         "max_drift": round(max_drift, 4),
         "consistency_grade": consistency_grade,
         "shots": shots,
-        "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        "analyzed_at": datetime.now(UTC).isoformat(),
     }
 
 
-def suggest_style_corrections(project_id: str) -> Dict[str, Any]:
+def suggest_style_corrections(project_id: str) -> dict[str, Any]:
     """Suggest adjustments to maintain style consistency across a project.
 
     Builds on evolution analysis — for each shot that exceeds a drift
@@ -415,5 +414,5 @@ def suggest_style_corrections(project_id: str) -> Dict[str, Any]:
         "overall_health": "good" if len(corrections) == 0 else (
             "fair" if len(corrections) <= 3 else "needs_attention"
         ),
-        "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        "analyzed_at": datetime.now(UTC).isoformat(),
     }

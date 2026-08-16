@@ -6,9 +6,8 @@ import hashlib
 import math
 import struct
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # In-memory stores
@@ -92,7 +91,7 @@ def store_generation_context(
         "project_id": project_id,
         "embedding": embedding,
         "context": context,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     _memory_store.setdefault(user_id, []).append(entry)
     return entry
@@ -139,7 +138,7 @@ def store_style_preference(
         "id": uuid.uuid4().hex[:16],
         "style_fingerprint": style_fingerprint,
         "rating": rating,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     _style_store.setdefault(user_id, []).append(entry)
     return entry

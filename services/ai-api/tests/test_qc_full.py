@@ -1,6 +1,5 @@
 """Comprehensive tests for the full QC validation system."""
 
-import pytest
 
 from src.services.qc_service import (
     compute_artifact_score,
@@ -11,7 +10,6 @@ from src.services.qc_service import (
     generate_qc_certificate,
     validate_output,
 )
-
 
 # -- 1. LPIPS computation --
 

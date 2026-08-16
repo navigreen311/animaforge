@@ -14,10 +14,7 @@ from fastapi.testclient import TestClient
 
 from src.routes.script_chat import router
 from src.services.script_chat_service import (
-    ScriptSession,
     clear_all_sessions,
-    create_session,
-    delete_session,
     get_session,
 )
 

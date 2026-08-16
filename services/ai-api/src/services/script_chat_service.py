@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Optional
 
 import httpx
 
@@ -27,14 +26,14 @@ class ScriptSession:
     def __init__(
         self,
         project_id: str,
-        world_bible: Optional[str] = None,
-        characters: Optional[list[dict]] = None,
+        world_bible: str | None = None,
+        characters: list[dict] | None = None,
     ) -> None:
         self.project_id = project_id
         self.world_bible = world_bible
         self.characters = characters or []
         self.history: list[dict[str, str]] = []
-        self.current_script: Optional[str] = None
+        self.current_script: str | None = None
 
     # -- history helpers ----------------------------------------------------
 
@@ -87,7 +86,10 @@ class ScriptSession:
                     response.raise_for_status()
                     result = response.json()
                     return result["content"][0]["text"]
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
+                # Deliberately broad, same reasoning as script_service: any
+                # failure reaching Claude degrades to the mock reply instead of
+                # failing the request.
                 print(f"Claude API error, falling back to mock: {e}")
         return ""
 
@@ -361,8 +363,8 @@ _sessions: dict[str, ScriptSession] = {}
 
 def create_session(
     project_id: str,
-    world_bible: Optional[str] = None,
-    characters: Optional[list[dict]] = None,
+    world_bible: str | None = None,
+    characters: list[dict] | None = None,
 ) -> ScriptSession:
     """Create and store a new ScriptSession for a project."""
     session = ScriptSession(project_id, world_bible, characters)
@@ -370,7 +372,7 @@ def create_session(
     return session
 
 
-def get_session(project_id: str) -> Optional[ScriptSession]:
+def get_session(project_id: str) -> ScriptSession | None:
     """Retrieve an existing session by project ID."""
     return _sessions.get(project_id)
 

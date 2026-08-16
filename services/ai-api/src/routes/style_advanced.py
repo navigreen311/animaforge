@@ -6,7 +6,7 @@ style transfer, presets, evolution tracking, and correction suggestions.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
@@ -47,12 +47,12 @@ class CompareRequest(BaseModel):
 
 class CompareResponse(BaseModel):
     similarity: float
-    dimension_scores: Dict[str, float]
+    dimension_scores: dict[str, float]
 
 
 class BlendRequest(BaseModel):
-    fingerprints: List[StyleFingerprint]
-    weights: List[float]
+    fingerprints: list[StyleFingerprint]
+    weights: list[float]
 
 
 class BlendResponse(BaseModel):
@@ -69,7 +69,7 @@ class TransferRequest(BaseModel):
 class PresetCreateRequest(BaseModel):
     name: str = Field(..., description="Human-readable preset name")
     fingerprint: StyleFingerprint
-    variations: Optional[List[float]] = Field(
+    variations: list[float] | None = Field(
         None, description="Strength levels for preset variations"
     )
 
@@ -80,14 +80,14 @@ class PresetCreateRequest(BaseModel):
 
 
 @router.post("/style/fingerprint/video")
-async def fingerprint_video(request: VideoFingerprintRequest) -> Dict[str, Any]:
+async def fingerprint_video(request: VideoFingerprintRequest) -> dict[str, Any]:
     """Extract a style fingerprint from a video source."""
     fp = extract_video_fingerprint(request.video_url)
     return {"fingerprint": fp.model_dump(mode="json")}
 
 
 @router.post("/style/fingerprint/animation")
-async def fingerprint_animation(request: AnimationFingerprintRequest) -> Dict[str, Any]:
+async def fingerprint_animation(request: AnimationFingerprintRequest) -> dict[str, Any]:
     """Extract an animation-specific fingerprint."""
     result = extract_animation_fingerprint(request.video_url)
     return {
@@ -111,7 +111,7 @@ async def blend_styles(request: BlendRequest) -> BlendResponse:
 
 
 @router.post("/style/transfer")
-async def transfer_style(request: TransferRequest) -> Dict[str, Any]:
+async def transfer_style(request: TransferRequest) -> dict[str, Any]:
     """Apply a style fingerprint to content."""
     result = apply_style_transfer(
         content_url=request.content_url,
@@ -123,7 +123,7 @@ async def transfer_style(request: TransferRequest) -> Dict[str, Any]:
 
 
 @router.post("/style/preset")
-async def create_preset(request: PresetCreateRequest) -> Dict[str, Any]:
+async def create_preset(request: PresetCreateRequest) -> dict[str, Any]:
     """Create a reusable style preset with variations."""
     preset = create_style_preset(
         name=request.name,
@@ -134,18 +134,18 @@ async def create_preset(request: PresetCreateRequest) -> Dict[str, Any]:
 
 
 @router.get("/style/presets")
-async def get_presets() -> List[Dict[str, Any]]:
+async def get_presets() -> list[dict[str, Any]]:
     """List all available style presets."""
     return list_style_presets()
 
 
 @router.post("/style/evolution/{project_id}")
-async def evolution(project_id: str) -> Dict[str, Any]:
+async def evolution(project_id: str) -> dict[str, Any]:
     """Analyse how style evolves across shots in a project."""
     return analyze_style_evolution(project_id)
 
 
 @router.post("/style/corrections/{project_id}")
-async def corrections(project_id: str) -> Dict[str, Any]:
+async def corrections(project_id: str) -> dict[str, Any]:
     """Suggest corrections to maintain style consistency."""
     return suggest_style_corrections(project_id)

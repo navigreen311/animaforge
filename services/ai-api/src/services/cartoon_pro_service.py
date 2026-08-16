@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import random
 import uuid
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 _CDN_BASE = "https://cdn.animaforge.io/cartoon-pro"
 
@@ -33,7 +32,7 @@ def apply_line_controls(
     taper: float = 0.5,
     variation: float = 0.3,
     color: str = "#000000",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fine-tune line art on a cartoon image."""
     jid = _job_id()
     settings_applied = {
@@ -58,9 +57,9 @@ _VALID_FILL_STYLES = {"flat", "gradient", "cel", "painterly"}
 def apply_fill_controls(
     image_url: str,
     fill_style: str = "flat",
-    palette: Optional[List[str]] = None,
+    palette: list[str] | None = None,
     shading: float = 0.5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Control flat fill style on a cartoon image."""
     if fill_style not in _VALID_FILL_STYLES:
         raise ValueError(
@@ -85,7 +84,7 @@ def apply_shading_controls(
     shading_type: str = "soft",
     intensity: float = 0.5,
     light_dir: str = "top-left",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Control shading on a cartoon image."""
     if shading_type not in _VALID_SHADING_TYPES:
         raise ValueError(
@@ -109,7 +108,7 @@ def apply_motion_principles(
     follow_through: float = 0.5,
     ease: float = 0.5,
     smear: float = 0.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Apply classic animation principles to animation data.
 
     All intensity values are 0.0-1.0.
@@ -147,8 +146,8 @@ _DEFAULT_VIEWS = ["front", "side", "back", "three_quarter", "expressions"]
 
 def create_style_sheet(
     character_id: str,
-    views: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    views: list[str] | None = None,
+) -> dict[str, Any]:
     """Generate a character model sheet with multiple views."""
     if views is None:
         views = list(_DEFAULT_VIEWS)
@@ -164,11 +163,11 @@ def create_style_sheet(
 # ---------------------------------------------------------------------------
 
 def batch_apply_style(
-    image_urls: List[str],
-    style_config: Dict[str, Any],
-) -> Dict[str, Any]:
+    image_urls: list[str],
+    style_config: dict[str, Any],
+) -> dict[str, Any]:
     """Apply a consistent cartoon style across a batch of images."""
-    outputs: List[Dict[str, Any]] = []
+    outputs: list[dict[str, Any]] = []
     for url in image_urls:
         jid = _job_id()
         outputs.append({
@@ -232,7 +231,7 @@ _CARTOON_PRESETS = [
 ]
 
 
-def get_cartoon_presets() -> List[Dict[str, Any]]:
+def get_cartoon_presets() -> list[dict[str, Any]]:
     """Return all named cartoon style presets."""
     return list(_CARTOON_PRESETS)
 
@@ -247,7 +246,7 @@ def adjust_proportions(
     eye_size: float = 1.0,
     limb_length: float = 1.0,
     body_type: str = "standard",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Exaggerate character proportions for cartoon style."""
     jid = _job_id()
     return {

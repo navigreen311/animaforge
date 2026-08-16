@@ -10,7 +10,6 @@ weights are integrated.
 from __future__ import annotations
 
 import hashlib
-import math
 import time
 import uuid
 from typing import Any
@@ -170,7 +169,6 @@ def detect_uncanny_valley(
             "problematic_frames": [],
         }
 
-    seed = _seed_from(*face_frames[:5], str(len(face_frames)))
     per_frame_scores: list[float] = []
     problematic: list[int] = []
 

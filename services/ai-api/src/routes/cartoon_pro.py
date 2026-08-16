@@ -6,7 +6,7 @@ motion principles, model sheets, batch styling, presets, and proportions.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
@@ -41,7 +41,7 @@ class LineControlsRequest(BaseModel):
 class FillControlsRequest(BaseModel):
     image_url: str = Field(..., description="URL of the image to process")
     fill_style: str = Field("flat", description="flat|gradient|cel|painterly")
-    palette: Optional[List[str]] = Field(None, description="Color palette as hex list")
+    palette: list[str] | None = Field(None, description="Color palette as hex list")
     shading: float = Field(0.5, ge=0.0, le=1.0)
 
 
@@ -63,14 +63,14 @@ class MotionPrinciplesRequest(BaseModel):
 
 class ModelSheetRequest(BaseModel):
     character_id: str = Field(..., description="Character identifier")
-    views: Optional[List[str]] = Field(
+    views: list[str] | None = Field(
         None, description="Views to generate (default: front, side, back, 3/4, expressions)"
     )
 
 
 class BatchStyleRequest(BaseModel):
-    image_urls: List[str] = Field(..., description="List of image URLs to style")
-    style_config: Dict[str, Any] = Field(..., description="Style configuration dict")
+    image_urls: list[str] = Field(..., description="List of image URLs to style")
+    style_config: dict[str, Any] = Field(..., description="Style configuration dict")
 
 
 class ProportionsRequest(BaseModel):
@@ -87,7 +87,7 @@ class ProportionsRequest(BaseModel):
 
 
 @router.post("/cartoon/lines")
-async def line_art_controls(request: LineControlsRequest) -> Dict[str, Any]:
+async def line_art_controls(request: LineControlsRequest) -> dict[str, Any]:
     """Fine-tune line art on a cartoon image."""
     return apply_line_controls(
         image_url=request.image_url,
@@ -99,7 +99,7 @@ async def line_art_controls(request: LineControlsRequest) -> Dict[str, Any]:
 
 
 @router.post("/cartoon/fill")
-async def fill_style_controls(request: FillControlsRequest) -> Dict[str, Any]:
+async def fill_style_controls(request: FillControlsRequest) -> dict[str, Any]:
     """Control flat fill style: flat, gradient, cel, painterly."""
     return apply_fill_controls(
         image_url=request.image_url,
@@ -110,7 +110,7 @@ async def fill_style_controls(request: FillControlsRequest) -> Dict[str, Any]:
 
 
 @router.post("/cartoon/shading")
-async def shading_controls(request: ShadingControlsRequest) -> Dict[str, Any]:
+async def shading_controls(request: ShadingControlsRequest) -> dict[str, Any]:
     """Control shading: hard, soft, rim, none, crosshatch."""
     return apply_shading_controls(
         image_url=request.image_url,
@@ -121,7 +121,7 @@ async def shading_controls(request: ShadingControlsRequest) -> Dict[str, Any]:
 
 
 @router.post("/cartoon/motion-principles")
-async def motion_principles(request: MotionPrinciplesRequest) -> Dict[str, Any]:
+async def motion_principles(request: MotionPrinciplesRequest) -> dict[str, Any]:
     """Apply classic animation principles to animation data."""
     return apply_motion_principles(
         animation_data=request.animation_data,
@@ -134,7 +134,7 @@ async def motion_principles(request: MotionPrinciplesRequest) -> Dict[str, Any]:
 
 
 @router.post("/cartoon/model-sheet")
-async def model_sheet(request: ModelSheetRequest) -> Dict[str, Any]:
+async def model_sheet(request: ModelSheetRequest) -> dict[str, Any]:
     """Generate a character model sheet with multiple views."""
     return create_style_sheet(
         character_id=request.character_id,
@@ -143,7 +143,7 @@ async def model_sheet(request: ModelSheetRequest) -> Dict[str, Any]:
 
 
 @router.post("/cartoon/batch-style")
-async def batch_style(request: BatchStyleRequest) -> Dict[str, Any]:
+async def batch_style(request: BatchStyleRequest) -> dict[str, Any]:
     """Apply consistent cartoon style across a batch of images."""
     return batch_apply_style(
         image_urls=request.image_urls,
@@ -152,13 +152,13 @@ async def batch_style(request: BatchStyleRequest) -> Dict[str, Any]:
 
 
 @router.get("/cartoon/presets")
-async def presets() -> List[Dict[str, Any]]:
+async def presets() -> list[dict[str, Any]]:
     """List all named cartoon style presets."""
     return get_cartoon_presets()
 
 
 @router.post("/cartoon/proportions")
-async def proportions(request: ProportionsRequest) -> Dict[str, Any]:
+async def proportions(request: ProportionsRequest) -> dict[str, Any]:
     """Adjust character proportions for cartoon style exaggeration."""
     return adjust_proportions(
         character_id=request.character_id,

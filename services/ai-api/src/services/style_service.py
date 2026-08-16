@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from ..models.style_schemas import StyleFingerprint
 
@@ -27,5 +27,5 @@ def extract_style_fingerprint(source_url: str, source_type: str) -> StyleFingerp
         source_url=source_url,
         source_type=source_type,
         confidence=0.87,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )

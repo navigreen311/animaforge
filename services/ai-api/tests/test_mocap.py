@@ -8,11 +8,8 @@ from fastapi.testclient import TestClient
 
 from src.routes.mocap import router
 from src.services.mocap_service import (
-    SUPPORTED_FORMATS,
     blend_motions,
-    motion_to_keyframes,
     parse_bvh,
-    parse_fbx_motion,
     retarget_motion,
     validate_motion_data,
 )

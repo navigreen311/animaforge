@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
-
+from datetime import UTC, datetime
+from typing import Any
 
 MOTION_TYPES = (
     "static", "pan_left", "pan_right", "tilt_up", "tilt_down",
@@ -42,7 +40,7 @@ def generate_motion_spec(scene_graph: dict[str, Any]) -> dict[str, Any]:
     return {
         "camera_spec": camera_spec,
         "element_motions": element_motions,
-        "extracted_at": datetime.now(timezone.utc).isoformat(),
+        "extracted_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -63,7 +61,7 @@ def apply_camera_control(
         "job_id": job_id,
         "camera_control": validated_spec,
         "status": "applied",
-        "applied_at": datetime.now(timezone.utc).isoformat(),
+        "applied_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -86,5 +84,5 @@ def apply_motion_module(
             "intensity": clamped,
         },
         "status": "applied",
-        "applied_at": datetime.now(timezone.utc).isoformat(),
+        "applied_at": datetime.now(UTC).isoformat(),
     }

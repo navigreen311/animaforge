@@ -7,7 +7,6 @@ from typing import Any
 
 from ..models.video_schemas import JobDict, PipelineStage
 
-
 # ---------------------------------------------------------------------------
 # Tier configuration
 # ---------------------------------------------------------------------------

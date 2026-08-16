@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, Field
-
 
 # -- Request Schemas -----------------------------------------------------------
 
@@ -36,7 +34,7 @@ class ImageToCartoonRequest(BaseModel):
 class StyleFingerprint(BaseModel):
     """Full fingerprint extracted from a visual source."""
 
-    color_palette: List[str] = Field(
+    color_palette: list[str] = Field(
         ..., description="Dominant hex colours extracted from the source"
     )
     contrast_profile: str = Field(
@@ -88,4 +86,4 @@ class PipelineStage(BaseModel):
 class ImageToCartoonResponse(BaseModel):
     job_id: str
     output_url: str
-    stages_completed: List[PipelineStage]
+    stages_completed: list[PipelineStage]

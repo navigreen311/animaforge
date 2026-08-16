@@ -107,7 +107,7 @@ async def test_material_presets(api_client: AsyncClient) -> None:
     assert "cotton" in presets
     assert "silk" in presets
     assert "leather" in presets
-    for _name, props in presets.items():
+    for props in presets.values():
         assert "stiffness" in props
         assert "damping" in props
 

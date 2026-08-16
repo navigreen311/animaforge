@@ -13,7 +13,6 @@ Format support is uneven, and the difference is visible to callers through
 from __future__ import annotations
 
 import math
-import re
 import uuid
 from pathlib import Path
 from typing import Any

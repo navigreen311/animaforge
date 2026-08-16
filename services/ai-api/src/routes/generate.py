@@ -17,7 +17,6 @@ from ..models.video_schemas import (
 from ..services.job_manager import create_job
 from ..services.video_service import (
     create_video_job,
-    estimate_generation_time,
 )
 
 router = APIRouter(prefix="/ai/v1")
