@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useResource } from '@/lib/api/useResource';
+import { ResourceView } from '@/components/api/ResourceStates';
 import { Heart, Sparkles, TrendingUp, Clock, ThumbsUp, Copy } from 'lucide-react';
 
 const FILTERS = ['All', 'Cartoon', 'Cinematic', 'Anime', 'Sci-Fi', 'Fantasy'] as const;
@@ -12,84 +14,58 @@ const SORT_ICONS: Record<string, React.ReactNode> = {
   'Most liked': <ThumbsUp size={14} />,
 };
 
-const MOCK_CARDS = [
-  {
-    creator: 'Luna Ray',
-    style: 'Neon Dreamscape',
-    likes: 2431,
-    gradient: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-  },
-  {
-    creator: 'Marco V.',
-    style: 'Ghibli Soft',
-    likes: 1897,
-    gradient: 'linear-gradient(135deg, #34d399, #3b82f6)',
-  },
-  {
-    creator: 'Aria Chen',
-    style: 'Cyberpunk 90s',
-    likes: 3205,
-    gradient: 'linear-gradient(135deg, #f43f5e, #7c3aed)',
-  },
-  {
-    creator: 'DevKnight',
-    style: 'Pixel Noir',
-    likes: 982,
-    gradient: 'linear-gradient(135deg, #1e1e2e, #6366f1)',
-  },
-  {
-    creator: 'Suki T.',
-    style: 'Anime Pastel',
-    likes: 4120,
-    gradient: 'linear-gradient(135deg, #f9a8d4, #a78bfa)',
-  },
-  {
-    creator: 'Omar J.',
-    style: 'Desert Mirage',
-    likes: 1543,
-    gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-  },
-  {
-    creator: 'Zara Kim',
-    style: 'Frozen Aether',
-    likes: 2789,
-    gradient: 'linear-gradient(135deg, #67e8f9, #818cf8)',
-  },
-  {
-    creator: 'Ravi P.',
-    style: 'Bollywood Glow',
-    likes: 1102,
-    gradient: 'linear-gradient(135deg, #fbbf24, #f43f5e)',
-  },
-  {
-    creator: 'Ines M.',
-    style: 'Watercolor Flow',
-    likes: 876,
-    gradient: 'linear-gradient(135deg, #a78bfa, #34d399)',
-  },
-  {
-    creator: 'TJ Banks',
-    style: 'Retro Sci-Fi',
-    likes: 2150,
-    gradient: 'linear-gradient(135deg, #0ea5e9, #22d3ee)',
-  },
-  {
-    creator: 'Nadia L.',
-    style: 'Dark Fantasy',
-    likes: 3670,
-    gradient: 'linear-gradient(135deg, #4c1d95, #991b1b)',
-  },
-  {
-    creator: 'Kai O.',
-    style: 'Toon Blast',
-    likes: 1455,
-    gradient: 'linear-gradient(135deg, #10b981, #fbbf24)',
-  },
+/** One post from GET /api/explore. */
+interface ExplorePost {
+  id: string;
+  outputUrl: string | null;
+  publicCaption: string | null;
+  publicLikes: number;
+  modelId: string;
+  createdAt: string;
+  user: { id: string; displayName: string | null; avatarUrl: string | null } | null;
+}
+
+interface ExploreFeed {
+  items: ExplorePost[];
+  total: number;
+}
+
+/**
+ * A deterministic gradient per post.
+ *
+ * The mock rows each carried a hand-picked gradient. Real posts have an output
+ * URL instead, and until a thumbnail pipeline exists the tile needs *some*
+ * fill — derived from the id so a post looks the same on every load, rather
+ * than random per render.
+ */
+const GRADIENTS = [
+  'linear-gradient(135deg, #7c3aed, #06b6d4)',
+  'linear-gradient(135deg, #34d399, #3b82f6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #ec4899, #8b5cf6)',
+  'linear-gradient(135deg, #06b6d4, #22c55e)',
+  'linear-gradient(135deg, #f97316, #eab308)',
 ];
+
+function gradientFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return GRADIENTS[hash % GRADIENTS.length];
+}
+
+const SORT_PARAM: Record<string, string> = {
+  Trending: 'trending',
+  New: 'new',
+  'Most liked': 'liked',
+};
 
 export default function ExplorePage() {
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [activeSort, setActiveSort] = useState<string>('Trending');
+  const state = useResource<ExploreFeed>(
+    `/api/explore?sort=${SORT_PARAM[activeSort] ?? 'trending'}`,
+    [activeSort],
+  );
 
   return (
     <div
@@ -207,64 +183,80 @@ export default function ExplorePage() {
           gap: 20,
         }}
       >
-        {MOCK_CARDS.map((card, i) => (
-          <div
-            key={i}
-            style={{
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-surface)',
-              overflow: 'hidden',
-              transition: 'border-color 0.15s',
-            }}
-          >
-            {/* Gradient placeholder */}
-            <div style={{ height: 180, background: card.gradient }} />
-
-            <div style={{ padding: '14px 16px' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{card.style}</p>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                by {card.creator}
-              </p>
-
+        <ResourceView
+          state={state}
+          isEmpty={(d) => d.items.length === 0}
+          emptyTitle="Nothing shared yet"
+          emptyHint="Public generations appear here once creators publish them."
+          loadingLabel="Loading the gallery…"
+        >
+          {(list) =>
+            list.items.map((card) => (
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                key={card.id}
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.15s',
+                }}
               >
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    color: 'var(--text-secondary)',
-                    fontSize: 13,
-                  }}
-                >
-                  <Heart size={14} />
-                  {card.likes.toLocaleString()}
-                </span>
+                {/* Gradient placeholder */}
+                <div style={{ height: 180, background: gradientFor(card.id) }} />
 
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-brand)',
-                    background: 'var(--brand-dim)',
-                    color: 'var(--text-brand)',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Copy size={13} />
-                  Clone style
-                </button>
+                <div style={{ padding: '14px 16px' }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>
+                    {card.publicCaption ?? card.modelId}
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    by {card.user?.displayName ?? 'Unknown creator'}
+                  </p>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        color: 'var(--text-secondary)',
+                        fontSize: 13,
+                      }}
+                    >
+                      <Heart size={14} />
+                      {card.publicLikes.toLocaleString()}
+                    </span>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-brand)',
+                        background: 'var(--brand-dim)',
+                        color: 'var(--text-brand)',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Copy size={13} />
+                      Clone style
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            ))
+          }
+        </ResourceView>
       </div>
 
       {/* CTA */}

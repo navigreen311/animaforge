@@ -247,6 +247,9 @@ model GenerationJob {
   qualityScores Json?   @map("quality_scores")
   costCredits  Float?   @map("cost_credits")
   gpuClass     String?  @map("gpu_class")
+  /// Why a job failed. The render queue showed a reason per failed job with no
+  /// column to read it from.
+  errorReason  String?  @map("error_reason")
   startedAt    DateTime? @map("started_at") @db.Timestamptz
   completedAt  DateTime? @map("completed_at") @db.Timestamptz
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -560,6 +563,10 @@ model BranchingScene {
   emotion      String?
   pose         String?
   position     Json     @default("{}")
+  /// A narrative is a set of scenes sharing narrativeId; the console lists them
+  /// by recency, which needs a timestamp the table did not have.
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
   @@index([narrativeId])
   @@map("branching_scenes")
 }
