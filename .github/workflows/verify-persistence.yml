@@ -129,8 +129,11 @@ jobs:
               read: ['GET', '/api/v1/teams'] },
             { key: 'team.invite', write: ['POST', '/api/v1/team/invitations', { email: `${MARK}@animaforge.test`, role: 'editor' }],
               read: ['GET', '/api/v1/team/invitations'] },
-            { key: 'team.projectAccess', write: ['POST', '/api/v1/teams', { name: `Access ${MARK}` }],
-              read: ['GET', '/api/v1/team/members'] },
+            // Membership is team-to-user with no project dimension, so there is
+            // nothing to write a per-project grant to. This probe confirms the
+            // members list is real; the grant itself has no endpoint at all.
+            { key: 'team.projectAccess (members list)', write: ['POST', '/api/v1/teams', { name: `Access ${MARK}` }],
+              read: ['GET', '/api/v1/teams'] },
             // /activity reads the AuditTrail table. The question is not whether
             // the read works but whether anything ever writes a row: the probe
             // performs a real, audit-worthy action (the setup project above,
@@ -141,7 +144,7 @@ jobs:
               read: ['GET', '/api/v1/webhook-endpoints'] },
             { key: 'settings.memoryEditor', write: ['PATCH', '/api/v1/users/me/memory', { genMemory: { marker: MARK } }],
               read: ['GET', '/api/v1/users/me/memory'] },
-            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify', sourceUrl: `https://cdn.test/${MARK}.png`, sourceType: 'image' }],
+            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify', sourceUrl: `https://cdn.test/${MARK}.png`, sourceType: 'video' }],
               read: ['GET', '/api/v1/styles'] },
             { key: 'projects.import/createFromScript', write: ['POST', '/api/v1/projects', { title: `Project ${MARK}` }],
               read: ['GET', '/api/v1/projects'] },
