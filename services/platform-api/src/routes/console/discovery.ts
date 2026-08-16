@@ -164,6 +164,43 @@ router.get(
 );
 
 /* ------------------------------------------------------------------ */
+/*  Shots in a project                                                 */
+/* ------------------------------------------------------------------ */
+// Shots were reachable one at a time (/shots/:id) but never listable, so any
+// screen that needed a shot picker carried its own hardcoded list.
+
+router.get(
+  '/projects/:projectId/shots',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    if (!(await isDatabaseReachable())) return unavailable(res);
+    const projectId = String(req.params.projectId);
+
+    const owned = await requirePrisma().project.findFirst({
+      where: { id: projectId, ownerId: req.user!.id },
+    });
+    if (!owned) return apiResponse.error(res, 'NOT_FOUND', 'No such project', 404);
+
+    const items = await requirePrisma().shot.findMany({
+      where: { projectId },
+      orderBy: [{ shotNumber: 'asc' }],
+      select: {
+        id: true,
+        sceneId: true,
+        shotNumber: true,
+        prompt: true,
+        status: true,
+        durationMs: true,
+        aspectRatio: true,
+        updatedAt: true,
+      },
+      take: 500,
+    });
+    apiResponse.success(res, { items, total: items.length });
+  }),
+);
+
+/* ------------------------------------------------------------------ */
 /*  Publish jobs (exports)                                             */
 /* ------------------------------------------------------------------ */
 

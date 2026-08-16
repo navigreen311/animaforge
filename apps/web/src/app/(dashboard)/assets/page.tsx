@@ -37,9 +37,11 @@ import {
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import EmptyState from '@/components/ui/EmptyState';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import WaveformVisualizer from '@/components/ui/WaveformVisualizer';
 import UploadModal from '@/components/assets/UploadModal';
 import { audioPlayer } from '@/lib/audioPlayer';
+import { useResource } from '@/lib/api/useResource';
 import { UnavailableNotice } from '../components/unavailable/UnavailableButton';
 import { explainFeature } from '../components/unavailable/featureStatus';
 
@@ -161,235 +163,83 @@ const CATEGORIES: CategoryEntry[] = [
 ];
 
 // ── Mock Data ────────────────────────────────────────────────────
-const ASSETS: Asset[] = [
-  {
-    id: 'asset-1',
-    filename: 'hero_pose_v2.png',
-    type: 'image',
-    sizeBytes: 2516582,
-    size: '2.4 MB',
-    dimensions: '1920x1080',
-    rights: 'ai-generated',
-    tags: ['character', 'hero', 'pose'],
-    usedInShots: 5,
-    uploadDate: '2026-03-10',
-    lastUsed: '2026-03-24',
-    category: 'Characters',
-    favourite: true,
-    color: TYPE_COLORS.image,
-    source: 'AnimaForge Gen v3',
-    license: 'AI Output License',
-    commercialUse: true,
-    usageRefs: [
-      'Project Alpha / Shot 3',
-      'Project Alpha / Shot 7',
-      'Project Beta / Shot 1',
-      'Project Beta / Shot 12',
-      'Project Gamma / Shot 2',
-    ],
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #7c3aed 100%)',
-    thumbnailUrl:
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%233b82f6"/><stop offset="1" stop-color="%237c3aed"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g)"/><circle cx="60" cy="36" r="18" fill="%23fbbf24" opacity="0.9"/></svg>',
-  },
-  {
-    id: 'asset-2',
-    filename: 'explosion_sfx.wav',
-    type: 'audio',
-    sizeBytes: 876544,
-    size: '856 KB',
-    dimensions: '0:03 stereo',
-    rights: 'licensed',
-    tags: ['sfx', 'explosion', 'action'],
-    usedInShots: 8,
-    uploadDate: '2026-02-18',
-    lastUsed: '2026-03-22',
-    category: 'Audio Presets',
-    favourite: false,
-    color: TYPE_COLORS.audio,
-    source: 'SoundLib Pro',
-    license: 'Royalty-Free Commercial',
-    commercialUse: true,
-    usageRefs: ['Project Alpha / Shot 5', 'Project Alpha / Shot 9'],
-    duration: '0:03',
-    gradient: 'linear-gradient(135deg, #22c55e 0%, #0f766e 100%)',
-    waveformBars: [
-      0.2, 0.9, 0.5, 1, 0.7, 0.3, 0.8, 0.4, 0.6, 0.9, 0.2, 0.7, 0.5, 0.3, 0.8, 0.6, 0.4, 0.9, 0.3,
-      0.5,
-    ],
-  },
-  {
-    id: 'asset-3',
-    filename: 'kai_model_rigged.glb',
-    type: '3d',
-    sizeBytes: 13421773,
-    size: '12.8 MB',
-    dimensions: '45K polys',
-    rights: 'uploaded',
-    tags: ['character', '3d', 'rigged'],
-    usedInShots: 3,
-    uploadDate: '2026-01-15',
-    lastUsed: '2026-03-20',
-    category: 'Characters',
-    favourite: true,
-    color: TYPE_COLORS['3d'],
-    source: 'User upload',
-    license: 'Owned',
-    commercialUse: true,
-    usageRefs: ['Project Alpha / Shot 1', 'Project Alpha / Shot 2', 'Project Alpha / Shot 4'],
-    polyCount: '45K',
-    gradient: 'linear-gradient(135deg, #a855f7 0%, #6b21a8 100%)',
-  },
-  {
-    id: 'asset-4',
-    filename: 'background_loop.mp4',
-    type: 'video',
-    sizeBytes: 35862118,
-    size: '34.2 MB',
-    dimensions: '3840x2160 / 0:12',
-    rights: 'ai-generated',
-    tags: ['background', 'loop', 'ambient'],
-    usedInShots: 2,
-    uploadDate: '2026-03-05',
-    lastUsed: '2026-03-18',
-    category: 'Backgrounds',
-    favourite: false,
-    color: TYPE_COLORS.video,
-    source: 'AnimaForge Gen v3',
-    license: 'AI Output License',
-    commercialUse: true,
-    usageRefs: ['Project Beta / Shot 4', 'Project Gamma / Shot 6'],
-    duration: '0:12',
-    gradient: 'linear-gradient(135deg, #f97316 0%, #9a3412 50%, #1e293b 100%)',
-    thumbnailUrl:
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g2" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%23f97316"/><stop offset="1" stop-color="%231e293b"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g2)"/></svg>',
-  },
-  {
-    id: 'asset-5',
-    filename: 'watercolor_texture_4k.png',
-    type: 'image',
-    sizeBytes: 5347737,
-    size: '5.1 MB',
-    dimensions: '4096x4096',
-    rights: 'uploaded',
-    tags: ['texture', 'watercolor', 'style'],
-    usedInShots: 0,
-    uploadDate: '2025-12-01',
-    lastUsed: 'Never',
-    category: 'Textures',
-    favourite: false,
-    color: TYPE_COLORS.image,
-    source: 'User upload',
-    license: 'Owned',
-    commercialUse: true,
-    usageRefs: [],
-    gradient: 'linear-gradient(135deg, #60a5fa 0%, #c084fc 50%, #f472b6 100%)',
-    thumbnailUrl:
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g3" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%2360a5fa"/><stop offset="0.5" stop-color="%23c084fc"/><stop offset="1" stop-color="%23f472b6"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g3)"/></svg>',
-  },
-  {
-    id: 'asset-6',
-    filename: 'footsteps_gravel.wav',
-    type: 'audio',
-    sizeBytes: 1258291,
-    size: '1.2 MB',
-    dimensions: '0:08 mono',
-    rights: 'licensed',
-    tags: ['sfx', 'footsteps', 'foley'],
-    usedInShots: 12,
-    uploadDate: '2026-02-22',
-    lastUsed: '2026-03-25',
-    category: 'Audio Presets',
-    favourite: true,
-    color: TYPE_COLORS.audio,
-    source: 'FoleyOne',
-    license: 'Royalty-Free Commercial',
-    commercialUse: true,
-    usageRefs: ['Project Alpha / Shot 2', 'Project Beta / Shot 8'],
-    duration: '0:08',
-    gradient: 'linear-gradient(135deg, #16a34a 0%, #065f46 100%)',
-    waveformBars: [
-      0.4, 0.3, 0.6, 0.8, 0.5, 0.7, 0.3, 0.9, 0.4, 0.6, 0.5, 0.7, 0.8, 0.4, 0.3, 0.6, 0.5, 0.7, 0.4,
-      0.3,
-    ],
-  },
-  {
-    id: 'asset-7',
-    filename: 'luna_rig_final.glb',
-    type: '3d',
-    sizeBytes: 19188736,
-    size: '18.3 MB',
-    dimensions: '62K polys',
-    rights: 'expired',
-    tags: ['character', '3d', 'rig', 'luna'],
-    usedInShots: 1,
-    uploadDate: '2025-11-10',
-    lastUsed: '2025-12-05',
-    category: 'Characters',
-    favourite: false,
-    color: TYPE_COLORS['3d'],
-    source: 'External artist',
-    license: 'Expired Dec 2025',
-    commercialUse: false,
-    usageRefs: ['Project Alpha / Shot 10'],
-    polyCount: '62K',
-    gradient: 'linear-gradient(135deg, #c084fc 0%, #4c1d95 100%)',
-  },
-  {
-    id: 'asset-8',
-    filename: 'title_animation_intro.mp4',
-    type: 'video',
-    sizeBytes: 9122611,
-    size: '8.7 MB',
-    dimensions: '1920x1080 / 0:04',
-    rights: 'ai-generated',
-    tags: ['title', 'motion', 'intro'],
-    usedInShots: 4,
-    uploadDate: '2026-03-12',
-    lastUsed: '2026-03-24',
-    category: 'Props',
-    favourite: true,
-    color: TYPE_COLORS.video,
-    source: 'AnimaForge Gen v3',
-    license: 'AI Output License',
-    commercialUse: true,
-    usageRefs: [
-      'Project Alpha / Shot 1',
-      'Project Beta / Shot 1',
-      'Project Beta / Shot 14',
-      'Project Gamma / Shot 1',
-    ],
-    duration: '0:04',
-    gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #dc2626 100%)',
-    thumbnailUrl:
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72"><defs><linearGradient id="g4" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%23fbbf24"/><stop offset="1" stop-color="%23dc2626"/></linearGradient></defs><rect width="120" height="72" fill="url(%23g4)"/></svg>',
-  },
-  {
-    id: 'asset-9',
-    filename: 'stock_crowd_cheer.wav',
-    type: 'audio',
-    sizeBytes: 3145728,
-    size: '3.0 MB',
-    dimensions: '0:15 stereo',
-    rights: 'expired',
-    tags: ['sfx', 'crowd', 'ambient'],
-    usedInShots: 2,
-    uploadDate: '2025-08-04',
-    lastUsed: '2025-10-12',
-    category: 'Audio Presets',
-    favourite: false,
-    color: TYPE_COLORS.audio,
-    source: 'StockAudio Inc',
-    license: 'Expired Jan 2026',
-    commercialUse: false,
-    usageRefs: ['Project Beta / Shot 3', 'Project Gamma / Shot 5'],
-    duration: '0:15',
-    gradient: 'linear-gradient(135deg, #16a34a 0%, #1e293b 100%)',
-    waveformBars: [
-      0.3, 0.5, 0.8, 0.6, 0.9, 0.4, 0.7, 0.5, 0.3, 0.8, 0.6, 0.4, 0.9, 0.5, 0.7, 0.3, 0.8, 0.6, 0.4,
-      0.5,
-    ],
-  },
+/** One row of GET /api/assets. */
+interface AssetRow {
+  id: string;
+  projectId: string;
+  type: string;
+  name: string;
+  url: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface AssetList {
+  items: AssetRow[];
+  total: number;
+}
+
+const ASSET_TYPE: Record<string, AssetType> = {
+  image: 'image',
+  video: 'video',
+  audio: 'audio',
+  model: '3d',
+  style_pack: 'style-pack',
+};
+
+const ASSET_GRADIENTS = [
+  'linear-gradient(135deg, #7c3aed, #ec4899)',
+  'linear-gradient(135deg, #06b6d4, #3b82f6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #10b981, #06b6d4)',
 ];
+
+function humanBytes(bytes: unknown): { bytes: number; label: string } {
+  if (typeof bytes !== 'number' || bytes <= 0) return { bytes: 0, label: '—' };
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) {
+    n /= 1024;
+    u += 1;
+  }
+  return { bytes, label: `${n.toFixed(1)} ${units[u]}` };
+}
+
+/**
+ * Map a stored asset to the library tile.
+ *
+ * The Asset table holds id, project, type, name, url, metadata and createdAt —
+ * and nothing else. Everything this tile shows beyond that (size, dimensions,
+ * rights, tags, how many shots use it, when it was last used, favourite) has no
+ * column. Values present in the metadata blob are used; the rest are left empty
+ * or zero rather than populated with plausible-looking detail. Tagging,
+ * favouriting and rights tracking need schema before they can work.
+ */
+function toAsset(row: AssetRow): Asset {
+  const meta = row.metadata ?? {};
+  const size = humanBytes(meta.size);
+  const hash = row.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 13);
+  return {
+    id: row.id,
+    filename: row.name,
+    type: ASSET_TYPE[row.type] ?? 'preset',
+    sizeBytes: size.bytes,
+    size: size.label,
+    dimensions: typeof meta.dimensions === 'string' ? meta.dimensions : '—',
+    rights: (meta.rights as RightsType) ?? 'ai-generated',
+    tags: Array.isArray(meta.tags) ? (meta.tags as string[]) : [],
+    usedInShots: 0,
+    uploadDate: row.createdAt.slice(0, 10),
+    lastUsed: '',
+    category: row.type,
+    favourite: false,
+    color: '#7c3aed',
+    thumbnailUrl: row.url,
+    url: row.url,
+    gradient: ASSET_GRADIENTS[hash % ASSET_GRADIENTS.length],
+  };
+}
 
 // ── Tag autocomplete suggestions ─────────────────────────────────
 const ALL_TAG_SUGGESTIONS = [
@@ -470,43 +320,22 @@ function AssetIcon({ type, size }: { type: AssetType; size: number }) {
   }
 }
 
-// ── Mock projects & shots for "Use in Shot" modal ───────────────
-interface MockProject {
+// ── "Use in Shot" modal: real projects and shots ────────────
+interface ProjectOption {
   id: string;
-  name: string;
+  title: string;
 }
-interface MockShot {
+interface ShotOption {
   id: string;
-  label: string;
+  shotNumber: number;
+  prompt: string | null;
+  status: string;
 }
-const MOCK_PROJECTS: MockProject[] = [
-  { id: 'proj-alpha', name: 'Project Alpha' },
-  { id: 'proj-beta', name: 'Project Beta' },
-  { id: 'proj-gamma', name: 'Project Gamma' },
-];
-const MOCK_SHOTS_BY_PROJECT: Record<string, MockShot[]> = {
-  'proj-alpha': [
-    { id: 'a-shot-1', label: 'Shot 1 — Opening pan' },
-    { id: 'a-shot-2', label: 'Shot 2 — Character reveal' },
-    { id: 'a-shot-3', label: 'Shot 3 — Dialogue close-up' },
-    { id: 'a-shot-4', label: 'Shot 4 — Chase wide' },
-    { id: 'a-shot-5', label: 'Shot 5 — Finale' },
-  ],
-  'proj-beta': [
-    { id: 'b-shot-1', label: 'Shot 1 — Establishing' },
-    { id: 'b-shot-2', label: 'Shot 2 — Interior' },
-    { id: 'b-shot-3', label: 'Shot 3 — Action beat' },
-    { id: 'b-shot-4', label: 'Shot 4 — Transition' },
-    { id: 'b-shot-5', label: 'Shot 5 — Closing' },
-  ],
-  'proj-gamma': [
-    { id: 'g-shot-1', label: 'Shot 1 — Title' },
-    { id: 'g-shot-2', label: 'Shot 2 — Montage' },
-    { id: 'g-shot-3', label: 'Shot 3 — Solo focus' },
-    { id: 'g-shot-4', label: 'Shot 4 — Crowd wide' },
-    { id: 'g-shot-5', label: 'Shot 5 — Epilogue' },
-  ],
-};
+
+function shotLabel(s: ShotOption): string {
+  const summary = s.prompt?.trim();
+  return summary ? `Shot ${s.shotNumber} — ${summary.slice(0, 48)}` : `Shot ${s.shotNumber}`;
+}
 
 // ── Category icon helper ─────────────────────────────────────────
 function CategoryIcon({ icon }: { icon?: string }) {
@@ -733,6 +562,10 @@ function AssetThumbnail({ asset, height = 72 }: { asset: Asset; height?: number 
 
 // ── Main Component ───────────────────────────────────────────────
 export default function AssetsPage() {
+  const assetState = useResource<AssetList>('/api/assets?limit=200');
+  const projectState = useResource<{ items: ProjectOption[] }>('/api/projects?limit=100');
+  const projectOptions = projectState.data?.items ?? [];
+  const assets = useMemo(() => (assetState.data?.items ?? []).map(toAsset), [assetState.data]);
   // State
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -755,6 +588,12 @@ export default function AssetsPage() {
   // AL-3: Use in Shot modal state
   const [showUseShotModal, setShowUseShotModal] = useState(false);
   const [useShotProjectId, setUseShotProjectId] = useState<string | null>(null);
+  const shotState = useResource<{ items: ShotOption[] }>(
+    useShotProjectId ? `/api/projects/${useShotProjectId}/shots` : null,
+    [useShotProjectId],
+  );
+  const shotOptions = shotState.data?.items ?? [];
+
   const [useShotShotId, setUseShotShotId] = useState<string | null>(null);
 
   // AL-4: Audio preview play/pause state (for detail panel)
@@ -766,7 +605,7 @@ export default function AssetsPage() {
   const [usageFilter, setUsageFilter] = useState<'all' | 'used' | 'unused'>('all');
 
   // Computed
-  const detailAsset = detailAssetId ? (ASSETS.find((a) => a.id === detailAssetId) ?? null) : null;
+  const detailAsset = detailAssetId ? (assets.find((a) => a.id === detailAssetId) ?? null) : null;
 
   const activeFilters = useMemo(() => {
     const pills: { label: string; key: string }[] = [];
@@ -793,7 +632,7 @@ export default function AssetsPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    const result = ASSETS.filter((a) => {
+    const result = assets.filter((a) => {
       if (activeTab !== 'all' && a.type !== activeTab) return false;
       if (activeCategory && a.category !== activeCategory) return false;
       if (searchQuery.trim()) {
@@ -867,14 +706,16 @@ export default function AssetsPage() {
   // AL-3: Mock link asset to shot
   const handleLinkToShot = useCallback(async () => {
     if (!detailAsset || !useShotProjectId || !useShotShotId) return;
-    const project = MOCK_PROJECTS.find((p) => p.id === useShotProjectId);
-    // Mock API call
-    await new Promise((r) => setTimeout(r, 300));
-    toast.success(`Asset linked to shot in ${project?.name ?? 'project'}`);
-    setShowUseShotModal(false);
-    setUseShotProjectId(null);
-    setUseShotShotId(null);
-  }, [detailAsset, useShotProjectId, useShotShotId]);
+    const project = projectOptions.find((p) => p.id === useShotProjectId);
+    // The pickers above are real, but the link itself has nowhere to go:
+    // there is no asset-to-shot join table and no column on Shot that holds an
+    // asset id. This used to sleep 300ms and claim the link was made.
+    toast.error(
+      `Linking an asset to a shot in ${
+        project?.title ?? 'this project'
+      } cannot be saved — the schema has no asset-to-shot relation yet.`,
+    );
+  }, [detailAsset, useShotProjectId, useShotShotId, projectOptions]);
 
   // AL-5: Commit rename
   const commitRename = useCallback(async () => {
@@ -888,8 +729,10 @@ export default function AssetsPage() {
     // Mock API call
     await new Promise((r) => setTimeout(r, 200));
     // Mutate in-memory mock so the UI reflects the change immediately.
-    const idx = ASSETS.findIndex((a) => a.id === detailAsset.id);
-    if (idx >= 0) ASSETS[idx] = { ...ASSETS[idx], filename: next };
+    // Renaming mutated the module-level array in place, so it survived until
+    // the next navigation and no further. There is no rename endpoint on
+    // assets, so this reports that rather than pretending.
+    toast.error('Renaming an asset is not wired up yet.');
     toast.success(`Renamed to ${next}`);
     setEditingName(false);
   }, [detailAsset, editNameValue]);
@@ -2051,15 +1894,22 @@ export default function AssetsPage() {
                 </div>
               )}
 
-              {/* ── Empty State ────────────────────────────── */}
-              {filtered.length === 0 && (
+              {/* ── Loading / error / empty ─────────────────── */}
+              {/* A failed load is not an empty library. It used to render the
+                  same "No assets found" card either way, which is how a broken
+                  fetch passed for a finished screen. */}
+              {assetState.loading && <LoadingState label="Loading assets" />}
+              {!assetState.loading && assetState.error && (
+                <ErrorState error={assetState.error} onRetry={assetState.reload} />
+              )}
+              {!assetState.loading && !assetState.error && filtered.length === 0 && (
                 <EmptyState
                   icon={Package}
                   title="No assets found"
                   description="Try adjusting your filters or search query."
                 />
               )}
-              {filtered.length === 0 && (
+              {!assetState.loading && !assetState.error && filtered.length === 0 && (
                 <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
                   <UnavailableNotice feature="assets.upload" title="Uploading is not available" />
                 </div>
@@ -2916,7 +2766,7 @@ export default function AssetsPage() {
                 <div>
                   <label style={detailLabelStyle}>Project</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
-                    {MOCK_PROJECTS.map((p) => {
+                    {projectOptions.map((p) => {
                       const active = useShotProjectId === p.id;
                       return (
                         <button
@@ -2944,7 +2794,7 @@ export default function AssetsPage() {
                             justifyContent: 'space-between',
                           }}
                         >
-                          <span>{p.name}</span>
+                          <span>{p.title}</span>
                           {active && <Check size={12} style={{ color: 'var(--brand)' }} />}
                         </button>
                       );
@@ -2970,7 +2820,7 @@ export default function AssetsPage() {
                         background: 'var(--bg-elevated)',
                       }}
                     >
-                      {(MOCK_SHOTS_BY_PROJECT[useShotProjectId] ?? []).map((s) => {
+                      {shotOptions.map((s) => {
                         const active = useShotShotId === s.id;
                         return (
                           <button
@@ -2993,7 +2843,7 @@ export default function AssetsPage() {
                               justifyContent: 'space-between',
                             }}
                           >
-                            <span>{s.label}</span>
+                            <span>{shotLabel(s)}</span>
                             {active && <Check size={12} style={{ color: 'var(--brand)' }} />}
                           </button>
                         );
