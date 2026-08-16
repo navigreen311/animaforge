@@ -8,7 +8,14 @@ name: Deploy to Staging
 #
 # It failed on every push to develop. Kept dispatchable so it can be run
 # deliberately once the infrastructure exists; `preflight` says what is
-# missing. Re-enable the push trigger when preflight passes. Tracked in #21.
+# missing.
+#
+# Disabled by commit 9777fe3 on 2026-08-15 (PR #81, CI hardening). Re-verified
+# on 2026-08-16: no repository secrets exist, k8s/ has no overlays/ directory,
+# and services/{export,notification,search,analytics} still have no Dockerfile.
+# See deploy-production.yml for the full re-enable checklist.
+#
+# Re-enable the push trigger when preflight passes. Tracked in #21.
 on:
   workflow_dispatch:
 

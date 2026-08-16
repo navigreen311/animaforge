@@ -6,6 +6,9 @@ import uuid
 from typing import Any
 
 from ..models.video_schemas import JobDict, PipelineStage
+from . import engines
+from .engines import EngineUnavailable
+from .video.diffusion import generate_video, video_available
 
 # ---------------------------------------------------------------------------
 # Tier configuration
@@ -88,12 +91,17 @@ def calculate_credit_cost(tier: str, duration_ms: int | None = None) -> float:
 # ---------------------------------------------------------------------------
 
 def create_video_job(params: dict[str, Any]) -> dict[str, Any]:
-    """Create a video generation job and return its canonical dict.
+    """Create a video generation job.
+
+    Renders for real when ``VIDEO_ENGINE=real`` is provisioned; otherwise
+    returns a queued job with **no preview URL** and an ``is_mock`` marker
+    saying why. Nothing in this function ever invents a URL.
 
     Parameters
     ----------
     params:
-        Must contain at least ``tier``.  May contain ``duration_ms``.
+        Must contain at least ``tier``. May contain ``duration_ms``,
+        ``prompt``, ``num_frames``, ``seed`` and ``image_path``.
     """
     tier: str = params.get("tier", "preview")
     duration_ms: int | None = params.get("duration_ms")
@@ -102,13 +110,75 @@ def create_video_job(params: dict[str, Any]) -> dict[str, Any]:
     cost = calculate_credit_cost(tier, duration_ms)
     stages = get_pipeline_stages()
 
+    job_id = str(uuid.uuid4())
+    prompt = str(params.get("prompt", "")).strip()
+
+    # The gated engine, when provisioned, actually renders. Anything else
+    # returns a job with no preview_url, because there is no clip.
+    if video_available() and prompt:
+        try:
+            result = generate_video(
+                prompt,
+                job_id=job_id,
+                num_frames=int(params.get("num_frames", 16)),
+                seed=int(params.get("seed", 0)),
+                image_path=params.get("image_path"),
+            )
+        except EngineUnavailable as exc:
+            return _unrendered_job(
+                job_id, tier, estimated, cost, stages, str(exc)
+            )
+
+        job = JobDict(
+            id=job_id,
+            status="completed",
+            tier=tier,
+            estimated_seconds=estimated,
+            credit_cost=cost,
+            preview_url=result.url,
+            stages=[PipelineStage(**s) for s in stages],
+        )
+        payload = job.model_dump()
+        payload["engine"] = engines.real_marker(
+            "video", detail=f"Rendered {result.frame_count} frames with {result.model_id}."
+        )
+        payload["artifact"] = result.as_dict()
+        return payload
+
+    return _unrendered_job(
+        job_id,
+        tier,
+        estimated,
+        cost,
+        stages,
+        "No video engine is active on this host.",
+    )
+
+
+def _unrendered_job(
+    job_id: str,
+    tier: str,
+    estimated: float,
+    cost: float,
+    stages: list[dict[str, Any]],
+    reason: str,
+) -> dict[str, Any]:
+    """A queued job for which nothing was rendered.
+
+    Carries no ``preview_url``. The previous implementation returned
+    ``https://cdn.animaforge.ai/preview/<random>.mp4`` for every job, which
+    pointed at nothing and always would -- no renderer existed to write it.
+    Stages are reported ``pending``, not completed, for the same reason.
+    """
     job = JobDict(
-        id=str(uuid.uuid4()),
+        id=job_id,
         status="queued",
         tier=tier,
         estimated_seconds=estimated,
         credit_cost=cost,
-        preview_url=f"https://cdn.animaforge.ai/preview/{uuid.uuid4().hex[:12]}.mp4",
+        preview_url=None,
         stages=[PipelineStage(**s) for s in stages],
     )
-    return job.model_dump()
+    payload = job.model_dump()
+    payload["engine"] = engines.mock_marker("video", detail=reason)
+    return payload

@@ -40,6 +40,7 @@ async def generate_video(body: GenerateVideoRequest) -> GenerateVideoResponse:
         job_id=managed["job_id"],
         estimated_seconds=managed["estimated_seconds"],
         preview_url=job["preview_url"],
+        engine=job.get("engine"),
     )
 
 

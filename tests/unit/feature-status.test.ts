@@ -12,14 +12,18 @@ const keys = Object.keys(FEATURE_STATUS) as FeatureKey[];
 
 describe('feature status registry', () => {
   it('covers every disabled control', () => {
-    expect(keys.length).toBeGreaterThan(15);
+    // Was > 15. Ten entries were deleted when the persistence layer landed and
+    // the controls they described were re-enabled, so a floor that high now
+    // asserts the opposite of what this registry is for: it would push back
+    // against removing an entry that had stopped being true.
+    expect(keys.length).toBeGreaterThan(5);
   });
 
   it.each(keys)('%s has a usable summary and detail', (key) => {
     const status = getFeatureStatus(key);
     expect(status.summary.length).toBeGreaterThan(5);
     expect(status.detail.length).toBeGreaterThan(40);
-    expect(['no-persistence', 'vendor-credential', 'not-built']).toContain(status.blocker);
+    expect(['vendor-credential', 'not-built']).toContain(status.blocker);
   });
 
   it.each(keys)('%s does not fall back to "coming soon"', (key) => {
@@ -45,8 +49,10 @@ describe('feature status registry', () => {
   });
 
   it('appends the tracking issue when there is one', () => {
+    // No entry currently carries an issue: the only tracked one was #58, which
+    // is closed. The formatting rule still has to hold for any that gains one,
+    // so this asserts the behaviour rather than that the set is non-empty.
     const withIssue = keys.filter((k) => getFeatureStatus(k).issue !== undefined);
-    expect(withIssue.length).toBeGreaterThan(0);
 
     for (const key of withIssue) {
       const status = getFeatureStatus(key);
@@ -63,14 +69,18 @@ describe('feature status registry', () => {
     }
   });
 
-  it('points persistence blockers at the same tracking issue', () => {
-    const persistence = keys
-      .map((k) => getFeatureStatus(k))
-      .filter((s) => s.blocker === 'no-persistence');
-
-    expect(persistence.length).toBeGreaterThan(5);
-    for (const status of persistence) {
-      expect(status.issue).toBe(58);
+  it('no longer blames a missing persistence layer', () => {
+    // Replaces a test that required at least five entries to carry
+    // blocker: 'no-persistence' pointing at issue #58. That issue is closed and
+    // the layer shipped; all thirteen such claims were re-checked by writing
+    // through the API, restarting platform-api and reading back
+    // (run 31925346146). Eleven persisted. The category itself is gone, so the
+    // useful assertion is that nothing has quietly reintroduced it.
+    for (const key of keys) {
+      const status = getFeatureStatus(key);
+      expect(status.blocker).not.toBe('no-persistence');
+      expect(status.issue).not.toBe(58);
+      expect(`${status.summary} ${status.detail}`).not.toMatch(/needs a persistence layer/i);
     }
   });
 });

@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from src.models.audio_schemas import GenerateAudioRequest, MusicScoreRequest
 from src.routes.audio import router
+from src.services.audio.timing import VISEMES
 from src.services.audio_service import (
     create_audio_job,
     create_music_job,
@@ -53,18 +54,29 @@ class TestAudioService:
         assert job.cue_sheet.title == "Tense Score"
 
     def test_generate_lip_sync_data_returns_phonemes(self) -> None:
-        timeline = generate_lip_sync_data("Hi there")
+        """The contract changed: this returns a result object, not a bare list.
+
+        The previous shape was a flat list of one entry per *letter*. That was
+        not a phoneme timeline, so the assertions that guarded it were
+        guarding the wrong thing.
+        """
+        result = generate_lip_sync_data("Hi there")
+        timeline = result["phonemes"]
+
         assert len(timeline) > 0
         first = timeline[0]
-        assert "phoneme" in first
-        assert "start_ms" in first
-        assert "end_ms" in first
         assert first["start_ms"] == 0
         assert first["end_ms"] > first["start_ms"]
+        assert first["viseme"] in VISEMES
+        assert result["source"] == "duration-model"
+        assert result["engine"]["is_mock"] is False
 
     def test_generate_lip_sync_data_empty_string(self) -> None:
-        timeline = generate_lip_sync_data("")
-        assert timeline == []
+        result = generate_lip_sync_data("")
+        assert result["phonemes"] == []
+        # Still labelled, so a caller inspecting an empty result can tell the
+        # difference between "nothing to say" and "no engine".
+        assert result["engine"]["is_mock"] is False
 
     def test_estimate_audio_time(self) -> None:
         result = estimate_audio_time(10_000)

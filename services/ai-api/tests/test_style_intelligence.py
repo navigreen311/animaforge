@@ -59,10 +59,16 @@ async def test_video_fingerprint_extraction():
     assert resp.status_code == 200
     data = resp.json()
     fp = data["fingerprint"]
-    assert isinstance(fp["color_palette"], list)
-    assert len(fp["color_palette"]) == 5
-    assert 0.0 <= fp["grain_noise"] <= 1.0
-    assert fp["source_type"] == "video"
+
+    # An https .mp4 cannot be decoded by this service, so the fingerprint must
+    # say it was not measured rather than inventing a palette. The previous
+    # implementation returned five hex colours derived from a hash of the URL,
+    # which is what these assertions were accidentally guarding.
+    assert fp["measured"] is False
+    assert fp["color_palette"] == []
+    assert fp["confidence"] == 0.0
+    assert fp["unmeasured_reason"]
+    assert fp["engine"]["is_mock"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -174,17 +180,16 @@ async def test_style_transfer():
         )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "completed"
+
+    # Style transfer is not implemented. It must not claim completion, and it
+    # must not hand back a URL for a file that was never rendered -- this used
+    # to return status "completed" and an output_url under
+    # cdn.animaforge.ai/transfers/.
+    assert data["status"] == "not_implemented"
+    assert "output_url" not in data
+    assert data["engine"]["is_mock"] is True
     assert data["strength"] == 0.7
-    assert "output_url" in data
 
-
-# ---------------------------------------------------------------------------
-# 7. Create preset
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.asyncio
 async def test_create_and_list_preset():
     fp = _make_fingerprint_payload()
     transport = ASGITransport(app=app)

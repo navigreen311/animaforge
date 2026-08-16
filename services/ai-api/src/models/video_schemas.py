@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
@@ -62,7 +64,11 @@ class GenerateVideoResponse(BaseModel):
 
     job_id: str
     estimated_seconds: float
-    preview_url: str
+    #: Present only when a clip was actually rendered. ``None`` when the video
+    #: engine is not provisioned -- a URL here always refers to real bytes.
+    preview_url: str | None = None
+    #: Engine marker; ``is_mock`` is true when nothing was rendered.
+    engine: dict[str, Any] | None = None
 
 
 class EditInstructionResponse(BaseModel):
@@ -98,5 +104,6 @@ class JobDict(BaseModel):
     tier: str = "preview"
     estimated_seconds: float = 0.0
     credit_cost: float = 0.0
-    preview_url: str = ""
+    #: Empty until a clip exists. Never a placeholder URL.
+    preview_url: str | None = None
     stages: list[PipelineStage] = []

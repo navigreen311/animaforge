@@ -1,0 +1,433 @@
+name: Verify Persistence
+
+# Evidence for the claims in
+# apps/web/src/app/(dashboard)/components/unavailable/featureStatus.ts.
+#
+# That file's doctrine is that every `detail` is "a claim about this repository
+# that was checked before being written down". Reading the route source is not
+# checking it -- a route can call Prisma and still lose the write. So this
+# writes through the real API and reads it back.
+#
+# The load-bearing detail is that platform-api is **restarted between the write
+# and the read**. Every service in this repo falls back to an in-memory Map when
+# the database is unreachable, and a Map answers a POST-then-GET in the same
+# process exactly like a database would. Only a restart tells them apart: the
+# Map is gone, so anything that comes back came from Postgres.
+#
+# Manual only. It provisions its own database and writes nothing outside the
+# artifact.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-persistence-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  verify:
+    name: Write, restart, read
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: animaforge_verify
+          POSTGRES_USER: animaforge
+          POSTGRES_PASSWORD: verify_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://animaforge:verify_password@localhost:5432/animaforge_verify
+      PORT: '4000'
+      API_BASE: http://127.0.0.1:4000
+      # platform-api verifies every request against this and refuses to start
+      # without it (#82). A throwaway value for a throwaway database.
+      JWT_SECRET: verify-persistence-secret-not-a-real-key
+      ACTOR_ID: 00000000-0000-4000-8000-00000000e2e1
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate the Prisma client and apply migrations
+        run: |
+          npx prisma generate --schema packages/db/prisma/schema.prisma
+          cd packages/db && npx prisma migrate deploy
+
+      # Ownership columns are foreign keys to users, so without a row here every
+      # write fails on the constraint rather than on anything being measured.
+      - name: Seed the acting user
+        run: |
+          PGPASSWORD=verify_password psql -h localhost -U animaforge -d animaforge_verify -c "
+            INSERT INTO users (id, email, display_name, role, tier, updated_at)
+            VALUES ('${{ env.ACTOR_ID }}'::uuid,
+                    'verify@animaforge.test', 'Verify User', 'admin', 'studio', NOW())
+            ON CONFLICT (id) DO NOTHING;"
+
+          # Creating a team 409s with NO_ORGANISATION unless the caller belongs
+          # to one. Without this the probe measures the missing org, not the
+          # persistence it is meant to check.
+          PGPASSWORD=verify_password psql -h localhost -U animaforge -d animaforge_verify -c "
+            INSERT INTO organizations (id, name, slug, updated_at)
+            VALUES ('00000000-0000-4000-8000-00000000e2f0'::uuid, 'Verify Org', 'verify-org', NOW())
+            ON CONFLICT (id) DO NOTHING;
+            UPDATE users SET org_id = '00000000-0000-4000-8000-00000000e2f0'::uuid
+             WHERE id = '${{ env.ACTOR_ID }}'::uuid;"
+
+      # The script is inline rather than a checked-in file so the whole harness
+      # is one reviewable unit and stays inside .github/workflows.
+      - name: Write, restart, read
+        run: |
+          cat > /tmp/verify.mjs <<'SCRIPT'
+          import { spawn } from 'node:child_process';
+          import { writeFileSync, openSync } from 'node:fs';
+          import { createRequire } from 'node:module';
+
+          // Resolved from the workspace, not from /tmp where this script is
+          // written -- otherwise node looks for node_modules next to the script
+          // and finds nothing.
+          const require = createRequire(`${process.cwd()}/`);
+
+          const BASE = process.env.API_BASE;
+          const ACTOR = process.env.ACTOR_ID;
+
+          // Signed for real. This used to mint an unsigned token, which worked
+          // only because requireAuth base64-decoded the payload and trusted it
+          // (#82). Now the signature, the HS256 algorithm and a future exp are
+          // all enforced, so an unsigned token 401s -- correctly.
+          const jwt = require('jsonwebtoken');
+          const TOKEN = jwt.sign(
+            { sub: ACTOR, email: 'verify@animaforge.test', role: 'admin' },
+            process.env.JWT_SECRET,
+            { algorithm: 'HS256', expiresIn: '1h' },
+          );
+
+          const HEADERS = {
+            'content-type': 'application/json',
+            authorization: `Bearer ${TOKEN}`,
+          };
+
+          /**
+           * One probe: write something with a marker unique to this run, then
+           * look for that marker after the restart.
+           */
+          const MARK = `verify-${Date.now()}`;
+          const PROBES = [
+            { key: 'team.create/team.manage', write: ['POST', '/api/v1/teams', { name: `Team ${MARK}` }],
+              read: ['GET', '/api/v1/teams'] },
+            { key: 'team.invite', write: ['POST', '/api/v1/team/invitations', { email: `${MARK}@animaforge.test`, role: 'editor' }],
+              read: ['GET', '/api/v1/team/invitations'] },
+            // Membership is team-to-user with no project dimension, so there is
+            // nothing to write a per-project grant to. This probe confirms the
+            // members list is real; the grant itself has no endpoint at all.
+            { key: 'team.projectAccess (members list)', write: ['POST', '/api/v1/teams', { name: `Access ${MARK}` }],
+              read: ['GET', '/api/v1/teams'] },
+            // /activity reads the AuditTrail table. The question is not whether
+            // the read works but whether anything ever writes a row: the probe
+            // performs a real, audit-worthy action (the setup project above,
+            // plus this team write) and then looks for any trace of it.
+            { key: 'team.activityLog', write: ['POST', '/api/v1/teams', { name: `Audit ${MARK}` }],
+              read: ['GET', '/api/v1/activity'], expectAny: true },
+            { key: 'settings.createWebhook', write: ['POST', '/api/v1/webhook-endpoints', { url: `https://example.test/${MARK}`, events: ['job.completed'] }],
+              read: ['GET', '/api/v1/webhook-endpoints'] },
+            { key: 'settings.memoryEditor', write: ['PATCH', '/api/v1/users/me/memory', { genMemory: { marker: MARK } }],
+              read: ['GET', '/api/v1/users/me/memory'] },
+            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify', sourceUrl: `https://cdn.test/${MARK}.png`, sourceType: 'video' }],
+              read: ['GET', '/api/v1/styles'] },
+            { key: 'projects.import/createFromScript', write: ['POST', '/api/v1/projects', { title: `Project ${MARK}` }],
+              read: ['GET', '/api/v1/projects'] },
+            { key: 'voice.uploadSample', write: ['POST', '/api/v1/voices', { name: `Voice ${MARK}` }],
+              read: ['GET', '/api/v1/voices'] },
+            { key: 'assets.upload/logoUpload (presign)', write: ['POST', '/api/v1/upload/signed-url', { filename: `${MARK}.png`, contentType: 'image/png', projectId: ACTOR }],
+              read: ['GET', '/api/v1/assets'] },
+            { key: 'assets.upload (asset record)', write: ['POST', '/api/v1/assets', { name: `Asset ${MARK}`, type: 'image', url: `https://cdn.test/${MARK}.png`, projectId: '__PROJECT__' }],
+              read: ['GET', '/api/v1/assets'] },
+            { key: 'settings.logoUpload (brand kit)', write: ['POST', '/api/v1/brand-kits', { name: `Kit ${MARK}` }],
+              read: ['GET', '/api/v1/brand-kits'] },
+          ];
+
+          async function call(method, path, body) {
+            try {
+              const res = await fetch(BASE + path, {
+                method,
+                headers: HEADERS,
+                body: body ? JSON.stringify(body) : undefined,
+              });
+              const text = await res.text();
+              let json = null;
+              try { json = JSON.parse(text); } catch { /* non-JSON body */ }
+              return { status: res.status, body: json, raw: text.slice(0, 300) };
+            } catch (err) {
+              return { status: 0, body: null, raw: String(err) };
+            }
+          }
+
+          function startApi(tag) {
+            const out = openSync(`/tmp/api-${tag}.log`, 'a');
+            const child = spawn('npx', ['tsx', 'src/index.ts'], {
+              cwd: 'services/platform-api',
+              env: process.env,
+              stdio: ['ignore', out, out],
+            });
+            return child;
+          }
+
+          async function waitForHealth(timeoutMs = 60000) {
+            const deadline = Date.now() + timeoutMs;
+            while (Date.now() < deadline) {
+              const res = await call('GET', '/api/v1/health');
+              if (res.status === 200) return true;
+              await new Promise((r) => setTimeout(r, 1000));
+            }
+            return false;
+          }
+
+          async function stop(child) {
+            child.kill('SIGTERM');
+            await new Promise((r) => {
+              child.on('exit', r);
+              setTimeout(() => { child.kill('SIGKILL'); r(); }, 8000);
+            });
+            // The port must actually be free before the next process binds it,
+            // or the "restart" silently keeps the old process and its Map.
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+
+          const results = [];
+
+          let api = startApi('write');
+          if (!(await waitForHealth())) {
+            console.error('platform-api did not become healthy');
+            process.exit(1);
+          }
+
+          // Assets are scoped to a project, so one has to exist before the
+          // asset probe can say anything about persistence rather than about a
+          // missing parent row.
+          const setup = await call('POST', '/api/v1/projects', { title: `Setup ${MARK}` });
+          const projectId = setup.body?.data?.id ?? null;
+          console.log(`setup project: ${setup.status} ${projectId}`);
+          for (const probe of PROBES) {
+            if (probe.write && JSON.stringify(probe.write[2]).includes('__PROJECT__')) {
+              probe.write[2] = JSON.parse(
+                JSON.stringify(probe.write[2]).replaceAll('__PROJECT__', projectId ?? ''),
+              );
+            }
+          }
+
+          for (const probe of PROBES) {
+            probe.writeResult = probe.write
+              ? await call(probe.write[0], probe.write[1], probe.write[2])
+              : { status: null, body: null, raw: '(read-only probe)' };
+          }
+
+          await stop(api);
+
+          // Fresh process: every in-memory Map in the service is now empty.
+          api = startApi('read');
+          if (!(await waitForHealth())) {
+            console.error('platform-api did not restart');
+            process.exit(1);
+          }
+
+          for (const probe of PROBES) {
+            const readResult = await call(probe.read[0], probe.read[1]);
+            const haystack = JSON.stringify(readResult.body ?? readResult.raw ?? '');
+            // Most probes look for their own marker. An audit feed will not
+            // echo it back, so that probe asks a weaker question: after several
+            // real writes, did anything get recorded at all?
+            const survived = probe.expectAny
+              ? (readResult.body?.data?.total ?? 0) > 0
+              : haystack.includes(MARK);
+
+            let verdict;
+            if (probe.writeResult.status !== null && probe.writeResult.status >= 400) {
+              verdict = 'write-rejected';
+            } else if (readResult.status >= 400) {
+              verdict = 'read-failed';
+            } else if (probe.write === null) {
+              verdict = 'read-only';
+            } else {
+              verdict = survived ? 'PERSISTS' : 'LOST';
+            }
+
+            results.push({
+              key: probe.key,
+              write: probe.write ? `${probe.write[0]} ${probe.write[1]}` : null,
+              writeStatus: probe.writeResult.status,
+              writeBody: probe.writeResult.raw,
+              read: `${probe.read[0]} ${probe.read[1]}`,
+              readStatus: readResult.status,
+              readBody: readResult.raw,
+              survivedRestart: survived,
+              verdict,
+            });
+          }
+
+          await stop(api);
+
+          writeFileSync('/tmp/persistence-report.json', JSON.stringify(results, null, 2));
+
+          const rows = results.map((r) =>
+            `| ${r.key} | ${r.write ?? '-'} | ${r.writeStatus ?? '-'} | ${r.read} | ${r.readStatus} | **${r.verdict}** |`,
+          );
+          const md = [
+            '## Persistence verification',
+            '',
+            `Marker \`${MARK}\`. platform-api restarted between write and read, so`,
+            'anything found afterwards came from Postgres and not from an in-process Map.',
+            '',
+            '| feature | write | status | read | status | verdict |',
+            '| --- | --- | --- | --- | --- | --- |',
+            ...rows,
+            '',
+          ].join('\n');
+          writeFileSync('/tmp/persistence-report.md', md);
+          console.log(md);
+
+          for (const r of results) {
+            if (r.verdict !== 'PERSISTS') {
+              console.log(`\n--- ${r.key} (${r.verdict})`);
+              console.log(`  write ${r.writeStatus}: ${r.writeBody}`);
+              console.log(`  read  ${r.readStatus}: ${r.readBody}`);
+            }
+          }
+          SCRIPT
+          # pipefail is load-bearing: without it the step takes tee's exit
+          # status, so a crashed verification reports success and the whole
+          # harness becomes a green light that checked nothing.
+          set -o pipefail
+          node /tmp/verify.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The leg that decides whether a control can be re-enabled. Everything
+      # above proves platform-api persists; this proves the console can reach
+      # it. Re-enabling a control that then 401s in the browser is worse than
+      # leaving it disabled, so the proxy layer gets checked too.
+      - name: Through the console proxy routes
+        run: |
+          set -o pipefail
+          cat > /tmp/verify-ui.mjs <<'UISCRIPT'
+          import { spawn } from 'node:child_process';
+          import { openSync, writeFileSync } from 'node:fs';
+          import { createRequire } from 'node:module';
+
+          const require = createRequire(`${process.cwd()}/`);
+          const jwt = require('jsonwebtoken');
+
+          const TOKEN = jwt.sign(
+            { sub: process.env.ACTOR_ID, email: 'verify@animaforge.test', role: 'admin' },
+            process.env.JWT_SECRET,
+            { algorithm: 'HS256', expiresIn: '1h' },
+          );
+          const WEB = 'http://127.0.0.1:3000';
+
+          const api = spawn('npx', ['tsx', 'src/index.ts'], {
+            cwd: 'services/platform-api',
+            env: process.env,
+            stdio: ['ignore', openSync('/tmp/api-ui.log', 'a'), openSync('/tmp/api-ui.log', 'a')],
+          });
+          const web = spawn('npx', ['next', 'dev', '-p', '3000'], {
+            cwd: 'apps/web',
+            env: { ...process.env, PLATFORM_API_URL: process.env.API_BASE },
+            stdio: ['ignore', openSync('/tmp/web.log', 'a'), openSync('/tmp/web.log', 'a')],
+          });
+
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          async function get(path) {
+            try {
+              const res = await fetch(WEB + path, {
+                headers: { authorization: `Bearer ${TOKEN}` },
+              });
+              const body = await res.text();
+              return { status: res.status, body: body.slice(0, 200) };
+            } catch (err) {
+              return { status: 0, body: String(err) };
+            }
+          }
+
+          // Next compiles routes on demand, so the first request to each is slow.
+          const deadline = Date.now() + 180000;
+          while (Date.now() < deadline) {
+            const probe = await get('/api/team/teams');
+            if (probe.status !== 0) break;
+            await sleep(3000);
+          }
+
+          const ROUTES = [
+            '/api/team/teams',
+            '/api/team/invitations',
+            '/api/webhooks',
+            '/api/users/me/memory',
+            '/api/styles',
+            '/api/projects?limit=5',
+            '/api/voices',
+            '/api/brand-kits',
+            '/api/assets?limit=5',
+          ];
+
+          const rows = [];
+          let bad = 0;
+          for (const route of ROUTES) {
+            const res = await get(route);
+            const ok = res.status === 200;
+            if (!ok) bad += 1;
+            rows.push(`| \`${route}\` | ${res.status} | ${ok ? 'OK' : '**FAILED**'} |`);
+            if (!ok) console.log(`${route} -> ${res.status}: ${res.body}`);
+          }
+
+          const md = [
+            '',
+            '## Through the console proxy',
+            '',
+            'Same signed token the browser would send, through the Next.js routes',
+            'the console calls. A 401 here would mean a re-enabled control fails',
+            'for a real user even though platform-api stores correctly.',
+            '',
+            '| route | status | |',
+            '| --- | --- | --- |',
+            ...rows,
+            '',
+          ].join(String.fromCharCode(10));
+          writeFileSync('/tmp/proxy-report.md', md);
+          console.log(md);
+
+          api.kill('SIGTERM');
+          web.kill('SIGTERM');
+          await sleep(1500);
+          process.exit(bad === 0 ? 0 : 1);
+          UISCRIPT
+          node /tmp/verify-ui.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: persistence-evidence
+          path: |
+            /tmp/persistence-report.json
+            /tmp/persistence-report.md
+            /tmp/proxy-report.md
+            /tmp/api-*.log
+            /tmp/web.log
+          if-no-files-found: warn

@@ -23,6 +23,26 @@ name: Deploy to Production
 # infrastructure exists. The `preflight` job below states what is still missing
 # rather than letting the run die somewhere confusing.
 #
+# Disabled by commit 9777fe3, "ci: stop deploy workflows running on push, and
+# say why", on 2026-08-15, as part of the CI-hardening work in PR #81. It was a
+# deliberate call with a stated reason, not a silent breakage.
+#
+# Re-verified on 2026-08-16 rather than taken on trust, and all three blockers
+# still hold:
+#   * `gh secret list` returns nothing -- no PRODUCTION_* secrets exist
+#   * `k8s/` contains ai, data, governance, monitoring, platform and some
+#     top-level manifests, but no `overlays/` directory at all
+#   * services/{export,notification,search,analytics}/Dockerfile are all absent
+#
+# Before the push trigger goes back on, all three must be true:
+#   1. PRODUCTION_KUBECONFIG, PRODUCTION_BASE_URL and PRODUCTION_INTERNAL_URL
+#      exist as repository secrets and point at a reachable cluster.
+#   2. k8s/overlays/production/ exists and `kubectl apply -k` against it
+#      succeeds on a dry run.
+#   3. Every service in the build matrix has a Dockerfile, or the matrix is
+#      narrowed to those that do.
+# The preflight job below checks exactly these and reports which are missing.
+#
 # Re-enable the push trigger when preflight passes. Tracked in #21.
 on:
   workflow_dispatch:

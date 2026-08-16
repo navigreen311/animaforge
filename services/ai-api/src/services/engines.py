@@ -149,31 +149,61 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="D3/D6",
         name="video",
         env_var="VIDEO_ENGINE",
-        summary="Text-to-video and image-to-video diffusion.",
+        summary=(
+            "Text-to-video and image-to-video diffusion. A real diffusers "
+            "adapter exists and renders to a stored MP4, but it needs a CUDA "
+            "GPU and multi-gigabyte weights, so it is gated. Unprovisioned, "
+            "jobs are queued with no preview URL and an is_mock marker -- "
+            "never a URL for a clip that was not rendered."
+        ),
         packages=("torch", "diffusers"),
         weights_env="VIDEO_WEIGHTS_DIR",
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="D4",
         name="audio",
         env_var="AUDIO_ENGINE",
-        summary="Speech synthesis and forced-alignment phoneme timing.",
+        summary=(
+            "Lip-sync phoneme timing. Rule-based ARPABET grapheme-to-phoneme "
+            "and a segmental duration model run on CPU by default with no "
+            "weights; CTC forced alignment against a real waveform is the "
+            "gated upgrade. Speech SYNTHESIS is not implemented -- that path "
+            "is still mock and says so in every response."
+        ),
         packages=("torch", "torchaudio"),
         weights_env="AUDIO_WEIGHTS_DIR",
+        real_by_default=True,
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="X6",
         name="style",
         env_var="STYLE_ENGINE",
-        summary="Style embedding and transfer.",
+        summary=(
+            "Style fingerprinting and transfer. Palette, contrast, saturation "
+            "and edge density are measured from decoded pixels on CPU with no "
+            "weights; sources that cannot be decoded are reported unmeasured "
+            "rather than invented. CLIP semantic embedding is the gated "
+            "upgrade. Style TRANSFER is not implemented -- it needs a "
+            "diffusion model and a GPU, and that path stays mock."
+        ),
         packages=("torch", "open_clip_torch"),
         weights_env="STYLE_WEIGHTS_DIR",
+        real_by_default=True,
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="G2",
         name="dubbing",
         env_var="DUBBING_ENGINE",
-        summary="Multi-language dubbing with voice cloning.",
+        summary=(
+            "Multi-language dubbing with voice cloning. NOT IMPLEMENTED -- "
+            "there is no adapter, and setting DUBBING_ENGINE=real will not "
+            "produce one. Translation, synthesis and remux all return "
+            "is_mock with no artifact URL. The D4 phoneme timing this would "
+            "build on is real; the voice model is the missing piece."
+        ),
         packages=("torch", "torchaudio"),
         weights_env="DUBBING_WEIGHTS_DIR",
     ),
@@ -181,17 +211,29 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="D10",
         name="training",
         env_var="TRAINING_ENGINE",
-        summary="LoRA / DreamBooth fine-tuning.",
+        summary=(
+            "LoRA fine-tuning via diffusers and peft. A real adapter exists "
+            "and writes a .safetensors adapter to storage; it is gated on a "
+            "CUDA GPU and a base checkpoint. Unprovisioned, jobs report "
+            "not_implemented rather than completing on a timer."
+        ),
         packages=("torch", "diffusers", "peft"),
         weights_env="TRAINING_WEIGHTS_DIR",
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="F3",
         name="music",
         env_var="MUSIC_ENGINE",
-        summary="Music generation and adaptive scoring.",
+        summary=(
+            "Music generation via audiocraft/MusicGen. A real adapter exists "
+            "and writes a stored WAV; it is gated on a multi-gigabyte "
+            "checkpoint and, above the small size, a GPU. Unprovisioned, cue "
+            "sheets are placeholders and no audio URL is returned."
+        ),
         packages=("torch", "audiocraft"),
         weights_env="MUSIC_WEIGHTS_DIR",
+        real_implemented=True,
     ),
 )
 
@@ -289,8 +331,43 @@ def resolve_engine(name: str) -> str:
 
 
 def real_engine_available(name: str) -> bool:
-    """Convenience predicate, used by tests to skip provisioning-only cases."""
+    """True when this cluster can produce real output on this host.
+
+    Note that a ``real_by_default`` cluster is always available -- its default
+    path needs nothing. To ask whether the *gated upgrade* is provisioned, use
+    :func:`upgrade_available`, which is a different question.
+    """
     return probe(name).real_engine_available
+
+
+def upgrade_available(name: str) -> bool:
+    """True when a cluster's optional upgrade is fully provisioned.
+
+    Several clusters are real by default *and* have a heavier path behind
+    packages and weights: D4 models phoneme durations on CPU but measures them
+    from audio once torchaudio is present; X6 measures pixel statistics
+    anywhere but embeds with CLIP once open_clip is present.
+
+    For those, :attr:`EngineStatus.real_engine_available` is always True --
+    the default path needs nothing -- so it cannot answer "is the upgrade
+    installed?". This can: it ignores ``real_by_default`` and reports purely on
+    whether every declared package, binary and weights directory is present.
+
+    Clusters with nothing declared have no upgrade, so this returns False.
+    """
+    spec = spec_for(name)
+    if not (spec.packages or spec.binaries or spec.weights_env):
+        return False
+
+    if any(not _module_installed(pkg) for pkg in spec.packages):
+        return False
+    if any(shutil.which(binary) is None for binary in spec.binaries):
+        return False
+    if spec.weights_env:
+        directory = os.getenv(spec.weights_env, "").strip()
+        if not directory or not os.path.isdir(directory):
+            return False
+    return True
 
 
 # ---------------------------------------------------------------------------

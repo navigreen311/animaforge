@@ -46,7 +46,11 @@ class TestDubbingService:
     def test_generate_dubbed_audio_returns_job(self) -> None:
         result = generate_dubbed_audio("To be or not to be", "fr", "voice-1")
         assert result["job_id"].startswith("dub-")
-        assert result["audio_url"].endswith(".wav")
+        # Dubbing is not implemented: nothing is synthesised or muxed, so
+        # no URL may be returned. This asserted a cdn.animaforge.ai link
+        # that no code ever wrote a file to.
+        assert result.get("audio_url") is None
+        assert result["engine"]["is_mock"] is True
         assert result["duration_ms"] > 0
 
     def test_lip_sync_adjust_returns_synced_video(self) -> None:
@@ -56,7 +60,11 @@ class TestDubbingService:
             "es",
         )
         assert result["job_id"].startswith("sync-")
-        assert result["synced_video_url"].endswith(".mp4")
+        # Dubbing is not implemented: nothing is synthesised or muxed, so
+        # no URL may be returned. This asserted a cdn.animaforge.ai link
+        # that no code ever wrote a file to.
+        assert result.get("synced_video_url") is None
+        assert result["engine"]["is_mock"] is True
         assert 0 < result["sync_quality"] <= 1.0
 
     def test_get_supported_languages_has_at_least_20(self) -> None:
@@ -80,7 +88,11 @@ class TestDubbingService:
             "https://example.com/original.wav",
             "https://example.com/dubbed.wav",
         )
-        assert result["adjusted_audio_url"].endswith(".wav")
+        # Dubbing is not implemented: nothing is synthesised or muxed, so
+        # no URL may be returned. This asserted a cdn.animaforge.ai link
+        # that no code ever wrote a file to.
+        assert result.get("adjusted_audio_url") is None
+        assert result["engine"]["is_mock"] is True
         assert 0 < result["timing_accuracy"] <= 1.0
 
     def test_translate_script_invalid_language_raises(self) -> None:
