@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from src.routes.training import router
 from src.services.training_service import (
-    FEEDBACK_TYPES,
     _reset_stores,
     aggregate_training_data,
     collect_feedback,

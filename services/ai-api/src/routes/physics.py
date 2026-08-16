@@ -14,7 +14,6 @@ from ..services.physics_service import (
     simulate_hair,
     simulate_rigid_body,
     simulate_soft_body,
-    validate_physics_params,
 )
 
 router = APIRouter(prefix="/ai/v1")

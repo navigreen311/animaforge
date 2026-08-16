@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Request schemas
@@ -22,10 +19,10 @@ class GenerateVideoRequest(BaseModel):
     scene_graph: dict = Field(
         ..., description="Scene graph describing objects, layout, and actions"
     )
-    style_ref: Optional[str] = Field(
+    style_ref: str | None = Field(
         None, description="URL or ID of the style reference asset"
     )
-    char_refs: Optional[list[str]] = Field(
+    char_refs: list[str] | None = Field(
         None, description="List of character reference asset URLs / IDs"
     )
 
@@ -38,7 +35,7 @@ class EditInstructionRequest(BaseModel):
     instruction: str = Field(
         ..., description="Natural-language editing instruction"
     )
-    mask_url: Optional[str] = Field(
+    mask_url: str | None = Field(
         None, description="Optional mask image URL for region-specific edits"
     )
 

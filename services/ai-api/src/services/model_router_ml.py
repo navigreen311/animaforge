@@ -360,8 +360,10 @@ class ModelRouter:
             return f"No routing record found for job {job_id}."
 
         lines = [
-            f"Job {job_id} was routed to model '{log['model_id']}' "
-            f"for job type '{log['job_type']}'.",
+            (
+                f"Job {job_id} was routed to model '{log['model_id']}' "
+                f"for job type '{log['job_type']}'."
+            ),
             "Reasoning:",
         ]
         for r in log["reasoning"]:

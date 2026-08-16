@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.model_router_ml import ModelRouter, MODEL_REGISTRY
+from src.services.model_router_ml import MODEL_REGISTRY, ModelRouter
 
 
 @pytest.fixture
@@ -51,7 +51,6 @@ class TestSelectModel:
 
     # 4. Quality history shifts confidence
     def test_quality_history_affects_confidence(self, router: ModelRouter):
-        base = router.select_model("image")
         boosted = router.select_model(
             "image",
             quality_history={"sdxl-v1-animaforge": 0.99, "flux-dev-v1": 0.50},

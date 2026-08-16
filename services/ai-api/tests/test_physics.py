@@ -8,13 +8,11 @@ from fastapi.testclient import TestClient
 
 from src.routes.physics import router
 from src.services.physics_service import (
-    PBD_CONFIG,
     apply_wind,
     get_material_presets,
     simulate_cloth,
     simulate_hair,
     simulate_rigid_body,
-    simulate_soft_body,
     validate_physics_params,
 )
 
@@ -101,7 +99,7 @@ class TestPhysicsService:
         presets = get_material_presets()
         expected = {"cotton", "silk", "leather", "denim", "wool"}
         assert set(presets.keys()) == expected
-        for name, props in presets.items():
+        for props in presets.values():
             assert "stiffness" in props
             assert "damping" in props
             assert "mass_per_m2" in props

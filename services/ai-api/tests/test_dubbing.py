@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from src.routes.dubbing import router
 from src.services.dubbing_service import (
-    SUPPORTED_LANGUAGES,
     detect_language,
     generate_dubbed_audio,
     get_supported_languages,

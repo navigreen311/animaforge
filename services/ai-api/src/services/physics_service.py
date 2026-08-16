@@ -369,34 +369,46 @@ def validate_physics_params(params: dict[str, Any]) -> dict[str, Any]:
     errors: list[str] = []
 
     timestep = params.get("timestep")
-    if timestep is not None:
-        if not isinstance(timestep, (int, float)) or timestep < _MIN_TIMESTEP or timestep > _MAX_TIMESTEP:
-            errors.append(f"timestep must be between {_MIN_TIMESTEP} and {_MAX_TIMESTEP}")
+    if timestep is not None and (
+        not isinstance(timestep, (int, float))
+        or timestep < _MIN_TIMESTEP
+        or timestep > _MAX_TIMESTEP
+    ):
+        errors.append(f"timestep must be between {_MIN_TIMESTEP} and {_MAX_TIMESTEP}")
 
     iterations = params.get("iterations")
-    if iterations is not None:
-        if not isinstance(iterations, int) or iterations < _MIN_ITERATIONS or iterations > _MAX_ITERATIONS:
-            errors.append(f"iterations must be an integer between {_MIN_ITERATIONS} and {_MAX_ITERATIONS}")
+    if iterations is not None and (
+        not isinstance(iterations, int)
+        or iterations < _MIN_ITERATIONS
+        or iterations > _MAX_ITERATIONS
+    ):
+        errors.append(
+            f"iterations must be an integer between {_MIN_ITERATIONS} and {_MAX_ITERATIONS}"
+        )
 
     substeps = params.get("substeps")
-    if substeps is not None:
-        if not isinstance(substeps, int) or substeps < _MIN_SUBSTEPS or substeps > _MAX_SUBSTEPS:
-            errors.append(f"substeps must be an integer between {_MIN_SUBSTEPS} and {_MAX_SUBSTEPS}")
+    if substeps is not None and (
+        not isinstance(substeps, int)
+        or substeps < _MIN_SUBSTEPS
+        or substeps > _MAX_SUBSTEPS
+    ):
+        errors.append(
+            f"substeps must be an integer between {_MIN_SUBSTEPS} and {_MAX_SUBSTEPS}"
+        )
 
     damping = params.get("damping")
-    if damping is not None:
-        if not isinstance(damping, (int, float)) or damping < 0.0 or damping > 1.0:
-            errors.append("damping must be between 0.0 and 1.0")
+    if damping is not None and (
+        not isinstance(damping, (int, float)) or damping < 0.0 or damping > 1.0
+    ):
+        errors.append("damping must be between 0.0 and 1.0")
 
     gravity = params.get("gravity")
-    if gravity is not None:
-        if not isinstance(gravity, list) or len(gravity) != 3:
-            errors.append("gravity must be a 3-element list [x, y, z]")
+    if gravity is not None and (not isinstance(gravity, list) or len(gravity) != 3):
+        errors.append("gravity must be a 3-element list [x, y, z]")
 
     constraints = params.get("max_constraints")
-    if constraints is not None:
-        if not isinstance(constraints, int) or constraints < 1:
-            errors.append("max_constraints must be a positive integer")
+    if constraints is not None and (not isinstance(constraints, int) or constraints < 1):
+        errors.append("max_constraints must be a positive integer")
 
     return {
         "valid": len(errors) == 0,

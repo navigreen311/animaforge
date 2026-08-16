@@ -43,7 +43,12 @@ jobs:
 
       - name: Python lint
         run: |
-          pip install ruff
+          # Pinned. Unpinned, the error count moved with every ruff release —
+          # the backlog this cleared measured 172 locally against 207 here on
+          # the same commit, purely from version drift. Now that lint blocks
+          # merge, a ruff release must not be able to turn the gate red on its
+          # own. Bump this deliberately.
+          pip install ruff==0.16.3
           ruff check services/ai-api/
 
   type-check:
@@ -611,19 +616,14 @@ jobs:
       #               build, against a migrated and seeded database. Closes the
       #               e2e half of #21.
       #
-      # ONE JOB IS STILL EXEMPT, and it is not exempt quietly:
+      # NOTHING IS EXEMPT ANY MORE. lint was the last one, and #84 cleared it:
+      # 207 ruff errors -> 0, with the suite unchanged at 621 passed. ruff is
+      # pinned in the lint job so a release cannot redden the gate by itself.
       #
-      #   lint — owner services/ai-api, tracked in #84.
-      #          ESLint passes (0 errors, 454 warnings) and Prettier is clean
-      #          across the checked globs since #74 and #75. The job is red
-      #          solely on `ruff check services/ai-api/`, measured at 172 errors
-      #          with ruff 0.16.3 locally and 207 on the runner — the workflow
-      #          installs ruff unpinned, so the number moves with the release.
-      #          133 of the 172 are auto-fixable. Put lint back in the blocking
-      #          list the moment `ruff check services/ai-api/` exits 0.
-      #
-      # Do not let this list grow again. A job that is exempt without an owner,
-      # a measured count and an issue number is a job nobody is going to fix.
+      # Every one of the nine jobs now blocks merge. Keep it that way. If a job
+      # has to come out, it needs an owner, a count you measured yourself, and
+      # an issue number written here — that is what made the previous four
+      # recoverable instead of permanent.
       - name: Check blocking jobs
         run: |
           failed=0
@@ -633,6 +633,7 @@ jobs:
               failed=1
             fi
           }
+          check lint          "${{ needs.lint.result }}"
           check test-frontend "${{ needs.test-frontend.result }}"
           check type-check    "${{ needs.type-check.result }}"
           check terraform     "${{ needs.terraform.result }}"
@@ -647,7 +648,7 @@ jobs:
             echo ""
             echo "| Job | Result | Blocks merge |"
             echo "|---|---|---|"
-            echo "| lint | ${{ needs.lint.result }} | no — ruff, #84 |"
+            echo "| lint | ${{ needs.lint.result }} | **yes** |"
             echo "| type-check | ${{ needs.type-check.result }} | **yes** |"
             echo "| test-frontend | ${{ needs.test-frontend.result }} | **yes** |"
             echo "| terraform | ${{ needs.terraform.result }} | **yes** |"

@@ -1,15 +1,17 @@
-import os
 import json
-import hashlib
-from typing import AsyncIterator
+import logging
+import os
+from collections.abc import AsyncIterator
+
+logger = logging.getLogger(__name__)
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 
 async def stream_script_generation(
     scene_desc: str,
-    world_bible: dict = None,
-    characters: list = None,
+    world_bible: dict | None = None,
+    characters: list | None = None,
 ) -> AsyncIterator[str]:
     """Stream-generate an animation script from a scene description.
 
@@ -29,43 +31,44 @@ async def stream_script_generation(
         if characters:
             user_content += f"\n\nCharacters: {json.dumps(characters)}"
 
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": "claude-sonnet-4-6",
-                    "max_tokens": 4096,
-                    "stream": True,
-                    "system": system_prompt,
-                    "messages": [{"role": "user", "content": user_content}],
-                },
-                timeout=120.0,
-            ) as response:
-                accumulated = ""
-                async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        try:
-                            data = json.loads(line[6:])
-                            if data.get("type") == "content_block_delta":
-                                text = data["delta"].get("text", "")
-                                accumulated += text
-                                yield json.dumps(
-                                    {"type": "content_delta", "text": text}
-                                )
-                        except Exception:
-                            pass
-                yield json.dumps({"type": "complete", "script": accumulated})
-                return
+        async with httpx.AsyncClient() as client, client.stream(
+            "POST",
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-sonnet-4-6",
+                "max_tokens": 4096,
+                "stream": True,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_content}],
+            },
+            timeout=120.0,
+        ) as response:
+            accumulated = ""
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    try:
+                        data = json.loads(line[6:])
+                        if data.get("type") == "content_block_delta":
+                            text = data["delta"].get("text", "")
+                            accumulated += text
+                            yield json.dumps(
+                                {"type": "content_delta", "text": text}
+                            )
+                    except (KeyError, TypeError, ValueError) as exc:
+                        # A malformed SSE frame should not end the stream, but
+                        # swallowing it silently hid real payload-shape changes.
+                        logger.debug("Skipping unparsable stream frame: %s", exc)
+            yield json.dumps({"type": "complete", "script": accumulated})
+            return
 
     # Mock fallback for development / testing
     chunks = [
-        f"INT. STUDIO - DAY\n\n",
+        "INT. STUDIO - DAY\n\n",
         f"{scene_desc}\n\n",
         "CHARACTER 1\n",
         "Let's begin.\n\n",

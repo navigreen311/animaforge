@@ -5,7 +5,6 @@ return shapes, determinism, grade thresholds, and comprehensive QC
 pass/fail behaviour.
 """
 
-import pytest
 
 from src.services.qc_ml_metrics import (
     _letter_grade,
@@ -18,7 +17,6 @@ from src.services.qc_ml_metrics import (
     detect_uncanny_valley,
     run_comprehensive_qc,
 )
-
 
 # -- 1. FID score --
 

@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
-
+from datetime import UTC, datetime
+from typing import Any
 
 _CDN_BASE = "https://cdn.animaforge.ai/edits"
 
@@ -13,7 +12,7 @@ _CDN_BASE = "https://cdn.animaforge.ai/edits"
 def apply_instruction_edit(
     output_url: str,
     instruction: str,
-    mask_url: Optional[str] = None,
+    mask_url: str | None = None,
 ) -> dict[str, Any]:
     """Simulate applying a natural-language editing instruction to a video."""
     job_id = str(uuid.uuid4())
@@ -24,7 +23,7 @@ def apply_instruction_edit(
             "instruction": instruction,
             "region": "masked" if mask_url else "full_frame",
             "mask_url": mask_url,
-            "applied_at": datetime.now(timezone.utc).isoformat(),
+            "applied_at": datetime.now(UTC).isoformat(),
         },
     ]
     return {
@@ -48,7 +47,7 @@ def apply_inpainting(
             "type": "inpainting",
             "prompt": prompt,
             "mask_url": mask_url,
-            "applied_at": datetime.now(timezone.utc).isoformat(),
+            "applied_at": datetime.now(UTC).isoformat(),
         },
     ]
     return {
@@ -73,7 +72,7 @@ def apply_v2v_transform(
             "type": "v2v_transform",
             "style_ref": style_ref,
             "strength": clamped,
-            "applied_at": datetime.now(timezone.utc).isoformat(),
+            "applied_at": datetime.now(UTC).isoformat(),
         },
     ]
     return {

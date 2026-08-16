@@ -29,7 +29,11 @@ def _get_redis():
         _redis_client.ping()
         logger.info("Connected to Redis at %s", url)
         return _redis_client
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        # Deliberately broad: this is a reachability probe. Redis can fail with
+        # ConnectionError, TimeoutError, auth errors or a DNS failure, and the
+        # service is designed to run without it. A narrower except here would
+        # turn an unanticipated client error into a failed startup.
         logger.warning("Redis unavailable, using in-memory fallback: %s", exc)
         _redis_client = None
         return None
@@ -46,8 +50,10 @@ def close_redis() -> None:
     if _redis_client is not None:
         try:
             _redis_client.close()
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            # Shutdown path: nothing useful to do if closing fails, but it is
+            # still worth a line in the log rather than vanishing.
+            logger.debug("Ignoring error while closing Redis: %s", exc)
         _redis_client = None
 
 
@@ -64,7 +70,7 @@ def _deserialize_value(key: str, value: str) -> Any:
     """Best-effort deserialization of a Redis hash value."""
     if value == "":
         return None
-    if value.startswith("{") or value.startswith("["):
+    if value.startswith(("{", "[")):
         try:
             return json.loads(value)
         except (json.JSONDecodeError, ValueError):

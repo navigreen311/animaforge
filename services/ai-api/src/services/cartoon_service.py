@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import random
 import uuid
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models.style_schemas import PipelineStage
 
-
 # The seven canonical stages of the toon-conversion pipeline.
-_PIPELINE_STAGES: List[str] = [
+_PIPELINE_STAGES: list[str] = [
     "subject_detection",
     "line_extraction",
     "color_segmentation",
@@ -25,7 +24,7 @@ def image_to_cartoon(
     image_url: str,
     style: str,
     strength: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Simulate the 7-stage cartoon-conversion pipeline.
 
     Each stage is executed with a mock duration; the result includes a
@@ -33,7 +32,7 @@ def image_to_cartoon(
     """
     job_id = uuid.uuid4().hex[:16]
 
-    stages_completed: List[PipelineStage] = []
+    stages_completed: list[PipelineStage] = []
     for stage_name in _PIPELINE_STAGES:
         duration_ms = round(random.uniform(50.0, 300.0), 1)
         stages_completed.append(

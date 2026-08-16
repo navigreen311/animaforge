@@ -1,0 +1,21 @@
+# Ruff settings for services/ai-api.
+#
+# This file exists to make the result independent of where ruff is invoked
+# from. Without it the two obvious invocations disagreed:
+#
+#   ruff check services/ai-api/    (from the repo root — what CI runs)   0 errors
+#   cd services/ai-api && ruff check .                                  39 errors
+#
+# all of them I001, because isort infers first-party packages from the project
+# root it detects, and the two roots classify `src` differently. CI passed
+# while a developer checking their own service saw a wall of import errors.
+#
+# `src` pins that classification. The rule set itself is untouched — this
+# narrows nothing, it just stops the answer depending on your shell's cwd.
+src = ["."]
+
+# The service targets Python 3.11 (see the Dockerfile and CI's PYTHON_VERSION).
+# Pinned so version-conditional rules — the pyupgrade family in particular —
+# do not change their minds based on whatever interpreter happens to be running
+# ruff.
+target-version = "py311"

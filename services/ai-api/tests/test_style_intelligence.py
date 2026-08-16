@@ -5,13 +5,9 @@ from httpx import ASGITransport, AsyncClient
 
 from src.main import app
 from src.services.style_intelligence import (
-    blend_fingerprints,
     clear_presets,
-    compare_fingerprints,
-    extract_animation_fingerprint,
     extract_video_fingerprint,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

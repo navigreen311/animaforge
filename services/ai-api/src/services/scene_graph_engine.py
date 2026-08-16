@@ -126,20 +126,27 @@ _TYPE_DEFAULTS: dict[str, dict[str, Any]] = {
 
 
 def parse_scene_graph(scene_graph_json: dict[str, Any]) -> dict[str, Any]:
-    """Validate and normalize a scene graph structure."""
+    """Validate and normalize a scene graph structure.
+
+    Type problems raise ValueError rather than the TypeError ruff's TRY004
+    would prefer, and the noqa comments below mark that as deliberate:
+    src/main.py registers an exception handler that maps ValueError to HTTP
+    422. Raising TypeError would fall through to the generic handler and turn
+    a client's malformed payload into a 500.
+    """
     if not isinstance(scene_graph_json, dict):
-        raise ValueError("scene_graph_json must be a dict")
+        raise ValueError("scene_graph_json must be a dict")  # noqa: TRY004
     elements = scene_graph_json.get("elements")
     if elements is None:
         raise ValueError("scene_graph_json must contain 'elements'")
     if not isinstance(elements, list):
-        raise ValueError("'elements' must be a list")
+        raise ValueError("'elements' must be a list")  # noqa: TRY004
 
     normalized: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for elem in elements:
         if not isinstance(elem, dict):
-            raise ValueError("Each element must be a dict")
+            raise ValueError("Each element must be a dict")  # noqa: TRY004
         eid = elem.get("id")
         etype = elem.get("type", "prop")
         if not eid:
@@ -272,7 +279,6 @@ def validate_composition(
     """Check composition rules: rule of thirds, headroom, lead room."""
     elements = layout.get("elements", [])
     fov = camera_frustum.get("fov", 60)
-    aspect = camera_frustum.get("aspect", _DEFAULT_ASPECT)
 
     violations: list[str] = []
     suggestions: list[str] = []

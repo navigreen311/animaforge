@@ -291,17 +291,17 @@ whether or not the thing exists.
 `ci-passed` decides what blocks merge. Every job still runs and still shows its
 own tick; the gate only decides which failures stop a PR.
 
-| Job             | Blocks merge   |
-| --------------- | -------------- |
-| lint            | no — ruff, #84 |
-| type-check      | **yes**        |
-| test-frontend   | **yes**        |
-| terraform       | **yes**        |
-| test-governance | **yes**        |
-| test-api        | **yes**        |
-| test-ai-api     | **yes**        |
-| test-e2e        | **yes**        |
-| security-scan   | **yes**        |
+| Job             | Blocks merge |
+| --------------- | ------------ |
+| lint            | **yes**      |
+| type-check      | **yes**      |
+| test-frontend   | **yes**      |
+| terraform       | **yes**      |
+| test-governance | **yes**      |
+| test-api        | **yes**      |
+| test-ai-api     | **yes**      |
+| test-e2e        | **yes**      |
+| security-scan   | **yes**      |
 
 Three jobs were returned to the blocking list once their backlogs were clear.
 Measured directly rather than inferred from a green tick:
@@ -312,11 +312,41 @@ Measured directly rather than inferred from a green tick:
 | `test-ai-api` | 11 of 280 failing      | 621 passed, 1 skipped, 0 failed |
 | `test-e2e`    | never verified to pass | 10 passed, 8 skipped, 0 failed  |
 
-`lint` is the only remaining exemption. ESLint passes (0 errors, 454 warnings)
-and Prettier is clean across the checked globs; the job is red solely on
-`ruff check services/ai-api/` — 172 errors with ruff 0.16.3 locally, 207 on the
-runner, because the workflow installs ruff unpinned and the count moves with
-the release. Owner and detail in #84.
+`lint` was the last exemption and #84 cleared it: **207 ruff errors to 0**, with
+the ai-api suite unchanged at 621 passed, 1 skipped. **All nine jobs now block
+merge.**
+
+### Ruff
+
+`ruff` is **pinned** in the lint job. Unpinned, the same commit measured 172
+errors locally and 207 on the runner, purely from version drift — tolerable
+while the job was advisory, not once it gates merge. Bump the pin deliberately.
+
+`services/ai-api/ruff.toml` pins two things that were making the answer depend
+on where you stood:
+
+- `src = ["."]` — isort classifies first-party packages from the project root it
+  detects, and the two obvious invocations detected different roots.
+  `ruff check services/ai-api/` from the repo root reported 0 while
+  `cd services/ai-api && ruff check .` reported 39, all `I001`. CI was the
+  lenient one, so making them agree meant fixing 55 more findings, not fewer.
+- `target-version = "py311"` — so the pyupgrade rules do not change their mind
+  based on whichever interpreter happens to run ruff.
+
+Neither setting narrows the rule set; the default selection is untouched.
+
+Six findings are suppressed with `# noqa` and a written reason rather than
+"fixed", because fixing them would have changed behaviour:
+
+- **`TRY004` ×3** in `scene_graph_engine.py` — ruff wants `TypeError` for type
+  validation. `src/main.py` maps `ValueError` to HTTP 422; raising `TypeError`
+  would fall through to the generic handler and turn a client's malformed
+  payload into a 500.
+- **`BLE001` ×3** — the Redis reachability probe in `job_manager.py` and the two
+  Claude-API fallbacks. All three are deliberately broad: degrading to the
+  in-memory store or the mock generator _is_ the documented behaviour, and a
+  narrower except would turn an unanticipated client error into a failed startup
+  or a 500.
 
 **Do not let the exemption list grow.** A job that is exempt without an owner, a
 measured count and an issue number is a job nobody is going to fix.

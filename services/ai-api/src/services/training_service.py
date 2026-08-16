@@ -139,8 +139,8 @@ def create_dataset(
     agg = aggregate_training_data(model_id, min_rating=min_rating)
     total = agg["count"]
 
-    train_count = int(math.floor(total * split_ratio.get("train", 0.8)))
-    val_count = int(math.floor(total * split_ratio.get("val", 0.1)))
+    train_count = math.floor(total * split_ratio.get("train", 0.8))
+    val_count = math.floor(total * split_ratio.get("val", 0.1))
     test_count = total - train_count - val_count
 
     dataset_id = str(uuid.uuid4())
@@ -239,7 +239,6 @@ def get_finetune_status(job_id: str) -> dict[str, Any]:
         job["status"] = "running"
         job["progress"] = min(0.95, elapsed / (job["estimated_hours"] * 3600))
         epoch = int(job["progress"] * job["hyperparams"]["epochs"])
-        seed = int(hashlib.sha256(job_id.encode()).hexdigest(), 16)
         base_loss = 0.8 - (job["progress"] * 0.6)
         job["metrics"] = {
             "loss": round(base_loss, 4),

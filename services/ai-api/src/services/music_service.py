@@ -7,7 +7,6 @@ sound effects generation, and video-to-music synchronisation.
 from __future__ import annotations
 
 import hashlib
-import math
 import uuid
 from typing import Any
 

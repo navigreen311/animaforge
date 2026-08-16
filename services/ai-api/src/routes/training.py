@@ -8,7 +8,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..services.training_service import (
-    FEEDBACK_TYPES,
     collect_feedback,
     create_dataset,
     evaluate_model,
