@@ -1,129 +1,135 @@
 'use client';
 
+import { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { TimelineRoot } from '@/components/timeline';
-import type { Shot, AudioTrack, Collaborator } from '@/components/timeline';
+import type { Shot, AudioTrack, Collaborator, ShotStatus } from '@/components/timeline';
+import { useResource } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 
 /* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
+/*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
-const MOCK_SHOTS: Shot[] = [
-  {
-    id: 'shot-1',
-    number: 1,
-    subject: 'Hero enters the forest',
-    camera: 'Wide establishing',
-    action: 'Walking slowly forward',
-    emotion: 'Curious, cautious',
-    timing: '0:00 - 0:04',
-    dialogue: '',
-    durationSec: 4,
-    status: 'approved',
-    characterRefs: ['Hero', 'Companion'],
-    styleRef: 'Ghibli watercolor',
-  },
-  {
-    id: 'shot-2',
-    number: 2,
-    subject: 'Close-up on hero face',
-    camera: 'Medium close-up',
-    action: 'Looks around, eyes widen',
-    emotion: 'Wonder',
-    timing: '0:04 - 0:07',
-    dialogue: 'What is this place?',
-    durationSec: 3,
-    status: 'approved',
-    characterRefs: ['Hero'],
-    styleRef: 'Ghibli watercolor',
-  },
-  {
-    id: 'shot-3',
-    number: 3,
-    subject: 'Pan across ancient ruins',
-    camera: 'Slow pan right',
-    action: 'Camera movement only',
-    emotion: 'Mystical, awe',
-    timing: '0:07 - 0:12',
-    dialogue: '',
-    durationSec: 5,
-    status: 'generating',
-    characterRefs: [],
-    styleRef: 'Ghibli watercolor',
-  },
-  {
-    id: 'shot-4',
-    number: 4,
-    subject: 'Companion discovers artifact',
-    camera: 'Over-the-shoulder',
-    action: 'Reaches out and picks up glowing orb',
-    emotion: 'Excitement, fear',
-    timing: '0:12 - 0:16',
-    dialogue: 'Look at this!',
-    durationSec: 4,
-    status: 'pending',
-    characterRefs: ['Companion'],
-    styleRef: 'Ghibli watercolor',
-  },
-  {
-    id: 'shot-5',
-    number: 5,
-    subject: 'Orb activates, light burst',
-    camera: 'Low angle dramatic',
-    action: 'Light expands outward, characters shield eyes',
-    emotion: 'Shock, intensity',
-    timing: '0:16 - 0:20',
-    dialogue: '',
-    durationSec: 4,
-    status: 'draft',
-    characterRefs: ['Hero', 'Companion'],
-    styleRef: 'Ghibli watercolor',
-  },
-];
-
-/** Generate a simple pseudo-random waveform array */
-function mockWaveform(count: number): number[] {
-  const waveform: number[] = [];
-  let val = 0.3;
-  for (let i = 0; i < count; i++) {
-    val += Math.sin(i * 0.7) * 0.15 + Math.cos(i * 0.3) * 0.1;
-    waveform.push(Math.max(0.05, Math.min(1, Math.abs(val))));
-  }
-  return waveform;
+/** One row of GET /api/projects/[id]/shots. */
+interface ShotRow {
+  id: string;
+  sceneId: string;
+  shotNumber: number;
+  prompt: string | null;
+  status: string;
+  durationMs: number | null;
+  aspectRatio: string;
 }
 
-const MOCK_AUDIO_TRACKS: AudioTrack[] = [
-  {
-    id: 'audio-1',
-    label: 'Dialogue',
-    durationSec: 20,
-    waveform: mockWaveform(160),
-  },
-  {
-    id: 'audio-2',
-    label: 'Music',
-    durationSec: 22,
-    waveform: mockWaveform(176),
-  },
-];
+/** One row of GET /api/audio/tracks. */
+interface AudioRow {
+  id: string;
+  name: string;
+  duration: number | null;
+}
 
-const MOCK_COLLABORATORS: Collaborator[] = [
-  { id: 'user-1', name: 'Alice (Director)', color: '#8b5cf6' },
-  { id: 'user-2', name: 'Bob (Animator)', color: '#06b6d4' },
-  { id: 'user-3', name: 'Carol (Sound)', color: '#f59e0b' },
-];
+const SHOT_STATUSES: ShotStatus[] = ['draft', 'pending', 'approved', 'rejected', 'generating'];
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
+function formatTiming(startSec: number, durationSec: number): string {
+  const stamp = (t: number) =>
+    `${Math.floor(t / 60)}:${Math.floor(t % 60)
+      .toString()
+      .padStart(2, '0')}`;
+  return `${stamp(startSec)} - ${stamp(startSec + durationSec)}`;
+}
+
+/**
+ * Map a stored shot onto the timeline clip.
+ *
+ * The mock rows this replaces carried a subject, a camera instruction, an
+ * action, an emotion and a dialogue line per shot. A shot row has a prompt, a
+ * scene graph, a status and a duration — the individual craft fields are not
+ * columns, so `subject` shows the prompt and camera, action, emotion and
+ * dialogue are left blank rather than split out of a prompt that may say
+ * nothing about them.
+ */
+function toShot(row: ShotRow, startSec: number): Shot {
+  const durationSec = row.durationMs === null ? 0 : Math.round(row.durationMs / 1000);
+  return {
+    id: row.id,
+    number: row.shotNumber,
+    subject: row.prompt ?? `Shot ${row.shotNumber}`,
+    camera: '',
+    action: '',
+    emotion: '',
+    timing: formatTiming(startSec, durationSec),
+    dialogue: '',
+    durationSec,
+    status: SHOT_STATUSES.includes(row.status as ShotStatus)
+      ? (row.status as ShotStatus)
+      : 'draft',
+    characterRefs: [],
+    styleRef: '',
+  };
+}
 
 export default function TimelinePage() {
+  const params = useParams<{ id: string }>();
+
+  const shotState = useResource<{ items: ShotRow[] }>(`/api/projects/${params.id}/shots`, [
+    params.id,
+  ]);
+  const audioState = useResource<{ items: AudioRow[] }>('/api/audio/tracks');
+
+  const shots = useMemo(() => {
+    let cursor = 0;
+    return (shotState.data?.items ?? []).map((row) => {
+      const shot = toShot(row, cursor);
+      cursor += shot.durationSec;
+      return shot;
+    });
+  }, [shotState.data]);
+
+  const audioTracks = useMemo<AudioTrack[]>(
+    () =>
+      (audioState.data?.items ?? []).map((row) => ({
+        id: row.id,
+        label: row.name,
+        durationSec: row.duration === null ? 0 : Math.round(row.duration / 1000),
+        // Nothing stores an amplitude series, and the previous page generated
+        // one with a random walk. An empty waveform draws nothing, which is
+        // accurate; a generated one is a picture of noise presented as audio.
+        waveform: [],
+      })),
+    [audioState.data],
+  );
+
+  // Live presence comes from the realtime service, which this page does not
+  // connect to. Three named collaborators used to be listed as present on every
+  // project timeline whether anyone was there or not.
+  const collaborators: Collaborator[] = [];
+
+  if (shotState.loading || audioState.loading) {
+    return (
+      <div className="h-screen w-screen bg-zinc-950 p-6">
+        <LoadingState label="Loading timeline" />
+      </div>
+    );
+  }
+
+  if (shotState.error || audioState.error) {
+    return (
+      <div className="h-screen w-screen bg-zinc-950 p-6">
+        <ErrorState
+          error={shotState.error ?? audioState.error!}
+          onRetry={() => {
+            shotState.reload();
+            audioState.reload();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen bg-zinc-950">
-      <TimelineRoot
-        shots={MOCK_SHOTS}
-        audioTracks={MOCK_AUDIO_TRACKS}
-        collaborators={MOCK_COLLABORATORS}
-      />
+      <TimelineRoot shots={shots} audioTracks={audioTracks} collaborators={collaborators} />
     </div>
   );
 }
