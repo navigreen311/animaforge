@@ -17,10 +17,6 @@ name: Verify Persistence
 # Manual only. It provisions its own database and writes nothing outside the
 # artifact.
 on:
-  # TEMPORARY: workflow_dispatch only fires from the default branch, so this
-  # cannot be exercised until it lands. Removed before merge.
-  push:
-    branches: [ai-chore/console-truthfulness]
   workflow_dispatch:
 
 concurrency:

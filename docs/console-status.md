@@ -24,6 +24,12 @@ the whole point: the `Map` is gone afterwards, so anything that comes back came
 from Postgres. Run [`31925346146`](https://github.com/navigreen311/animaforge/actions/runs/31925346146)
 is the evidence behind every claim below.
 
+A second leg runs the same signed token through the Next.js proxy routes the
+console actually calls. Storage being correct is not enough: a control that
+persists but 401s in the browser is worse re-enabled than left alone. All nine
+proxied routes return 200 after the auth hardening in #86 — run
+[`31926568212`](https://github.com/navigreen311/animaforge/actions/runs/31926568212).
+
 ## Re-enabled — verified to persist
 
 | Control | Route | Evidence |
@@ -122,9 +128,11 @@ The re-enable bar is now written into the workflow files themselves.
    a signature. The harness mints such a token. When that is fixed, the workflow
    must mint a properly signed one or every probe will 401 — and the workflow
    will report failures that are about the harness, not the routes.
-3. **Persistence was verified at the API layer, then re-checked through the UI
-   after rebasing.** If the auth fix changes the token the browser sends, the
-   proxy routes could 401 even though platform-api persists correctly.
+3. **Both legs were re-run after #86 landed**, with properly signed HS256
+   tokens rather than the unsigned ones the old bypass accepted. Results were
+   identical, and the nine proxy routes returned 200. The harness signs its own
+   token; it does not exercise the login flow that issues one to a browser, so
+   an end-to-end session could still fail for reasons this does not cover.
 4. **`assets.upload` and `settings.logoUpload` were verified as far as the
    presign and the asset record.** The `PUT` to storage was not exercised —
    there is no S3 bucket here — so an upload can still fail at the storage step.
