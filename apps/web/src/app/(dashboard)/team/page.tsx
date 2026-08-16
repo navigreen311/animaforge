@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import {
   UserPlus,
   Shield,
@@ -144,96 +146,88 @@ const MOCK_PROJECT_ACCESS: ProjectAccessEntry[] = [
   },
 ];
 
-const MEMBERS: TeamMember[] = [
-  {
-    id: '1',
-    name: 'Alice Chen',
-    email: 'alice@animaforge.io',
-    role: 'Admin',
-    status: 'Active',
-    joined: 'Jan 2026',
-    avatarColor: '#7c3aed',
-    initials: 'AC',
-    creditLimit: null,
-    creditsUsed: 3200,
-    shotsGenerated: 84,
-    shotsApproved: 71,
-    projects: ['Cyber Samurai', 'Brand Story', 'Product Launch'],
-    currentActivity: 'Cyber Samurai / Shot 14',
-    limitPolicy: 'block',
-  },
-  {
-    id: '2',
-    name: 'Bob Martinez',
-    email: 'bob@example.com',
-    role: 'Editor',
-    status: 'Active',
-    joined: 'Feb 2026',
-    avatarColor: '#06b6d4',
-    initials: 'BM',
-    creditLimit: 2000,
-    creditsUsed: 1450,
-    shotsGenerated: 42,
-    shotsApproved: 36,
-    projects: ['Cyber Samurai', 'Holiday Campaign'],
-    currentActivity: 'Brand Story / Timeline',
-    limitPolicy: 'warn',
-  },
-  {
-    id: '3',
-    name: 'Carol Nakamura',
-    email: 'carol@animaforge.io',
-    role: 'Editor',
-    status: 'Active',
-    joined: 'Feb 2026',
-    avatarColor: '#f59e0b',
-    initials: 'CN',
-    creditLimit: 2000,
-    creditsUsed: 1820,
-    shotsGenerated: 55,
-    shotsApproved: 48,
-    projects: ['Brand Story', 'Product Launch', 'Client Reel'],
-    currentActivity: 'Browsing marketplace',
-    limitPolicy: 'block',
-  },
-  {
-    id: '4',
-    name: 'Dave Okafor',
-    email: 'dave@example.com',
-    role: 'Viewer',
-    status: 'Away',
-    joined: 'Mar 2026',
-    avatarColor: '#ef4444',
-    initials: 'DO',
-    creditLimit: 500,
-    creditsUsed: 120,
-    shotsGenerated: 3,
-    shotsApproved: 2,
-    projects: ['Holiday Campaign'],
-    limitPolicy: 'block',
-  },
-  {
-    id: '5',
-    name: 'Eve Park',
-    email: 'eve@example.com',
-    role: 'Editor',
-    status: 'Offline',
-    joined: 'Mar 2026',
-    avatarColor: '#10b981',
-    initials: 'EP',
-    creditLimit: 1500,
-    creditsUsed: 890,
-    shotsGenerated: 28,
-    shotsApproved: 22,
-    projects: ['Cyber Samurai', 'Client Reel'],
-    limitPolicy: 'warn',
-  },
-];
+/** One row of GET /api/team/members. */
+interface MemberRow {
+  id: string;
+  userId: string;
+  teamId: string;
+  teamName: string;
+  role: string;
+  user: {
+    id: string;
+    email: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    role: string;
+  } | null;
+}
 
-const INITIAL_PENDING_INVITES: PendingInvite[] = [
-  { id: 'inv-1', email: 'frank@example.com', role: 'Editor', sentAt: 'Mar 20, 2026' },
-  { id: 'inv-2', email: 'grace@example.com', role: 'Viewer', sentAt: 'Mar 22, 2026' },
-];
+interface MemberList {
+  items: MemberRow[];
+  total: number;
+}
+
+/** One row of GET /api/team/invitations. */
+interface InviteRow {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+interface InviteList {
+  items: InviteRow[];
+  total: number;
+}
+
+const AVATAR_COLORS = ['#7c3aed', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '??';
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+/**
+ * Map a membership row to the card this screen renders.
+ *
+ * Per-member usage — credits used, shots generated, shots approved, credit
+ * limits and the limit policy — has no backing column anywhere in the schema.
+ * Rather than invent numbers, they are reported as zero/unlimited and the UI
+ * that reads them shows nothing earned. Adding them is a schema change, not a
+ * UI fix; see docs/persistence.md.
+ */
+function toMember(row: MemberRow): TeamMember {
+  const name = row.user?.displayName ?? row.user?.email ?? row.userId.slice(0, 8);
+  const hash = row.userId.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return {
+    id: row.id,
+    name,
+    email: row.user?.email ?? '',
+    role: (row.role as Role) ?? 'viewer',
+    status: 'Offline',
+    joined: '',
+    avatarColor: AVATAR_COLORS[hash % AVATAR_COLORS.length],
+    initials: initialsOf(name),
+    creditLimit: null,
+    creditsUsed: 0,
+    shotsGenerated: 0,
+    shotsApproved: 0,
+    projects: [],
+    limitPolicy: 'warn',
+  };
+}
+
+function toInvite(row: InviteRow): PendingInvite {
+  return {
+    id: row.id,
+    email: row.email,
+    role: (row.role as Role) ?? 'viewer',
+    sentAt: row.createdAt,
+  };
+}
 
 const SUB_TEAMS: SubTeam[] = [
   { id: 'st-1', name: 'Animation Team', memberIds: ['1', '2', '3'] },
@@ -454,9 +448,11 @@ function Avatar({
 // AVATAR STACK COMPONENT
 // ══════════════════════════════════════════════════════════════
 
-function AvatarStack({ memberIds }: { memberIds: string[] }) {
+function AvatarStack({ memberIds, allMembers }: { memberIds: string[]; allMembers: TeamMember[] }) {
+  // Looked the ids up in a module-level array before; the roster is state now,
+  // so it has to be passed in.
   const members = memberIds
-    .map((id) => MEMBERS.find((m) => m.id === id))
+    .map((id) => allMembers.find((m) => m.id === id))
     .filter(Boolean) as TeamMember[];
   return (
     <div style={{ display: 'flex', marginLeft: 4 }}>
@@ -1734,8 +1730,13 @@ export default function TeamPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
-  const [members, setMembers] = useState(MEMBERS);
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(INITIAL_PENDING_INVITES);
+  const memberState = useResource<MemberList>('/api/team/members');
+  const inviteState = useResource<InviteList>('/api/team/invitations');
+  const members = useMemo(() => (memberState.data?.items ?? []).map(toMember), [memberState.data]);
+  const pendingInvites = useMemo(
+    () => (inviteState.data?.items ?? []).map(toInvite),
+    [inviteState.data],
+  );
   const [livePolling, setLivePolling] = useState(0);
   const [showSsoGate, setShowSsoGate] = useState(false);
 
@@ -1772,11 +1773,18 @@ export default function TeamPage() {
         case 'changeRole': {
           const newRole = payload as Role;
           if (newRole === member.role) return;
-          // optimistic update + mock API
-          setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)));
+          // Was an optimistic local update followed by a 250ms sleep and a
+          // success toast — the role change never left the browser.
           void (async () => {
-            await new Promise((r) => setTimeout(r, 250));
+            const { error } = await mutate(`/api/team/members/${member.id}`, 'PATCH', {
+              role: newRole,
+            });
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
             toast.success(`${member.name}'s role changed to ${newRole}`);
+            memberState.reload();
           })();
           break;
         }
@@ -1795,19 +1803,38 @@ export default function TeamPage() {
             confirmLabel: 'Remove',
             danger: true,
             onConfirm: async () => {
-              // mock API
-              await new Promise((r) => setTimeout(r, 250));
-              setMembers((prev) => prev.filter((m) => m.id !== member.id));
+              const { error } = await mutate(`/api/team/members/${member.id}`, 'DELETE');
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
               toast.success(`${member.name} has been removed`);
               setConfirmAction(null);
               if (selectedMember?.id === member.id) setSelectedMember(null);
+              memberState.reload();
             },
           });
           break;
       }
     },
-    [selectedMember],
+    [selectedMember, memberState],
   );
+
+  if (memberState.loading && memberState.data === null) {
+    return (
+      <div style={{ padding: 24 }}>
+        <LoadingState label="Loading the team…" />
+      </div>
+    );
+  }
+
+  if (memberState.error) {
+    return (
+      <div style={{ padding: 24 }}>
+        <ErrorState error={memberState.error} onRetry={memberState.reload} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -2366,10 +2393,17 @@ export default function TeamPage() {
                         confirmLabel: 'Revoke',
                         danger: true,
                         onConfirm: async () => {
-                          await new Promise((r) => setTimeout(r, 200));
-                          setPendingInvites((prev) => prev.filter((p) => p.id !== invite.id));
+                          const { error } = await mutate(
+                            `/api/team/invitations/${invite.id}`,
+                            'DELETE',
+                          );
+                          if (error) {
+                            toast.error(error.message);
+                            return;
+                          }
                           toast.success(`Invitation to ${invite.email} revoked`);
                           setConfirmAction(null);
+                          inviteState.reload();
                         },
                       });
                     }}
@@ -2441,7 +2475,7 @@ export default function TeamPage() {
                     {team.memberIds.length} members
                   </p>
                 </div>
-                <AvatarStack memberIds={team.memberIds} />
+                <AvatarStack memberIds={team.memberIds} allMembers={members} />
                 <UnavailableButton
                   feature="team.manage"
                   layout="inline"
@@ -2657,14 +2691,15 @@ export default function TeamPage() {
           <CreditLimitModal
             member={creditLimitMember}
             onClose={() => setCreditLimitMember(null)}
-            onSave={(limit, policy) => {
-              setMembers((prev) =>
-                prev.map((m) =>
-                  m.id === creditLimitMember.id
-                    ? { ...m, creditLimit: limit, limitPolicy: policy }
-                    : m,
-                ),
+            onSave={() => {
+              // Per-member credit limits have no column: Membership stores only
+              // a role, and UsageMeter is per user per period with no cap. This
+              // used to update local state and look saved. Rather than pretend,
+              // it reports that the setting cannot be stored yet.
+              toast.error(
+                'Per-member credit limits are not stored yet — there is no column for them.',
               );
+              setCreditLimitMember(null);
             }}
           />
         )}
