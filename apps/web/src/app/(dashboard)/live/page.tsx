@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useResource } from '@/lib/api/useResource';
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -68,7 +69,11 @@ interface ReactionFloat {
 
 /* ── Mock Data ───────────────────────────────────────────────── */
 
-const AVATARS = ['Nova (Default)', 'Aria', 'Kai', 'Luna', 'Orion'];
+/** One row of GET /api/avatars. */
+interface AvatarRow {
+  id: string;
+  name: string;
+}
 
 const EMOTIONS: { name: Emotion; icon: React.ElementType; color: string }[] = [
   { name: 'Happy', icon: Smile, color: '#ffd460' },
@@ -85,25 +90,26 @@ const POSES: Pose[] = ['Idle', 'Wave', 'Point', 'Sit', 'Dance'];
 
 const QUALITY_PRESETS: QualityPreset[] = ['Low/720p', 'HD/1080p', 'Studio/4K'];
 
+// Twitch and YouTube were marked connected. Nothing stores a stream key or an
+// OAuth token for either, so no destination is connected -- claiming otherwise
+// would let the UI offer a "go live" that could not reach anywhere.
 const DESTINATIONS: Destination[] = [
-  { id: 'twitch', label: 'Twitch', connected: true },
-  { id: 'youtube', label: 'YouTube Live', connected: true },
+  { id: 'twitch', label: 'Twitch', connected: false },
+  { id: 'youtube', label: 'YouTube Live', connected: false },
   { id: 'rtmp', label: 'Custom RTMP', connected: false },
 ];
 
-const MOCK_CHAT: ChatMessage[] = [
-  { id: 'm1', user: 'pixelPanda', text: 'This looks amazing!', color: '#ff6b9d' },
-  { id: 'm2', user: 'neonDrifter', text: 'How did you rig that?', color: '#00d4ff' },
-  { id: 'm3', user: 'kodaFrames', text: 'Wave hello to chat!', color: '#ffd460' },
-  { id: 'm4', user: 'lumenArt', text: 'Loving the lighting setup', color: '#c77dff' },
-  { id: 'm5', user: 'vectorVibe', text: 'Do the dance pose next pls', color: '#7ec8a0' },
-];
+// live_chat_messages is keyed by session, and there is no session until the
+// stream starts, so the panel opens empty instead of showing five invented
+// viewers greeting a stream that is not running.
 
-const SCENE_BRANCHES: SceneBranch[] = [
-  { id: 'b1', title: 'Interview Set', description: 'Two-camera sit-down, warm lighting' },
-  { id: 'b2', title: 'Outdoor Plaza', description: 'Daylight exterior with crowd ambience' },
-  { id: 'b3', title: 'Neon Alley', description: 'Night scene, cyberpunk atmosphere' },
-];
+/** A branching scene, as the narratives endpoint's scenes are stored. */
+interface BranchingSceneRow {
+  id: string;
+  name: string;
+  triggerType: string;
+  emotion: string | null;
+}
 
 const REACTION_EMOJIS = ['❤️', '🔥', '✨', '😂', '👏', '🎉'];
 
@@ -201,12 +207,18 @@ function formatDuration(secs: number): string {
 /* ── Component ───────────────────────────────────────────────── */
 
 export default function LivePage() {
+  // No narrative is selected on this screen, so the branch list is empty until
+  // one is: see /live/branching.
+  const sceneBranches: SceneBranch[] = [];
+  // The avatar picker listed five fixed names; these are the caller's avatars.
+  const avatarState = useResource<{ items: AvatarRow[] }>('/api/avatars');
+  const avatars = avatarState.data?.items ?? [];
   /* ── Session state ───────────────────────────── */
   const [isLive, setIsLive] = useState(false);
   const [duration, setDuration] = useState(2535); // 00:42:15
   const [viewers] = useState(247);
   const [latency] = useState('1.2s avg');
-  const [avatar, setAvatar] = useState<string>(AVATARS[0]);
+  const [avatar, setAvatar] = useState<string>('');
   const [avatarDropOpen, setAvatarDropOpen] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -233,7 +245,7 @@ export default function LivePage() {
   /* ── Audience state ──────────────────────────── */
   const [chatPaused, setChatPaused] = useState(false);
   const [chatMuted, setChatMuted] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(MOCK_CHAT);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [reactions, setReactions] = useState<ReactionFloat[]>([]);
   const reactionIdRef = useRef(0);
 
@@ -442,9 +454,16 @@ export default function LivePage() {
                     boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                   }}
                 >
-                  {AVATARS.map((a) => (
+                  {avatars.length === 0 && (
+                    <div style={{ padding: '7px 9px', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      {avatarState.loading ? 'Loading…' : 'No avatars yet.'}
+                    </div>
+                  )}
+                  {avatars.map((row) => {
+                    const a = row.name;
+                    return (
                     <button
-                      key={a}
+                      key={row.id}
                       type="button"
                       onClick={() => {
                         setAvatar(a);
@@ -465,7 +484,8 @@ export default function LivePage() {
                     >
                       {a}
                     </button>
-                  ))}
+                    );
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -990,7 +1010,11 @@ export default function LivePage() {
 
           <p style={subLabelStyle}>Next Scene Options</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {SCENE_BRANCHES.map((b) => (
+            {/* Three named sets ("Interview Set", "Neon Alley") were hardcoded
+                here. Branching scenes are stored per narrative, and this page
+                never picks a narrative, so there is no branch list to offer --
+                the /live/branching editor is where scenes are built. */}
+            {sceneBranches.map((b) => (
               <div
                 key={b.id}
                 style={{
