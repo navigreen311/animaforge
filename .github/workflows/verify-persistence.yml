@@ -85,6 +85,16 @@ jobs:
                     'verify@animaforge.test', 'Verify User', 'admin', 'studio', NOW())
             ON CONFLICT (id) DO NOTHING;"
 
+          # Creating a team 409s with NO_ORGANISATION unless the caller belongs
+          # to one. Without this the probe measures the missing org, not the
+          # persistence it is meant to check.
+          PGPASSWORD=verify_password psql -h localhost -U animaforge -d animaforge_verify -c "
+            INSERT INTO organizations (id, name, updated_at)
+            VALUES ('00000000-0000-4000-8000-00000000e2f0'::uuid, 'Verify Org', NOW())
+            ON CONFLICT (id) DO NOTHING;
+            UPDATE users SET org_id = '00000000-0000-4000-8000-00000000e2f0'::uuid
+             WHERE id = '${{ env.ACTOR_ID }}'::uuid;"
+
       # The script is inline rather than a checked-in file so the whole harness
       # is one reviewable unit and stays inside .github/workflows.
       - name: Write, restart, read
@@ -121,12 +131,17 @@ jobs:
               read: ['GET', '/api/v1/team/invitations'] },
             { key: 'team.projectAccess', write: ['POST', '/api/v1/teams', { name: `Access ${MARK}` }],
               read: ['GET', '/api/v1/team/members'] },
-            { key: 'team.activityLog', write: null, read: ['GET', '/api/v1/activity'] },
+            // /activity reads the AuditTrail table. The question is not whether
+            // the read works but whether anything ever writes a row: the probe
+            // performs a real, audit-worthy action (the setup project above,
+            // plus this team write) and then looks for any trace of it.
+            { key: 'team.activityLog', write: ['POST', '/api/v1/teams', { name: `Audit ${MARK}` }],
+              read: ['GET', '/api/v1/activity'], expectAny: true },
             { key: 'settings.createWebhook', write: ['POST', '/api/v1/webhook-endpoints', { url: `https://example.test/${MARK}`, events: ['job.completed'] }],
               read: ['GET', '/api/v1/webhook-endpoints'] },
             { key: 'settings.memoryEditor', write: ['PATCH', '/api/v1/users/me/memory', { genMemory: { marker: MARK } }],
               read: ['GET', '/api/v1/users/me/memory'] },
-            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify' }],
+            { key: 'style.createPack', write: ['POST', '/api/v1/styles', { name: `Style ${MARK}`, description: 'verify', sourceUrl: `https://cdn.test/${MARK}.png`, sourceType: 'image' }],
               read: ['GET', '/api/v1/styles'] },
             { key: 'projects.import/createFromScript', write: ['POST', '/api/v1/projects', { title: `Project ${MARK}` }],
               read: ['GET', '/api/v1/projects'] },
@@ -134,7 +149,7 @@ jobs:
               read: ['GET', '/api/v1/voices'] },
             { key: 'assets.upload/logoUpload (presign)', write: ['POST', '/api/v1/upload/signed-url', { filename: `${MARK}.png`, contentType: 'image/png', projectId: ACTOR }],
               read: ['GET', '/api/v1/assets'] },
-            { key: 'assets.upload (asset record)', write: ['POST', '/api/v1/assets', { name: `Asset ${MARK}`, type: 'image', url: `https://cdn.test/${MARK}.png` }],
+            { key: 'assets.upload (asset record)', write: ['POST', '/api/v1/assets', { name: `Asset ${MARK}`, type: 'image', url: `https://cdn.test/${MARK}.png`, projectId: '__PROJECT__' }],
               read: ['GET', '/api/v1/assets'] },
             { key: 'settings.logoUpload (brand kit)', write: ['POST', '/api/v1/brand-kits', { name: `Kit ${MARK}` }],
               read: ['GET', '/api/v1/brand-kits'] },
@@ -195,6 +210,20 @@ jobs:
             process.exit(1);
           }
 
+          // Assets are scoped to a project, so one has to exist before the
+          // asset probe can say anything about persistence rather than about a
+          // missing parent row.
+          const setup = await call('POST', '/api/v1/projects', { title: `Setup ${MARK}` });
+          const projectId = setup.body?.data?.id ?? null;
+          console.log(`setup project: ${setup.status} ${projectId}`);
+          for (const probe of PROBES) {
+            if (probe.write && JSON.stringify(probe.write[2]).includes('__PROJECT__')) {
+              probe.write[2] = JSON.parse(
+                JSON.stringify(probe.write[2]).replaceAll('__PROJECT__', projectId ?? ''),
+              );
+            }
+          }
+
           for (const probe of PROBES) {
             probe.writeResult = probe.write
               ? await call(probe.write[0], probe.write[1], probe.write[2])
@@ -213,7 +242,12 @@ jobs:
           for (const probe of PROBES) {
             const readResult = await call(probe.read[0], probe.read[1]);
             const haystack = JSON.stringify(readResult.body ?? readResult.raw ?? '');
-            const survived = haystack.includes(MARK);
+            // Most probes look for their own marker. An audit feed will not
+            // echo it back, so that probe asks a weaker question: after several
+            // real writes, did anything get recorded at all?
+            const survived = probe.expectAny
+              ? (readResult.body?.data?.total ?? 0) > 0
+              : haystack.includes(MARK);
 
             let verdict;
             if (probe.writeResult.status !== null && probe.writeResult.status >= 400) {
