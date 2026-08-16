@@ -89,8 +89,8 @@ jobs:
           # to one. Without this the probe measures the missing org, not the
           # persistence it is meant to check.
           PGPASSWORD=verify_password psql -h localhost -U animaforge -d animaforge_verify -c "
-            INSERT INTO organizations (id, name, updated_at)
-            VALUES ('00000000-0000-4000-8000-00000000e2f0'::uuid, 'Verify Org', NOW())
+            INSERT INTO organizations (id, name, slug, updated_at)
+            VALUES ('00000000-0000-4000-8000-00000000e2f0'::uuid, 'Verify Org', 'verify-org', NOW())
             ON CONFLICT (id) DO NOTHING;
             UPDATE users SET org_id = '00000000-0000-4000-8000-00000000e2f0'::uuid
              WHERE id = '${{ env.ACTOR_ID }}'::uuid;"
