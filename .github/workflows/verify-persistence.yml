@@ -58,6 +58,9 @@ jobs:
       DATABASE_URL: postgresql://animaforge:verify_password@localhost:5432/animaforge_verify
       PORT: '4000'
       API_BASE: http://127.0.0.1:4000
+      # platform-api verifies every request against this and refuses to start
+      # without it (#82). A throwaway value for a throwaway database.
+      JWT_SECRET: verify-persistence-secret-not-a-real-key
       ACTOR_ID: 00000000-0000-4000-8000-00000000e2e1
 
     steps:
@@ -102,17 +105,23 @@ jobs:
           cat > /tmp/verify.mjs <<'SCRIPT'
           import { spawn } from 'node:child_process';
           import { writeFileSync, openSync } from 'node:fs';
+          import { createRequire } from 'node:module';
+
+          const require = createRequire(import.meta.url);
 
           const BASE = process.env.API_BASE;
           const ACTOR = process.env.ACTOR_ID;
 
-          // platform-api's requireAuth base64-decodes the payload segment and
-          // trusts it without verifying a signature -- that is issue #82, and
-          // this token exists only because of it. When the auth fix lands this
-          // must become a properly signed JWT or every probe below 401s.
-          const claims = { sub: ACTOR, email: 'verify@animaforge.test', role: 'admin' };
-          const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-          const TOKEN = `${b64({ alg: 'none', typ: 'JWT' })}.${b64(claims)}.unsigned`;
+          // Signed for real. This used to mint an unsigned token, which worked
+          // only because requireAuth base64-decoded the payload and trusted it
+          // (#82). Now the signature, the HS256 algorithm and a future exp are
+          // all enforced, so an unsigned token 401s -- correctly.
+          const jwt = require('jsonwebtoken');
+          const TOKEN = jwt.sign(
+            { sub: ACTOR, email: 'verify@animaforge.test', role: 'admin' },
+            process.env.JWT_SECRET,
+            { algorithm: 'HS256', expiresIn: '1h' },
+          );
 
           const HEADERS = {
             'content-type': 'application/json',
