@@ -130,7 +130,23 @@ export default defineConfig({
          */
         NODE_ENV: 'development',
         JWT_SECRET: E2E_JWT_SECRET,
-        DATABASE_URL: E2E_DATABASE_URL,
+        /*
+         * Deliberately empty, so the auth service uses its in-memory user
+         * store rather than Prisma.
+         *
+         * With a DATABASE_URL set, /auth/register succeeded and the very next
+         * /auth/login hung until the 30s request timeout on the CI runner —
+         * register does not touch sessions, login calls createSession, and
+         * that is where it stopped. It did not reproduce locally.
+         *
+         * Nothing is lost by not sharing the user store: platform-api cannot
+         * accept the auth service's tokens at all (#82), so a user row shared
+         * between the two buys no coverage today. The store is also faster and
+         * starts empty every run, which is what global-setup wants. Point this
+         * back at E2E_DATABASE_URL when #82 is fixed and the specs need one
+         * identity across both services.
+         */
+        DATABASE_URL: '',
       },
     },
     {
