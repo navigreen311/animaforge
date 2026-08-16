@@ -388,16 +388,29 @@ jobs:
     runs-on: ubuntu-latest
     # test-api is known-red (see ci-passed); needing it would skip e2e entirely.
     needs: [test-frontend]
+    # Postgres only; redis is gone because nothing in the harness touches it.
     #
-    # No postgres or redis service any more, and no DATABASE_URL.
-    #
-    # Both were declared here and neither was ever reached. The pages under
-    # test are served by Next route handlers backed by
-    # apps/web/src/lib/mockData.ts, and the auth service the login specs use
-    # falls back to an in-memory user store when Prisma has no database. Worse
-    # than unused: exporting DATABASE_URL made the auth service try to reach a
-    # Postgres with no tables, so CI and a developer's machine took different
-    # code paths through login. Dropping them makes the two identical.
+    # Since #79 the console proxies every /api/* route to platform-api, which
+    # reads this database, so the e2e stack is now web + platform-api + auth
+    # and the schema has to exist. playwright.config.ts starts the three
+    # servers; the steps below create the schema and fixture rows they read.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: animaforge_e2e
+          POSTGRES_USER: animaforge
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      E2E_DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_e2e
+      DATABASE_URL: postgresql://animaforge:test_password@localhost:5432/animaforge_e2e
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -425,10 +438,19 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
-      # playwright.config.ts starts both servers itself: the auth service on
-      # :3003 and apps/web on :3000 from a production build. The build is the
-      # slow part and runs inside the webServer command, which is why that
-      # entry allows 5 minutes.
+      # The schema and fixture rows the harness reads. Kept as explicit steps
+      # rather than hidden in globalSetup so a migration failure is its own
+      # red step instead of a confusing setup error.
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+
+      - name: Seed fixture data
+        run: npm run db:seed --workspace @animaforge/db
+
+      # playwright.config.ts starts all three servers itself: auth on :3003,
+      # platform-api on :4000 and apps/web on :3000 from a production build.
+      # The web build is the slow part and runs inside its webServer command,
+      # which is why that entry allows 5 minutes.
       #
       # No --project flag: the config now declares chromium only, matching the
       # single browser installed above. It used to declare firefox as well and

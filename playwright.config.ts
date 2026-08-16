@@ -1,5 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** Shared by services/auth and services/platform-api; see #82. */
+const E2E_JWT_SECRET = process.env.E2E_JWT_SECRET ?? 'e2e-fixture-secret-not-a-real-key';
+
+const E2E_DATABASE_URL =
+  process.env.E2E_DATABASE_URL ??
+  process.env.DATABASE_URL ??
+  'postgresql://postgres:postgres@localhost:5432/animaforge_e2e';
+
 /**
  * E2E configuration.
  *
@@ -19,12 +27,23 @@ import { defineConfig, devices } from '@playwright/test';
  * reliably. `next build && next start` costs one build up front and then
  * behaves identically on every run.
  *
- * There is deliberately no database seeding step. The web app under test does
- * not read one: /projects, /shots and the rest are served by Next route
- * handlers backed by apps/web/src/lib/mockData.ts. Standing up Postgres and
- * seeding it would not change a single pixel these tests observe, so the
- * fixture data is the mock module and the seeded auth user, and the
- * determinism work went into the parts that are actually variable.
+ *   :4000  services/platform-api — every console /api/* route proxies to it
+ *          since #79. Backed by the same Postgres the migrations and seed
+ *          target.
+ *
+ * DATABASE_URL and JWT_SECRET are shared by the two services on purpose. They
+ * default to *different* JWT secrets (`animaforge-dev-secret` in auth,
+ * `dev-secret-change-me` in platform-api), which nothing notices today only
+ * because platform-api does not verify signatures — see #82.
+ *
+ * The database is not created here. Run migrations and the seed first:
+ *
+ *   createdb animaforge_e2e
+ *   DATABASE_URL=... npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+ *   DATABASE_URL=... npm run db:seed --workspace @animaforge/db
+ *
+ * global-setup fails with that instruction if the database is not reachable,
+ * rather than letting the specs fail one by one.
  */
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -89,7 +108,24 @@ export default defineConfig({
       env: {
         PORT: '3003',
         NODE_ENV: 'test',
-        JWT_SECRET: 'e2e-fixture-secret-not-a-real-key',
+        JWT_SECRET: E2E_JWT_SECRET,
+        DATABASE_URL: E2E_DATABASE_URL,
+      },
+    },
+    {
+      name: 'platform-api',
+      command: 'npx tsx src/index.ts',
+      cwd: 'services/platform-api',
+      url: 'http://localhost:4000/api/v1/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        PORT: '4000',
+        NODE_ENV: 'development',
+        JWT_SECRET: E2E_JWT_SECRET,
+        DATABASE_URL: E2E_DATABASE_URL,
       },
     },
     {
@@ -107,6 +143,7 @@ export default defineConfig({
         NODE_ENV: 'production',
         NEXT_TELEMETRY_DISABLED: '1',
         NEXT_PUBLIC_AUTH_URL: 'http://localhost:3003',
+        PLATFORM_API_URL: 'http://localhost:4000',
       },
     },
   ],
