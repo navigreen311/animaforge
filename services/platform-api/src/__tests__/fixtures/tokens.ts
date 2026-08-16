@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 
 /**
  * Token helpers for the suites.
@@ -12,22 +13,27 @@ import jwt from 'jsonwebtoken';
  * were passing precisely *because* of the bug they should have caught. Now
  * that signatures are verified, tokens have to be signed, and there is one
  * helper instead of nine copies.
- */
-
-/**
- * The secret the suites sign with.
  *
- * Set here rather than read from the environment so the suites are
- * self-contained, and assigned before any module reads it. It is a test value
- * and never leaves this process.
+ * The secrets here are generated per run rather than written as literals. That
+ * keeps a real (if harmless) secret out of the source, and means the suites
+ * cannot accidentally share a key with anything outside this process.
  */
-export const TEST_JWT_SECRET = 'test-secret-for-platform-api-suites';
 
-process.env.JWT_SECRET ??= TEST_JWT_SECRET;
-
-/** The secret in force for this run — whatever the environment settled on. */
+/** The secret in force for this run, whatever `setup.ts` settled on. */
 function secret(): string {
-  return process.env.JWT_SECRET ?? TEST_JWT_SECRET;
+  const configured = process.env.JWT_SECRET;
+  if (!configured) {
+    throw new Error(
+      'JWT_SECRET is unset in the test process. src/__tests__/setup.ts sets it; ' +
+        'check vitest.config.ts still lists it under setupFiles.',
+    );
+  }
+  return configured;
+}
+
+/** Read the active test secret, for suites that need to sign unusual claims. */
+export function testSecret(): string {
+  return secret();
 }
 
 export interface TokenClaims {
@@ -72,7 +78,7 @@ export function forgedUnsignedToken(sub: string, role = 'admin'): string {
       exp: Math.floor(Date.now() / 1000) + 3600,
     }),
   ).toString('base64url');
-  const signature = Buffer.from('fake-signature').toString('base64url');
+  const signature = Buffer.from('not-a-signature').toString('base64url');
   return `${header}.${payload}.${signature}`;
 }
 
@@ -94,13 +100,16 @@ export function algNoneToken(sub: string, role = 'admin'): string {
   return `${header}.${payload}.`;
 }
 
-/** Correctly structured and correctly signed — with the wrong key. */
+/**
+ * Correctly structured and correctly signed — with a key this service has
+ * never seen. Generated per call so it cannot coincide with the real one.
+ */
 export function wrongSecretToken(sub: string, role = 'admin'): string {
-  return jwt.sign(
-    { sub, email: 'attacker@evil.example', role },
-    'not-the-secret-this-service-uses',
-    { algorithm: 'HS256', expiresIn: '1h' },
-  );
+  const otherKey = randomBytes(32).toString('hex');
+  return jwt.sign({ sub, email: 'attacker@evil.example', role }, otherKey, {
+    algorithm: 'HS256',
+    expiresIn: '1h',
+  });
 }
 
 /** Signed with the right key, but expired an hour ago. */
@@ -122,5 +131,16 @@ export function expiredToken(sub: string): string {
 export function neverExpiringToken(sub: string): string {
   return jwt.sign({ sub, email: `${sub}@animaforge.test`, role: 'editor' }, secret(), {
     algorithm: 'HS256',
+  });
+}
+
+/**
+ * A token in the pre-#82 shape: subject under a custom `userId` claim with no
+ * `sub`. Correctly signed, and must still be rejected.
+ */
+export function legacyUserIdToken(sub: string): string {
+  return jwt.sign({ userId: sub, email: `${sub}@animaforge.test`, role: 'editor' }, secret(), {
+    algorithm: 'HS256',
+    expiresIn: '1h',
   });
 }

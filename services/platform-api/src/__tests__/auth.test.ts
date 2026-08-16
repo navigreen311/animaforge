@@ -2,13 +2,13 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import {
-  TEST_JWT_SECRET,
   signTestToken,
   forgedUnsignedToken,
   algNoneToken,
   wrongSecretToken,
   expiredToken,
   neverExpiringToken,
+  legacyUserIdToken,
 } from './fixtures/tokens.js';
 import {
   requireAuth,
@@ -152,15 +152,12 @@ describe('requireAuth — the token that must be accepted', () => {
 
   it('reads the subject from sub, not from a custom userId claim', async () => {
     // A token in the old shape — subject under `userId`, nothing under `sub` —
-    // must not authenticate. This is what "standardise on sub" means: one name,
-    // and the other one stops working.
-    const legacy = (await import('jsonwebtoken')).default.sign(
-      { userId: VICTIM, email: 'legacy@animaforge.test', role: 'editor' },
-      TEST_JWT_SECRET,
-      { algorithm: 'HS256', expiresIn: '1h' },
-    );
+    // correctly signed, and still rejected. This is what "standardise on sub"
+    // means: one name, and the other one stops working.
+    const res = await request(app)
+      .get('/protected')
+      .set('Authorization', `Bearer ${legacyUserIdToken(VICTIM)}`);
 
-    const res = await request(app).get('/protected').set('Authorization', `Bearer ${legacy}`);
     expect(res.status).toBe(401);
   });
 });
