@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import jwt from 'jsonwebtoken';
 import { ShotLockManager } from '../../services/collab/src/shotLocking';
 import { AwarenessManager } from '../../services/collab/src/awareness';
 import { verifyToken } from '../../services/collab/src/auth';
@@ -7,7 +8,42 @@ import { verifyToken } from '../../services/collab/src/auth';
 // 1. Session auth (verifyToken)
 // ---------------------------------------------------------------------------
 describe('Collab - Auth / Token Verification', () => {
-  it('verifies a valid JWT token and returns userId + displayName', () => {
+  // These tokens used to be assembled by hand and ended in a literal
+  // `.fakesig`, and the first test asserted verification SUCCEEDED — the suite
+  // encoded the bypass as correct behaviour. `rejects an expired token` passed
+  // for the wrong reason too: the token was refused because its signature was
+  // nonsense, not because it had expired, so the assertion proved nothing about
+  // expiry. Signing properly is what makes these tests mean what they say.
+  // See docs/auth.md section 7.
+  const secret = () => process.env.JWT_SECRET!;
+
+  it('verifies a correctly signed token and returns userId + displayName', () => {
+    const token = jwt.sign({ sub: 'user-1', displayName: 'Alice' }, secret(), {
+      algorithm: 'HS256',
+      expiresIn: '1h',
+    });
+
+    const result = verifyToken(token);
+    expect(result).not.toBeNull();
+    expect(result!.userId).toBe('user-1');
+    expect(result!.displayName).toBe('Alice');
+  });
+
+  it('rejects an expired token whose signature is otherwise valid', () => {
+    const token = jwt.sign(
+      {
+        sub: 'user-2',
+        iat: Math.floor(Date.now() / 1000) - 7200,
+        exp: Math.floor(Date.now() / 1000) - 100,
+      },
+      secret(),
+      { algorithm: 'HS256' },
+    );
+
+    expect(verifyToken(token)).toBeNull();
+  });
+
+  it('rejects a hand-assembled token with an invalid signature', () => {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(
       JSON.stringify({
@@ -16,22 +52,8 @@ describe('Collab - Auth / Token Verification', () => {
         exp: Math.floor(Date.now() / 1000) + 3600,
       }),
     ).toString('base64url');
-    const token = `${header}.${payload}.fakesig`;
 
-    const result = verifyToken(token);
-    expect(result).not.toBeNull();
-    expect(result!.userId).toBe('user-1');
-    expect(result!.displayName).toBe('Alice');
-  });
-
-  it('rejects an expired token', () => {
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256' })).toString('base64url');
-    const payload = Buffer.from(
-      JSON.stringify({ sub: 'user-2', exp: Math.floor(Date.now() / 1000) - 100 }),
-    ).toString('base64url');
-    const token = `${header}.${payload}.fakesig`;
-
-    expect(verifyToken(token)).toBeNull();
+    expect(verifyToken(`${header}.${payload}.fakesig`)).toBeNull();
   });
 
   it('rejects null or empty token', () => {
