@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import {
   Palette,
   Type,
@@ -64,7 +66,9 @@ type Animation = 'slide' | 'fade' | 'wipe';
 type WatermarkPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 type WatermarkSize = 'small' | 'medium' | 'large';
 
-// ── Initial Data ─────────────────────────────────────────────────
+// ── Defaults for a brand new kit ──────────────────────────────────
+// These are the starting palette and type scale a kit is created with, not
+// stand-in data: once a kit exists, its colours and fonts come from the row.
 const INITIAL_COLORS: BrandColor[] = [
   { id: '1', role: 'PRIMARY', hex: '#7c3aed', label: 'Purple' },
   { id: '2', role: 'SECONDARY', hex: '#06b6d4', label: 'Cyan' },
@@ -105,11 +109,21 @@ interface BrandKitSummary {
   name: string;
 }
 
-const INITIAL_BRAND_KITS: BrandKitSummary[] = [
-  { id: 'kit-1', name: 'AnimaForge Studio' },
-  { id: 'kit-2', name: 'Client - Acme Corp' },
-  { id: 'kit-3', name: 'Personal Brand' },
-];
+/** One row of GET /api/brand-kits. */
+interface BrandKitRow {
+  id: string;
+  name: string;
+  colors: BrandColor[] | null;
+  fonts: { slots?: FontSlot[]; sizes?: FontSize[] } | null;
+  logoUrl: string | null;
+  sonicUrl: string | null;
+  isDefault: boolean;
+}
+
+interface BrandKitList {
+  items: BrandKitRow[];
+  total: number;
+}
 
 const ENFORCEMENT_RULES = [
   { key: 'blockOffBrand', label: 'Block off-brand colors' },
@@ -848,12 +862,20 @@ function FontPickerModal({
 // ── Main Page Component ──────────────────────────────────────────
 export default function BrandKitPage() {
   // Kit switcher
-  const [brandKits, setBrandKits] = useState<BrandKitSummary[]>(INITIAL_BRAND_KITS);
-  const [activeKitId, setActiveKitId] = useState<string>(INITIAL_BRAND_KITS[0].id);
+  const kitState = useResource<BrandKitList>('/api/brand-kits');
+  const brandKits: BrandKitSummary[] = useMemo(
+    () => (kitState.data?.items ?? []).map((k) => ({ id: k.id, name: k.name })),
+    [kitState.data],
+  );
+  const [activeKitId, setActiveKitId] = useState<string>('');
+  const activeKit = useMemo(
+    () => (kitState.data?.items ?? []).find((k) => k.id === activeKitId) ?? null,
+    [kitState.data, activeKitId],
+  );
   const [kitDropdownOpen, setKitDropdownOpen] = useState(false);
   const [createKitModalOpen, setCreateKitModalOpen] = useState(false);
   const [newKitName, setNewKitName] = useState('');
-  const brandKit = brandKits.find((k) => k.id === activeKitId) ?? brandKits[0];
+  const brandKit = brandKits.find((k) => k.id === activeKitId) ?? brandKits[0] ?? null;
 
   // Brand enforcement
   const [enforcementProjects, setEnforcementProjects] = useState(['Hero Promo', 'Brand Story']);
@@ -867,7 +889,7 @@ export default function BrandKitPage() {
   });
   const [strictness, setStrictness] = useState<Strictness>('warn');
 
-  // Colors
+  // Colors — seeded from the selected kit, then edited locally until saved.
   const [colors, setColors] = useState<BrandColor[]>(INITIAL_COLORS);
   const [editingColor, setEditingColor] = useState<BrandColor | null>(null);
   const [extractedSwatches, setExtractedSwatches] = useState<string[] | null>(null);
@@ -1003,28 +1025,89 @@ export default function BrandKitPage() {
       // Mock download
       const a = document.createElement('a');
       a.href = 'data:application/pdf;base64,';
-      a.download = `${brandKit.name}-style-guide.pdf`;
+      a.download = `${brandKit?.name ?? 'brand'}-style-guide.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     }, 2000);
   };
 
-  const handleCreateKit = () => {
+  const handleCreateKit = async () => {
     const name = newKitName.trim();
     if (!name) {
       toast.error('Please enter a kit name');
       return;
     }
-    const newKit: BrandKitSummary = { id: `kit-${Date.now()}`, name };
-    setBrandKits((prev) => [...prev, newKit]);
-    setActiveKitId(newKit.id);
+    // Was `{ id: kit-<Date.now()> }` pushed into local state, so a kit created
+    // here was gone on refresh.
+    const { data, error } = await mutate<{ id: string }>('/api/brand-kits', 'POST', {
+      name,
+      colors: INITIAL_COLORS,
+      fonts: { slots: INITIAL_FONTS, sizes: INITIAL_FONT_SIZES },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data?.id) setActiveKitId(data.id);
     setCreateKitModalOpen(false);
     setNewKitName('');
     toast.success(`Created ${name}`);
+    kitState.reload();
   };
 
+  /** Persist the palette and type scale of the selected kit. */
+  const handleSaveKit = async () => {
+    if (!activeKitId) {
+      toast.error('Select a brand kit first');
+      return;
+    }
+    const { error } = await mutate(`/api/brand-kits/${activeKitId}`, 'PATCH', {
+      colors,
+      fonts: { slots: fonts, sizes: fontSizes },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Brand kit saved');
+    kitState.reload();
+  };
+
+  // Select the first kit once the list arrives, and load its contents into the
+  // editors. Without this the editors would show the creation defaults for a
+  // kit that has its own saved palette.
+  useEffect(() => {
+    const items = kitState.data?.items ?? [];
+    if (items.length === 0) return;
+    if (!activeKitId) {
+      setActiveKitId(items[0].id);
+      return;
+    }
+    const kit = items.find((k) => k.id === activeKitId);
+    if (!kit) return;
+    if (kit.colors && kit.colors.length > 0) setColors(kit.colors);
+    if (kit.fonts?.slots?.length) setFonts(kit.fonts.slots);
+    if (kit.fonts?.sizes?.length) setFontSizes(kit.fonts.sizes);
+  }, [kitState.data, activeKitId]);
+
   // ── Render ─────────────────────────────────────────────────────
+  if (kitState.loading && kitState.data === null) {
+    return (
+      <div style={{ padding: 24 }}>
+        <LoadingState label="Loading brand kits…" />
+      </div>
+    );
+  }
+
+  if (kitState.error) {
+    return (
+      <div style={{ padding: 24 }}>
+        <ErrorState error={kitState.error} onRetry={kitState.reload} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
       {/* Create brand kit modal */}
@@ -1149,8 +1232,23 @@ export default function BrandKitPage() {
                   gap: 6,
                 }}
               >
-                {brandKit.name}
+                {brandKit?.name ?? 'No brand kit'}
                 <ChevronDown size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveKit}
+                disabled={!activeKitId}
+                title="Save the palette and type scale to this kit"
+                style={{
+                  ...ghostBtn,
+                  padding: '5px 12px',
+                  marginLeft: 6,
+                  opacity: activeKitId ? 1 : 0.5,
+                  cursor: activeKitId ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Save kit
               </button>
               {kitDropdownOpen && (
                 <div
