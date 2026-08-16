@@ -8,28 +8,28 @@ right — it is derived from the machine, this is written by hand.
 
 ## Status meanings
 
-| Status | Means |
-| --- | --- |
-| **real** | A genuine implementation runs by default. Nothing to provision. |
-| **real-gated** | A genuine implementation exists but needs weights, a GPU or a binary. Mock until provisioned. |
-| **mock** | No engine adapter is written. Output is synthetic and every response says so. Provisioning does not change this — the adapter has to be written first. |
+| Status         | Means                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **real**       | A genuine implementation runs by default. Nothing to provision.                                                                                        |
+| **real-gated** | A genuine implementation exists but needs weights, a GPU or a binary. Mock until provisioned.                                                          |
+| **mock**       | No engine adapter is written. Output is synthetic and every response says so. Provisioning does not change this — the adapter has to be written first. |
 
 ## Clusters
 
-| Cluster | Engine | Status | What a human must provision |
-| --- | --- | --- | --- |
-| **E3** | Scene graph | **real** | Nothing. Deterministic decomposition and 3D reasoning, CPU only. |
-| **E8** | Mocap | **real** | Nothing. BVH/FBX/C3D/TRC parsing, retargeting, IK on CPU. |
-| **F5** | Physics | **real** | Nothing. Position-based dynamics for cloth, hair, rigid body, fluid on CPU. |
-| **G6** | Auto-QC | **real** | Nothing for loudness, temporal stability, A/V sync, container validation. `ffmpeg`/`ffprobe` on PATH widens what can be decoded — without it, audio measurement is limited to PCM WAV and frame measurement to PNG. |
-| **E6** | Continuity | **real** | Nothing for the handcrafted perceptual descriptor. `open_clip_torch` + `CONTINUITY_WEIGHTS_DIR` + `CONTINUITY_ENGINE=real` add semantic matching. |
-| **X5** | Avatar | **real-gated** | `torch`, `gsplat`, `nerfstudio`, COLMAP, a CUDA GPU (compute ≥ 7.0, ≥ 12 GB VRAM), `AVATAR_WEIGHTS_DIR`, `AVATAR_ENGINE=real`. See [avatar-studio.md](avatar-studio.md). |
-| **D3/D6** | Video | **mock** | No adapter written. `diffusers`/`transformers`/`accelerate` + weights are necessary but not sufficient. |
-| **D4** | Audio / lip-sync | **mock** | No adapter written. `torchaudio` + a TTS and forced-alignment model. |
-| **X6** | Style intelligence | **mock** | No adapter written. `open_clip_torch` + weights. |
-| **G2** | Dubbing | **mock** | No adapter written. `torchaudio` + a multilingual TTS and voice-cloning model. |
-| **D10** | Training | **mock** | No adapter written. `peft` + `diffusers` + a GPU. |
-| **F3** | Music | **mock** | No adapter written. `audiocraft` + weights. |
+| Cluster   | Engine             | Status         | What a human must provision                                                                                                                                                                                         |
+| --------- | ------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **E3**    | Scene graph        | **real**       | Nothing. Deterministic decomposition and 3D reasoning, CPU only.                                                                                                                                                    |
+| **E8**    | Mocap              | **real**       | Nothing. BVH/FBX/C3D/TRC parsing, retargeting, IK on CPU.                                                                                                                                                           |
+| **F5**    | Physics            | **real**       | Nothing. Position-based dynamics for cloth, hair, rigid body, fluid on CPU.                                                                                                                                         |
+| **G6**    | Auto-QC            | **real**       | Nothing for loudness, temporal stability, A/V sync, container validation. `ffmpeg`/`ffprobe` on PATH widens what can be decoded — without it, audio measurement is limited to PCM WAV and frame measurement to PNG. |
+| **E6**    | Continuity         | **real**       | Nothing for the handcrafted perceptual descriptor. `open_clip_torch` + `CONTINUITY_WEIGHTS_DIR` + `CONTINUITY_ENGINE=real` add semantic matching.                                                                   |
+| **X5**    | Avatar             | **real-gated** | `torch`, `gsplat`, `nerfstudio`, COLMAP, a CUDA GPU (compute ≥ 7.0, ≥ 12 GB VRAM), `AVATAR_WEIGHTS_DIR`, `AVATAR_ENGINE=real`. See [avatar-studio.md](avatar-studio.md).                                            |
+| **D3/D6** | Video              | **mock**       | No adapter written. `diffusers`/`transformers`/`accelerate` + weights are necessary but not sufficient.                                                                                                             |
+| **D4**    | Audio / lip-sync   | **mock**       | No adapter written. `torchaudio` + a TTS and forced-alignment model.                                                                                                                                                |
+| **X6**    | Style intelligence | **mock**       | No adapter written. `open_clip_torch` + weights.                                                                                                                                                                    |
+| **G2**    | Dubbing            | **mock**       | No adapter written. `torchaudio` + a multilingual TTS and voice-cloning model.                                                                                                                                      |
+| **D10**   | Training           | **mock**       | No adapter written. `peft` + `diffusers` + a GPU.                                                                                                                                                                   |
+| **F3**    | Music              | **mock**       | No adapter written. `audiocraft` + weights.                                                                                                                                                                         |
 
 Five real, one real-gated, six mock.
 
@@ -47,7 +47,7 @@ isolation and nothing about whether the service exposes it.
 never wired up.
 
 **E3 gained the layer it was missing.** `scene_graph_engine.py` was never a
-mock — 470 lines of real 3D reasoning. But all eight of its endpoints *consume*
+mock — 470 lines of real 3D reasoning. But all eight of its endpoints _consume_
 a scene graph and nothing produced one, so the step from a director's sentence
 to a structured scene did not exist. `scene_decomposition.py` is that step:
 prompt → subject, environment, camera, lens, action, emotional beat, timing,
@@ -143,7 +143,7 @@ Assumptions that would break the above if wrong.
 4. **The E6 descriptor is perceptual, not semantic.** It cannot tell that the
    same actor changed costume if the colours match, nor that two different
    actors are different people if they do not. It measures how alike two frames
-   *look*. CLIP is the gated upgrade.
+   _look_. CLIP is the gated upgrade.
 5. **E3 decomposition is lexicon-driven.** It handles the vocabulary in
    `scene_decomposition.py` and defaults everything else — reported honestly in
    `coverage.defaulted_fields`, but a prompt in another language or an unusual

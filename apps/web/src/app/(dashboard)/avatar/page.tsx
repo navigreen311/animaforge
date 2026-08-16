@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useResource } from '@/lib/api/useResource';
 import { ResourceView } from '@/components/api/ResourceStates';
 import {
@@ -463,7 +463,7 @@ function Btn({
 }
 
 // ── Main Component ───────────────────────────────────────────
-export default function AvatarStudioPage() {
+function AvatarStudioPageContent() {
   const avatarState = useResource<AvatarList>('/api/avatars');
   // Pipeline state
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -3064,5 +3064,21 @@ export default function AvatarStudioPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+// `useSearchParams` opts a route into client-side rendering, and Next requires
+// the bailout to happen inside a Suspense boundary. Without one, prerendering
+// /avatar fails the production build outright:
+//
+//   useSearchParams() should be wrapped in a suspense boundary at page "/avatar"
+//   Error occurred prerendering page "/avatar"
+//
+// Regression from the X5 wiring, which added the ?characterId= lookup.
+export default function AvatarStudioPage() {
+  return (
+    <Suspense fallback={null}>
+      <AvatarStudioPageContent />
+    </Suspense>
   );
 }

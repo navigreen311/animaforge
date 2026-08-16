@@ -46,3 +46,7 @@ prisma/generated/
 # Local Semgrep scan output (CI uploads this as an artifact instead)
 semgrep-report.json
 coverage-report.json
+
+# Playwright output (created by the e2e harness)
+test-results/
+playwright-report/
