@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useResource } from '@/lib/api/useResource';
 import { useParams, useRouter } from 'next/navigation';
 import {
   User,
@@ -37,7 +38,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import type { Character, StyleMode } from '@/lib/types';
+import type { Character, StyleMode, RightsScope } from '@/lib/types';
 import { useAuthStore } from '@/stores/authStore';
 import { Toast, useToast } from '@/components/shared/Toast';
 import HairTab from './HairTab';
@@ -45,7 +46,25 @@ import WardrobeTab from './WardrobeTab';
 
 /* ── Mock Data ──────────────────────────────────────────────── */
 
-const MOCK_CHARACTER: Character & {
+/** GET /api/characters/[id]. */
+interface CharacterRow {
+  id: string;
+  projectId: string | null;
+  name: string;
+  isDigitalTwin: boolean;
+  faceModelUrl: string | null;
+  bodyParams: Record<string, unknown> | null;
+  hairParams: Record<string, unknown> | null;
+  wardrobe: Record<string, unknown> | null;
+  voiceId: string | null;
+  styleMode: string;
+  consentRecord: string | null;
+  rightsStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type EditableCharacter = Character & {
   skinTone: string;
   age: number;
   build: string;
@@ -53,32 +72,68 @@ const MOCK_CHARACTER: Character & {
   hairLength: number;
   facialHair: boolean;
   consentStatus: 'verified' | 'pending' | 'none';
-} = {
-  id: 'char-1',
-  name: 'Kai Tanaka',
-  description: 'A cyberpunk ronin wandering neon-lit streets.',
-  styleMode: 'anime',
-  status: 'active',
-  isDigitalTwin: true,
-  sourcePhotos: [],
-  voiceId: 'voice-001',
-  voiceName: 'Kenji Smooth',
-  projectIds: ['proj-1', 'proj-2'],
-  driftScore: 85,
-  rightsScope: 'commercial',
-  avatarColor: '#6366f1',
-  shotCount: 24,
-  lastUsedAt: '2026-03-22T14:30:00Z',
-  createdAt: '2026-01-15T10:00:00Z',
-  updatedAt: '2026-03-22T14:30:00Z',
-  skinTone: '#D2A679',
-  age: 32,
-  build: 'Athletic',
-  hairColor: '#1a1a2e',
-  hairLength: 40,
-  facialHair: false,
-  consentStatus: 'verified',
 };
+
+function num(source: Record<string, unknown> | null, key: string, fallback: number): number {
+  const v = source?.[key];
+  return typeof v === 'number' ? v : fallback;
+}
+
+function str(source: Record<string, unknown> | null, key: string, fallback: string): string {
+  const v = source?.[key];
+  return typeof v === 'string' ? v : fallback;
+}
+
+/**
+ * Map a stored character onto the editor.
+ *
+ * Skin tone, age, build, hair colour, hair length and facial hair are not
+ * columns; they live inside the open `body_params` and `hair_params` JSON
+ * blobs, so they are read from there and fall back to the editor's own
+ * defaults when a character has never been saved with them.
+ *
+ * Three fields the header used to show are gone because nothing records them:
+ * a description, a drift score, and a shot count. `lastUsedAt` is the row's
+ * updatedAt, which is when it was last edited -- not when it was last rendered.
+ */
+function toEditable(row: CharacterRow): EditableCharacter {
+  return {
+    id: row.id,
+    name: row.name,
+    description: '',
+    styleMode: row.styleMode as StyleMode,
+    status: 'active',
+    isDigitalTwin: row.isDigitalTwin,
+    sourcePhotos: [],
+    voiceId: row.voiceId ?? '',
+    voiceName: '',
+    projectIds: row.projectId ? [row.projectId] : [],
+    driftScore: 0,
+    // characters.rights_status is a free-form string; anything outside the
+    // three the UI models is reported as personal rather than shown as a scope
+    // that does not exist.
+    rightsScope: (['personal', 'commercial', 'expired'] as const).includes(
+      row.rightsStatus as RightsScope,
+    )
+      ? (row.rightsStatus as RightsScope)
+      : 'personal',
+    avatarColor: '#6366f1',
+    shotCount: 0,
+    lastUsedAt: row.updatedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    skinTone: str(row.bodyParams, 'skinTone', '#D2A679'),
+    age: num(row.bodyParams, 'age', 30),
+    build: str(row.bodyParams, 'build', 'Average'),
+    hairColor: str(row.hairParams, 'hairColor', '#1a1a2e'),
+    hairLength: num(row.hairParams, 'hairLength', 40),
+    facialHair: row.hairParams?.facialHair === true,
+    // consent_record is a nullable id with no status column of its own; a
+    // present record is treated as consent on file, absent as none. There is
+    // no "pending" the data can express.
+    consentStatus: row.consentRecord ? 'verified' : 'none',
+  };
+}
 
 const STYLE_MODES: { value: StyleMode; label: string; gradient: string }[] = [
   { value: 'realistic', label: 'Realistic', gradient: 'linear-gradient(135deg, #334155, #1e293b)' },
@@ -142,89 +197,15 @@ const EMOTION_PREVIEWS = [
   { label: 'Surprise', Icon: Zap },
 ];
 
-const MOCK_HISTORY = [
-  {
-    id: 'h-1',
-    project: 'Cyber Samurai: Origin',
-    shotNumber: 7,
-    date: '2026-03-20',
-    consistencyScore: 94,
-  },
-  { id: 'h-2', project: 'Neon Drift', shotNumber: 3, date: '2026-03-18', consistencyScore: 88 },
-  {
-    id: 'h-3',
-    project: 'Cyber Samurai: Origin',
-    shotNumber: 12,
-    date: '2026-03-15',
-    consistencyScore: 91,
-  },
-];
 
 /* ── Voice Modal Mock Voices ──────────────────────────────────── */
 
-const VOICE_LIBRARY = [
-  { id: 'voice-001', name: 'Kenji Smooth', style: 'Warm baritone' },
-  { id: 'voice-002', name: 'Aria Crystal', style: 'Ethereal soprano' },
-  { id: 'voice-003', name: 'Marcus Gravel', style: 'Gritty narrator' },
-];
 
 /* ── Drift Chart Data ─────────────────────────────────────────── */
 
-const DRIFT_CHART_DATA = [
-  { date: 'Jan 20', score: 92 },
-  { date: 'Feb 03', score: 88 },
-  { date: 'Feb 14', score: 85 },
-  { date: 'Feb 28', score: 78 },
-  { date: 'Mar 05', score: 82 },
-  { date: 'Mar 12', score: 91 },
-  { date: 'Mar 18', score: 88 },
-  { date: 'Mar 22', score: 85 },
-];
 
 /* ── Enhanced History Data ────────────────────────────────────── */
 
-const ENHANCED_HISTORY = [
-  {
-    id: 'h-1',
-    project: 'Cyber Samurai: Origin',
-    projectId: 'proj-1',
-    shotNumber: 7,
-    date: '2026-03-20',
-    score: 94,
-  },
-  {
-    id: 'h-2',
-    project: 'Neon Drift',
-    projectId: 'proj-2',
-    shotNumber: 3,
-    date: '2026-03-18',
-    score: 88,
-  },
-  {
-    id: 'h-3',
-    project: 'Cyber Samurai: Origin',
-    projectId: 'proj-1',
-    shotNumber: 12,
-    date: '2026-03-15',
-    score: 91,
-  },
-  {
-    id: 'h-4',
-    project: 'Neon Drift',
-    projectId: 'proj-2',
-    shotNumber: 8,
-    date: '2026-03-10',
-    score: 55,
-  },
-  {
-    id: 'h-5',
-    project: 'Cyber Samurai: Origin',
-    projectId: 'proj-1',
-    shotNumber: 2,
-    date: '2026-03-01',
-    score: 72,
-  },
-];
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -253,7 +234,55 @@ export default function CharacterDetailPage() {
   const { toast, toasts, dismiss } = useToast();
   const authToken = useAuthStore((s) => s.token);
 
-  const [character] = useState(MOCK_CHARACTER);
+  const state = useResource<CharacterRow>(`/api/characters/${params.id}`, [params.id]);
+  const character = useMemo<EditableCharacter>(
+    () =>
+      state.data
+        ? toEditable(state.data)
+        : {
+            id: params.id,
+            name: '',
+            description: '',
+            styleMode: 'realistic',
+            status: 'active',
+            isDigitalTwin: false,
+            sourcePhotos: [],
+            voiceId: '',
+            voiceName: '',
+            projectIds: [],
+            driftScore: 0,
+            rightsScope: 'personal',
+            avatarColor: '#6366f1',
+            shotCount: 0,
+            lastUsedAt: '',
+            createdAt: '',
+            updatedAt: '',
+            skinTone: '#D2A679',
+            age: 30,
+            build: 'Average',
+            hairColor: '#1a1a2e',
+            hairLength: 40,
+            facialHair: false,
+            consentStatus: 'none',
+          },
+    [state.data, params.id],
+  );
+
+  // Voices come from the voice library the console already has.
+  const voiceState = useResource<{ items: { id: string; name: string; style?: string }[] }>(
+    '/api/voices',
+  );
+  const voiceLibrary = voiceState.data?.items ?? [];
+
+  // Appearance history, drift over time and per-shot consistency scores all
+  // came from three literals here: eight dated drift readings, three shots in
+  // two named projects, and a score per shot. Nothing measures character
+  // consistency and nothing links a character to the shots it appears in
+  // (shots carry a character_refs id array with no back-reference and no
+  // score), so there is no history to show.
+  const history: { id: string; project: string; projectId: string; shotNumber: number; date: string; score: number }[] =
+    [];
+  const driftSeries: { date: string; score: number }[] = [];
   const [activeTab, setActiveTab] = useState<Tab>('Appearance');
   const [activeView, setActiveView] = useState<(typeof VIEW_ANGLES)[number]>('Front');
   const [selectedStyle, setSelectedStyle] = useState<StyleMode>(character.styleMode);
@@ -268,6 +297,22 @@ export default function CharacterDetailPage() {
     useState<(typeof WARDROBE_CATEGORIES)[number]>('Tops');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(character.name);
+
+  // The editor fields above are seeded from the stored character once it
+  // arrives. Without this they would keep the placeholder defaults the first
+  // render used, because useState only reads its initial value once.
+  useEffect(() => {
+    if (!state.data) return;
+    const c = toEditable(state.data);
+    setSelectedStyle(c.styleMode);
+    setSelectedSkin(c.skinTone);
+    setAge(c.age);
+    setBuild(c.build);
+    setHairColor(c.hairColor);
+    setHairLength(c.hairLength);
+    setFacialHair(c.facialHair);
+    setEditName(c.name);
+  }, [state.data]);
 
   /* Voice tab state */
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
@@ -767,7 +812,7 @@ export default function CharacterDetailPage() {
               {/* Select existing tab */}
               {voiceModalTab === 'select' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {VOICE_LIBRARY.map((voice) => (
+                  {voiceLibrary.map((voice) => (
                     <div
                       key={voice.id}
                       style={{
@@ -1155,8 +1200,8 @@ export default function CharacterDetailPage() {
   /* ── History Tab ───────────────────────────────────────────── */
 
   function renderHistoryTab() {
-    const hasHistory = ENHANCED_HISTORY.length > 0;
-    const uniqueProjects = new Set(ENHANCED_HISTORY.map((e) => e.projectId));
+    const hasHistory = history.length > 0;
+    const uniqueProjects = new Set(history.map((e) => e.projectId));
 
     function scoreColor(score: number) {
       if (score > 80)
@@ -1227,7 +1272,7 @@ export default function CharacterDetailPage() {
             Drift Score Over Time
           </h4>
           <ResponsiveContainer width="100%" height={140}>
-            <LineChart data={DRIFT_CHART_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <LineChart data={driftSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <XAxis
                 dataKey="date"
                 tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }}
@@ -1274,10 +1319,10 @@ export default function CharacterDetailPage() {
               marginBottom: 8,
             }}
           >
-            Appears in {ENHANCED_HISTORY.length} shots across {uniqueProjects.size} projects
+            Appears in {history.length} shots across {uniqueProjects.size} projects
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {ENHANCED_HISTORY.map((entry) => {
+            {history.map((entry) => {
               const sc = scoreColor(entry.score);
               return (
                 <div
