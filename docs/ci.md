@@ -162,3 +162,161 @@ Dockerfiles invoke succeeds outside Docker:
 
 The builds themselves are verified only by CI, in Security Scanning run
 31915718483, where all five container jobs report success.
+
+---
+
+## GitHub Actions versions
+
+Every action is SHA-pinned with a `# vN` comment, and all of them were moved to
+their current major together in one change (#52) rather than in eleven
+Dependabot PRs. Pinning to a SHA is what makes the comment load-bearing: the
+comment says what you meant, the SHA says what actually runs.
+
+Two of these had breaking changes worth checking, and both were checked:
+`upload-artifact` v4+ makes artifacts immutable, so two uploads sharing a name
+fail the run — all eleven artifact names in this repo are distinct within their
+workflow, and the only parameterised one is keyed by matrix service.
+`codeql-action` v4 changes CLI-version handling, which does not affect
+`upload-sarif`, the only part of it used here.
+
+The upgrade cleared the deprecation CI printed on every run: the pinned
+versions were all Node-20-era and were being forced onto Node 24 by the runner.
+
+When bumping, resolve the SHA from the API against the tag rather than copying
+it out of a changelog, and dereference annotated tags to their commit.
+
+---
+
+## Deployment workflows are switched off
+
+`Deploy to Production` and `Deploy to Staging` no longer run on push. They ran
+on every merge to `main` and `develop` respectively and failed every time; a
+permanently red workflow trains people to stop reading red.
+
+Neither can succeed today, for three reasons that are all missing
+infrastructure rather than bugs:
+
+1. **No repository secrets exist.** `gh secret list` returns nothing.
+   Production needs `PRODUCTION_KUBECONFIG`, `PRODUCTION_BASE_URL` and
+   `PRODUCTION_INTERNAL_URL`; staging needs `STAGING_KUBECONFIG`. The deploy
+   step pipes an empty string through `base64 -d` and writes a garbage
+   kubeconfig.
+2. **There is no cluster, and no `k8s/overlays/production/`** — the path
+   `kubectl apply -k` targets. `k8s/` has no overlays directory at all.
+3. **Four services in the build matrix have no Dockerfile**: `export`,
+   `notification`, `search`, `analytics`. `export` fails first and cancels the
+   other eleven, which is the error the run actually shows.
+
+Both keep `workflow_dispatch`, and both now start with a `preflight` job that
+every other job depends on. It names precisely which secret, path or Dockerfile
+is missing instead of letting the run die at `base64 -d` several jobs later.
+
+Re-enable the push trigger when preflight passes.
+
+---
+
+## End-to-end tests
+
+`playwright.config.ts` starts three real servers and runs Chromium against
+them:
+
+| Port | Service                 | Notes                                                                              |
+| ---- | ----------------------- | ---------------------------------------------------------------------------------- |
+| 3003 | `services/auth`         | Real bcrypt comparison and JWT issue. Runs on its in-memory user store — see below |
+| 4000 | `services/platform-api` | Reads the migrated and seeded database                                             |
+| 3000 | `apps/web`              | **Production build**, not `next dev`                                               |
+
+Ports are overridable with `E2E_WEB_PORT`, `E2E_AUTH_PORT` and
+`E2E_PLATFORM_PORT`, because a developer whose 4000 is already taken should not
+have to edit the config — and the failure when they cannot is an opaque
+"Process from config.webServer exited early".
+
+The web server is a production build on purpose. `next dev` compiles each route
+on first request, so the first navigation to a page takes tens of seconds and
+every later one takes milliseconds. That is the single largest source of flake
+in a Playwright suite and no amount of waiting fixes it.
+
+`retries` is 0. A retry turns an intermittent failure into a green run and
+hides it.
+
+### Running it locally
+
+```bash
+createdb animaforge_e2e
+export E2E_DATABASE_URL=postgresql://USER:PASS@localhost:5432/animaforge_e2e
+DATABASE_URL=$E2E_DATABASE_URL npx prisma generate --schema packages/db/prisma/schema.prisma
+DATABASE_URL=$E2E_DATABASE_URL npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+DATABASE_URL=$E2E_DATABASE_URL npm run db:seed --workspace @animaforge/db
+npx playwright test
+```
+
+Redis must be reachable at `redis://localhost:6379` (or set `E2E_REDIS_URL`).
+`services/auth`'s `createSession()` reaches for it on **every login**, and with
+no server node-redis retries rather than failing fast, so `/auth/login` hangs
+until the caller times out. That is what it looks like when the service is
+missing, and it is worth recognising.
+
+The seed is **not idempotent** — a second run fails on a unique constraint on
+`slug`. CI gets a fresh Postgres each time so it never notices; locally, drop
+and recreate the database rather than re-seeding.
+
+### What is covered, and what is skipped
+
+10 pass, 8 skipped, 0 fail. Every skip is a `test.skip` with an inline reason
+and an issue, never a deletion and never an assertion loosened until it passes.
+
+- **#80** — three flows have no implementation to test: there is no logout
+  control (the "User menu" opens nothing and nothing calls `authStore.logout()`),
+  dashboard routes are not protected (no middleware; the layout renders
+  regardless of auth state), and nothing consumes a generation request.
+- **#82** — five specs need the console to load data, and it cannot.
+  `services/auth` signs a token carrying `userId`; `services/platform-api`
+  requires `sub`. Every authenticated request answers 401
+  `AUTH_TOKEN_MALFORMED`, so pages render their shell and nothing else. The
+  same middleware does not verify signatures at all, so anyone can mint
+  `{"sub":"…","role":"admin"}` and be that user.
+
+The auth service runs on its in-memory store rather than Postgres because
+platform-api cannot accept its tokens anyway (#82), so a shared user row buys
+no coverage today. Point it back at the database when #82 is fixed.
+
+All eight of these previously "passed" — the original specs wrapped their
+assertions in `if (await x.isVisible().catch(() => false))`, which passes
+whether or not the thing exists.
+
+---
+
+## The merge gate
+
+`ci-passed` decides what blocks merge. Every job still runs and still shows its
+own tick; the gate only decides which failures stop a PR.
+
+| Job             | Blocks merge   |
+| --------------- | -------------- |
+| lint            | no — ruff, #84 |
+| type-check      | **yes**        |
+| test-frontend   | **yes**        |
+| terraform       | **yes**        |
+| test-governance | **yes**        |
+| test-api        | **yes**        |
+| test-ai-api     | **yes**        |
+| test-e2e        | **yes**        |
+| security-scan   | **yes**        |
+
+Three jobs were returned to the blocking list once their backlogs were clear.
+Measured directly rather than inferred from a green tick:
+
+| Job           | Was                    | Now                             |
+| ------------- | ---------------------- | ------------------------------- |
+| `test-api`    | 35 of 117 failing      | 152 passed, 1 skipped, 0 failed |
+| `test-ai-api` | 11 of 280 failing      | 621 passed, 1 skipped, 0 failed |
+| `test-e2e`    | never verified to pass | 10 passed, 8 skipped, 0 failed  |
+
+`lint` is the only remaining exemption. ESLint passes (0 errors, 454 warnings)
+and Prettier is clean across the checked globs; the job is red solely on
+`ruff check services/ai-api/` — 172 errors with ruff 0.16.3 locally, 207 on the
+runner, because the workflow installs ruff unpinned and the count moves with
+the release. Owner and detail in #84.
+
+**Do not let the exemption list grow.** A job that is exempt without an owner, a
+measured count and an issue number is a job nobody is going to fix.

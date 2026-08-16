@@ -596,22 +596,34 @@ jobs:
       # Every job above still RUNS and still shows its own red/green tick on the
       # PR. This step decides only what blocks merge.
       #
-      # Three jobs are deliberately non-blocking. NONE of them is broken by a
-      # change in flight — every one has been failing invisibly since PR #16,
-      # because `npm ci` died before them and nobody could see the output. Each
-      # has an owner and a tracking issue; put it back in the blocking list the
-      # moment its backlog is clear, and do not let this list shrink further.
+      # THREE JOBS CAME BACK INTO THE BLOCKING LIST. Their backlogs are clear,
+      # measured directly rather than taken from a green tick:
       #
-      #   lint       — repo has no formatting history: 561 files fail
-      #                `prettier --check`. That reformat is a ~560-file diff that
-      #                would conflict with every open PR, so it lands alone.  #18
-      #   test-api   — 35 of 117 platform-api tests fail on response-shape
-      #                mismatches in services/platform-api/src.                #21
-      #   test-e2e   — Playwright boots the Next dev server; never verified to
-      #                pass, and depends on test-api's service being correct. #21
-      #   test-ai-api— 11 of 280 pytest tests fail: every tests/test_memory.py
-      #                endpoint returns 404 (router not mounted) plus 2 script-QC
-      #                assertions. All in services/ai-api/**.                 #23
+      #   test-api    35 of 117 failing  ->  152 passed, 1 skipped, 0 failed
+      #               against a fresh Postgres with migrations applied. Fixed by
+      #               #79 and #72. Closes the platform-api half of #21.
+      #   test-ai-api 11 of 280 failing  ->  621 passed, 1 skipped, 0 failed.
+      #               Fixed by #76. The 1 skip is the GPU reconstruction test,
+      #               which names what is missing. #23 is closed.
+      #   test-e2e    never verified to pass at all  ->  10 passed, 8 skipped,
+      #               0 failed, from a cold start with no server running. Real
+      #               harness in #81: auth + platform-api + a production web
+      #               build, against a migrated and seeded database. Closes the
+      #               e2e half of #21.
+      #
+      # ONE JOB IS STILL EXEMPT, and it is not exempt quietly:
+      #
+      #   lint — owner services/ai-api, tracked in #84.
+      #          ESLint passes (0 errors, 454 warnings) and Prettier is clean
+      #          across the checked globs since #74 and #75. The job is red
+      #          solely on `ruff check services/ai-api/`, measured at 172 errors
+      #          with ruff 0.16.3 locally and 207 on the runner — the workflow
+      #          installs ruff unpinned, so the number moves with the release.
+      #          133 of the 172 are auto-fixable. Put lint back in the blocking
+      #          list the moment `ruff check services/ai-api/` exits 0.
+      #
+      # Do not let this list grow again. A job that is exempt without an owner,
+      # a measured count and an issue number is a job nobody is going to fix.
       - name: Check blocking jobs
         run: |
           failed=0
@@ -625,6 +637,9 @@ jobs:
           check type-check    "${{ needs.type-check.result }}"
           check terraform     "${{ needs.terraform.result }}"
           check test-governance "${{ needs.test-governance.result }}"
+          check test-api      "${{ needs.test-api.result }}"
+          check test-ai-api   "${{ needs.test-ai-api.result }}"
+          check test-e2e      "${{ needs.test-e2e.result }}"
           check security-scan "${{ needs.security-scan.result }}"
 
           {
@@ -632,14 +647,14 @@ jobs:
             echo ""
             echo "| Job | Result | Blocks merge |"
             echo "|---|---|---|"
-            echo "| lint | ${{ needs.lint.result }} | no — #18 |"
+            echo "| lint | ${{ needs.lint.result }} | no — ruff, #84 |"
             echo "| type-check | ${{ needs.type-check.result }} | **yes** |"
             echo "| test-frontend | ${{ needs.test-frontend.result }} | **yes** |"
             echo "| terraform | ${{ needs.terraform.result }} | **yes** |"
             echo "| test-governance | ${{ needs.test-governance.result }} | **yes** |"
-            echo "| test-api | ${{ needs.test-api.result }} | no — #21 |"
-            echo "| test-ai-api | ${{ needs.test-ai-api.result }} | no — #23 |"
-            echo "| test-e2e | ${{ needs.test-e2e.result }} | no — #21 |"
+            echo "| test-api | ${{ needs.test-api.result }} | **yes** |"
+            echo "| test-ai-api | ${{ needs.test-ai-api.result }} | **yes** |"
+            echo "| test-e2e | ${{ needs.test-e2e.result }} | **yes** |"
             echo "| security-scan | ${{ needs.security-scan.result }} | **yes** |"
           } >> "$GITHUB_STEP_SUMMARY"
 
