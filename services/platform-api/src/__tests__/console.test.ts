@@ -14,6 +14,7 @@ import consoleAccountRouter from '../routes/console/account.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { isDatabaseReachable } from '../db.js';
 import { resetFixtures, seedUser } from './fixtures/factories.js';
+import { signTestToken } from './fixtures/tokens.js';
 
 const app = express();
 app.use(express.json());
@@ -21,12 +22,9 @@ app.use('/api/v1', consoleResourcesRouter);
 app.use('/api/v1', consoleAccountRouter);
 app.use(errorHandler);
 
+// Tokens are signed now (#82).
 function token(sub: string): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const payload = Buffer.from(
-    JSON.stringify({ sub, email: `${sub}@animaforge.test`, role: 'editor' }),
-  ).toString('base64url');
-  return `${header}.${payload}.${Buffer.from('sig').toString('base64url')}`;
+  return signTestToken({ sub, email: `${sub}@animaforge.test`, role: 'editor' });
 }
 
 const USER_A = '11111111-1111-4111-8111-0000000000a1';

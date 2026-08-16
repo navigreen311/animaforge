@@ -1,11 +1,21 @@
 import type { Socket } from 'socket.io';
 
 // ── Authenticated socket ────────────────────────────────────────────
+/**
+ * The verified claims of a socket handshake token.
+ *
+ * The subject is `sub`, the registered JWT claim, matching what the auth
+ * service now signs and what platform-api verifies. It was `userId` here, a
+ * custom name only this service used -- part of the mismatch filed as #82.
+ * `exp` is required rather than optional: the handshake rejects a token
+ * without one.
+ */
 export interface AuthPayload {
-  userId: string;
+  sub: string;
   email?: string;
+  role?: string;
   iat?: number;
-  exp?: number;
+  exp: number;
 }
 
 export interface AuthenticatedSocket extends Socket {

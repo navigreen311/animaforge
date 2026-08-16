@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 import { createServer, Server as HttpServer } from 'http';
 import { Server, type Socket as ServerSocket } from 'socket.io';
 import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client';
@@ -12,11 +13,23 @@ import type {
   ServerToClientEvents,
 } from '../../services/realtime/src/types';
 
-const JWT_SECRET = 'dev-secret';
+// socketAuth has no default secret any more (#82) -- a default in the source
+// is a published secret -- so the suite supplies one, generated per run rather
+// than written as a literal, before socketAuth reads it.
+const JWT_SECRET = randomBytes(32).toString('hex');
+process.env.JWT_SECRET = JWT_SECRET;
+
 const PORT = 0;
 
-function makeToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '1h' });
+/**
+ * A handshake token.
+ *
+ * The subject claim is `sub`, the registered claim the auth service now signs
+ * and platform-api verifies. It was a custom `userId` here, which is the naming
+ * half of #82.
+ */
+function makeToken(sub: string): string {
+  return jwt.sign({ sub }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
 }
 
 describe('Realtime WebSocket Service', () => {
@@ -43,7 +56,7 @@ describe('Realtime WebSocket Service', () => {
         ioServer.use(socketAuth);
         ioServer.on('connection', (socket: ServerSocket) => {
           const s = socket as AuthenticatedSocket;
-          s.join(`user:${s.data.user.userId}`);
+          s.join(`user:${s.data.user.sub}`);
           registerJobEvents(ioServer, s);
           registerCollabEvents(ioServer, s);
         });

@@ -41,7 +41,7 @@ roomManager.init(io);
 // ── Connection handler ──────────────────────────────────────────────
 io.on('connection', (socket) => {
   const authedSocket = socket as AuthenticatedSocket;
-  const { userId } = authedSocket.data.user;
+  const { sub: userId } = authedSocket.data.user;
 
   // Every user automatically joins their own private room
   authedSocket.join(`user:${userId}`);

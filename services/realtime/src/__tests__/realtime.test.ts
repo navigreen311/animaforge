@@ -8,11 +8,22 @@ import { registerJobEvents } from '../handlers/jobEvents';
 import { registerCollabEvents } from '../handlers/collabEvents';
 import type { AuthenticatedSocket, ClientToServerEvents, ServerToClientEvents } from '../types';
 
-const JWT_SECRET = 'dev-secret';
+// The service has no default secret any more (#82), so the suite supplies one
+// before socketAuth reads it.
+const JWT_SECRET = 'test-secret-for-realtime-suite';
+process.env.JWT_SECRET = JWT_SECRET;
+
 const PORT = 0; // let OS pick a free port
 
-function makeToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '1h' });
+/**
+ * A handshake token.
+ *
+ * The subject claim is `sub`, matching what the auth service signs and what
+ * platform-api verifies. It was `userId` here — a name only this service used,
+ * which is the mismatch half of #82.
+ */
+function makeToken(sub: string): string {
+  return jwt.sign({ sub }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
 }
 
 describe('Realtime WebSocket service', () => {

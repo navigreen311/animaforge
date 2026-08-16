@@ -9,7 +9,8 @@ import jwt from 'jsonwebtoken';
 import { prisma, createTestUser, getAuthToken, getExpiredToken, authRequest } from './helpers';
 import { clearStore, resetPrismaCheck } from '../../services/auth/src/services/authService';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'animaforge-dev-secret';
+// helpers.ts sets JWT_SECRET on import; read it rather than re-deriving one.
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 // Reset auth service in-memory state so each test starts clean
 beforeEach(() => {
@@ -69,7 +70,8 @@ describe('Auth API', () => {
     // Verify JWT is valid
     const decoded = jwt.verify(res.body.token, JWT_SECRET) as Record<string, any>;
     expect(decoded.email).toBe('login@integration.test');
-    expect(decoded.userId).toBeDefined();
+    // The subject is `sub`, the registered claim (#82).
+    expect(decoded.sub).toBeDefined();
   });
 
   // ------------------------------------------------------------------

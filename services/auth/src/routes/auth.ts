@@ -109,7 +109,7 @@ router.post('/refresh', authenticate, async (req: AuthRequest, res: Response) =>
       return;
     }
 
-    const result = await authRefresh(req.token, req.user.userId);
+    const result = await authRefresh(req.token, req.user.sub);
     if (!result) {
       res.status(401).json({ error: 'User not found' });
       return;
@@ -131,7 +131,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const user = await findUserById(req.user.userId);
+    const user = await findUserById(req.user.sub);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
@@ -174,7 +174,7 @@ router.get('/sessions', authenticate, async (req: AuthRequest, res: Response) =>
       return;
     }
 
-    const sessions = await getUserSessions(req.user.userId);
+    const sessions = await getUserSessions(req.user.sub);
     res.json({ sessions, count: sessions.length });
   } catch {
     res.status(500).json({ error: 'Internal server error' });
@@ -191,7 +191,7 @@ router.delete('/sessions', authenticate, async (req: AuthRequest, res: Response)
       return;
     }
 
-    await invalidateAllSessions(req.user.userId);
+    await invalidateAllSessions(req.user.sub);
     res.json({ message: 'All sessions invalidated' });
   } catch {
     res.status(500).json({ error: 'Internal server error' });
@@ -217,7 +217,7 @@ router.post('/api-keys', authenticate, async (req: AuthRequest, res: Response) =
 
     const scopeArr = Array.isArray(scopes) ? scopes : [];
 
-    const { rawKey, record } = await createApiKey(req.user.userId, name, scopeArr);
+    const { rawKey, record } = await createApiKey(req.user.sub, name, scopeArr);
 
     res.status(201).json({
       key: rawKey,
@@ -238,7 +238,7 @@ router.get('/api-keys', authenticate, async (req: AuthRequest, res: Response) =>
       return;
     }
 
-    const keys = await listApiKeys(req.user.userId);
+    const keys = await listApiKeys(req.user.sub);
     res.json({ keys });
   } catch {
     res.status(500).json({ error: 'Internal server error' });
@@ -255,7 +255,7 @@ router.delete('/api-keys/:id', authenticate, async (req: AuthRequest, res: Respo
       return;
     }
 
-    const deleted = await revokeApiKey(req.params.id, req.user.userId);
+    const deleted = await revokeApiKey(req.params.id, req.user.sub);
     if (!deleted) {
       res.status(404).json({ error: 'API key not found' });
       return;

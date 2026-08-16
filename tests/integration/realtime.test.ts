@@ -7,17 +7,23 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+// socketAuth has no default secret any more (#82). helpers.ts generates one on
+// import; fall back to generating one here so this suite also stands alone.
+process.env.JWT_SECRET ??= randomBytes(32).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET;
 
 let httpServer: any;
 let serverPort: number;
 const activeSockets: ClientSocket[] = [];
 
-function makeToken(userId: string): string {
-  return jwt.sign({ userId, email: 'test@test.com' }, JWT_SECRET, {
+/** The subject claim is `sub`, matching what every service now reads (#82). */
+function makeToken(sub: string): string {
+  return jwt.sign({ sub, email: 'test@test.com' }, JWT_SECRET, {
+    algorithm: 'HS256',
     expiresIn: '1h',
   });
 }
