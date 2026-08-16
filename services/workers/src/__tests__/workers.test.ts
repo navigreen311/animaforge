@@ -80,14 +80,16 @@ describe('jobHelpers', () => {
 });
 
 describe('Queue definitions', () => {
-  it('creates all four queues', async () => {
+  it('creates every queue the service consumes', async () => {
+    // Asserted a length of 4 and had done since before `cleanup` was added, so
+    // it counted wrong rather than checking anything. Naming the queues is the
+    // part that matters -- the count follows from the list.
     const { allQueues } = await import('../queues/index.js');
-    expect(allQueues).toHaveLength(4);
     const names = allQueues.map((q) => q.name);
-    expect(names).toContain('generation');
-    expect(names).toContain('governance');
-    expect(names).toContain('export');
-    expect(names).toContain('qc');
+    expect(names).toEqual(
+      expect.arrayContaining(['generation', 'governance', 'export', 'qc', 'cleanup']),
+    );
+    expect(allQueues).toHaveLength(5);
   });
 
   it('can add a job to the generation queue', async () => {

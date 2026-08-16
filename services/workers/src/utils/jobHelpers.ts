@@ -100,25 +100,52 @@ export function calculateProgress(stages: StageDefinition[], completedIndex: num
 /* ---------- CRUD operations ---------- */
 
 /**
- * Create a new job record in the database.
+ * Create or adopt the job record for a queued job.
+ *
+ * An upsert rather than a create, because the producer writes the row before
+ * it enqueues (see queues/producer.ts) so the console can show the job as
+ * queued straight away. By the time a worker reaches this, the row usually
+ * exists and a plain `create` would fail on the primary key.
+ *
+ * The update branch touches only `inputParams` -- the worker fills in the
+ * computed input hash -- and deliberately leaves `status` alone, so adopting a
+ * row can never walk a job backwards from `processing` to `queued`.
  */
 export async function createJobRecord(data: CreateJobData) {
   return withFallback(
     () =>
-      requirePrisma().generationJob.create({
-        data: {
-          ...(data.id ? { id: data.id } : {}),
-          projectId: data.projectId,
-          userId: data.userId,
-          jobType: data.jobType,
-          modelId: data.modelId ?? 'default',
-          inputParams: data.inputParams as Prisma.InputJsonValue,
-          tier: data.tier ?? 'preview',
-          shotId: data.shotId,
-          status: 'queued',
-          progress: 0,
-        },
-      }),
+      data.id
+        ? requirePrisma().generationJob.upsert({
+            where: { id: data.id },
+            update: {
+              inputParams: data.inputParams as Prisma.InputJsonValue,
+            },
+            create: {
+              id: data.id,
+              projectId: data.projectId,
+              userId: data.userId,
+              jobType: data.jobType,
+              modelId: data.modelId ?? 'default',
+              inputParams: data.inputParams as Prisma.InputJsonValue,
+              tier: data.tier ?? 'preview',
+              shotId: data.shotId,
+              status: 'queued',
+              progress: 0,
+            },
+          })
+        : requirePrisma().generationJob.create({
+            data: {
+              projectId: data.projectId,
+              userId: data.userId,
+              jobType: data.jobType,
+              modelId: data.modelId ?? 'default',
+              inputParams: data.inputParams as Prisma.InputJsonValue,
+              tier: data.tier ?? 'preview',
+              shotId: data.shotId,
+              status: 'queued',
+              progress: 0,
+            },
+          }),
     () => {
       const id = data.id ?? crypto.randomUUID();
       const record = {
@@ -256,6 +283,11 @@ export async function markFailed(jobId: string, error: string): Promise<void> {
         where: { id: jobId },
         data: {
           status: 'failed',
+          // The reason was passed in and then dropped: the in-memory fallback
+          // below recorded it but the database branch did not, so a failed job
+          // in the console showed "failed" with no explanation. /render-queue
+          // reads this column.
+          errorReason: error,
           completedAt: new Date(),
         },
       }),
