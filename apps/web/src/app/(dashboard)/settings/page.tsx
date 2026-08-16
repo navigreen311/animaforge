@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useResource, mutate } from '@/lib/api/useResource';
 import {
   Settings,
   User,
@@ -330,15 +331,39 @@ function blurBorder(
 }
 
 // ── Component ────────────────────────────────────────────────────
+/** GET /api/users/me/sessions. */
+interface SessionRow {
+  id: string;
+  device: string | null;
+  browser: string | null;
+  lastActiveAt: string | null;
+  isCurrent?: boolean;
+}
+
+/** GET /api/users/me. */
+interface MeRow {
+  id: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
 export default function SettingsPage() {
+  const meState = useResource<MeRow>('/api/users/me');
   const [activeTab, setActiveTab] = useState<Tab>('profile');
 
   // ── Profile State ────────────────────────────────────────
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [displayName, setDisplayName] = useState('Shadow');
-  const [email, setEmail] = useState('shadow@animaforge.io');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  // Seed the form from the signed-in user; edits after that stay local.
+  useEffect(() => {
+    if (!meState.data) return;
+    setDisplayName(meState.data.displayName ?? '');
+    setEmail(meState.data.email);
+  }, [meState.data]);
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
   const [twitterHandle, setTwitterHandle] = useState('');
@@ -385,22 +410,25 @@ export default function SettingsPage() {
   };
 
   // ── Security State ───────────────────────────────────────
-  const [sessions] = useState<Session[]>([
-    {
-      device: 'MacBook Pro',
-      browser: 'Chrome 122',
-      icon: <Monitor size={14} />,
-      lastActive: 'Active now',
-      isCurrent: true,
-    },
-    {
-      device: 'iPhone 15',
-      browser: 'Safari 17',
-      icon: <Smartphone size={14} />,
-      lastActive: '2 days ago',
-      isCurrent: false,
-    },
-  ]);
+  // Two devices ("MacBook Pro / Chrome 122", "iPhone 15 / Safari 17") were
+  // listed as signed in on every account. Real sessions come from
+  // /api/users/me/sessions.
+  const sessionState = useResource<{ items: SessionRow[] }>('/api/users/me/sessions');
+  const sessions = useMemo<Session[]>(
+    () =>
+      (sessionState.data?.items ?? []).map((row) => ({
+        device: row.device ?? 'Unknown device',
+        browser: row.browser ?? '',
+        icon: /iphone|android|mobile/i.test(row.device ?? '') ? (
+          <Smartphone size={14} />
+        ) : (
+          <Monitor size={14} />
+        ),
+        lastActive: row.lastActiveAt ? new Date(row.lastActiveAt).toLocaleString() : 'unknown',
+        isCurrent: row.isCurrent ?? false,
+      })),
+    [sessionState.data],
+  );
 
   // ── AI Memory State ──────────────────────────────────────
   const [aiMemory, setAiMemory] = useState({
@@ -503,9 +531,19 @@ export default function SettingsPage() {
       return;
     }
     setProfileSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setProfileSaving(false);
-    toast.success('Profile saved');
+    try {
+      // Only display name and email are columns on users. Bio, website and the
+      // social handle above have nowhere to go, so the save reports what it
+      // actually stored instead of a blanket "Profile saved" after a 600ms
+      // sleep that wrote nothing at all.
+      await mutate('/api/users/me', 'PATCH', { displayName, email });
+      toast.success('Name and email saved. Bio, website and handle are not stored yet.');
+      meState.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save your profile.');
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   // ── API Key Creation ─────────────────────────────────────
