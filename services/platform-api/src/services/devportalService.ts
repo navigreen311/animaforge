@@ -135,9 +135,19 @@ export const devportalService = {
     return true;
   },
 
-  testWebhook(webhookId: string): WebhookLogEntry {
+  /**
+   * Send a test delivery to one of the caller's own webhooks.
+   *
+   * `userId` is required and checked. Without it this method took any webhook
+   * id and fired a delivery for it, so an authenticated user could probe and
+   * trigger deliveries on webhooks belonging to anyone else — the id is a
+   * bare uuid and ownership was never consulted. A webhook the caller does not
+   * own is reported as not found rather than forbidden, so the endpoint does
+   * not confirm that some other user's webhook id exists.
+   */
+  testWebhook(userId: string, webhookId: string): WebhookLogEntry {
     const webhook = webhooks.get(webhookId);
-    if (!webhook) {
+    if (!webhook || webhook.userId !== userId) {
       throw new Error('Webhook ' + webhookId + ' not found');
     }
     const log: WebhookLogEntry = {
@@ -159,7 +169,18 @@ export const devportalService = {
     return log;
   },
 
-  getWebhookLogs(webhookId: string): WebhookLogEntry[] {
+  /**
+   * Delivery logs for one of the caller's own webhooks.
+   *
+   * `userId` is required and checked, for the same reason as {@link testWebhook}:
+   * without it, any authenticated user could read the delivery history —
+   * including payloads — of any webhook whose id they could guess or observe.
+   * An unowned or unknown id returns an empty list, which is what a caller with
+   * no webhooks of that id should see either way.
+   */
+  getWebhookLogs(userId: string, webhookId: string): WebhookLogEntry[] {
+    const webhook = webhooks.get(webhookId);
+    if (!webhook || webhook.userId !== userId) return [];
     return webhookLogs.get(webhookId) ?? [];
   },
 
