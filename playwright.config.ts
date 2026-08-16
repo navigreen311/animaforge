@@ -45,10 +45,10 @@ const E2E_DATABASE_URL =
  *          since #79. Backed by the same Postgres the migrations and seed
  *          target.
  *
- * DATABASE_URL and JWT_SECRET are shared by the two services on purpose. They
- * default to *different* JWT secrets (`animaforge-dev-secret` in auth,
- * `dev-secret-change-me` in platform-api), which nothing notices today only
- * because platform-api does not verify signatures — see #82.
+ * DATABASE_URL and JWT_SECRET are shared by all three on purpose, and since
+ * #82 that sharing is load-bearing rather than decorative: platform-api
+ * verifies every signature against JWT_SECRET, so a mismatch is now a 401 on
+ * every request instead of something nothing noticed.
  *
  * The database is not created here. Run migrations and the seed first:
  *
@@ -131,22 +131,21 @@ export default defineConfig({
         NODE_ENV: 'development',
         JWT_SECRET: E2E_JWT_SECRET,
         /*
-         * Deliberately empty, so the auth service uses its in-memory user
-         * store rather than Prisma.
+         * The same database platform-api reads.
          *
-         * With a DATABASE_URL set, /auth/register succeeded and the very next
-         * /auth/login hung until the 30s request timeout on the CI runner —
-         * register does not touch sessions, login calls createSession, and
-         * that is where it stopped. It did not reproduce locally.
+         * This was deliberately empty, so the auth service used its in-memory
+         * user store. The note here said to point it back at the real database
+         * "when #82 is fixed and the specs need one identity across both
+         * services" — which is now. A token's `sub` has to name a row that
+         * platform-api can see, or every project the specs create violates the
+         * projects.owner_id foreign key and the list they assert on is empty.
          *
-         * Nothing is lost by not sharing the user store: platform-api cannot
-         * accept the auth service's tokens at all (#82), so a user row shared
-         * between the two buys no coverage today. The store is also faster and
-         * starts empty every run, which is what global-setup wants. Point this
-         * back at E2E_DATABASE_URL when #82 is fixed and the specs need one
-         * identity across both services.
+         * The hang that motivated the in-memory store was createSession()
+         * reaching for Redis, not Prisma; Redis is in the harness now (see the
+         * REDIS_URL below and the service container in ci.yml), so login
+         * completes.
          */
-        DATABASE_URL: '',
+        DATABASE_URL: E2E_DATABASE_URL,
         /*
          * createSession() reaches for Redis on every login. Without a
          * reachable server node-redis retries rather than failing fast, and

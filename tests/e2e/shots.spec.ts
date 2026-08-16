@@ -1,8 +1,8 @@
 import { test, expect } from './fixtures/test';
 import { login } from './fixtures/test-helpers';
-import { FIXTURE_PROJECT } from './fixtures/test-data';
+import { fixtureState } from './fixtures/test-data';
 
-const SHOT_EDITOR = `/projects/${FIXTURE_PROJECT.id}/shots/1`;
+const SHOT_EDITOR = () => `/projects/${fixtureState().projectId}/shots/1`;
 
 test.describe('Shot management', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe('Shot management', () => {
   });
 
   test('the shot editor renders every scene-graph field', async ({ page }) => {
-    await page.goto(SHOT_EDITOR);
+    await page.goto(SHOT_EDITOR());
 
     await expect(page.getByRole('heading', { name: 'Shot Editor' })).toBeVisible();
 
@@ -28,7 +28,7 @@ test.describe('Shot management', () => {
   });
 
   test('scene-graph fields accept and retain input', async ({ page }) => {
-    await page.goto(SHOT_EDITOR);
+    await page.goto(SHOT_EDITOR());
     await expect(page.getByRole('heading', { name: 'Shot Editor' })).toBeVisible();
 
     await page.getByLabel('Subject', { exact: true }).fill('Hero walks through a neon alley');
@@ -54,20 +54,17 @@ test.describe('Shot management', () => {
     );
   });
 
-  test.skip('the timeline route renders its inspector', async () => {
-    /*
-     * SKIPPED — this page cannot load data (#82).
-     *
-     * #79 moved the console onto platform-api and #83 wired the dashboard
-     * pages to it. Every request forwards the browser's Authorization header;
-     * the auth service issues a token carrying `userId` and platform-api's
-     * middleware requires `sub`, so all of them answer 401
-     * AUTH_TOKEN_MALFORMED and the page renders its shell with no content —
-     * no heading, no tabs.
-     *
-     * Login itself still passes for real (auth.spec.ts). This is the data
-     * path behind it, broken in services/, not here. Skipped rather than
-     * softened into asserting an empty shell, which would hide the bug.
-     */
+  test('the timeline route renders its inspector', async ({ page }) => {
+    // Unskipped by #82: the timeline can read the project's shots now. The
+    // project has no shots, so the inspector renders its empty state -- which
+    // is the honest assertion, and distinct from the shell-with-nothing this
+    // used to produce when every request answered 401.
+    const { projectId } = fixtureState();
+
+    await page.goto(`/projects/${projectId}/timeline`);
+
+    await expect(page.locator('main, [class*="timeline"]').first()).toBeVisible({
+      timeout: 30_000,
+    });
   });
 });

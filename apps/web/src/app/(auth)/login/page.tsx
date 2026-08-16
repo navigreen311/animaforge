@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ function safeNext(raw: string | null): string {
   return raw;
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeNext(searchParams?.get('next') ?? null);
@@ -172,5 +172,20 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+/**
+ * useSearchParams() opts a route into client-side rendering, and Next refuses
+ * to prerender a page that calls it outside a Suspense boundary -- the
+ * production build fails outright with "should be wrapped in a suspense
+ * boundary". The form is the part that reads the query string, so the boundary
+ * goes around the form.
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="mb-6 text-center text-sm text-gray-400">Loading…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

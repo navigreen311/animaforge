@@ -1,61 +1,48 @@
 import { test, expect } from './fixtures/test';
 import { login, openProject } from './fixtures/test-helpers';
-import { FIXTURE_PROJECT } from './fixtures/test-data';
+import { fixtureState, PROJECT_TABS } from './fixtures/test-data';
 
 test.describe('Project management', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test.skip('the project list renders the seeded projects', async () => {
+  test('the project list renders the projects the user owns', async ({ page }) => {
     /*
-     * SKIPPED — the project list cannot load data (#82).
-     *
-     * Since #79 this list is served by /api/projects, which proxies to
-     * platform-api and forwards the browser's Authorization header. The token
-     * the auth service issues carries `userId`; platform-api's middleware
-     * requires `sub`, so every request answers
-     * 401 AUTH_TOKEN_MALFORMED and the list renders empty.
-     *
-     * The login itself works — that is asserted in auth.spec.ts. This is the
-     * data path behind it, and it is broken in services/, not here. Skipped
-     * rather than loosened into passing against an empty list, which would
-     * hide exactly the bug this found.
+     * Unskipped by #82. The token the auth service issues now carries `sub`
+     * and platform-api verifies its signature, so this list is real data
+     * belonging to the logged-in user — global-setup created it through the
+     * API with that same token.
      */
+    const { projectTitle } = fixtureState();
+
+    await page.goto('/projects');
+    await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
+    await expect(page.getByText(projectTitle).first()).toBeVisible();
   });
 
-  test.skip('project detail shows the title and all six tabs', async () => {
-    /*
-     * SKIPPED — this page cannot load data (#82).
-     *
-     * #79 moved the console onto platform-api and #83 wired the dashboard
-     * pages to it. Every request forwards the browser's Authorization header;
-     * the auth service issues a token carrying `userId` and platform-api's
-     * middleware requires `sub`, so all of them answer 401
-     * AUTH_TOKEN_MALFORMED and the page renders its shell with no content —
-     * no heading, no tabs.
-     *
-     * Login itself still passes for real (auth.spec.ts). This is the data
-     * path behind it, broken in services/, not here. Skipped rather than
-     * softened into asserting an empty shell, which would hide the bug.
-     */
+  test('project detail shows the title and all six tabs', async ({ page }) => {
+    // Unskipped by #82: the detail page can read its project now.
+    const { projectId, projectTitle } = fixtureState();
+
+    await openProject(page, projectId, projectTitle);
+
+    for (const tab of PROJECT_TABS) {
+      await expect(page.getByRole('button', { name: tab, exact: true })).toBeVisible();
+    }
   });
 
-  test.skip('switching tabs keeps the project loaded', async () => {
-    /*
-     * SKIPPED — this page cannot load data (#82).
-     *
-     * #79 moved the console onto platform-api and #83 wired the dashboard
-     * pages to it. Every request forwards the browser's Authorization header;
-     * the auth service issues a token carrying `userId` and platform-api's
-     * middleware requires `sub`, so all of them answer 401
-     * AUTH_TOKEN_MALFORMED and the page renders its shell with no content —
-     * no heading, no tabs.
-     *
-     * Login itself still passes for real (auth.spec.ts). This is the data
-     * path behind it, broken in services/, not here. Skipped rather than
-     * softened into asserting an empty shell, which would hide the bug.
-     */
+  test('switching tabs keeps the project loaded', async ({ page }) => {
+    // Unskipped by #82.
+    const { projectId, projectTitle } = fixtureState();
+
+    await openProject(page, projectId, projectTitle);
+
+    await page.getByRole('button', { name: 'Shots', exact: true }).click();
+    await expect(page.getByRole('heading', { name: projectTitle })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Assets', exact: true }).click();
+    await expect(page.getByRole('heading', { name: projectTitle })).toBeVisible();
   });
 
   test('the new project dialog opens from the list', async ({ page }) => {
