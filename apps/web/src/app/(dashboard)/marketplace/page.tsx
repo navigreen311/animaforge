@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import {
   Store,
   Search,
@@ -99,318 +101,8 @@ type CreatorFilter = 'all' | 'official' | 'community' | 'verified';
 type LicenseFilter = 'all' | 'personal' | 'commercial';
 
 // ── Mock Reviews ─────────────────────────────────────────────────
-const MOCK_REVIEWS: Review[] = [
-  {
-    id: 'r1',
-    author: 'PixelPro',
-    rating: 5,
-    text: 'Absolutely stunning quality. The pack transformed my entire project in minutes.',
-    date: '2026-03-18',
-  },
-  {
-    id: 'r2',
-    author: 'AnimeMaker42',
-    rating: 4,
-    text: 'Great variety and well-organized. Would love more color variations.',
-    date: '2026-03-15',
-  },
-  {
-    id: 'r3',
-    author: 'StudioNova',
-    rating: 4,
-    text: 'Professional grade assets. The licensing terms are very fair too.',
-    date: '2026-03-10',
-  },
-];
 
 // ── Mock Data ────────────────────────────────────────────────────
-const SHOP_ITEMS: MarketplaceItem[] = [
-  {
-    id: 'mp-1',
-    name: 'Watercolor Dream',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'ArtBot',
-    creatorAvatar: 'AB',
-    price: null,
-    commercialPrice: 80,
-    rating: 4.5,
-    ratingCount: 128,
-    downloads: 1200,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-    description:
-      'A beautiful hand-painted watercolor style pack that transforms your animations into dreamy, fluid watercolor art. Perfect for music videos, title sequences, and artistic short films.',
-    included: [
-      '12 watercolor brush presets',
-      '6 color palettes',
-      '4 texture overlays',
-      'Blending mode templates',
-      'Tutorial video',
-    ],
-    tags: ['watercolor', 'artistic', 'dreamy', 'paint'],
-    reviews: MOCK_REVIEWS,
-    isFreePick: true,
-    isTrending: true,
-  },
-  {
-    id: 'mp-2',
-    name: 'Anime Classic',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'StyleMaster',
-    creatorAvatar: 'SM',
-    price: 50,
-    commercialPrice: 150,
-    rating: 4.2,
-    ratingCount: 89,
-    downloads: 890,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-    description:
-      'Classic anime aesthetic pack featuring cel-shading, dramatic lighting, and authentic Japanese animation styles from the golden era of anime.',
-    included: [
-      '8 cel-shade presets',
-      '5 line-art styles',
-      '3 dramatic lighting setups',
-      'Speed line templates',
-      'Expression sheet',
-    ],
-    tags: ['anime', 'cel-shade', 'japanese', 'classic'],
-    reviews: MOCK_REVIEWS,
-    isTrending: true,
-    isNewThisWeek: true,
-  },
-  {
-    id: 'mp-3',
-    name: 'Hero Template',
-    category: 'Template',
-    categorySlug: 'templates',
-    creator: 'AnimaForge',
-    creatorAvatar: 'AF',
-    price: null,
-    commercialPrice: null,
-    rating: 4.8,
-    ratingCount: 245,
-    downloads: 3400,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-    description:
-      'A complete hero animation template with pre-built sequences for intros, action shots, and dramatic reveals. Drop in your character and go.',
-    included: [
-      '5 intro sequences',
-      '8 action poses',
-      '3 reveal transitions',
-      'Camera presets',
-      'Sound effects pack',
-    ],
-    tags: ['hero', 'action', 'template', 'intro'],
-    reviews: MOCK_REVIEWS,
-    isFreePick: true,
-  },
-  {
-    id: 'mp-4',
-    name: 'Villain Pack',
-    category: 'Characters',
-    categorySlug: 'characters',
-    creator: 'CharacterLab',
-    creatorAvatar: 'CL',
-    price: 120,
-    commercialPrice: 350,
-    rating: 4.6,
-    ratingCount: 67,
-    downloads: 450,
-    license: 'commercial',
-    gradient: 'linear-gradient(135deg, #10b981, #065f46)',
-    description:
-      'A sinister collection of villain archetypes ready for animation. Each character comes with full expression sheets, multiple outfits, and rigged models.',
-    included: [
-      '6 villain base models',
-      '24 expressions per character',
-      '3 outfits each',
-      'Rigged for animation',
-      'Backstory cards',
-    ],
-    tags: ['villain', 'character', 'rigged', 'evil'],
-    reviews: MOCK_REVIEWS,
-    isNewThisWeek: true,
-  },
-  {
-    id: 'mp-5',
-    name: 'Cinematic Score',
-    category: 'Audio',
-    categorySlug: 'audio',
-    creator: 'SoundForge',
-    creatorAvatar: 'SF',
-    price: 80,
-    commercialPrice: 240,
-    rating: 4.3,
-    ratingCount: 103,
-    downloads: 670,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #3b82f6, #1e3a5f)',
-    description:
-      'Epic orchestral music loops and stems designed for animation. Includes tension builders, heroic themes, and emotional moments.',
-    included: [
-      '15 music loops',
-      '8 stem packs',
-      '20 sound effects',
-      'Tempo-synced markers',
-      'Mixing guide',
-    ],
-    tags: ['audio', 'cinematic', 'orchestral', 'epic'],
-    reviews: MOCK_REVIEWS,
-    isTrending: true,
-  },
-  {
-    id: 'mp-6',
-    name: 'Pixel Art Pack',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'RetroPixels',
-    creatorAvatar: 'RP',
-    price: 30,
-    commercialPrice: 90,
-    rating: 4.1,
-    ratingCount: 156,
-    downloads: 1100,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #a855f7, #f472b6)',
-    description:
-      'Transform any animation into retro pixel art. Multiple resolution presets from 8-bit to 32-bit styles with authentic dithering patterns.',
-    included: [
-      '4 resolution presets',
-      '8 color palettes',
-      '6 dithering patterns',
-      'Scanline overlay',
-      'CRT filter',
-    ],
-    tags: ['pixel', 'retro', '8-bit', 'nostalgia'],
-    reviews: MOCK_REVIEWS,
-    isNewThisWeek: true,
-    isFreePick: false,
-  },
-];
-
-const LIBRARY_ITEMS: OwnedItem[] = [
-  { ...SHOP_ITEMS[0], ownedDate: '2026-03-10' },
-  { ...SHOP_ITEMS[2], ownedDate: '2026-03-05' },
-  { ...SHOP_ITEMS[1], id: 'lib-3', ownedDate: '2026-02-28' },
-  { ...SHOP_ITEMS[3], id: 'lib-4', ownedDate: '2026-02-20' },
-  { ...SHOP_ITEMS[4], id: 'lib-5', ownedDate: '2026-02-14' },
-  { ...SHOP_ITEMS[5], id: 'lib-6', ownedDate: '2026-02-08' },
-  {
-    ...SHOP_ITEMS[0],
-    id: 'lib-7',
-    name: 'Painterly Brushes',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'BrushLab',
-    creatorAvatar: 'BL',
-    gradient: 'linear-gradient(135deg, #f97316, #eab308)',
-    ownedDate: '2026-01-22',
-  },
-  {
-    ...SHOP_ITEMS[4],
-    id: 'lib-8',
-    name: 'Foley Essentials',
-    category: 'Audio',
-    categorySlug: 'audio',
-    creator: 'SoundForge',
-    creatorAvatar: 'SF',
-    gradient: 'linear-gradient(135deg, #14b8a6, #0f766e)',
-    ownedDate: '2026-01-15',
-  },
-];
-
-const PUBLISHED_ITEMS: PublishedItem[] = [
-  {
-    id: 'pub-1',
-    name: 'Neon Glow Effects',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'You',
-    creatorAvatar: 'ME',
-    price: 45,
-    commercialPrice: 130,
-    rating: 4.4,
-    ratingCount: 32,
-    downloads: 215,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #f43f5e, #7c3aed)',
-    description: 'Vibrant neon glow effects for cyberpunk and sci-fi animations.',
-    included: ['10 glow presets', '5 neon palettes', '3 bloom filters'],
-    tags: ['neon', 'glow', 'cyberpunk'],
-    reviews: MOCK_REVIEWS,
-    status: 'live',
-    revenue: 1260,
-  },
-  {
-    id: 'pub-2',
-    name: 'Retro VHS Filter',
-    category: 'Style Pack',
-    categorySlug: 'style-packs',
-    creator: 'You',
-    creatorAvatar: 'ME',
-    price: 25,
-    commercialPrice: 75,
-    rating: 4.1,
-    ratingCount: 14,
-    downloads: 92,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-    description: 'Authentic 80s VHS grain, chromatic aberration, and tracking lines.',
-    included: ['6 VHS presets', 'Noise overlays', 'Tracking line animation'],
-    tags: ['vhs', 'retro', 'grain'],
-    reviews: MOCK_REVIEWS,
-    status: 'pending',
-    revenue: 0,
-  },
-  {
-    id: 'pub-3',
-    name: 'Sci-Fi HUD Kit',
-    category: 'Template',
-    categorySlug: 'templates',
-    creator: 'You',
-    creatorAvatar: 'ME',
-    price: 60,
-    commercialPrice: 180,
-    rating: 4.6,
-    ratingCount: 8,
-    downloads: 48,
-    license: 'commercial',
-    gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-    description: 'Animated sci-fi interface overlays for futuristic scenes.',
-    included: ['12 HUD elements', 'Scan line animations', 'Glitch transitions'],
-    tags: ['scifi', 'hud', 'ui'],
-    reviews: MOCK_REVIEWS,
-    status: 'draft',
-    revenue: 0,
-  },
-  {
-    id: 'pub-4',
-    name: 'Vintage Jazz Loops',
-    category: 'Audio',
-    categorySlug: 'audio',
-    creator: 'You',
-    creatorAvatar: 'ME',
-    price: 40,
-    commercialPrice: 120,
-    rating: 4.3,
-    ratingCount: 11,
-    downloads: 62,
-    license: 'personal',
-    gradient: 'linear-gradient(135deg, #a855f7, #ec4899)',
-    description: 'Smooth vintage jazz loops perfect for noir animations.',
-    included: ['8 loop packs', 'Tempo-synced stems', 'Sax & piano solos'],
-    tags: ['jazz', 'vintage', 'loop'],
-    reviews: MOCK_REVIEWS,
-    status: 'live',
-    revenue: 480,
-  },
-];
-
-const WISHLIST_IDS_INIT = ['mp-2', 'mp-4', 'mp-5', 'mp-6', 'mp-1'];
 
 const CATEGORY_TABS: { label: string; value: Category }[] = [
   { label: 'All', value: 'all' },
@@ -475,6 +167,96 @@ function statusColor(status: ItemStatus): string {
 }
 
 // ── Component ────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/*  Live data                                                          */
+/* ------------------------------------------------------------------ */
+
+/** One row of GET /api/marketplace/items. */
+interface ItemRow {
+  id: string;
+  name: string;
+  type: string;
+  price: string | number;
+  description: string;
+  previewUrl: string;
+  creatorId: string;
+  status: string;
+  featured: boolean;
+  category: string;
+  purchaseCount: number;
+  createdAt: string;
+  averageRating?: number | null;
+  reviewCount?: number;
+}
+
+interface ItemList {
+  items: ItemRow[];
+  total: number;
+}
+
+interface PublishedList {
+  items: Array<ItemRow & { revenueCents: number; salesCount: number }>;
+  total: number;
+}
+
+interface LibraryList {
+  items: Array<ItemRow & { purchasedAt: string }>;
+  total: number;
+}
+
+const ITEM_GRADIENTS = [
+  'linear-gradient(135deg, #7c3aed, #ec4899)',
+  'linear-gradient(135deg, #06b6d4, #3b82f6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #10b981, #06b6d4)',
+  'linear-gradient(135deg, #8b5cf6, #f472b6)',
+];
+
+function gradientFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return ITEM_GRADIENTS[hash % ITEM_GRADIENTS.length];
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Map a listing row to the card this screen renders.
+ *
+ * Several card fields have no column and are derived or left empty rather than
+ * invented: the preview is a deterministic gradient (there is no thumbnail
+ * pipeline), `included` and `tags` are not modelled, and the reviews array is
+ * empty because reviews are fetched per item on the detail panel rather than
+ * embedded in the list. `isTrending` is purchase volume and `isNewThisWeek` is
+ * the row's own age — both real signals, not flags someone set by hand.
+ */
+function toItem(row: ItemRow): MarketplaceItem {
+  const price = Number(row.price);
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    categorySlug: row.category as Category,
+    creator: row.creatorId.slice(0, 8),
+    creatorAvatar: '',
+    price: price === 0 ? null : price,
+    commercialPrice: price === 0 ? null : price * 2,
+    rating: row.averageRating ?? 0,
+    ratingCount: row.reviewCount ?? 0,
+    downloads: row.purchaseCount,
+    license: 'personal',
+    gradient: gradientFor(row.id),
+    description: row.description,
+    included: [],
+    tags: [],
+    reviews: [],
+    isFeatured: row.featured,
+    isTrending: row.purchaseCount >= 5,
+    isNewThisWeek: Date.now() - new Date(row.createdAt).getTime() < WEEK_MS,
+    isFreePick: price === 0,
+  };
+}
+
 export default function MarketplacePage() {
   const router = useRouter();
 
@@ -507,12 +289,39 @@ export default function MarketplacePage() {
   // User state
   const [userCredits, setUserCredits] = useState(850);
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [ownedIds, setOwnedIds] = useState<string[]>(LIBRARY_ITEMS.map((i) => i.id));
-  const [libraryItemIds, setLibraryItemIds] = useState<Set<string>>(
-    () => new Set(LIBRARY_ITEMS.map((i) => i.id)),
+  const shopState = useResource<ItemList>('/api/marketplace/items?limit=60');
+  const libraryState = useResource<LibraryList>('/api/marketplace/library');
+  const publishedState = useResource<PublishedList>('/api/marketplace/published');
+  const wishlistState = useResource<ItemList>('/api/marketplace/wishlist');
+
+  const SHOP_ITEMS = useMemo(() => (shopState.data?.items ?? []).map(toItem), [shopState.data]);
+  const LIBRARY_ITEMS = useMemo(
+    () =>
+      (libraryState.data?.items ?? []).map((row) => ({
+        ...toItem(row),
+        ownedDate: row.purchasedAt,
+      })),
+    [libraryState.data],
   );
+  const PUBLISHED_ITEMS = useMemo(
+    () =>
+      (publishedState.data?.items ?? []).map((row) => ({
+        ...toItem(row),
+        // The listing's own status, and earnings net of the platform fee.
+        status: row.status as ItemStatus,
+        revenue: row.revenueCents / 100,
+      })),
+    [publishedState.data],
+  );
+
   const [cloningIds, setCloningIds] = useState<Set<string>>(() => new Set());
-  const [wishlistedIds, setWishlistedIds] = useState<Set<string>>(() => new Set(WISHLIST_IDS_INIT));
+  // Ownership and the wishlist are server state, not local guesses.
+  const ownedIds = useMemo(() => LIBRARY_ITEMS.map((i) => i.id), [LIBRARY_ITEMS]);
+  const libraryItemIds = useMemo(() => new Set(ownedIds), [ownedIds]);
+  const wishlistedIds = useMemo(
+    () => new Set((wishlistState.data?.items ?? []).map((i) => i.id)),
+    [wishlistState.data],
+  );
 
   // Review state
   const [reviewRating, setReviewRating] = useState(0);
@@ -639,37 +448,23 @@ export default function MarketplacePage() {
   }, []);
 
   const toggleWishlist = useCallback(
-    (itemId: string) => {
-      // MP-4: Optimistic update with mock API + revert on failure
+    async (itemId: string) => {
+      // The previous version updated a local Set, then ran a `mockSuccess = true`
+      // timer whose failure branch was unreachable, so the wishlist never
+      // survived a refresh. POST adds, DELETE removes, then the list is re-read.
       const wasWishlisted = wishlistedIds.has(itemId);
-      setWishlistedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(itemId)) next.delete(itemId);
-        else next.add(itemId);
-        return next;
-      });
-
-      // Toast on add only (per MP-4 spec)
-      if (!wasWishlisted) {
-        toast.success('Added to wishlist');
+      const { error } = await mutate(
+        `/api/marketplace/wishlist/${itemId}`,
+        wasWishlisted ? 'DELETE' : 'POST',
+      );
+      if (error) {
+        toast.error(`Could not update wishlist: ${error.message}`);
+        return;
       }
-
-      // Mock API call (success after 300ms)
-      setTimeout(() => {
-        const mockSuccess = true; // flip to false to simulate failure
-        if (!mockSuccess) {
-          // Revert optimistic update
-          setWishlistedIds((prev) => {
-            const next = new Set(prev);
-            if (wasWishlisted) next.add(itemId);
-            else next.delete(itemId);
-            return next;
-          });
-          toast.error('Failed to update wishlist. Please try again.');
-        }
-      }, 300);
+      if (!wasWishlisted) toast.success('Added to wishlist');
+      wishlistState.reload();
     },
-    [wishlistedIds],
+    [wishlistedIds, wishlistState],
   );
 
   const openPurchaseModal = useCallback(
@@ -684,42 +479,45 @@ export default function MarketplacePage() {
     [selectedItem],
   );
 
-  const confirmPurchase = useCallback(() => {
+  const confirmPurchase = useCallback(async () => {
     if (!selectedItem) return;
-    const cost =
-      purchaseLicense === 'commercial'
-        ? (selectedItem.commercialPrice ?? selectedItem.price ?? 0)
-        : (selectedItem.price ?? 0);
-    if (cost > userCredits) {
-      toast.error('Insufficient credits');
+    // Was a 1.5s timer that decremented a local credit counter and pushed the
+    // id into an array, so a "purchase" vanished on refresh. The server owns
+    // the purchase, and it is what rejects buying your own item or buying twice.
+    setIsPurchasing(true);
+    const { error } = await mutate('/api/marketplace/purchase', 'POST', {
+      itemId: selectedItem.id,
+    });
+    setIsPurchasing(false);
+    if (error) {
+      toast.error(error.message);
       return;
     }
-    // MP-3: Loading state + mock 1.5s delay, then success + close
-    setIsPurchasing(true);
-    setTimeout(() => {
-      setUserCredits((b) => b - cost);
-      setOwnedIds((prev) => [...prev, selectedItem.id]);
-      setIsPurchasing(false);
-      setShowPurchaseModal(false);
-      toast.success(`Purchased "${selectedItem.name}" for ${cost} credits`);
-    }, 1500);
-  }, [selectedItem, purchaseLicense, userCredits]);
+    setShowPurchaseModal(false);
+    toast.success(`Purchased "${selectedItem.name}"`);
+    libraryState.reload();
+    shopState.reload();
+  }, [selectedItem, libraryState, shopState]);
 
-  const addFreeToLibrary = useCallback(() => {
+  const addFreeToLibrary = useCallback(async () => {
     if (!selectedItem) return;
-    setOwnedIds((prev) => [...prev, selectedItem.id]);
-    setLibraryItemIds((prev) => {
-      const next = new Set(prev);
-      next.add(selectedItem.id);
-      return next;
+    // A free item is still a purchase row: that row is what grants library
+    // access, so there is no separate "add" path to keep in sync.
+    const { error } = await mutate('/api/marketplace/purchase', 'POST', {
+      itemId: selectedItem.id,
     });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    libraryState.reload();
     toast.success('Item added to your library', {
       action: {
         label: 'View library',
         onClick: () => setMainTab('library'),
       },
     });
-  }, [selectedItem]);
+  }, [selectedItem, libraryState]);
 
   const handleClone = useCallback(
     (item: MarketplaceItem | { id: string; name: string }) => {
@@ -734,31 +532,31 @@ export default function MarketplacePage() {
         return next;
       });
 
-      // Mock API call
-      setTimeout(() => {
-        setLibraryItemIds((prev) => {
-          const next = new Set(prev);
-          next.add(id);
-          return next;
-        });
-        setOwnedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      // Adding to the library is a purchase row server-side; the mock timer that
+      // used to add the id locally left nothing behind on refresh.
+      void (async () => {
+        const { error } = await mutate('/api/marketplace/purchase', 'POST', { itemId: id });
+        if (error) toast.error(error.message);
+        else libraryState.reload();
         setCloningIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
         });
+        if (error) return;
         toast.success('Item added to your library', {
           action: {
             label: 'View library',
             onClick: () => setMainTab('library'),
           },
         });
-      }, 700);
+      })();
     },
-    [libraryItemIds, cloningIds],
+    [libraryItemIds, cloningIds, libraryState],
   );
 
-  const submitReview = useCallback(() => {
+  const submitReview = useCallback(async () => {
+    if (!selectedItem) return;
     if (reviewRating === 0) {
       toast.error('Please select a rating');
       return;
@@ -767,24 +565,42 @@ export default function MarketplacePage() {
       toast.error('Please write a review');
       return;
     }
-    toast.success('Review submitted successfully!');
+    // The success toast used to fire without a request. The endpoint only
+    // accepts a review from someone who bought the item, so a non-buyer now
+    // gets told why instead of being congratulated.
+    const { error } = await mutate(`/api/marketplace/items/${selectedItem.id}/reviews`, 'POST', {
+      rating: reviewRating,
+      body: reviewText.trim(),
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Review submitted');
     setReviewRating(0);
     setReviewText('');
-  }, [reviewRating, reviewText]);
+    shopState.reload();
+  }, [reviewRating, reviewText, selectedItem, shopState]);
 
-  const purchaseAllWishlist = useCallback(() => {
+  const purchaseAllWishlist = useCallback(async () => {
     const unpurchased = wishlistItems.filter((i) => !ownedIds.includes(i.id));
     const totalCost = unpurchased.reduce((sum, i) => sum + (i.price ?? 0), 0);
     if (totalCost > userCredits) {
       toast.error('Insufficient balance for all items');
       return;
     }
-    setUserCredits((b) => b - totalCost);
-    setOwnedIds((prev) => [...prev, ...unpurchased.map((i) => i.id)]);
-    toast.success(`Purchased ${unpurchased.length} items for ${totalCost} credits`);
-  }, [wishlistItems, ownedIds, userCredits]);
+    // One request per item: the server owns pricing and rejects duplicates, so
+    // there is nothing sensible to decrement locally.
+    const results = await Promise.all(
+      unpurchased.map((i) => mutate('/api/marketplace/purchase', 'POST', { itemId: i.id })),
+    );
+    const failed = results.filter((r) => r.error).length;
+    libraryState.reload();
+    if (failed > 0) toast.error(`${failed} of ${unpurchased.length} purchases failed`);
+    else toast.success(`Purchased ${unpurchased.length} items`);
+  }, [wishlistItems, ownedIds, libraryState]);
 
-  const purchaseAllAffordable = useCallback(() => {
+  const purchaseAllAffordable = useCallback(async () => {
     const unpurchased = wishlistItems.filter((i) => !ownedIds.includes(i.id));
     // Greedy select affordable items until balance exhausted
     const affordable: MarketplaceItem[] = [];
@@ -800,11 +616,14 @@ export default function MarketplacePage() {
       toast.error('No affordable items in your wishlist');
       return;
     }
-    const totalCost = affordable.reduce((sum, i) => sum + (i.price ?? 0), 0);
-    setUserCredits((b) => b - totalCost);
-    setOwnedIds((prev) => [...prev, ...affordable.map((i) => i.id)]);
-    toast.success(`Purchased ${affordable.length} affordable items for ${totalCost} credits`);
-  }, [wishlistItems, ownedIds, userCredits]);
+    const results = await Promise.all(
+      affordable.map((i) => mutate('/api/marketplace/purchase', 'POST', { itemId: i.id })),
+    );
+    const failed = results.filter((r) => r.error).length;
+    libraryState.reload();
+    if (failed > 0) toast.error(`${failed} of ${affordable.length} purchases failed`);
+    else toast.success(`Purchased ${affordable.length} affordable items`);
+  }, [wishlistItems, ownedIds, userCredits, libraryState]);
 
   const navigateToStudio = useCallback(
     (item: MarketplaceItem, e?: React.MouseEvent) => {
@@ -2546,9 +2365,16 @@ export default function MarketplacePage() {
                 gap: 12,
               }}
             >
-              {filteredShopItems.map((item) => renderItemCard(item))}
+              {shopState.loading && shopState.data === null
+                ? null
+                : filteredShopItems.map((item) => renderItemCard(item))}
             </div>
-            {filteredShopItems.length === 0 && (
+            {shopState.loading && shopState.data === null ? (
+              <LoadingState label="Loading the marketplace…" />
+            ) : shopState.error ? (
+              <ErrorState error={shopState.error} onRetry={shopState.reload} />
+            ) : null}
+            {!shopState.loading && !shopState.error && filteredShopItems.length === 0 && (
               <div
                 style={{
                   textAlign: 'center',
