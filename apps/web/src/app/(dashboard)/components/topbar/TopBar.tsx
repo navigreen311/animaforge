@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import GlobalSearch from './GlobalSearch';
 import RenderQueueBadge from './RenderQueueBadge';
+import UserMenu from './UserMenu';
 
 export default function TopBar() {
   return (
@@ -63,25 +64,8 @@ export default function TopBar() {
           </span>
         </button>
 
-        {/* User Avatar */}
-        <button
-          type="button"
-          aria-label="User menu"
-          className="flex items-center justify-center rounded-full"
-          style={{
-            width: 28,
-            height: 28,
-            backgroundColor: 'var(--brand)',
-            color: '#ffffff',
-            fontSize: 10,
-            fontWeight: 600,
-          }}
-          onClick={() => {
-            // TODO: open user dropdown
-          }}
-        >
-          SH
-        </button>
+        {/* User Avatar + account menu */}
+        <UserMenu />
       </div>
     </header>
   );

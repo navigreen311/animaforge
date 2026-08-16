@@ -38,7 +38,20 @@ export function getProgressPercent(approved: number, total: number): number {
 }
 
 /** Return CSS variable references for a given project status. */
-export function getStatusColor(status: ProjectStatus): {
+/**
+ * Colours for a project's status chip.
+ *
+ * The parameter is typed `ProjectStatus`, but the value arriving at runtime is
+ * `projects.status` from the database, which is a free-form string column whose
+ * default is `'active'` -- not a member of that union. The switch had no
+ * default branch, so it returned `undefined` and the caller crashed on
+ * `statusColor.border`, taking the whole project list into the error boundary.
+ *
+ * This did not show up until the list started rendering real rows (#82). The
+ * fallback below is the neutral draft styling: a status this function does not
+ * recognise should look unremarkable, not take the page down.
+ */
+export function getStatusColor(status: ProjectStatus | string): {
   bg: string;
   text: string;
   border: string;
@@ -72,6 +85,13 @@ export function getStatusColor(status: ProjectStatus): {
         text: 'var(--status-complete-text)',
         border: 'var(--status-complete-border)',
         dot: '#6ee7b7',
+      };
+    default:
+      return {
+        bg: 'var(--status-draft-bg)',
+        text: 'var(--status-draft-text)',
+        border: 'var(--status-draft-border)',
+        dot: 'rgba(255,255,255,0.4)',
       };
   }
 }

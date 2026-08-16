@@ -6,6 +6,8 @@ import { requireAuth } from '../../middleware/auth.js';
 import { crudRouter } from '../../lib/crudRouter.js';
 import { isDatabaseReachable, requirePrisma } from '../../db.js';
 import * as apiResponse from '../../utils/apiResponse.js';
+import { enqueueGeneration } from '../../lib/generationQueue.js';
+import type { Prisma } from '@prisma/client';
 
 /** Production surfaces: jobs, takes, calendar, live sessions, audio, styles. */
 
@@ -94,6 +96,91 @@ router.delete(
   }),
 );
 
+/**
+ * Submit a generation job.
+ *
+ * This is the entry point the pipeline was missing (#80). The row is written
+ * before the enqueue, deliberately: /render-queue reads `generation_jobs`, so
+ * writing first means a submitted job appears as `queued` immediately rather
+ * than only once a worker happens to pick it up. A deployment with no worker
+ * running then shows a queue that is filling up -- which is true -- instead of
+ * one that looks empty.
+ */
+router.post(
+  '/jobs',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    if (!(await isDatabaseReachable())) return unavailable(res);
+
+    const body = z
+      .object({
+        type: z.enum(['video', 'audio', 'avatar', 'style_clone', 'img_to_cartoon']),
+        projectId: z.string().uuid(),
+        shotId: z.string().uuid().optional(),
+        params: z.record(z.unknown()).default({}),
+        tier: z.enum(['preview', 'standard', 'pro', 'enterprise']).default('preview'),
+        modelId: z.string().min(1).optional(),
+        priority: z.coerce.number().int().min(1).max(10).optional(),
+      })
+      .parse(req.body);
+
+    // Ownership, by construction: a caller can only queue work against a
+    // project they own. Without this check the job would be created against
+    // someone else's project and its output would land there.
+    const project = await requirePrisma().project.findFirst({
+      where: { id: body.projectId, ownerId: req.user!.id, deletedAt: null },
+    });
+    if (!project) return apiResponse.error(res, 'NOT_FOUND', 'No such project', 404);
+
+    const job = await requirePrisma().generationJob.create({
+      data: {
+        projectId: body.projectId,
+        shotId: body.shotId ?? null,
+        userId: req.user!.id,
+        jobType: body.type,
+        modelId: body.modelId ?? 'default',
+        inputParams: body.params as Prisma.InputJsonValue,
+        tier: body.tier,
+        status: 'queued',
+        progress: 0,
+      },
+    });
+
+    try {
+      await enqueueGeneration({
+        jobId: job.id,
+        type: body.type,
+        projectId: body.projectId,
+        userId: req.user!.id,
+        params: body.params,
+        tier: body.tier,
+        priority: body.priority,
+      });
+    } catch (err) {
+      // Redis is unreachable. The row exists and would otherwise sit at
+      // `queued` forever, which reads as "waiting its turn" when in fact
+      // nothing will ever run it. Say so on the row and in the response.
+      const reason = err instanceof Error ? err.message : String(err);
+      const failed = await requirePrisma().generationJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'failed',
+          errorReason: `Could not be queued: ${reason}`,
+          completedAt: new Date(),
+        },
+      });
+      return apiResponse.error(
+        res,
+        'QUEUE_UNAVAILABLE',
+        `Job ${failed.id} was recorded but could not be queued: ${reason}`,
+        503,
+      );
+    }
+
+    apiResponse.success(res, job, 201);
+  }),
+);
+
 router.post(
   '/jobs/:id/retry',
   requireAuth,
@@ -126,6 +213,36 @@ router.post(
         status: 'queued',
       },
     });
+
+    // Retry used to create the row and stop there, so a "retried" job sat at
+    // queued and never ran again.
+    try {
+      await enqueueGeneration({
+        jobId: retry.id,
+        type: retry.jobType,
+        projectId: retry.projectId,
+        userId: retry.userId,
+        params: (retry.inputParams ?? {}) as Record<string, unknown>,
+        tier: retry.tier,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      await requirePrisma().generationJob.update({
+        where: { id: retry.id },
+        data: {
+          status: 'failed',
+          errorReason: `Could not be queued: ${reason}`,
+          completedAt: new Date(),
+        },
+      });
+      return apiResponse.error(
+        res,
+        'QUEUE_UNAVAILABLE',
+        `Retry ${retry.id} was recorded but could not be queued: ${reason}`,
+        503,
+      );
+    }
+
     apiResponse.success(res, retry, 201);
   }),
 );

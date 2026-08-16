@@ -51,31 +51,47 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
   });
 
-  test.skip('logout returns the user to the login page', async () => {
-    /*
-     * SKIPPED — there is nothing to log out with.
-     *
-     * The top bar renders a control labelled "User menu", but clicking it
-     * opens no menu: no [role="menu"], no menu items, and no element matching
-     * /sign out|log out/i anywhere on the page afterwards. authStore exposes a
-     * logout() action; no component calls it.
-     *
-     * Verified by probing the running production build, not by reading the
-     * source. Tracked in #80 — re-enable this spec when the menu exists.
-     */
+  test('logout returns the user to the login page', async ({ page }) => {
+    await login(page);
+
+    // The avatar opens a real menu now (#80). It used to be a button whose
+    // onClick body was a TODO comment, so there was nothing to click through.
+    await page.getByRole('button', { name: 'User menu' }).click();
+
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+
+    await menu.getByRole('menuitem', { name: /sign out/i }).click();
+
+    await page.waitForURL('**/login', { timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+
+    // Signed out for real, not just navigated: going back to a protected route
+    // must not let them in.
+    await page.goto('/projects');
+    await page.waitForURL(/\/login/, { timeout: 30_000 });
   });
 
-  test.skip('unauthenticated visitor is redirected away from the dashboard', async () => {
-    /*
-     * SKIPPED — the app does not protect dashboard routes.
-     *
-     * There is no middleware.ts, and the (dashboard) layout does not redirect:
-     * it calls loadFromStorage() and renders regardless of the result. A
-     * signed-out visitor gets /projects with a 200 and the full dashboard.
-     *
-     * This spec asserted a redirect that has never existed, so it was failing
-     * for a real reason. Leaving it enabled would mean deleting a legitimate
-     * finding to get to green. Tracked in #80.
-     */
+  test('unauthenticated visitor is redirected away from the dashboard', async ({ page }) => {
+    // apps/web/src/middleware.ts, added in #80. Before it there was no
+    // middleware at all and a signed-out visitor got /projects with a 200.
+    await page.goto('/projects');
+
+    await page.waitForURL(/\/login/, { timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+
+    // The route they asked for is carried, so signing in returns them to it.
+    expect(new URL(page.url()).searchParams.get('next')).toBe('/projects');
+  });
+
+  test('signing in returns the visitor to the route they asked for', async ({ page }) => {
+    await page.goto('/characters');
+    await page.waitForURL(/\/login/, { timeout: 30_000 });
+
+    await page.getByLabel('Email').fill(E2E_USER.email);
+    await page.getByLabel('Password').fill(E2E_USER.password);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    await page.waitForURL('**/characters', { timeout: 30_000 });
   });
 });

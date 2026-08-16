@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/test';
 import { login } from './fixtures/test-helpers';
-import { FIXTURE_PROJECT, SIDEBAR_LINKS } from './fixtures/test-data';
+import { fixtureState, SIDEBAR_LINKS } from './fixtures/test-data';
 
 test.describe('App navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,7 +8,17 @@ test.describe('App navigation', () => {
   });
 
   test('every sidebar link navigates to its route', async ({ page }) => {
-    await page.goto('/projects');
+    /*
+     * Starts on /settings, which is not one of the links under test.
+     *
+     * Landing on /projects and then clicking "Projects" first was clicking the
+     * link that already carries aria-current="page". That item re-renders as
+     * the page's data arrives -- which it now does, since #82 made these pages
+     * able to load -- and Playwright spent the full timeout on "element was
+     * detached from the DOM, retrying". Starting off-list means no click ever
+     * targets the active link, and every link is still exercised.
+     */
+    await page.goto('/settings');
 
     const sidebar = page.locator('aside');
     await expect(sidebar).toBeVisible();
@@ -20,27 +30,34 @@ test.describe('App navigation', () => {
      * /style-studio, both of which 404. It failed on the third link every run.
      */
     for (const { label, path } of SIDEBAR_LINKS) {
-      await sidebar.getByRole('link', { name: label, exact: false }).first().click();
+      const link = sidebar.getByRole('link', { name: label, exact: false }).first();
+      await expect(link).toBeVisible();
+      await link.click();
       await page.waitForURL(`**${path}`);
       await expect(page).toHaveURL(new RegExp(`${path}$`));
     }
   });
 
-  test.skip('project detail is reachable from the list', async () => {
+  test('project detail is reachable from the list', async ({ page }) => {
     /*
-     * SKIPPED — the project list cannot load data (#82).
+     * Unskipped by #82: the list has real rows to click now.
      *
-     * Since #79 this list is served by /api/projects, which proxies to
-     * platform-api and forwards the browser's Authorization header. The token
-     * the auth service issues carries `userId`; platform-api's middleware
-     * requires `sub`, so every request answers
-     * 401 AUTH_TOKEN_MALFORMED and the list renders empty.
-     *
-     * The login itself works — that is asserted in auth.spec.ts. This is the
-     * data path behind it, and it is broken in services/, not here. Skipped
-     * rather than loosened into passing against an empty list, which would
-     * hide exactly the bug this found.
+     * A project card routes to that project's *timeline*, not to
+     * /projects/<id> — ProjectCard pushes `/projects/${project.id}/timeline`
+     * on click. So the assertion is that the card carries you into the right
+     * project's routes, by id. Asserting a heading here would be asserting
+     * against whatever the timeline renders, which is a different page's
+     * concern; projects.spec.ts covers the detail page's own heading.
      */
+    const { projectId, projectTitle } = fixtureState();
+
+    await page.goto('/projects');
+    await expect(page.getByRole('heading', { name: 'My Projects' })).toBeVisible();
+
+    await page.getByText(projectTitle).first().click();
+
+    await page.waitForURL(new RegExp(`/projects/${projectId}`), { timeout: 30_000 });
+    expect(page.url()).toContain(projectId);
   });
 
   test('browser back returns to the previous route', async ({ page }) => {

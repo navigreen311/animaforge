@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/stores/authStore';
@@ -17,8 +17,29 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+/**
+ * Where to land after signing in.
+ *
+ * The middleware redirects a signed-out visitor to `/login?next=<path>`, so
+ * signing in returns them to what they asked for rather than a generic
+ * dashboard.
+ *
+ * Only same-origin absolute paths are honoured. A value like
+ * `//evil.example/x` or `https://evil.example` is a valid relative-looking
+ * string that the browser resolves off-site, which is how an open redirect
+ * turns a login page into a phishing hop -- so anything not starting with a
+ * single '/' is discarded.
+ */
+function safeNext(raw: string | null): string {
+  if (!raw) return '/projects';
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/projects';
+  return raw;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNext(searchParams?.get('next') ?? null);
   const login = useAuthStore((s) => s.login);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +57,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(data.email, data.password);
-      router.push('/projects');
+      router.push(next);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
@@ -151,5 +172,20 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+/**
+ * useSearchParams() opts a route into client-side rendering, and Next refuses
+ * to prerender a page that calls it outside a Suspense boundary -- the
+ * production build fails outright with "should be wrapped in a suspense
+ * boundary". The form is the part that reads the query string, so the boundary
+ * goes around the form.
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="mb-6 text-center text-sm text-gray-400">Loading…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
