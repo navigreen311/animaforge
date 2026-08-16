@@ -438,6 +438,13 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      # The seed script and platform-api both import @prisma/client, which is
+      # the ungenerated stub until this runs. `migrate deploy` does not
+      # generate it, so without this the seed dies with
+      # "@prisma/client did not initialize yet".
+      - name: Generate Prisma client
+        run: npx prisma generate --schema packages/db/prisma/schema.prisma
+
       # The schema and fixture rows the harness reads. Kept as explicit steps
       # rather than hidden in globalSetup so a migration failure is its own
       # red step instead of a confusing setup error.
