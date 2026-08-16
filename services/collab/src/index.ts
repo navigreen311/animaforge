@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { setupWSConnection } from 'y-websocket/bin/utils';
-import { verifyToken } from './auth.js';
+import { verifyToken, assertAuthConfigured } from './auth.js';
 import { initPersistence } from './persistence.js';
 import { ShotLockManager } from './shotLocking.js';
 import { AwarenessManager } from './awareness.js';
@@ -111,6 +111,10 @@ function broadcastToRoom(projectId: string, message: Record<string, unknown>) {
     if (conn.ws.readyState === conn.ws.OPEN) conn.ws.send(data);
   }
 }
+
+// Fail here, loudly, rather than accepting upgrades and rejecting every one of
+// them because the secret was never set.
+assertAuthConfigured();
 
 server.listen(PORT, HOST, () => {
   console.log(`[collab] Yjs server on ${HOST}:${PORT}`);

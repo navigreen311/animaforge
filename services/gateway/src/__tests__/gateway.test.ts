@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../index';
+import { verifyToken } from '../middleware/authForward';
 import type { Express } from 'express';
 
 let app: Express;
@@ -38,17 +39,29 @@ describe('API Gateway', () => {
     expect(res.headers['x-request-id']).toBe(customId);
   });
 
-  it('forwards x-user-id from decoded JWT', async () => {
+  /**
+   * This test used to be called "forwards x-user-id from decoded JWT" and built
+   * exactly this token — three segments with `const signature = 'fakesignature'`
+   * — then asserted only that the response was 200. It passed because the
+   * gateway decoded the payload without checking the signature, and it recorded
+   * that behaviour as intended.
+   *
+   * It is kept, and inverted: the same forgery must now be refused an identity.
+   * What is actually forwarded upstream is asserted in authForward.test.ts,
+   * which can see the request headers; here we only confirm the request is
+   * still served rather than crashing.
+   */
+  it('serves a request carrying a forged token without granting it an identity', async () => {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(
       JSON.stringify({ sub: 'user-42', role: 'admin', tier: 'pro' }),
     ).toString('base64url');
-    const signature = 'fakesignature';
-    const token = `${header}.${payload}.${signature}`;
+    const token = `${header}.${payload}.fakesignature`;
 
     const res = await request(app).get('/health').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
+    expect(verifyToken(token)).toBeNull();
   });
 
   it('handles requests without Authorization header gracefully', async () => {

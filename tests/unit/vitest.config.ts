@@ -7,6 +7,9 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
     globals: true,
     environment: 'node',
+    // Supplies JWT_SECRET before any module reads it. collab's verifyToken
+    // refuses to verify without one, by design.
+    setupFiles: [path.resolve(__dirname, 'setup.ts')],
     testTimeout: 15_000,
     hookTimeout: 15_000,
     coverage: {

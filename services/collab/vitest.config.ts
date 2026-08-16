@@ -5,8 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    // Supplies JWT_SECRET before any module reads it. authForward refuses to
-    // run without one, by design — see src/middleware/authForward.ts.
+    // Supplies JWT_SECRET before any module reads it. The collab service
+    // refuses to verify without one, by design — see src/auth.ts.
     setupFiles: ['src/__tests__/setup.ts'],
   },
 });
