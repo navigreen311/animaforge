@@ -462,8 +462,12 @@ jobs:
       # No --project flag: the config now declares chromium only, matching the
       # single browser installed above. It used to declare firefox as well and
       # rely on this flag to avoid launching a browser that was not on disk.
+      # No --reporter flag: playwright.config.ts already selects html + list
+      # for CI. Forcing html alone swallowed the webServer stdout, so a server
+      # that failed to start reported only "Process from config.webServer
+      # exited early" with no indication of which one or why.
       - name: Run Playwright tests
-        run: npx playwright test --reporter=html
+        run: npx playwright test
         env:
           CI: true
 

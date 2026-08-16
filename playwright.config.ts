@@ -3,6 +3,20 @@ import { defineConfig, devices } from '@playwright/test';
 /** Shared by services/auth and services/platform-api; see #82. */
 const E2E_JWT_SECRET = process.env.E2E_JWT_SECRET ?? 'e2e-fixture-secret-not-a-real-key';
 
+/*
+ * Ports are overridable. The defaults are the ones the services use, but a
+ * developer whose 4000 is already taken by something else should be able to
+ * run the suite without editing this file — and the failure when they cannot
+ * is an opaque "Process from config.webServer exited early".
+ */
+const WEB_PORT = process.env.E2E_WEB_PORT ?? '3000';
+const AUTH_PORT = process.env.E2E_AUTH_PORT ?? '3003';
+const PLATFORM_PORT = process.env.E2E_PLATFORM_PORT ?? '4000';
+
+const AUTH_URL = `http://localhost:${AUTH_PORT}`;
+const PLATFORM_URL = `http://localhost:${PLATFORM_PORT}`;
+const WEB_URL = `http://localhost:${WEB_PORT}`;
+
 const E2E_DATABASE_URL =
   process.env.E2E_DATABASE_URL ??
   process.env.DATABASE_URL ??
@@ -70,7 +84,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: WEB_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15_000,
@@ -100,14 +114,21 @@ export default defineConfig({
       name: 'auth',
       command: 'npx tsx src/index.ts',
       cwd: 'services/auth',
-      url: 'http://localhost:3003/health',
+      url: `${AUTH_URL}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
-        PORT: '3003',
-        NODE_ENV: 'test',
+        PORT: AUTH_PORT,
+        /*
+         * Not 'test'. services/auth/src/index.ts guards its listen call with
+         * `if (process.env.NODE_ENV !== 'test')` so the Vitest suite can
+         * import the app without binding a port — so NODE_ENV=test here makes
+         * the process start, bind nothing and exit 0, which Playwright reports
+         * only as "Process from config.webServer exited early".
+         */
+        NODE_ENV: 'development',
         JWT_SECRET: E2E_JWT_SECRET,
         DATABASE_URL: E2E_DATABASE_URL,
       },
@@ -116,13 +137,13 @@ export default defineConfig({
       name: 'platform-api',
       command: 'npx tsx src/index.ts',
       cwd: 'services/platform-api',
-      url: 'http://localhost:4000/api/v1/health',
+      url: `${PLATFORM_URL}/api/v1/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
-        PORT: '4000',
+        PORT: PLATFORM_PORT,
         NODE_ENV: 'development',
         JWT_SECRET: E2E_JWT_SECRET,
         DATABASE_URL: E2E_DATABASE_URL,
@@ -132,18 +153,18 @@ export default defineConfig({
       name: 'web',
       command:
         'npm run build --workspace @animaforge/web && npm run start --workspace @animaforge/web',
-      url: 'http://localhost:3000',
+      url: WEB_URL,
       reuseExistingServer: !process.env.CI,
       /* The build dominates this; 5 minutes is a cold CI build with margin. */
       timeout: 300_000,
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
-        PORT: '3000',
+        PORT: WEB_PORT,
         NODE_ENV: 'production',
         NEXT_TELEMETRY_DISABLED: '1',
-        NEXT_PUBLIC_AUTH_URL: 'http://localhost:3003',
-        PLATFORM_API_URL: 'http://localhost:4000',
+        NEXT_PUBLIC_AUTH_URL: AUTH_URL,
+        PLATFORM_API_URL: PLATFORM_URL,
       },
     },
   ],

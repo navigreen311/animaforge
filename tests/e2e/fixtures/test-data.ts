@@ -7,7 +7,8 @@
  * there is no database behind the pages under test.
  */
 
-export const AUTH_URL = process.env.E2E_AUTH_URL ?? 'http://localhost:3003';
+export const AUTH_URL =
+  process.env.E2E_AUTH_URL ?? `http://localhost:${process.env.E2E_AUTH_PORT ?? '3003'}`;
 
 /** Registered by tests/e2e/fixtures/global-setup.ts before any spec runs. */
 export const E2E_USER = {
