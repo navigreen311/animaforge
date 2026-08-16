@@ -323,6 +323,106 @@ jobs:
           set -o pipefail
           node /tmp/verify.mjs | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # The leg that decides whether a control can be re-enabled. Everything
+      # above proves platform-api persists; this proves the console can reach
+      # it. Re-enabling a control that then 401s in the browser is worse than
+      # leaving it disabled, so the proxy layer gets checked too.
+      - name: Through the console proxy routes
+        run: |
+          set -o pipefail
+          cat > /tmp/verify-ui.mjs <<'UISCRIPT'
+          import { spawn } from 'node:child_process';
+          import { openSync, writeFileSync } from 'node:fs';
+          import { createRequire } from 'node:module';
+
+          const require = createRequire(`${process.cwd()}/`);
+          const jwt = require('jsonwebtoken');
+
+          const TOKEN = jwt.sign(
+            { sub: process.env.ACTOR_ID, email: 'verify@animaforge.test', role: 'admin' },
+            process.env.JWT_SECRET,
+            { algorithm: 'HS256', expiresIn: '1h' },
+          );
+          const WEB = 'http://127.0.0.1:3000';
+
+          const api = spawn('npx', ['tsx', 'src/index.ts'], {
+            cwd: 'services/platform-api',
+            env: process.env,
+            stdio: ['ignore', openSync('/tmp/api-ui.log', 'a'), openSync('/tmp/api-ui.log', 'a')],
+          });
+          const web = spawn('npx', ['next', 'dev', '-p', '3000'], {
+            cwd: 'apps/web',
+            env: { ...process.env, PLATFORM_API_URL: process.env.API_BASE },
+            stdio: ['ignore', openSync('/tmp/web.log', 'a'), openSync('/tmp/web.log', 'a')],
+          });
+
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          async function get(path) {
+            try {
+              const res = await fetch(WEB + path, {
+                headers: { authorization: `Bearer ${TOKEN}` },
+              });
+              const body = await res.text();
+              return { status: res.status, body: body.slice(0, 200) };
+            } catch (err) {
+              return { status: 0, body: String(err) };
+            }
+          }
+
+          // Next compiles routes on demand, so the first request to each is slow.
+          const deadline = Date.now() + 180000;
+          while (Date.now() < deadline) {
+            const probe = await get('/api/team/teams');
+            if (probe.status !== 0) break;
+            await sleep(3000);
+          }
+
+          const ROUTES = [
+            '/api/team/teams',
+            '/api/team/invitations',
+            '/api/webhooks',
+            '/api/users/me/memory',
+            '/api/styles',
+            '/api/projects?limit=5',
+            '/api/voices',
+            '/api/brand-kits',
+            '/api/assets?limit=5',
+          ];
+
+          const rows = [];
+          let bad = 0;
+          for (const route of ROUTES) {
+            const res = await get(route);
+            const ok = res.status === 200;
+            if (!ok) bad += 1;
+            rows.push(`| \`${route}\` | ${res.status} | ${ok ? 'OK' : '**FAILED**'} |`);
+            if (!ok) console.log(`${route} -> ${res.status}: ${res.body}`);
+          }
+
+          const md = [
+            '',
+            '## Through the console proxy',
+            '',
+            'Same signed token the browser would send, through the Next.js routes',
+            'the console calls. A 401 here would mean a re-enabled control fails',
+            'for a real user even though platform-api stores correctly.',
+            '',
+            '| route | status | |',
+            '| --- | --- | --- |',
+            ...rows,
+            '',
+          ].join(String.fromCharCode(10));
+          writeFileSync('/tmp/proxy-report.md', md);
+          console.log(md);
+
+          api.kill('SIGTERM');
+          web.kill('SIGTERM');
+          await sleep(1500);
+          process.exit(bad === 0 ? 0 : 1);
+          UISCRIPT
+          node /tmp/verify-ui.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload the evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -331,5 +431,7 @@ jobs:
           path: |
             /tmp/persistence-report.json
             /tmp/persistence-report.md
+            /tmp/proxy-report.md
             /tmp/api-*.log
+            /tmp/web.log
           if-no-files-found: warn
