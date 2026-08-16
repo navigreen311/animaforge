@@ -8,6 +8,7 @@ import morgan from 'morgan';
 
 import { config } from './config/index.js';
 import { logger } from './utils/logger.js';
+import { assertAuthConfigured } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import healthRouter from './routes/health.js';
 import projectsRouter from './routes/projects.js';
@@ -86,6 +87,17 @@ app.use(errorHandler);
 
 // Start server only when this module is run directly (not imported for tests)
 if (process.env.NODE_ENV !== 'test') {
+  // Refuse to serve traffic without a signing secret. Every authenticated
+  // route verifies against it; starting without one would mean either
+  // 401-ing every request or -- as this service did until #82 -- accepting
+  // unsigned tokens. Dying here names the cause once, at boot.
+  try {
+    assertAuthConfigured();
+  } catch (err) {
+    logger.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+
   app.listen(config.port, () => {
     logger.info(`Platform API listening on port ${config.port}`);
   });

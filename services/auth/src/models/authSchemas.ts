@@ -33,8 +33,17 @@ export interface User {
   createdAt: Date;
 }
 
+/**
+ * The claims this service signs.
+ *
+ * The subject is `sub`, the registered claim (RFC 7519 section 4.1.2). It used
+ * to be a custom `userId`, which platform-api and services/realtime each read
+ * differently -- platform-api looked for `sub` and found nothing, which is the
+ * incompatibility filed as #82. Standardising on the registered name means one
+ * claim, spelled the same way, in every service that reads a token.
+ */
 export interface JwtPayload {
-  userId: string;
+  sub: string;
   email: string;
   role: UserRole;
   tier: UserTier;

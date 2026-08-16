@@ -23,7 +23,7 @@ export function registerCollabEvents(io: AppServer, socket: AuthenticatedSocket)
     socket.join(room);
     io.to(room).emit('collab:joined', {
       projectId: data.projectId,
-      userId: socket.data.user.userId,
+      userId: socket.data.user.sub,
     });
   });
 
@@ -31,7 +31,7 @@ export function registerCollabEvents(io: AppServer, socket: AuthenticatedSocket)
     const room = `project:${data.projectId}`;
     socket.to(room).emit('collab:cursor', {
       ...data,
-      userId: socket.data.user.userId,
+      userId: socket.data.user.sub,
     });
   });
 
@@ -39,7 +39,7 @@ export function registerCollabEvents(io: AppServer, socket: AuthenticatedSocket)
     const room = `project:${data.projectId}`;
     socket.to(room).emit('collab:edit', {
       ...data,
-      userId: socket.data.user.userId,
+      userId: socket.data.user.sub,
     });
   });
 }

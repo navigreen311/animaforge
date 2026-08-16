@@ -11,5 +11,8 @@ export default defineConfig({
     // The whole suite runs in well under a second, so this costs nothing and
     // removes an entire class of cross-file flake.
     fileParallelism: false,
+    // JWT_SECRET is required with no fallback (#82); the setup file supplies a
+    // test value before any suite imports the middleware that reads it.
+    setupFiles: ['./src/__tests__/setup.ts'],
   },
 });

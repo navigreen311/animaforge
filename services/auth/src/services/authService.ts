@@ -6,8 +6,44 @@ import prisma from '../db';
 import { requirePrisma } from '../db';
 import { createSession, invalidateSession, isBlacklisted } from './sessionService';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'animaforge-dev-secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+
+/** The only algorithm this service signs and accepts. */
+const JWT_ALGORITHM: jwt.Algorithm = 'HS256';
+
+/**
+ * The signing secret, required.
+ *
+ * This used to be `process.env.JWT_SECRET || 'animaforge-dev-secret'`. A
+ * default secret checked into a public repository is not a secret: anyone can
+ * mint a valid token for any account against a deployment that forgot to set
+ * the variable, and nothing about that deployment looks broken. The governance
+ * work removed the same pattern from the C2PA signer; this removes it here.
+ *
+ * Read lazily rather than at module load so that importing this module (as the
+ * test suite does) is not itself fatal -- the failure lands on the first
+ * attempt to sign or verify, with a message naming the cause.
+ */
+function jwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.trim() === '') {
+    throw new Error(
+      'JWT_SECRET is not set. The auth service signs every session token with it ' +
+        'and there is no development default, because a default secret is a ' +
+        'published secret. Set JWT_SECRET to the same value platform-api and the ' +
+        'realtime service verify with (see .env.example and docs/auth.md).',
+    );
+  }
+  return secret;
+}
+
+/**
+ * Assert the secret is present, for callers that want to fail at startup
+ * rather than on the first login attempt.
+ */
+export function assertJwtConfigured(): void {
+  jwtSecret();
+}
 const SALT_ROUNDS = 10;
 
 // ---------------------------------------------------------------------------
@@ -64,8 +100,11 @@ export async function comparePassword(password: string, hash: string): Promise<b
 // ---------------------------------------------------------------------------
 
 export function signToken(payload: JwtPayload): string {
-  return jwt.sign({ ...payload, jti: uuidv4() }, JWT_SECRET, {
+  // The algorithm is pinned on the signing side too, so a token this service
+  // issues can never be the one that triggers algorithm confusion downstream.
+  return jwt.sign({ ...payload, jti: uuidv4() }, jwtSecret(), {
     expiresIn: JWT_EXPIRES_IN,
+    algorithm: JWT_ALGORITHM,
   } as jwt.SignOptions);
 }
 
@@ -73,7 +112,9 @@ export function verifyToken(token: string): JwtPayload {
   if (tokenBlacklist.has(token)) {
     throw new Error('Token has been revoked');
   }
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return jwt.verify(token, jwtSecret(), {
+    algorithms: [JWT_ALGORITHM],
+  }) as JwtPayload;
 }
 
 export async function verifyTokenAsync(token: string): Promise<JwtPayload> {
@@ -84,7 +125,9 @@ export async function verifyTokenAsync(token: string): Promise<JwtPayload> {
   if (blacklisted) {
     throw new Error('Token has been revoked');
   }
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return jwt.verify(token, jwtSecret(), {
+    algorithms: [JWT_ALGORITHM],
+  }) as JwtPayload;
 }
 
 // ---------------------------------------------------------------------------
@@ -276,7 +319,7 @@ export async function updateUser(
 
 export function buildJwtPayload(user: User): JwtPayload {
   return {
-    userId: user.id,
+    sub: user.id,
     email: user.email,
     role: user.role,
     tier: user.tier,

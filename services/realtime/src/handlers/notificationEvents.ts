@@ -22,7 +22,7 @@ export function registerNotificationEvents(io: AppServer, socket: AuthenticatedS
     (data: { userId: string; message: string; payload?: Record<string, unknown> }) => {
       const room = `user:${data.userId}`;
       io.to(room).emit('render:notify' as any, {
-        from: socket.data.user.userId,
+        from: socket.data.user.sub,
         message: data.message,
         payload: data.payload ?? {},
         timestamp: Date.now(),
@@ -35,7 +35,7 @@ export function registerNotificationEvents(io: AppServer, socket: AuthenticatedS
     'system:broadcast' as any,
     (data: { message: string; level?: 'info' | 'warning' | 'critical' }) => {
       io.emit('system:broadcast' as any, {
-        from: socket.data.user.userId,
+        from: socket.data.user.sub,
         message: data.message,
         level: data.level ?? 'info',
         timestamp: Date.now(),
@@ -47,7 +47,7 @@ export function registerNotificationEvents(io: AppServer, socket: AuthenticatedS
   socket.on('user:typing' as any, (data: { projectId: string; isTyping: boolean }) => {
     const room = `project:${data.projectId}`;
     socket.to(room).emit('user:typing' as any, {
-      userId: socket.data.user.userId,
+      userId: socket.data.user.sub,
       projectId: data.projectId,
       isTyping: data.isTyping,
       timestamp: Date.now(),

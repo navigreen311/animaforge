@@ -56,7 +56,7 @@ class RoomManager {
       const socketRoom = `project:${projectId}`;
       const sockets = this.io.sockets.sockets;
       for (const [, socket] of sockets) {
-        if ((socket as any).data?.user?.userId === userId) {
+        if ((socket as any).data?.user?.sub === userId) {
           socket.join(socketRoom);
         }
       }
@@ -79,7 +79,7 @@ class RoomManager {
       const socketRoom = `project:${projectId}`;
       const sockets = this.io.sockets.sockets;
       for (const [, socket] of sockets) {
-        if ((socket as any).data?.user?.userId === userId) {
+        if ((socket as any).data?.user?.sub === userId) {
           socket.leave(socketRoom);
         }
       }

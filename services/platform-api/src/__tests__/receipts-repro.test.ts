@@ -7,6 +7,7 @@ import receiptsRouter from '../routes/receipts.js';
 import reproducibilityRouter from '../routes/reproducibility.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { resetFixtures } from './fixtures/factories.js';
+import { signTestToken } from './fixtures/tokens.js';
 
 // Build a self-contained test app
 const app = express();
@@ -15,12 +16,10 @@ app.use('/api/v1', receiptsRouter);
 app.use('/api/v1', reproducibilityRouter);
 app.use(errorHandler);
 
-// Build a mock JWT
+// Tokens are signed now (#82). The local helper built a token with a
+// literal 'fake-signature' and it was accepted, which is the bug.
 function makeToken(sub: string, email: string, role: string): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const payload = Buffer.from(JSON.stringify({ sub, email, role })).toString('base64url');
-  const signature = Buffer.from('fake-signature').toString('base64url');
-  return `${header}.${payload}.${signature}`;
+  return signTestToken({ sub, email, role });
 }
 
 const TOKEN = makeToken('00000000-0000-4000-8000-000000000001', 'test@animaforge.io', 'editor');
