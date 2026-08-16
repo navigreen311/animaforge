@@ -388,7 +388,14 @@ jobs:
     runs-on: ubuntu-latest
     # test-api is known-red (see ci-passed); needing it would skip e2e entirely.
     needs: [test-frontend]
-    # Postgres only; redis is gone because nothing in the harness touches it.
+    # Postgres and Redis. Both are used.
+    #
+    # An earlier revision of this job dropped Redis on the grounds that
+    # nothing in the harness touched it. That was wrong, and CI caught it:
+    # services/auth's createSession() calls getRedis(), so /auth/register
+    # succeeded and the very next /auth/login hung until the 30s request
+    # timeout while node-redis retried a connection that was never going to
+    # arrive. Login is on the critical path of every spec.
     #
     # Since #79 the console proxies every /api/* route to platform-api, which
     # reads this database, so the e2e stack is now web + platform-api + auth
@@ -405,6 +412,15 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5

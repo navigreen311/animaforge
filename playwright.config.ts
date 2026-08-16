@@ -147,6 +147,12 @@ export default defineConfig({
          * identity across both services.
          */
         DATABASE_URL: '',
+        /*
+         * createSession() reaches for Redis on every login. Without a
+         * reachable server node-redis retries rather than failing fast, and
+         * /auth/login hangs until the caller times out.
+         */
+        REDIS_URL: process.env.E2E_REDIS_URL ?? 'redis://localhost:6379',
       },
     },
     {
