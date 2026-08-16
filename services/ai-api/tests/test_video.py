@@ -63,17 +63,21 @@ class TestGenerateVideoEndpoint:
         assert "estimated_seconds" in data
         assert data["estimated_seconds"] > 0
 
-    def test_returns_preview_url(self, client: TestClient) -> None:
+    def test_no_preview_url_without_a_renderer(self, client: TestClient) -> None:
+        """No clip was rendered, so no URL may be returned.
+
+        This asserted `preview_url.startswith("https://cdn.animaforge.ai/preview/")`,
+        which was a URL minted from a fresh uuid on every request. Nothing ever
+        wrote a file there and no renderer existed that could have.
+        """
         resp = client.post(
             "/ai/v1/generate/video",
-            json={
-                "shot_id": "shot-003",
-                "scene_graph": {"objects": []},
-            },
+            json={"shot_id": "shot-1", "scene_graph": {}, "tier": "preview"},
         )
         assert resp.status_code == 201
         data = resp.json()
-        assert data["preview_url"].startswith("https://cdn.animaforge.ai/preview/")
+        assert data.get("preview_url") is None
+        assert data["engine"]["is_mock"] is True
 
     def test_invalid_tier_returns_422(self, client: TestClient) -> None:
         resp = client.post(

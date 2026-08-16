@@ -58,7 +58,8 @@ async def test_generate_dubbed_audio(api_client: AsyncClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["job_id"].startswith("dub-")
-    assert data["audio_url"].endswith(".wav")
+    assert data.get("audio_url") is None
+    assert data["engine"]["is_mock"] is True
     assert data["duration_ms"] > 0
 
 

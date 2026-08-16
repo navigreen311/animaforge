@@ -149,9 +149,16 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="D3/D6",
         name="video",
         env_var="VIDEO_ENGINE",
-        summary="Text-to-video and image-to-video diffusion.",
+        summary=(
+            "Text-to-video and image-to-video diffusion. A real diffusers "
+            "adapter exists and renders to a stored MP4, but it needs a CUDA "
+            "GPU and multi-gigabyte weights, so it is gated. Unprovisioned, "
+            "jobs are queued with no preview URL and an is_mock marker -- "
+            "never a URL for a clip that was not rendered."
+        ),
         packages=("torch", "diffusers"),
         weights_env="VIDEO_WEIGHTS_DIR",
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="D4",
@@ -190,7 +197,13 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="G2",
         name="dubbing",
         env_var="DUBBING_ENGINE",
-        summary="Multi-language dubbing with voice cloning.",
+        summary=(
+            "Multi-language dubbing with voice cloning. NOT IMPLEMENTED -- "
+            "there is no adapter, and setting DUBBING_ENGINE=real will not "
+            "produce one. Translation, synthesis and remux all return "
+            "is_mock with no artifact URL. The D4 phoneme timing this would "
+            "build on is real; the voice model is the missing piece."
+        ),
         packages=("torch", "torchaudio"),
         weights_env="DUBBING_WEIGHTS_DIR",
     ),
@@ -198,17 +211,29 @@ REGISTRY: tuple[EngineSpec, ...] = (
         cluster="D10",
         name="training",
         env_var="TRAINING_ENGINE",
-        summary="LoRA / DreamBooth fine-tuning.",
+        summary=(
+            "LoRA fine-tuning via diffusers and peft. A real adapter exists "
+            "and writes a .safetensors adapter to storage; it is gated on a "
+            "CUDA GPU and a base checkpoint. Unprovisioned, jobs report "
+            "not_implemented rather than completing on a timer."
+        ),
         packages=("torch", "diffusers", "peft"),
         weights_env="TRAINING_WEIGHTS_DIR",
+        real_implemented=True,
     ),
     EngineSpec(
         cluster="F3",
         name="music",
         env_var="MUSIC_ENGINE",
-        summary="Music generation and adaptive scoring.",
+        summary=(
+            "Music generation via audiocraft/MusicGen. A real adapter exists "
+            "and writes a stored WAV; it is gated on a multi-gigabyte "
+            "checkpoint and, above the small size, a GPU. Unprovisioned, cue "
+            "sheets are placeholders and no audio URL is returned."
+        ),
         packages=("torch", "audiocraft"),
         weights_env="MUSIC_WEIGHTS_DIR",
+        real_implemented=True,
     ),
 )
 
