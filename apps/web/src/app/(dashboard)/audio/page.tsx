@@ -144,11 +144,13 @@ const SFX_CATEGORIES = ['All', 'Action', 'Nature', 'UI', 'Sci-Fi', 'Foley', 'Mus
 
 const SFX_DURATIONS = ['0.5s', '1s', '2s', '5s', 'Custom'] as const;
 
-const PROJECTS = [
-  { id: 'proj-1', name: 'Cyberpunk Short Film' },
-  { id: 'proj-2', name: 'Nature Documentary' },
-  { id: 'proj-3', name: 'Product Launch Ad' },
-] as const;
+/**
+ * Fallback while the real project list loads or fails.
+ *
+ * The three invented projects that used to live here were presented as the
+ * user's own; an empty list is the honest stand-in for "not loaded yet".
+ */
+const NO_PROJECTS: { id: string; name: string }[] = [];
 
 const STATUS_COLORS: Record<ShotStatus, string> = {
   approved: '#10b981',
@@ -388,6 +390,9 @@ function toTrack(row: TrackRow): MusicTrack {
   };
 }
 
+// Generated voice takes have no model. /api/voices serves Voice rows (the
+// available voices), not recordings made from them -- there is no table for
+// a take, its character assignment or its status. Placeholder data.
 const VOICE_ENTRIES: VoiceEntry[] = [
   {
     id: 've-1',
@@ -407,6 +412,7 @@ const VOICE_ENTRIES: VoiceEntry[] = [
   },
 ];
 
+// No sound-effects library exists in the schema or the API. Placeholder.
 const SFX_LIBRARY: SfxItem[] = [
   { id: 'sfx-1', name: 'Laser Blast', category: 'Sci-Fi', duration: '0.5s', icon: '💥' },
   { id: 'sfx-2', name: 'Thunder Roll', category: 'Nature', duration: '2s', icon: '⛈' },
@@ -614,6 +620,12 @@ function DropdownMenu({
 
 // ── Component ────────────────────────────────────────────────
 export default function AudioStudioPage() {
+  const projectState = useResource<{ items: { id: string; title: string }[] }>(
+    '/api/projects?limit=100',
+  );
+  const projects =
+    projectState.data?.items?.map((p) => ({ id: p.id, name: p.title })) ?? NO_PROJECTS;
+
   const trackState = useResource<TrackList>('/api/audio/tracks');
   const voiceState = useResource<VoiceList>('/api/voices');
   const MUSIC_TRACKS = useMemo(
@@ -636,16 +648,14 @@ export default function AudioStudioPage() {
   const [bpmRangeOn, setBpmRangeOn] = useState(false);
   const [bpmMin, setBpmMin] = useState('100');
   const [bpmMax, setBpmMax] = useState('140');
-  // Without the explicit parameter, useState infers the literal type of
-  // PROJECTS[0].id ('proj-1'), so the setter rejects every other project.
-  const [selectedProject, setSelectedProject] = useState<string>(PROJECTS[0].id);
+  const [selectedProject, setSelectedProject] = useState<string>('');
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
   const [editingTrackName, setEditingTrackName] = useState<string | null>(null);
   // SFX Add-to-project modal (AU-4)
   const [sfxAddModal, setSfxAddModal] = useState<{ sfx: SfxItem } | null>(null);
-  const [sfxModalProject, setSfxModalProject] = useState<string>(PROJECTS[0].id);
+  const [sfxModalProject, setSfxModalProject] = useState<string>('');
   const [sfxModalShot, setSfxModalShot] = useState<string>('s1');
   const [trackNames, setTrackNames] = useState<Record<string, string>>(() => {
     const m: Record<string, string> = {};
@@ -672,7 +682,7 @@ export default function AudioStudioPage() {
   const [voiceGenEtaSec, setVoiceGenEtaSec] = useState(0);
 
   // Score from Scene state (AU-5 / AU-6)
-  const [sceneShots, setSceneShots] = useState<SceneShot[]>(PROJECT_SHOTS[PROJECTS[0].id] ?? []);
+  const [sceneShots, setSceneShots] = useState<SceneShot[]>([]);
   const [selectedShotIds, setSelectedShotIds] = useState<Set<string>>(new Set());
   const [sceneGenerating, setSceneGenerating] = useState(false);
   const [beatMap, setBeatMap] = useState<BeatMarker[] | null>(null);
@@ -895,7 +905,7 @@ export default function AudioStudioPage() {
   const renderTrackActions = (id: string, isMusic: boolean) => {
     const displayName = trackNames[id] ?? id;
 
-    const timelineItems = PROJECTS.map((p) => ({
+    const timelineItems = projects.map((p) => ({
       label: p.name,
       icon: <FolderPlus size={12} />,
       onClick: () => toast.success(`"${displayName}" added to ${p.name} timeline`),
@@ -1333,7 +1343,7 @@ export default function AudioStudioPage() {
                     onChange={(e) => setSelectedProject(e.target.value)}
                     style={selectStyle}
                   >
-                    {PROJECTS.map((p) => (
+                    {projects.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
@@ -2285,7 +2295,7 @@ export default function AudioStudioPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSfxAddModal({ sfx });
-                            setSfxModalProject(PROJECTS[0].id);
+                            setSfxModalProject(projects[0]?.id ?? '');
                             setSfxModalShot('s1');
                           }}
                           style={{
@@ -2396,7 +2406,7 @@ export default function AudioStudioPage() {
                   onChange={(e) => setSfxModalProject(e.target.value)}
                   style={selectStyle}
                 >
-                  {PROJECTS.map((p) => (
+                  {projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
@@ -2434,7 +2444,7 @@ export default function AudioStudioPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const proj = PROJECTS.find((p) => p.id === sfxModalProject);
+                    const proj = projects.find((p) => p.id === sfxModalProject);
                     const shot = SCENE_SHOTS.find((s) => s.id === sfxModalShot);
                     toast.success(
                       `SFX added to timeline — ${proj?.name ?? 'project'} / ${shot?.label ?? 'shot'}`,

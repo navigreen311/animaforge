@@ -91,7 +91,11 @@ interface ProjectAccessEntry {
 // MOCK DATA
 // ══════════════════════════════════════════════════════════════
 
-const CURRENT_USER_ID = '1';
+// Seat and credit allowances are not modelled anywhere: Subscription carries
+// id, userId, stripeId, tier, status and currentPeriodEnd, and no table records
+// how many seats or credits a plan grants. These remain constants because the
+// alternative is inventing a table; the numbers below are a placeholder plan,
+// not this workspace's real entitlement. Reported in the PR that landed this.
 const TOTAL_SEATS = 10;
 const MONTHLY_CREDITS = 10_000;
 
@@ -1526,14 +1530,17 @@ function RowContextMenu({
   anchorRect,
   onClose,
   onAction,
+  currentUserId,
 }: {
   member: TeamMember;
   anchorRect: DOMRect;
   onClose: () => void;
   onAction: (action: string, member: TeamMember, payload?: unknown) => void;
+  /** Who is signed in, from GET /api/users/me. Was the constant '1'. */
+  currentUserId: string | null;
 }) {
   const [roleSubmenu, setRoleSubmenu] = useState(false);
-  const isOwnRow = member.id === CURRENT_USER_ID;
+  const isOwnRow = currentUserId !== null && member.id === currentUserId;
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1741,6 +1748,11 @@ export default function TeamPage() {
     danger?: boolean;
     onConfirm: () => void;
   } | null>(null);
+  // Who is signed in. This was the constant CURRENT_USER_ID = '1', which made
+  // whichever member happened to have id '1' look like the viewer.
+  const meState = useResource<{ id?: string; data?: { id?: string } }>('/api/users/me');
+  const currentUserId = meState.data?.data?.id ?? meState.data?.id ?? null;
+
   const memberState = useResource<MemberList>('/api/team/members');
   const inviteState = useResource<InviteList>('/api/team/invitations');
   // Replaces the two hardcoded SUB_TEAMS rows. Teams persist: created through
@@ -2729,6 +2741,7 @@ export default function TeamPage() {
           anchorRect={contextMenu.rect}
           onClose={() => setContextMenu(null)}
           onAction={handleMenuAction}
+          currentUserId={currentUserId}
         />
       )}
 

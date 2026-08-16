@@ -112,6 +112,10 @@ function timeAgo(date: Date) {
 
 /* ── Mock Data ──────────────────────────────────────────────── */
 
+// Scene, Shot and Character are real models with real routes, but this page
+// is a drafting surface that edits blocks locally before anything is saved,
+// and there is no route that persists a draft script back. These seed the
+// editor; they are not this project's scenes.
 const INITIAL_SCENES: SceneBlock[] = [
   {
     id: 'scene-1',

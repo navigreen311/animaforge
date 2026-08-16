@@ -281,6 +281,10 @@ const ALL_TAG_SUGGESTIONS = [
 ];
 
 // ── Storage breakdown (mock) ─────────────────────────────────────
+// No endpoint reports storage usage and no table records it: Asset has no
+// size column, so neither the total nor the breakdown below can be derived
+// from anything real. These are placeholder figures, not this workspace's
+// usage. Wiring them needs a size on Asset and an aggregate route.
 const STORAGE = {
   total: 10 * 1024 * 1024 * 1024, // 10 GB
   used: 2.4 * 1024 * 1024 * 1024,
