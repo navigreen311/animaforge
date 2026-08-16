@@ -42,12 +42,14 @@ import consoleTeamRouter from './routes/console/team.js';
 import consoleMarketRouter from './routes/console/market.js';
 import consoleInsightsRouter from './routes/console/insights.js';
 import consoleDiscoveryRouter from './routes/console/discovery.js';
+import { stripIdentityHeaders } from './middleware/stripIdentityHeaders.js';
 
 const app = express();
 
 // Security & parsing middleware
 app.use(helmet());
 app.use(cors());
+app.use(stripIdentityHeaders);
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(performanceMonitor);

@@ -108,6 +108,11 @@ export function verifyToken(token: string): AuthUser | null {
     }) as TokenClaims;
   } catch {
     // Bad signature, wrong algorithm, expired — all "not authenticated".
+    //
+    // A missing JWT_SECRET lands here too, and that is deliberate: the service
+    // fails shut, so no token authenticates while it is misconfigured.
+    // `assertAuthConfigured` is what makes that state loud, by refusing to
+    // start at all — see the startup check rather than adding a throw here.
     return null;
   }
 
