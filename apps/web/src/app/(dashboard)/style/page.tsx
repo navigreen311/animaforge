@@ -243,26 +243,6 @@ const SHADING_MODES = ['Cel', 'Gradient', 'Hatching', 'Flat'] as const;
 const ANIMATION_STYLES = ['Snappy', 'Smooth', 'Elastic', 'Linear'] as const;
 const VISEME_STYLES = ['Anime', 'Western', 'Realistic', 'Simple'] as const;
 
-const MOCK_DISCOVERY_RESULTS: DiscoveryResult[] = [
-  {
-    id: 'd1',
-    title: 'Wes Anderson Palette',
-    description: 'Symmetrical, pastel tones, high saturation',
-    thumbnail: '#c4a882',
-  },
-  {
-    id: 'd2',
-    title: 'Vintage Film Look',
-    description: 'Warm grain, lifted blacks, faded highlights',
-    thumbnail: '#8b7355',
-  },
-  {
-    id: 'd3',
-    title: 'Clean Studio Style',
-    description: 'Crisp colors, even lighting, minimal grain',
-    thumbnail: '#5a7d9a',
-  },
-];
 
 const FINGERPRINT_COLORS = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#ffd460'];
 
@@ -478,8 +458,12 @@ export default function StyleStudioPage() {
 
   const handleDiscoverySearch = useCallback(() => {
     if (!discoveryQuery.trim()) return;
-    setDiscoveryResults(MOCK_DISCOVERY_RESULTS);
-    toast.info('Found 3 style references');
+    // Any query returned the same three named references ("Wes Anderson
+    // Palette" and friends) and announced "Found 3 style references". There is
+    // no reference search: nothing indexes styles by description and no service
+    // answers a text query with matches.
+    setDiscoveryResults([]);
+    toast.error('Style reference search is not available yet.');
   }, [discoveryQuery]);
 
   /* ── Library Handlers ─────────────────────────────────── */

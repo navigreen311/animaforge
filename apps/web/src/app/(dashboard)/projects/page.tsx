@@ -18,16 +18,47 @@ import { useUIStore } from '@/store/useUIStore';
 import type { Project, RenderJob, ActivityItem, DashboardStats, ProjectFolder } from '@/lib/types';
 import { timeAgo } from '@/lib/utils/format';
 import { UnavailableButton } from '../components/unavailable/UnavailableButton';
+import { authHeaders } from '@/lib/api/useResource';
 
 /* ------------------------------------------------------------------ */
 /*  Mock folders                                                       */
 /* ------------------------------------------------------------------ */
 
-const MOCK_FOLDERS: ProjectFolder[] = [
-  { id: 'folder-animations', name: 'Animations', color: '#6366f1', projectCount: 0 },
-  { id: 'folder-ads', name: 'Ads', color: '#f59e0b', projectCount: 0 },
-  { id: 'folder-shorts', name: 'Shorts', color: '#10b981', projectCount: 0 },
-];
+/** One row of GET /api/projects. */
+interface ProjectRow {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  phase: string;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/**
+ * Map a stored project onto the card.
+ *
+ * The card shows more than the table does. Shot counts come from a separate
+ * query the list endpoint does not run, and there is no thumbnail, preview
+ * video, per-project credit total, pin flag, folder or member list anywhere in
+ * the schema — so those are empty or zero rather than filled in. Grouping into
+ * folders needs a folders table before it can mean anything.
+ */
+function toProject(row: ProjectRow): Project {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? '',
+    status: row.status as Project['status'],
+    projectType: 'short-film' as Project['projectType'],
+    totalShots: 0,
+    approvedShots: 0,
+    teamMembers: [],
+    creditsCost: 0,
+    updatedAt: row.updatedAt,
+    createdAt: row.createdAt,
+  } as Project;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -55,10 +86,12 @@ export default function ProjectsPage() {
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (sortOption) params.set('sort', sortOption);
       if (searchQuery) params.set('search', searchQuery);
-      const res = await fetch(`/api/projects?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch projects');
+      // The request carries the console's bearer token. Without it the proxy
+      // route answers 401 and this list stays permanently empty.
+      const res = await fetch(`/api/projects?${params.toString()}`, { headers: authHeaders() });
       const data = await res.json();
-      return data.projects ?? [];
+      if (!res.ok) throw new Error(data?.error?.message ?? 'Failed to fetch projects');
+      return ((data.items ?? []) as ProjectRow[]).map(toProject);
     },
     refetchInterval: 30_000,
   });
@@ -67,10 +100,10 @@ export default function ProjectsPage() {
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<RenderJob[]>({
     queryKey: ['jobs'],
     queryFn: async () => {
-      const res = await fetch('/api/jobs');
-      if (!res.ok) throw new Error('Failed to fetch jobs');
+      const res = await fetch('/api/jobs', { headers: authHeaders() });
       const data = await res.json();
-      return data.jobs ?? [];
+      if (!res.ok) throw new Error(data?.error?.message ?? 'Failed to fetch jobs');
+      return data.items ?? [];
     },
     refetchInterval: 5_000,
   });
@@ -79,10 +112,10 @@ export default function ProjectsPage() {
   const { data: activities = [], isLoading: activityLoading } = useQuery<ActivityItem[]>({
     queryKey: ['activity'],
     queryFn: async () => {
-      const res = await fetch('/api/activity');
-      if (!res.ok) throw new Error('Failed to fetch activity');
+      const res = await fetch('/api/activity', { headers: authHeaders() });
       const data = await res.json();
-      return data.activities ?? [];
+      if (!res.ok) throw new Error(data?.error?.message ?? 'Failed to fetch activity');
+      return data.items ?? [];
     },
   });
 
@@ -169,17 +202,15 @@ export default function ProjectsPage() {
   }, [projects]);
 
   // ── Folder counts (derived from current projects) ─────────
-  const foldersWithCounts = useMemo<ProjectFolder[]>(() => {
-    return MOCK_FOLDERS.map((folder) => ({
-      ...folder,
-      projectCount: projects.filter((p) => p.folderId === folder.id).length,
-    }));
-  }, [projects]);
+  // Three folders (Animations, Ads, Shorts) were listed here for every
+  // workspace. There is no folders table and no folder column on a project, so
+  // there are no folders to count into.
+  const foldersWithCounts = useMemo<ProjectFolder[]>(() => [], []);
 
   // ── Handlers ──────────────────────────────────────────────
   // Import is rendered disabled — see featureStatus['projects.import'].
-  // /api/projects serves the hardcoded MOCK_PROJECTS list and stores nothing,
-  // so an imported project could be parsed but never saved.
+  // /api/projects now proxies platform-api and persists, but nothing parses an
+  // imported project file into one.
 
   const handleCreateProject = () => {
     setNewProjectModalOpen(true);

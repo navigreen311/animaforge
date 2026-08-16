@@ -95,56 +95,8 @@ const CURRENT_USER_ID = '1';
 const TOTAL_SEATS = 10;
 const MONTHLY_CREDITS = 10_000;
 
-const MOCK_PROJECTS = [
-  'Cyber Samurai',
-  'Brand Story',
-  'Product Launch',
-  'Holiday Campaign',
-  'Client Reel',
-];
 
-const MOCK_PROJECT_ACCESS: ProjectAccessEntry[] = [
-  {
-    id: 'p1',
-    title: 'Cyber Samurai',
-    status: 'Active',
-    dotColor: '#7c3aed',
-    hasAccess: true,
-    role: 'Editor',
-  },
-  {
-    id: 'p2',
-    title: 'Brand Story',
-    status: 'Active',
-    dotColor: '#06b6d4',
-    hasAccess: true,
-    role: 'Editor',
-  },
-  {
-    id: 'p3',
-    title: 'Product Launch',
-    status: 'Draft',
-    dotColor: '#f59e0b',
-    hasAccess: false,
-    role: 'Viewer',
-  },
-  {
-    id: 'p4',
-    title: 'Holiday Campaign',
-    status: 'Active',
-    dotColor: '#ef4444',
-    hasAccess: false,
-    role: 'Viewer',
-  },
-  {
-    id: 'p5',
-    title: 'Client Reel',
-    status: 'Archived',
-    dotColor: '#10b981',
-    hasAccess: false,
-    role: 'Viewer',
-  },
-];
+
 
 /** One row of GET /api/team/members. */
 interface MemberRow {
@@ -676,6 +628,10 @@ function CreditLimitModal({
 // ══════════════════════════════════════════════════════════════
 
 function InviteMemberModal({ onClose }: { onClose: () => void }) {
+  const inviteProjectState = useResource<{ items: { id: string; title: string }[] }>(
+    '/api/projects?limit=100',
+  );
+  const projectNames = (inviteProjectState.data?.items ?? []).map((p) => p.title);
   const [entries, setEntries] = useState<InviteEntry[]>([{ email: '', id: crypto.randomUUID() }]);
   const [role, setRole] = useState<Role>('Editor');
   const [projectAccess, setProjectAccess] = useState<'all' | 'specific'>('all');
@@ -881,7 +837,11 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
           </div>
           {projectAccess === 'specific' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {MOCK_PROJECTS.map((p) => (
+              {/* Five project names were listed here for every workspace.
+                  Per-project access is not stored anyway -- a project has an
+                  owner and an optional org, and no member table -- so there is
+                  nothing to scope an invitation to. */}
+              {projectNames.map((p) => (
                 <label
                   key={p}
                   style={{
@@ -998,12 +958,26 @@ function InviteMemberModal({ onClose }: { onClose: () => void }) {
 // ══════════════════════════════════════════════════════════════
 
 function ProjectAccessModal({ member, onClose }: { member: TeamMember; onClose: () => void }) {
-  const [entries, setEntries] = useState<ProjectAccessEntry[]>(() =>
-    MOCK_PROJECT_ACCESS.map((p) => ({
-      ...p,
-      hasAccess: member.projects.includes(p.title),
-    })),
+  // The five projects with per-member roles this modal used to toggle were
+  // literals, and nothing they toggled was ever written anywhere: there is no
+  // project-member table. The list is the caller's real projects, and the
+  // toggles are local until such a table exists.
+  const projectState = useResource<{ items: { id: string; title: string }[] }>(
+    '/api/projects?limit=100',
   );
+  const [entries, setEntries] = useState<ProjectAccessEntry[]>([]);
+  useEffect(() => {
+    setEntries(
+      (projectState.data?.items ?? []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        status: 'Active' as const,
+        dotColor: '#7c3aed',
+        hasAccess: member.projects.includes(p.title),
+        role: 'Editor' as const,
+      })),
+    );
+  }, [projectState.data, member.projects]);
 
   const toggleAccess = (id: string) => {
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, hasAccess: !e.hasAccess } : e)));

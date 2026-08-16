@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as characterController from '../controllers/characterController.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 router.post('/characters', asyncHandler(characterController.create));
 router.get('/characters', asyncHandler(characterController.list));
+// Registered before /characters/:id, or ":id" swallows "stats".
+router.get('/characters/stats', requireAuth, asyncHandler(characterController.stats));
 router.get('/characters/:id', asyncHandler(characterController.getById));
 router.put('/characters/:id', asyncHandler(characterController.update));
 router.put('/characters/:id/hair', asyncHandler(characterController.updateHair));

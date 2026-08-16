@@ -7,6 +7,7 @@ import {
   Wardrobe,
 } from '../models/characterSchemas.js';
 import * as characterService from '../services/characterService.js';
+import { requirePrisma } from '../db.js';
 
 const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -49,6 +50,42 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       limit: limit ? Number(limit) : undefined,
     });
     res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * The four counters on the characters page header.
+ *
+ * The console used to fall back to a fixture when this 404'd, so the numbers on
+ * that header belonged to no account at all. Each of these is a count over the
+ * caller's own rows.
+ */
+export async function stats(req: Request, res: Response, next: NextFunction) {
+  try {
+    const ownerId = req.user!.id;
+    const [total, digitalTwins, voicesPaired, projectGroups] = await Promise.all([
+      requirePrisma().character.count({ where: { ownerId } }),
+      requirePrisma().character.count({ where: { ownerId, isDigitalTwin: true } }),
+      requirePrisma().character.count({ where: { ownerId, voiceId: { not: null } } }),
+      requirePrisma().character.groupBy({
+        by: ['projectId'],
+        where: { ownerId, projectId: { not: null } },
+      }),
+    ]);
+    res.json({
+      success: true,
+      data: {
+        total,
+        // "Active in projects" is how many distinct projects the caller's
+        // characters are attached to -- a character has one projectId, not a
+        // list, so this cannot be a per-character count.
+        activeInProjects: projectGroups.length,
+        digitalTwins,
+        voicesPaired,
+      },
+    });
   } catch (err) {
     next(err);
   }

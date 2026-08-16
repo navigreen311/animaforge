@@ -22,7 +22,49 @@ import CharacterFilterBar, {
   type CharacterFilters,
 } from '../components/characters/CharacterFilterBar';
 import NewCharacterModal from '../components/characters/NewCharacterModal';
-import { MOCK_CHARACTERS, MOCK_CHARACTER_STATS } from '@/lib/mockData';
+import { authHeaders } from '@/lib/api/useResource';
+
+/** One row of GET /api/characters. */
+interface CharacterRow {
+  id: string;
+  projectId: string | null;
+  name: string;
+  isDigitalTwin: boolean;
+  voiceId: string | null;
+  styleMode: string;
+  rightsStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Map a stored character onto the grid card.
+ *
+ * The card carries a description, a drift score, a shot count and a last-used
+ * timestamp. None are columns, so they are empty or zero; `lastUsedAt` is the
+ * row's updatedAt, which is when it was last edited.
+ */
+function toCharacter(row: CharacterRow): Character {
+  return {
+    id: row.id,
+    name: row.name,
+    description: '',
+    styleMode: row.styleMode as Character['styleMode'],
+    status: 'active',
+    isDigitalTwin: row.isDigitalTwin,
+    sourcePhotos: [],
+    voiceId: row.voiceId ?? '',
+    voiceName: '',
+    projectIds: row.projectId ? [row.projectId] : [],
+    driftScore: 0,
+    rightsScope: row.rightsStatus as Character['rightsScope'],
+    avatarColor: '#6366f1',
+    shotCount: 0,
+    lastUsedAt: row.updatedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  } as Character;
+}
 import type { Character, CharacterStats } from '@/lib/types';
 
 // ── Status dot color map ──────────────────────────────────
@@ -83,32 +125,36 @@ export default function CharactersPage() {
 
   // ── Fetch characters (falls back to mock data) ──────────
   const {
-    data: characters = MOCK_CHARACTERS,
+    data: characters = [],
     isLoading: charsLoading,
     isError: charsError,
     refetch: refetchCharacters,
   } = useQuery<Character[]>({
     queryKey: ['characters'],
     queryFn: async () => {
-      const res = await fetch('/api/characters');
-      if (!res.ok) throw new Error('Failed to fetch characters');
+      // Both requests carry the bearer token, and neither falls back to a
+      // fixture. Returning MOCK_CHARACTERS when the request failed is what made
+      // an empty or broken account look like a populated one.
+      const res = await fetch('/api/characters', { headers: authHeaders() });
       const data = await res.json();
-      return data.characters ?? MOCK_CHARACTERS;
+      if (!res.ok) throw new Error(data?.error?.message ?? 'Failed to fetch characters');
+      return ((data.items ?? []) as CharacterRow[]).map(toCharacter);
     },
-    placeholderData: MOCK_CHARACTERS,
     refetchInterval: 30_000,
   });
 
-  // ── Fetch stats (falls back to mock data) ───────────────
-  const { data: stats = MOCK_CHARACTER_STATS, isLoading: statsLoading } = useQuery<CharacterStats>({
+  // ── Fetch stats ─────────────────────────────────────────
+  const {
+    data: stats = { total: 0, activeInProjects: 0, digitalTwins: 0, voicesPaired: 0 },
+    isLoading: statsLoading,
+  } = useQuery<CharacterStats>({
     queryKey: ['character-stats'],
     queryFn: async () => {
-      const res = await fetch('/api/characters/stats');
-      if (!res.ok) throw new Error('Failed to fetch stats');
+      const res = await fetch('/api/characters/stats', { headers: authHeaders() });
       const data = await res.json();
-      return data.stats ?? MOCK_CHARACTER_STATS;
+      if (!res.ok) throw new Error(data?.error?.message ?? 'Failed to fetch stats');
+      return data as CharacterStats;
     },
-    placeholderData: MOCK_CHARACTER_STATS,
   });
 
   // ── Client-side filtering ───────────────────────────────
