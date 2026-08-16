@@ -107,7 +107,10 @@ jobs:
           import { writeFileSync, openSync } from 'node:fs';
           import { createRequire } from 'node:module';
 
-          const require = createRequire(import.meta.url);
+          // Resolved from the workspace, not from /tmp where this script is
+          // written -- otherwise node looks for node_modules next to the script
+          // and finds nothing.
+          const require = createRequire(`${process.cwd()}/`);
 
           const BASE = process.env.API_BASE;
           const ACTOR = process.env.ACTOR_ID;
@@ -314,6 +317,10 @@ jobs:
             }
           }
           SCRIPT
+          # pipefail is load-bearing: without it the step takes tee's exit
+          # status, so a crashed verification reports success and the whole
+          # harness becomes a green light that checked nothing.
+          set -o pipefail
           node /tmp/verify.mjs | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the evidence
