@@ -3,6 +3,7 @@
  */
 import { prisma } from './setup';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import request from 'supertest';
@@ -10,7 +11,10 @@ import request from 'supertest';
 // Re-export prisma for convenience
 export { prisma };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'animaforge-dev-secret';
+// The services have no default secret any more (#82); the suites supply one,
+// generated per run rather than written as a literal, before anything reads it.
+process.env.JWT_SECRET ??= randomBytes(32).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 // ---------------------------------------------------------------------------
@@ -201,13 +205,14 @@ export function getAuthToken(
   extra: { email?: string; role?: string; tier?: string } = {},
 ): string {
   const payload = {
-    userId,
+    // `sub`, the registered claim, matching what the auth service signs (#82).
+    sub: userId,
     email: extra.email ?? 'test@test.com',
     role: extra.role ?? 'creator',
     tier: extra.tier ?? 'free',
     jti: uuidv4(),
   };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
 }
 
 /**
@@ -215,33 +220,35 @@ export function getAuthToken(
  */
 export function getExpiredToken(userId: string): string {
   const payload = {
-    userId,
+    sub: userId,
     email: 'test@test.com',
     role: 'creator',
     tier: 'free',
     jti: uuidv4(),
   };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '0s' });
+  return jwt.sign(payload, JWT_SECRET, { algorithm: 'HS256', expiresIn: '0s' });
 }
 
 /**
- * Build a bearer token that the platform-api auth middleware can decode.
- * The platform-api middleware reads `sub`, `email`, `role` from the JWT payload.
+ * Build a bearer token that platform-api accepts.
+ *
+ * This used to assemble three base64url segments with a literal
+ * 'test-signature', which the middleware accepted because it never verified
+ * one. It is a real signed token now (#82).
  */
 export function getPlatformToken(
   userId: string,
   extra: { email?: string; role?: string } = {},
 ): string {
-  const payload = {
-    sub: userId,
-    email: extra.email ?? 'test@test.com',
-    role: extra.role ?? 'creator',
-  };
-  // Build a 3-part dot-separated token where part[1] is base64url JSON
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const sig = Buffer.from('test-signature').toString('base64url');
-  return `${header}.${body}.${sig}`;
+  return jwt.sign(
+    {
+      sub: userId,
+      email: extra.email ?? 'test@test.com',
+      role: extra.role ?? 'creator',
+    },
+    JWT_SECRET,
+    { algorithm: 'HS256', expiresIn: '1h' },
+  );
 }
 
 // ---------------------------------------------------------------------------
