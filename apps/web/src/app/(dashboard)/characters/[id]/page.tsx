@@ -197,15 +197,11 @@ const EMOTION_PREVIEWS = [
   { label: 'Surprise', Icon: Zap },
 ];
 
-
 /* ── Voice Modal Mock Voices ──────────────────────────────────── */
-
 
 /* ── Drift Chart Data ─────────────────────────────────────────── */
 
-
 /* ── Enhanced History Data ────────────────────────────────────── */
-
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -280,8 +276,14 @@ export default function CharacterDetailPage() {
   // consistency and nothing links a character to the shots it appears in
   // (shots carry a character_refs id array with no back-reference and no
   // score), so there is no history to show.
-  const history: { id: string; project: string; projectId: string; shotNumber: number; date: string; score: number }[] =
-    [];
+  const history: {
+    id: string;
+    project: string;
+    projectId: string;
+    shotNumber: number;
+    date: string;
+    score: number;
+  }[] = [];
   const driftSeries: { date: string; score: number }[] = [];
   const [activeTab, setActiveTab] = useState<Tab>('Appearance');
   const [activeView, setActiveView] = useState<(typeof VIEW_ANGLES)[number]>('Front');

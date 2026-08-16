@@ -140,7 +140,11 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
   const router = useRouter();
   const state = useResource<{ items: MarketItemRow[] }>('/api/marketplace/items?limit=100');
   const profile = useMemo(
-    () => toProfile(id, (state.data?.items ?? []).filter((row) => row.creatorId === id)),
+    () =>
+      toProfile(
+        id,
+        (state.data?.items ?? []).filter((row) => row.creatorId === id),
+      ),
     [id, state.data],
   );
   const [isFollowing, setIsFollowing] = useState(false);

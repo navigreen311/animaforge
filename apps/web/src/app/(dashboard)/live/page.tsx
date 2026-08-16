@@ -455,35 +455,37 @@ export default function LivePage() {
                   }}
                 >
                   {avatars.length === 0 && (
-                    <div style={{ padding: '7px 9px', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    <div
+                      style={{ padding: '7px 9px', fontSize: 11, color: 'var(--text-tertiary)' }}
+                    >
                       {avatarState.loading ? 'Loading…' : 'No avatars yet.'}
                     </div>
                   )}
                   {avatars.map((row) => {
                     const a = row.name;
                     return (
-                    <button
-                      key={row.id}
-                      type="button"
-                      onClick={() => {
-                        setAvatar(a);
-                        setAvatarDropOpen(false);
-                      }}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        padding: '7px 9px',
-                        background: avatar === a ? 'var(--bg-hover)' : 'transparent',
-                        border: 'none',
-                        borderRadius: 'var(--radius-sm)',
-                        color: 'var(--text-primary)',
-                        fontSize: 11,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {a}
-                    </button>
+                      <button
+                        key={row.id}
+                        type="button"
+                        onClick={() => {
+                          setAvatar(a);
+                          setAvatarDropOpen(false);
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '7px 9px',
+                          background: avatar === a ? 'var(--bg-hover)' : 'transparent',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          color: 'var(--text-primary)',
+                          fontSize: 11,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {a}
+                      </button>
                     );
                   })}
                 </motion.div>

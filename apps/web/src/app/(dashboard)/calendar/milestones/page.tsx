@@ -14,10 +14,6 @@ interface MilestoneRow {
   status: string;
 }
 
-
-
-
-
 // calendar_events.status is a free-form string, so anything unrecognised keeps
 // the neutral colour instead of falling through to undefined.
 function statusColor(s: string): string {
@@ -125,9 +121,7 @@ export default function MilestonesPage() {
           than redrawn from invented numbers, and what is listed below is the
           milestones that actually exist. */}
       {state.loading && <LoadingState label="Loading milestones" />}
-      {!state.loading && state.error && (
-        <ErrorState error={state.error} onRetry={state.reload} />
-      )}
+      {!state.loading && state.error && <ErrorState error={state.error} onRetry={state.reload} />}
       {!state.loading && !state.error && (
         <section
           style={{

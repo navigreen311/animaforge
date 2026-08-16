@@ -36,7 +36,6 @@ const PRESETS: Record<
   custom: { container: 'MP4', codec: 'H.264', resolution: '1080p', fps: '24' },
 };
 
-
 const EXPORT_STAGES = [
   'Preparing',
   'Encoding video',

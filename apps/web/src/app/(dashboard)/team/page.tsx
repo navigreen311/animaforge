@@ -95,9 +95,6 @@ const CURRENT_USER_ID = '1';
 const TOTAL_SEATS = 10;
 const MONTHLY_CREDITS = 10_000;
 
-
-
-
 /** One row of GET /api/team/members. */
 interface MemberRow {
   id: string;

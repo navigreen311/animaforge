@@ -243,7 +243,6 @@ const SHADING_MODES = ['Cel', 'Gradient', 'Hatching', 'Flat'] as const;
 const ANIMATION_STYLES = ['Snappy', 'Smooth', 'Elastic', 'Linear'] as const;
 const VISEME_STYLES = ['Anime', 'Western', 'Realistic', 'Simple'] as const;
 
-
 const FINGERPRINT_COLORS = ['#1a1a2e', '#e94560', '#0f3460', '#16213e', '#533483', '#ffd460'];
 
 /* ── Helpers ──────────────────────────────────────────────────── */

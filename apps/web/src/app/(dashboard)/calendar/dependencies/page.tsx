@@ -48,7 +48,9 @@ export default function DependenciesPage() {
     <div style={{ padding: 24 }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <GitBranch size={24} color="var(--accent, #a855f7)" />
-        <h1 style={{ margin: 0, fontSize: 22, color: 'var(--text, #f1f5f9)' }}>Task Dependencies</h1>
+        <h1 style={{ margin: 0, fontSize: 22, color: 'var(--text, #f1f5f9)' }}>
+          Task Dependencies
+        </h1>
       </header>
 
       {state.loading && <LoadingState label="Loading dependencies" />}

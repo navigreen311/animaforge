@@ -775,7 +775,8 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">
-                  Type <span className="font-mono text-red-400">{project?.title ?? ''}</span> to confirm
+                  Type <span className="font-mono text-red-400">{project?.title ?? ''}</span> to
+                  confirm
                 </label>
                 <input
                   type="text"

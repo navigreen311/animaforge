@@ -107,9 +107,7 @@ export default function BranchingNarrativesPage() {
               <ErrorState error={state.error} onRetry={state.reload} />
             )}
             {!state.loading && !state.error && narratives.length === 0 && (
-              <li style={{ fontSize: 12, color: 'var(--muted, #9ca3af)' }}>
-                No narratives yet.
-              </li>
+              <li style={{ fontSize: 12, color: 'var(--muted, #9ca3af)' }}>No narratives yet.</li>
             )}
             {narratives.map((n) => (
               <li key={n.narrativeId}>

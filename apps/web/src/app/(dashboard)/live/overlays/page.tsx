@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { ChevronRight, Layers } from 'lucide-react';
 import BroadcastOverlayDesigner from '@/components/live/BroadcastOverlayDesigner';
 
-
-
 export default function BroadcastOverlaysPage() {
   return (
     <div style={{ padding: 24, color: 'var(--fg, #e5e7eb)' }}>

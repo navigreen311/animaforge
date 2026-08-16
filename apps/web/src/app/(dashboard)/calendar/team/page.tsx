@@ -90,9 +90,7 @@ export default function CalendarTeamPage() {
               <tbody>
                 {members.map((m) => (
                   <tr key={m.id} style={{ borderTop: '1px solid var(--border, #26263a)' }}>
-                    <td style={{ padding: 8 }}>
-                      {m.user?.displayName ?? m.user?.email ?? m.id}
-                    </td>
+                    <td style={{ padding: 8 }}>{m.user?.displayName ?? m.user?.email ?? m.id}</td>
                     <td style={{ padding: 8 }}>{m.teamName}</td>
                     <td style={{ padding: 8 }}>{m.role}</td>
                   </tr>

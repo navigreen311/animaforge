@@ -38,7 +38,6 @@ interface CalendarEvent {
   description?: string;
 }
 
-
 interface TeamMember {
   id: string;
   name: string;
@@ -114,7 +113,6 @@ const EVENT_COLORS: Record<EventType, { bg: string; text: string; border: string
     },
   };
 
-
 const STATUS_COLORS: Record<EventStatus, { bg: string; text: string }> = {
   scheduled: { bg: 'rgba(148, 163, 184, 0.15)', text: '#cbd5e1' },
   in_progress: { bg: 'rgba(59, 130, 246, 0.18)', text: '#93c5fd' },
@@ -129,7 +127,6 @@ const STATUS_COLORS: Record<EventStatus, { bg: string; text: string }> = {
 // Today is 2026-04-09 per project context. Spread events across April 2026.
 const YEAR = 2026;
 const MONTH = 3; // April (0-indexed)
-
 
 /** One row of GET /api/calendar/events. */
 interface CalendarEventRow {
@@ -173,9 +170,6 @@ function toEvent(row: CalendarEventRow): CalendarEvent {
     description: row.description ?? undefined,
   };
 }
-
-
-
 
 /* ------------------------------------------------------------------ */
 /*  Date helpers                                                       */
@@ -251,12 +245,12 @@ export default function CalendarPage() {
   );
   const memberState = useResource<{ items: MemberRow[] }>('/api/team/members');
 
-  const allEvents = useMemo(
-    () => (eventState.data?.items ?? []).map(toEvent),
-    [eventState.data],
-  );
+  const allEvents = useMemo(() => (eventState.data?.items ?? []).map(toEvent), [eventState.data]);
   const PROJECTS = useMemo<ProjectOption[]>(
-    () => [ALL_PROJECTS, ...(projectState.data?.items ?? []).map((p) => ({ id: p.id, name: p.title }))],
+    () => [
+      ALL_PROJECTS,
+      ...(projectState.data?.items ?? []).map((p) => ({ id: p.id, name: p.title })),
+    ],
     [projectState.data],
   );
   const TEAM_MEMBERS = useMemo(
@@ -1148,7 +1142,6 @@ function WeekView({
 /* ------------------------------------------------------------------ */
 /*  Gantt view                                                         */
 /* ------------------------------------------------------------------ */
-
 
 /* ------------------------------------------------------------------ */
 /*  List view                                                          */

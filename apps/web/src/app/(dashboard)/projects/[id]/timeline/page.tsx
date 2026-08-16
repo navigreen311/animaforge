@@ -61,9 +61,7 @@ function toShot(row: ShotRow, startSec: number): Shot {
     timing: formatTiming(startSec, durationSec),
     dialogue: '',
     durationSec,
-    status: SHOT_STATUSES.includes(row.status as ShotStatus)
-      ? (row.status as ShotStatus)
-      : 'draft',
+    status: SHOT_STATUSES.includes(row.status as ShotStatus) ? (row.status as ShotStatus) : 'draft',
     characterRefs: [],
     styleRef: '',
   };
