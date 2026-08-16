@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useResource } from '@/lib/api/useResource';
+import { useResource, mutate } from '@/lib/api/useResource';
 import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import { useRouter } from 'next/navigation';
 import {
@@ -365,6 +365,35 @@ export default function StyleStudioPage() {
   const [applyModalStyleId, setApplyModalStyleId] = useState<string | null>(null);
   const [applyTarget, setApplyTarget] = useState<'project' | 'shots'>('project');
   const packState = useResource<StylePackList>('/api/styles');
+  const [packBusy, setPackBusy] = useState(false);
+
+  /**
+   * Create a style pack.
+   *
+   * POST /api/styles writes a StylePack row; created here and read back after a
+   * platform-api restart, the pack came from Postgres (run 31925346146).
+   * sourceType is constrained to video | animation server-side, so the prompt
+   * offers exactly those rather than letting the request 400.
+   */
+  const createStylePack = async () => {
+    const name = window.prompt('Name for the new style pack');
+    if (!name?.trim()) return;
+    const sourceUrl = window.prompt('Reference URL for the pack (video or animation)');
+    if (!sourceUrl?.trim()) return;
+
+    setPackBusy(true);
+    const { error } = await mutate('/api/styles', 'POST', {
+      name: name.trim(),
+      sourceUrl: sourceUrl.trim(),
+      sourceType: 'video',
+    });
+    setPackBusy(false);
+    if (error) {
+      toast.error(`Could not create the pack: ${error.message}`);
+      return;
+    }
+    packState.reload();
+  };
   const projectState = useResource<ProjectList>('/api/projects?limit=100');
   const stylePacks = useMemo(() => (packState.data?.items ?? []).map(toPack), [packState.data]);
   const projects = useMemo(() => projectState.data?.items ?? [], [projectState.data]);
@@ -1981,13 +2010,20 @@ export default function StyleStudioPage() {
               </button>
 
               {/* Create Style Pack */}
-              <UnavailableButton
-                feature="style.createPack"
-                style={{ ...btnPrimary, padding: '5px 12px', fontSize: 10 }}
+              <button
+                type="button"
+                onClick={createStylePack}
+                disabled={packBusy}
+                style={{
+                  ...btnPrimary,
+                  padding: '5px 12px',
+                  fontSize: 10,
+                  opacity: packBusy ? 0.5 : 1,
+                }}
               >
                 <Plus size={10} />
-                Create Style Pack
-              </UnavailableButton>
+                {packBusy ? 'Creating…' : 'Create Style Pack'}
+              </button>
             </div>
 
             {/* Cards Grid */}

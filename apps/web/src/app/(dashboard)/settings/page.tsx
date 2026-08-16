@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useResource, mutate } from '@/lib/api/useResource';
+import { LoadingState, ErrorState } from '@/components/api/ResourceStates';
 import {
   Settings,
   User,
@@ -414,6 +415,109 @@ export default function SettingsPage() {
   // listed as signed in on every account. Real sessions come from
   // /api/users/me/sessions.
   const sessionState = useResource<{ items: SessionRow[] }>('/api/users/me/sessions');
+
+  // Webhook endpoints, AI memory and the brand logo all persist now: each was
+  // written through these routes and read back after a platform-api restart
+  // (run 31925346146), so the value came from Postgres rather than a Map.
+  const webhookState = useResource<{ items: { id: string; url: string; events?: string[] }[] }>(
+    '/api/webhooks',
+  );
+  const [webhookBusy, setWebhookBusy] = useState(false);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
+
+  const addWebhook = async () => {
+    const url = window.prompt('Endpoint URL to receive events');
+    if (!url?.trim()) return;
+    setWebhookBusy(true);
+    setWebhookError(null);
+    const { error } = await mutate('/api/webhooks', 'POST', {
+      url: url.trim(),
+      events: ['job.completed'],
+    });
+    setWebhookBusy(false);
+    if (error) {
+      setWebhookError(error.message);
+      return;
+    }
+    webhookState.reload();
+  };
+
+  const removeWebhook = async (id: string) => {
+    setWebhookError(null);
+    const { error } = await mutate(`/api/webhooks/${id}`, 'DELETE');
+    if (error) {
+      setWebhookError(error.message);
+      return;
+    }
+    webhookState.reload();
+  };
+
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoName, setLogoName] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  /**
+   * Presign, PUT the bytes to storage, then record the asset.
+   *
+   * Each step is reported separately: a failure at the storage PUT leaves no
+   * asset row, and saying "uploaded" at that point would be the same lie the
+   * disabled state existed to prevent.
+   */
+  const uploadLogo = async (file: File) => {
+    setLogoBusy(true);
+    setLogoError(null);
+    setLogoName(null);
+    try {
+      const { data, error } = await mutate<{
+        data?: { uploadUrl?: string; publicUrl?: string; key?: string };
+      }>('/api/upload/presign', 'POST', {
+        filename: file.name,
+        contentType: file.type || 'application/octet-stream',
+      });
+      if (error) throw new Error(error.message);
+
+      const uploadUrl = (data as { data?: { uploadUrl?: string } } | null)?.data?.uploadUrl;
+      if (!uploadUrl) throw new Error('The presign response carried no upload URL.');
+
+      const put = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      });
+      if (!put.ok) throw new Error(`Storage rejected the upload (HTTP ${put.status}).`);
+
+      setLogoName(file.name);
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  const memoryState = useResource<{ genMemory?: Record<string, unknown> }>(
+    '/api/users/me/memory',
+  );
+  const [memoryDraft, setMemoryDraft] = useState<string | null>(null);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
+
+  const saveMemory = async () => {
+    if (memoryDraft === null) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(memoryDraft);
+    } catch (err) {
+      setMemoryError(`Not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    setMemoryError(null);
+    const { error } = await mutate('/api/users/me/memory', 'PATCH', { genMemory: parsed });
+    if (error) {
+      setMemoryError(error.message);
+      return;
+    }
+    setMemoryDraft(null);
+    memoryState.reload();
+  };
   const sessions = useMemo<Session[]>(
     () =>
       (sessionState.data?.items ?? []).map((row) => ({
@@ -1794,72 +1898,92 @@ export default function SettingsPage() {
 
               {/* Webhooks */}
               <p style={labelStyle}>Webhooks</p>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-surface)',
-                    border: '0.5px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--text-primary)',
-                        margin: 0,
-                        fontWeight: 500,
-                      }}
-                    >
-                      Render Events
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {webhookState.loading && <LoadingState label="Loading webhooks" />}
+                {webhookState.error && (
+                  <ErrorState error={webhookState.error} onRetry={webhookState.reload} />
+                )}
+                {!webhookState.loading &&
+                  !webhookState.error &&
+                  (webhookState.data?.items ?? []).length === 0 && (
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+                      No webhook endpoints yet.
                     </p>
-                    <p
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--text-tertiary)',
-                        margin: '2px 0 0',
-                      }}
-                    >
-                      https://api.example.com/webhooks/renders
-                    </p>
-                  </div>
-                  <button
-                    type="button"
+                  )}
+
+                {(webhookState.data?.items ?? []).map((hook) => (
+                  <div
+                    key={hook.id}
                     style={{
-                      ...btnSecondary,
-                      fontSize: 11,
-                      padding: '4px 10px',
-                      color: '#ef4444',
-                      borderColor: 'rgba(239,68,68,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: 'var(--bg-surface)',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
                     }}
-                    onClick={() => toast.success('Webhook removed')}
                   >
-                    Remove
-                  </button>
-                </div>
-                <UnavailableButton
-                  feature="settings.createWebhook"
+                    <div style={{ minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          margin: 0,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {(hook.events ?? []).join(', ') || 'All events'}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--text-tertiary)',
+                          margin: '2px 0 0',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {hook.url}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      style={{
+                        ...btnSecondary,
+                        fontSize: 11,
+                        padding: '4px 10px',
+                        color: '#ef4444',
+                        borderColor: 'rgba(239,68,68,0.3)',
+                      }}
+                      onClick={() => removeWebhook(hook.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                {webhookError && (
+                  <p role="alert" style={{ fontSize: 11, color: '#ef4444', margin: 0 }}>
+                    {webhookError}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addWebhook}
+                  disabled={webhookBusy}
                   style={{
                     ...btnSecondary,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
                     width: 'fit-content',
+                    opacity: webhookBusy ? 0.5 : 1,
                   }}
                 >
                   <Plus size={13} />
                   Add webhook
-                </UnavailableButton>
+                </button>
               </div>
             </div>
 
@@ -1952,14 +2076,71 @@ export default function SettingsPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Memory: Tracking camera preferences, style parameters, and character consistency
-                across 12 sessions. Last updated 2 hours ago.
+                {memoryState.loading && 'Loading stored memory…'}
+                {memoryState.error && `Could not read stored memory: ${memoryState.error.message}`}
+                {!memoryState.loading &&
+                  !memoryState.error &&
+                  (Object.keys(memoryState.data?.genMemory ?? {}).length === 0
+                    ? 'No generation memory stored yet.'
+                    : `${Object.keys(memoryState.data?.genMemory ?? {}).length} stored key(s).`)}
               </div>
 
+              {memoryDraft !== null && (
+                <div style={{ marginBottom: 14 }}>
+                  <textarea
+                    value={memoryDraft}
+                    onChange={(e) => setMemoryDraft(e.target.value)}
+                    aria-label="Generation memory (JSON)"
+                    rows={8}
+                    spellCheck={false}
+                    style={{
+                      width: '100%',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: 11,
+                      padding: 10,
+                      background: 'var(--bg-surface)',
+                      border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-primary)',
+                      resize: 'vertical',
+                    }}
+                  />
+                  {memoryError && (
+                    <p role="alert" style={{ fontSize: 11, color: '#ef4444', margin: '6px 0 0' }}>
+                      {memoryError}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 8 }}>
-                <UnavailableButton feature="settings.memoryEditor" style={btnSecondary}>
-                  Edit memory
-                </UnavailableButton>
+                {memoryDraft === null ? (
+                  <button
+                    type="button"
+                    style={btnSecondary}
+                    onClick={() =>
+                      setMemoryDraft(JSON.stringify(memoryState.data?.genMemory ?? {}, null, 2))
+                    }
+                  >
+                    Edit memory
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" style={btnSecondary} onClick={saveMemory}>
+                      Save memory
+                    </button>
+                    <button
+                      type="button"
+                      style={btnSecondary}
+                      onClick={() => {
+                        setMemoryDraft(null);
+                        setMemoryError(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   style={{
@@ -2130,33 +2311,37 @@ export default function SettingsPage() {
               </div>
               <div style={{ marginBottom: 14 }}>
                 <p style={labelStyle}>Workspace Logo</p>
-                <div
+                {/* POST /api/upload/presign returns a signed S3 URL and
+                    POST /api/assets records the file; both survive a
+                    platform-api restart (run 31925346146). The upload itself
+                    goes straight to storage, so the only thing this page keeps
+                    is the asset record. */}
+                <label
+                  htmlFor="workspace-logo"
                   style={{
+                    display: 'block',
                     border: '1.5px dashed var(--border)',
                     borderRadius: 'var(--radius-md)',
                     padding: 24,
                     textAlign: 'center',
-                    cursor: 'not-allowed',
-                    opacity: 0.7,
+                    cursor: logoBusy ? 'progress' : 'pointer',
                   }}
-                  aria-disabled
-                  title={explainFeature('settings.logoUpload')}
                 >
-                  <Upload
-                    size={20}
-                    style={{
-                      color: 'var(--text-tertiary)',
-                      marginBottom: 6,
+                  <input
+                    id="workspace-logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml"
+                    disabled={logoBusy}
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadLogo(file);
+                      e.target.value = '';
                     }}
                   />
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-tertiary)',
-                      margin: 0,
-                    }}
-                  >
-                    Logo upload is unavailable
+                  <Upload size={20} style={{ color: 'var(--text-tertiary)', marginBottom: 6 }} />
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+                    {logoBusy ? 'Uploading…' : 'Click to upload a logo'}
                   </p>
                   <p
                     style={{
@@ -2166,9 +2351,9 @@ export default function SettingsPage() {
                       lineHeight: 1.4,
                     }}
                   >
-                    {getFeatureStatus('settings.logoUpload').detail}
+                    {logoError ?? logoName ?? 'PNG, JPG or SVG.'}
                   </p>
-                </div>
+                </label>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <p style={labelStyle}>Timezone</p>

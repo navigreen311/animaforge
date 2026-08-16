@@ -12,8 +12,6 @@
  */
 
 export type Blocker =
-  /** The UI and an API route exist, but nothing persists. */
-  | 'no-persistence'
   /** Needs a credential or account this repository does not have. */
   | 'vendor-credential'
   /** Simply not implemented. */
@@ -29,68 +27,52 @@ export interface FeatureStatus {
   issue?: number;
 }
 
-const NO_PERSISTENCE_ISSUE = 58;
-
 export const FEATURE_STATUS = {
   /* -- team ---------------------------------------------------------------- */
 
-  'team.create': {
-    summary: 'Needs a persistence layer',
+  'projects.import': {
+    summary: 'No importer exists',
     detail:
-      'POST /api/team/teams builds a team object and returns it without storing ' +
-      'it anywhere, and GET returns two hardcoded teams. Creating a team would ' +
-      'appear to succeed and be gone on refresh.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'team.manage': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'The sub-teams list comes from two hardcoded entries in ' +
-      '/api/team/teams. There is nothing to edit that would survive a reload.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
+      'Creating a project persists — POST /api/projects survives a platform-api ' +
+      'restart (run 31925346146) — so this is no longer a storage problem. What ' +
+      'is missing is the import itself: nothing in this repository parses a ' +
+      'project archive or a screenplay into scenes and shots, and there is no ' +
+      '/api/projects/import route to send a file to. Use New Project and add ' +
+      'scenes by hand.',
+    blocker: 'not-built',
   },
 
   'team.activityLog': {
-    summary: 'Needs a persistence layer',
+    summary: 'Nothing records activity yet',
     detail:
-      'GET /api/team/members/[id]/activity serves generated sample events, not ' +
-      'recorded ones. The AuditTrail model exists in packages/db/prisma but ' +
-      'nothing writes to it from the web app.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
+      'The feed now reads the real AuditTrail table through GET /api/v1/activity, ' +
+      'so the endpoint is no longer sample data. Nothing writes to that table: ' +
+      'after creating a team, a project and an invitation against a real ' +
+      'database, /api/v1/activity returned total: 0 (run 31925346146). The ' +
+      'gap is a recording call on the write paths, not a missing store.',
+    blocker: 'not-built',
   },
 
   'team.transferOwnership': {
     summary: 'Needs an identity provider',
     detail:
-      'Transferring ownership has to re-authenticate the current owner and ' +
-      'reassign the Organization record. AUTH_PROVIDER (Auth0 or Clerk) is not ' +
-      'configured, and organisation membership is not persisted.',
+      'Transferring ownership has to re-authenticate the current owner before ' +
+      'reassigning the Organization record, and AUTH_PROVIDER (Auth0 or Clerk) ' +
+      'is not configured. The record itself persists — teams and org ' +
+      'membership survive a platform-api restart (run 31925346146) — so the ' +
+      'step-up authentication is the only thing missing.',
     blocker: 'vendor-credential',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'team.invite': {
-    summary: 'Invitations cannot be sent',
-    detail:
-      'POST /api/team/invite validates the request and returns success without ' +
-      'recording an invitation or sending mail. The Send button used to wait ' +
-      '1.2s and report "Invitation sent" for an email that never left.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
   },
 
   'team.projectAccess': {
-    summary: 'Access changes are not saved',
+    summary: 'No per-project access model exists',
     detail:
-      'Project access is held in component state over the hardcoded ' +
-      'MOCK_PROJECT_ACCESS list. Saving used to wait 300ms and report "Project ' +
-      'access updated" without persisting anything.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
+      'Membership in packages/db/prisma is team-to-user only — it has teamId, ' +
+      'userId and role, and no project dimension — and no endpoint accepts a ' +
+      'per-project grant. Teams themselves persist (run 31925346146), so this ' +
+      'is not the persistence layer: there is nowhere to record that one member ' +
+      'may see one project.',
+    blocker: 'not-built',
   },
 
   /* -- account and security ------------------------------------------------ */
@@ -144,47 +126,7 @@ export const FEATURE_STATUS = {
 
   /* -- settings ------------------------------------------------------------ */
 
-  'settings.createWebhook': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'GET /api/webhooks returns MOCK_WEBHOOKS and POST does not store the ' +
-      'endpoint. A webhook that is not recorded is never delivered to, so ' +
-      'creating one would be silently meaningless.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'settings.memoryEditor': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'GET /api/users/me/memory returns MOCK_MEMORY and PATCH mutates a copy ' +
-      'that is discarded when the request ends. User.genMemory exists in ' +
-      'packages/db/prisma but the web app has no database connection.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'settings.logoUpload': {
-    summary: 'Needs object storage',
-    detail:
-      'POST /api/upload/presign returns a fabricated URL under https://s3.mock/ ' +
-      'instead of a signed S3 or R2 URL. An upload would post to a host that ' +
-      'does not exist.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
   /* -- content ------------------------------------------------------------- */
-
-  'assets.upload': {
-    summary: 'Needs object storage',
-    detail:
-      'POST /api/upload/presign returns a fabricated URL under https://s3.mock/, ' +
-      'and the asset library itself is the hardcoded MOCK_ASSETS list. An ' +
-      'uploaded file would have nowhere to go and nothing to appear in.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
 
   'assets.preview3d': {
     summary: 'No 3D viewer is built',
@@ -193,35 +135,6 @@ export const FEATURE_STATUS = {
       'or PLY. None is implemented here, and three.js is not a dependency of ' +
       'apps/web.',
     blocker: 'not-built',
-  },
-
-  'style.createPack': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'GET /api/styles returns MOCK_STYLE_PACKS. The StylePack model exists in ' +
-      'packages/db/prisma, but nothing in the web app writes to it, so a new ' +
-      'pack would not survive the request.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'projects.import': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'GET /api/projects serves MOCK_PROJECTS from src/lib/mockData. An ' +
-      'imported project could be parsed but not saved, so it would vanish on ' +
-      'the next request.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
-  },
-
-  'projects.createFromScript': {
-    summary: 'Needs a persistence layer',
-    detail:
-      'Creating a project here would have to write through /api/projects, which ' +
-      'serves the hardcoded MOCK_PROJECTS list and stores nothing.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
   },
 
   /* -- integrations -------------------------------------------------------- */
@@ -237,13 +150,13 @@ export const FEATURE_STATUS = {
   },
 
   'voice.uploadSample': {
-    summary: 'Needs object storage',
+    summary: 'Upload is not wired to the API yet',
     detail:
-      'Uploading a voice sample needs somewhere to put the audio. POST ' +
-      '/api/upload/presign returns a fabricated URL under https://s3.mock/, and ' +
-      'no voice-cloning provider is configured to train against it.',
-    blocker: 'no-persistence',
-    issue: NO_PERSISTENCE_ISSUE,
+      'Persistence is no longer the blocker: POST /api/v1/voices followed by a ' +
+      'platform-api restart returns the voice from Postgres (run 31925346146). ' +
+      'The control still needs wiring in components/shared/VoiceSelectorModal, ' +
+      'which sits outside the paths this change owns.',
+    blocker: 'not-built',
   },
 
   'billing.mobilePurchase': {
