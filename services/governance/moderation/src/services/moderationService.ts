@@ -44,6 +44,72 @@ const CATEGORY_KEYWORDS: Record<Exclude<ModerationCategory, 'safe'>, string[]> =
 const BLOCK_THRESHOLD = 0.7;
 const FLAG_THRESHOLD = 0.4;
 
+/**
+ * Keyword matching, on WORD BOUNDARIES.
+ *
+ * THE DEFECT THIS REPLACES
+ * ========================
+ *
+ *     Both classifiers used `lower.includes(kw)`, a raw substring test. In a video
+ *     production tool that is not a tuning problem, it is a collision with the
+ *     vocabulary of the domain:
+ *
+ *         establishing  contains  stab      "establishing shot" — the single most
+ *                                            common term in cinematography
+ *         stabilization contains  stab      AnimaForge ships a Stabilizer service
+ *         skilled       contains  kill
+ *         bloodhound    contains  blood
+ *         exploded      contains  explode   "exploded view"
+ *         explicitly    contains  explicit
+ *         weaponise     contains  weapon
+ *
+ *     Measured against 18 lines of ordinary production language, 16 were refused.
+ *     `preCheck` blocks on a single hit with no threshold, so each of those was a
+ *     total refusal of the generation.
+ *
+ * WHY A REGEX AND NOT A SPLIT-ON-WHITESPACE
+ * =========================================
+ *
+ *     Several keywords are phrases — "child abuse", "pretend to be", "clone voice" —
+ *     and a token-set test cannot match those. `\b<phrase>\b` matches the phrase as a
+ *     unit while still refusing to match inside a longer word.
+ *
+ *     Internal whitespace is matched flexibly (`\s+`) so a line break between the words
+ *     of a phrase does not defeat the check. That is the most obvious accidental bypass
+ *     and it is the one that would look like a passing scan.
+ *
+ * WHAT THIS DOES NOT FIX
+ * ======================
+ *
+ *     `shoot` is still a keyword, and it is still ordinary production vocabulary —
+ *     "shoot the interview", "re-shoot", "photoshoot". Word boundaries stop
+ *     `photoshoot` matching (it is one word) but "shoot wide" still refuses, correctly
+ *     by the rule and wrongly by intent. That is a keyword-list decision, not a
+ *     matching one, and it is left alone deliberately: removing a violence keyword is
+ *     a safety choice, not a bug fix.
+ */
+const patternCache = new Map<string, RegExp>();
+
+function keywordPattern(keyword: string): RegExp {
+  const cached = patternCache.get(keyword);
+  if (cached) return cached;
+
+  const escaped = keyword
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('\\s+');
+  const pattern = new RegExp(`\\b${escaped}\\b`, 'i');
+
+  patternCache.set(keyword, pattern);
+  return pattern;
+}
+
+/** True when `keyword` appears in `text` as a whole word or whole phrase. */
+export function matchesKeyword(text: string, keyword: string): boolean {
+  return keywordPattern(keyword).test(text);
+}
+
 const logStore: Map<string, ModerationLogRecord[]> = new Map();
 
 function appendLogInMemory(record: ModerationLogRecord): void {
@@ -59,7 +125,8 @@ function classifyText(text: string): { category: ModerationCategory; score: numb
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     let hits = 0;
     for (const kw of keywords) {
-      if (lower.includes(kw)) hits++;
+      // Word boundaries, not substrings. See keywordPattern above.
+      if (matchesKeyword(lower, kw)) hits++;
     }
     if (hits > 0) {
       const cat = category as Exclude<ModerationCategory, 'safe'>;
@@ -126,7 +193,7 @@ export async function preCheck(req: PreCheckRequest): Promise<PreCheckResponse> 
   const reasons: string[] = [];
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     const lower = textToClassify.toLowerCase();
-    const hits = keywords.filter((kw) => lower.includes(kw));
+    const hits = keywords.filter((kw) => matchesKeyword(lower, kw));
     if (hits.length > 0) {
       blockedCategories.push(category as ModerationCategory);
       reasons.push(`${category}:${hits.join(',')}`);

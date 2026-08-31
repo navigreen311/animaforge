@@ -275,10 +275,27 @@ describe('Pre-Generation Check', () => {
       missingConsents: [],
     });
 
-    const result = await runPreCheck('unsafe prompt content', { characters: [] }, ['char-a']);
+    // Explicit 'enforce': the default is now shadow, so a test that omitted the mode
+    // would be asserting the default rather than the refusal it means to check.
+    const result = await runPreCheck(
+      'unsafe prompt content',
+      { characters: [] },
+      ['char-a'],
+      'enforce',
+    );
 
     expect(result.allowed).toBe(false);
     expect(result.blockedCategories).toEqual(['violence', 'hate_speech']);
+  });
+
+  it('SHADOW mode allows the same unsafe prompt, and records that it would not have', async () => {
+    mockPreCheck.mockResolvedValue({ safe: false, blockedCategories: ['violence'] });
+    mockConsent.mockResolvedValue({ valid: true, missingConsents: [] });
+
+    const result = await runPreCheck('unsafe prompt content', { characters: [] }, [], 'shadow');
+
+    expect(result.allowed).toBe(true);
+    expect(result.wouldHaveRefused).toBe(true);
   });
 
   it('should block when consents are missing', async () => {
@@ -291,9 +308,12 @@ describe('Pre-Generation Check', () => {
       missingConsents: ['likeness:char-x'],
     });
 
-    const result = await runPreCheck('A cartoon cat playing piano', { characters: ['cat'] }, [
-      'char-x',
-    ]);
+    const result = await runPreCheck(
+      'A cartoon cat playing piano',
+      { characters: ['cat'] },
+      ['char-x'],
+      'enforce',
+    );
 
     expect(result.allowed).toBe(false);
     expect(result.missingConsents).toEqual(['likeness:char-x']);
@@ -309,7 +329,12 @@ describe('Pre-Generation Check', () => {
       missingConsents: ['voice:char-y'],
     });
 
-    const result = await runPreCheck('problematic prompt', { characters: [] }, ['char-y']);
+    const result = await runPreCheck(
+      'problematic prompt',
+      { characters: [] },
+      ['char-y'],
+      'enforce',
+    );
 
     expect(result.allowed).toBe(false);
     expect(result.blockedCategories).toEqual(['nsfw']);

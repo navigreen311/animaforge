@@ -23,6 +23,8 @@ import {
   type AiJobStatusResult,
 } from '../utils/aiApiClient.js';
 import { runGovernancePipeline, type GovernancePipelineJob } from './governancePipeline.js';
+import { runMarketingComplianceGate } from './marketingComplianceGate.js';
+import { runPreCheck } from './preGenerationCheck.js';
 import { prisma, requirePrisma } from '../db.js';
 
 /* ---------- Constants ---------- */
@@ -366,6 +368,116 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
   const timeoutHandle = setTimeout(() => abortController.abort(), maxDuration);
 
   try {
+    // ── Marketing compliance gate ────────────────────────────────
+    //
+    // FIRST, and before the dedup cache lookup below. Two reasons, and the
+    // second is the less obvious one:
+    //
+    //   1. Nothing has been spent yet. No job record, no GPU, no artefact.
+    //
+    //   2. The cache is keyed on an input hash, so a cached hit returns a
+    //      previous output without running governance at all. If the gate sat
+    //      after the lookup, a script that passed last month would keep
+    //      rendering after the Marketing Claim Library started blocking it —
+    //      the claim library changes, the input hash does not. Scanning first
+    //      means the current library decides every render.
+    //
+    // This gate fails closed: an unreachable scanner refuses the job. See
+    // marketingComplianceGate.ts for what a script scan does NOT cover.
+    const complianceGate = await runMarketingComplianceGate(job.data.params, type);
+    if (!complianceGate.allowed) {
+      const reason = complianceGate.blockedReason ?? 'Marketing compliance refused this script';
+      // The record is created before it is failed, because `markFailed` updates
+      // a row and no row exists this early. A refusal that leaves no trace is
+      // the wrong shape for a compliance control: what was refused, and why, is
+      // exactly the thing somebody comes looking for later.
+      await createJobRecord({
+        id: jobId,
+        projectId: project_id,
+        userId: user_id,
+        jobType: type,
+        inputParams: {
+          ...job.data.params,
+          marketing_compliance: {
+            scanId: complianceGate.scan?.scanId ?? null,
+            riskScore: complianceGate.scan?.riskScore ?? null,
+            violations: complianceGate.scan?.violations ?? [],
+            scannedFields: complianceGate.scannedFields,
+            scannedCharacters: complianceGate.scannedCharacters,
+          },
+        },
+        tier: tier ?? 'preview',
+      });
+      await markFailed(jobId, reason);
+      await emitRealtimeEvent(user_id, 'job:failed', { jobId, reason });
+      await publishEvent('generation.failed', {
+        jobId,
+        userId: user_id,
+        reason,
+        stage: 'marketing_compliance',
+      });
+      clearTimeout(timeoutHandle);
+      throw new Error('Marketing compliance blocked: ' + reason);
+    }
+
+    // ── Pre-generation safety and consent check ──────────────────
+    //
+    // SHADOW MODE BY DEFAULT. This check existed and was called by nothing but its
+    // own tests. It now runs, and it records what it WOULD refuse without refusing —
+    // because measured against 18 lines of ordinary production vocabulary it refuses
+    // 16 of them. `establishing` contains `stab`; `skilled` contains `kill`; `shoot`
+    // is a keyword in a video tool. See preGenerationCheck.ts.
+    //
+    // Set PRECHECK_MODE=enforce to make it decline. Do not, until the substring
+    // matching is fixed.
+    const preCheck = await runPreCheck(
+      typeof job.data.params.prompt === 'string' ? job.data.params.prompt : '',
+      (job.data.params.sceneGraph as Record<string, unknown>) ?? {},
+      (job.data.params.characterRefs as string[]) ?? [],
+    );
+    // Each half logs its own verdict. A shadow-mode hit that leaves no trace is a
+    // measurement nobody can make later, and one line covering both halves would hide
+    // which of them fired.
+    for (const [half, r] of [
+      ['safety', preCheck.safety],
+      ['consent', preCheck.consent],
+    ] as const) {
+      if (r.wouldHaveRefused) {
+        console.warn(
+          '[precheck] half=' + half +
+            ' mode=' + r.mode +
+            ' verdict=' + r.verdict +
+            ' enforced=' + String(r.enforced) +
+            ' job=' + jobId +
+            (r.detail ? ' detail=' + r.detail : ''),
+        );
+      }
+    }
+    if (!preCheck.allowed) {
+      const reason = preCheck.blockedReason ?? 'Pre-generation check refused this job.';
+      await createJobRecord({
+        id: jobId,
+        projectId: project_id,
+        userId: user_id,
+        jobType: type,
+        inputParams: {
+          ...job.data.params,
+          pre_check: { safety: preCheck.safety, consent: preCheck.consent },
+        },
+        tier: tier ?? 'preview',
+      });
+      await markFailed(jobId, reason);
+      await emitRealtimeEvent(user_id, 'job:failed', { jobId, reason });
+      await publishEvent('generation.failed', {
+        jobId,
+        userId: user_id,
+        reason,
+        stage: 'pre_generation_check',
+      });
+      clearTimeout(timeoutHandle);
+      throw new Error('Pre-generation check blocked: ' + reason);
+    }
+
     const inputHash = job.data.input_hash ?? computeInputHash(job.data);
     const cachedResult = await findCachedResult(inputHash);
     if (cachedResult) {
@@ -411,7 +523,31 @@ async function processGeneration(job: Job<GenerationJobData>): Promise<Generatio
       projectId: project_id,
       userId: user_id,
       jobType: type,
-      inputParams: { ...job.data.params, input_hash: inputHash },
+      inputParams: {
+        ...job.data.params,
+        input_hash: inputHash,
+        // The passing scan is recorded too, not only the refusals. "This job
+        // was checked and cleared, against these fields, on this scan id" is
+        // the half of the record that answers whether the gate was actually
+        // in the path — a control that only writes when it fires cannot be
+        // distinguished from one that never ran.
+        marketing_compliance: {
+          scanId: complianceGate.scan?.scanId ?? null,
+          riskScore: complianceGate.scan?.riskScore ?? null,
+          verdict: complianceGate.verdict,
+          notApplicableReason: complianceGate.notApplicableReason ?? null,
+          scannedFields: complianceGate.scannedFields,
+          scannedCharacters: complianceGate.scannedCharacters,
+          uncheckedSurfaces: complianceGate.uncheckedSurfaces.map((s) => s.surface),
+        },
+        // Recorded even when it did not act, so "how often would enforcing have
+        // fired, and on what" is a query over job records rather than a guess.
+        // Both halves recorded, with their own mode and verdict, so "how often
+        // would enforcing safety have fired" and "did consent actually check
+        // anything" are separate queries over job records rather than one blended
+        // number that answers neither.
+        pre_check: { safety: preCheck.safety, consent: preCheck.consent },
+      },
       tier: tier ?? 'preview',
     });
 

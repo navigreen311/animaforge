@@ -26,6 +26,27 @@ vi.mock('bullmq', () => {
   return { Queue: MockQueue, Worker: MockWorker };
 });
 
+// The marketing compliance gate now runs before anything else in the processor
+// and calls out to CapitalForge's scanner. These tests are about the worker's
+// own mechanics, so the scan is stubbed clean here — a network call to another
+// service is not what any assertion below is checking.
+vi.mock('../utils/complianceClient.js', async () => {
+  const actual = await vi.importActual<typeof import('../utils/complianceClient.js')>(
+    '../utils/complianceClient.js',
+  );
+  return {
+    ...actual,
+    scanScript: vi.fn().mockResolvedValue({
+      scanId: 'scan-test',
+      approved: true,
+      riskScore: 0,
+      riskLevel: 'clean',
+      violations: [],
+      summary: 'Communication is compliant. No banned claims detected.',
+    }),
+  };
+});
+
 vi.mock('ioredis', () => {
   return {
     default: vi.fn().mockImplementation(() => ({
@@ -128,7 +149,9 @@ describe('Generation worker', () => {
         type: 'video' as const,
         project_id: 'proj-1',
         user_id: 'user-1',
-        params: {},
+        // A video job carries a prompt. An empty one is refused by the
+        // marketing compliance gate, which is the gate working, not a bug.
+        params: { prompt: 'A founder walking through a warehouse at sunrise.' },
       },
       updateProgress: vi.fn().mockResolvedValue(undefined),
       log: vi.fn().mockResolvedValue(undefined),
