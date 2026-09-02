@@ -387,6 +387,46 @@ configure, not as a gate that exists.
 
 ## Deployment
 
+### Deploy order: CapitalForge ships first
+
+The render pipeline scans every generation script through CapitalForge's
+Communication Compliance Scanner before rendering, and holds no banned-phrase
+list of its own — `services/workers/src/utils/complianceClient.ts` holds a URL.
+Three environment variables are required:
+
+| Variable | Description |
+|----------|-------------|
+| `COMPLIANCE_SCAN_URL` | CapitalForge's `POST /api/comm-compliance/scan` |
+| `COMPLIANCE_SCAN_TOKEN` | Bearer token with `compliance:write` |
+| `COMPLIANCE_SCAN_ADVISOR_ID` | A **real user row** in the token's tenant |
+
+**`COMPLIANCE_SCAN_ADVISOR_ID` must resolve.** CapitalForge enforces that it
+names a user in the same tenant as the token; it previously accepted any UUID.
+The workers verify this at boot against `/api/comm-compliance/scan/preflight`
+and **refuse to start** if the scanner rejects the identity — because the
+render gate fails closed, so an unusable id does not let unchecked videos
+through, it stops renders, and that failure is otherwise silent until a queue
+backs up.
+
+**CapitalForge must ship its preflight endpoint first.** Against an older
+CapitalForge the boot check gets a 404, logs "identity not verified" and starts
+anyway — deliberately, so an older scanner cannot cause the outage the check
+exists to warn about. The consequence is that the check is inert until
+CapitalForge is deployed.
+
+The boot check is not symmetrical, and that is intentional:
+
+| Outcome | Behaviour |
+|---|---|
+| identity rejected | exit 1 — it will not fix itself |
+| scanner unreachable | warn and start — the gate refuses per job meanwhile |
+| no `/preflight` | warn and start — an older scanner proves nothing about us |
+| not configured | warn and start — renders refuse per job |
+
+Refusing to start the whole worker fleet — export, QC, cleanup — over a
+transient outage in one dependency would be a bigger outage than the one being
+prevented.
+
 ### Docker Compose (Development)
 
 ```bash

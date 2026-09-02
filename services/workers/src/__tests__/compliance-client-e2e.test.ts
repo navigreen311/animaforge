@@ -25,6 +25,15 @@ import {
  * against the real list in
  * `capitalforge/tests/unit/services/comm-compliance-marketing-surface.test.ts`;
  * this file is about transport, not about which phrases are banned.
+ *
+ * A COPY IN A CODE PATH DRIFTS DANGEROUSLY; A COPY IN A TEST FIXTURE DOES NOT
+ * — as long as it is labelled and nothing treats it as authoritative. If
+ * STUB_CLAIMS falls behind the real list, these tests keep passing and no
+ * production decision changes, because no production decision is made from
+ * them: `complianceClient.ts` holds no phrases and asks the service. The
+ * distinction is worth stating because the rule elsewhere in these repos is
+ * the opposite one — two copies of a rule that both run is the defect —
+ * and this is the exception rather than an oversight of it.
  */
 
 interface StubClaim {
