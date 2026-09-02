@@ -42,10 +42,30 @@ export interface ComplianceViolation {
   category: string;
   label: string;
   evidence: string;
+  /** The FIRST position. See `positions` for the rest. */
   position: number;
   severityWeight: number;
   legalCitation: string;
   compliantAlternative?: string;
+  /**
+   * How many times this claim appears in the script, and where.
+   *
+   * CapitalForge deduplicates by claim id — nine "guaranteed approval"s are
+   * one violation to fix, not nine, and the risk score does not multiply. But
+   * it now reports the count, and this interface did not carry it, so the
+   * repetition was dropped at the boundary rather than in the scan: a script
+   * saying it nine times arrived at the render gate looking like one hit.
+   *
+   * That matters more here than it does for an advisor's email. A marketing
+   * script reaches an audience, and a claim repeated through a video is a
+   * different thing from a claim made once in passing.
+   *
+   * Optional, because a CapitalForge older than 2026-09-01 does not send them
+   * and this client must not turn a missing field into a crash on a path that
+   * decides whether a render proceeds.
+   */
+  occurrences?: number;
+  positions?: number[];
 }
 
 /** The scan result, narrowed to the fields a render decision needs. */
@@ -129,6 +149,95 @@ export function isComplianceScannerConfigured(): boolean {
 }
 
 /* ---------- Scan ---------- */
+
+/**
+ * Raised at boot when the scanner is reachable and says our identity is wrong.
+ *
+ * Distinct from `ComplianceUnavailableError`, which means we could not ask.
+ * Only one of the two is worth refusing to start over: a scanner that is down
+ * at boot may be up in a minute, and the render gate already fails closed per
+ * job. A COMPLIANCE_SCAN_ADVISOR_ID that resolves to nobody will not fix
+ * itself, and every render will refuse until somebody changes it.
+ */
+export class ComplianceIdentityError extends Error {
+  constructor(reason: string) {
+    super(
+      `Marketing compliance identity is not usable: ${reason}. `
+      + 'Every render will be refused until this is corrected — the gate fails '
+      + 'closed, so an unusable identity stops renders rather than letting them '
+      + 'through unchecked.',
+    );
+    this.name = 'ComplianceIdentityError';
+  }
+}
+
+/**
+ * Confirm at boot that our credentials and advisor id are usable.
+ *
+ * CapitalForge enforces that `advisorId` names a real user in the token's
+ * tenant — it used to accept any UUID — so a service principal that was never
+ * created, or was created in the wrong tenant, now fails every scan. Because
+ * the gate fails closed, the symptom is renders stopping, and the operator
+ * finds out from a queue backing up.
+ *
+ * The preflight endpoint verifies the id and persists nothing, so this can run
+ * on every start without filing a compliance record each time.
+ *
+ * Three outcomes, deliberately not two:
+ *
+ *   configured and valid   -> resolves
+ *   configured and WRONG   -> ComplianceIdentityError: refuse to start
+ *   not reachable          -> ComplianceUnavailableError, which the caller
+ *                             logs and continues past. A transient outage at
+ *                             boot must not take the worker fleet down; the
+ *                             gate refuses per job while it lasts.
+ */
+export async function verifyComplianceIdentity(): Promise<void> {
+  const config = readConfig();
+  const preflightUrl = `${config.url.replace(/\/+$/, '')}/preflight`;
+
+  let response: Response;
+  try {
+    response = await fetch(preflightUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.token}`,
+      },
+      body: JSON.stringify({ advisorId: config.advisorId }),
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    });
+  } catch (err) {
+    // Could not ask. Not the same as being told no.
+    throw new ComplianceUnavailableError(
+      `preflight could not reach the scanner (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
+
+  if (response.status === 404) {
+    // A CapitalForge older than the preflight endpoint. Nothing is known to be
+    // wrong with our identity, and refusing to boot against an older scanner
+    // would make this check cause the outage it exists to warn about.
+    throw new ComplianceUnavailableError(
+      'the scanner has no /preflight endpoint (older CapitalForge); identity not verified',
+    );
+  }
+
+  if (response.status >= 400 && response.status < 500) {
+    const body = await response.text().catch(() => '');
+    throw new ComplianceIdentityError(
+      `scanner rejected our preflight with HTTP ${response.status}`
+      + `${body ? ` — ${body.slice(0, 300)}` : ''}`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new ComplianceUnavailableError(
+      `preflight returned HTTP ${response.status} ${response.statusText}`,
+    );
+  }
+}
+
 
 /**
  * Scan generation script text against the Marketing Claim Library.

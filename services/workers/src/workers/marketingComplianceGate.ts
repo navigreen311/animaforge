@@ -297,8 +297,19 @@ export async function runMarketingComplianceGate(
   }
 
   if (!scan.approved) {
+    // Distinct claims and total mentions are different numbers, and a script
+    // can have few of the first and many of the second.
+    const totalMentions = scan.violations.reduce((n, v) => n + (v.occurrences ?? 1), 0);
+    // The repeat count is in the refusal, not only in the response.
+    //
+    // Whoever reads this reason is deciding how to rewrite the script, and
+    // "said nine times" and "said once" are different rewrites. CapitalForge
+    // counts repeats per claim and this dropped the count on the floor.
     const detail = scan.violations
-      .map((v) => `${v.label} (${v.category}, ${v.legalCitation}): "${v.evidence}"`)
+      .map((v) => {
+        const times = (v.occurrences ?? 1) > 1 ? ` x${v.occurrences}` : '';
+        return `${v.label}${times} (${v.category}, ${v.legalCitation}): "${v.evidence}"`;
+      })
       .join('; ');
 
     return {
@@ -306,7 +317,9 @@ export async function runMarketingComplianceGate(
       verdict: 'scanned_violation',
       blockedReason:
         `Marketing compliance refused this script before render. ` +
-        `${scan.violations.length} banned claim(s), risk ${scan.riskScore}/100 (${scan.riskLevel}). ` +
+        `${scan.violations.length} banned claim(s)` +
+        `${totalMentions > scan.violations.length ? ` in ${totalMentions} mentions` : ''}` +
+        `, risk ${scan.riskScore}/100 (${scan.riskLevel}). ` +
         `${detail}`,
       scan,
       ...base,

@@ -3,7 +3,12 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import { runMarketingComplianceGate } from '../workers/marketingComplianceGate.js';
-import { scanScript, ComplianceUnavailableError } from '../utils/complianceClient.js';
+import {
+  scanScript,
+  verifyComplianceIdentity,
+  ComplianceUnavailableError,
+  ComplianceIdentityError,
+} from '../utils/complianceClient.js';
 
 /**
  * End-to-end refusal, over real HTTP, with no mock of the client.
@@ -67,7 +72,7 @@ let baseUrl: string;
 /** Bodies the server actually received, so the request shape can be asserted. */
 const received: { auth: string | undefined; body: Record<string, unknown> }[] = [];
 /** Flip to make the stub behave like a service that is down. */
-let mode: 'ok' | 'error_500' | 'unauthorized' = 'ok';
+let mode: 'ok' | 'error_500' | 'unauthorized' | 'no_preflight' = 'ok';
 
 beforeAll(async () => {
   server = createServer((req, res) => {
@@ -87,8 +92,44 @@ beforeAll(async () => {
         return;
       }
 
+      // The preflight endpoint: verifies the advisor, persists nothing.
+      // CapitalForge enforces that advisorId names a real user in the token's
+      // tenant, so an unknown one is a 400 here exactly as it is on a scan.
+      if ((req.url ?? '').endsWith('/preflight')) {
+        if (mode === 'no_preflight') {
+          res.writeHead(404).end('Not Found');
+          return;
+        }
+        if (body.advisorId !== ADVISOR) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              success: false,
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'advisorId does not name an advisor in this tenant.',
+              },
+            }),
+          );
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, data: { ok: true, advisorId: body.advisorId } }));
+        return;
+      }
+
       const content = String(body.content ?? '');
       const violations = STUB_CLAIMS.filter((c) => c.pattern.test(content)).map((c) => {
+        // Every position, so the count survives the boundary. CapitalForge
+        // reports one violation per claim with an occurrence count.
+        const flags = c.pattern.flags.includes('g') ? c.pattern.flags : c.pattern.flags + 'g';
+        const global = new RegExp(c.pattern.source, flags);
+        const positions: number[] = [];
+        let g: RegExpExecArray | null;
+        while ((g = global.exec(content)) !== null) {
+          positions.push(g.index);
+          if (g.index === global.lastIndex) global.lastIndex++;
+        }
         const m = c.pattern.exec(content)!;
         return {
           claimId: c.claimId,
@@ -98,6 +139,8 @@ beforeAll(async () => {
           position: m.index,
           severityWeight: c.severityWeight,
           legalCitation: c.legalCitation,
+          occurrences: positions.length,
+          positions,
         };
       });
 
@@ -266,5 +309,86 @@ describe('End-to-end: fail closed', () => {
     await expect(scanScript('anything at all')).rejects.toBeInstanceOf(ComplianceUnavailableError);
 
     await new Promise<void>((r) => bad.close(() => r()));
+  });
+});
+
+describe('Boot: verifying the compliance identity', () => {
+  it('resolves when the advisor id is one the scanner accepts', async () => {
+    await expect(verifyComplianceIdentity()).resolves.toBeUndefined();
+  });
+
+  it('is a preflight, not a scan — it sends no content', async () => {
+    await verifyComplianceIdentity();
+
+    expect(received).toHaveLength(1);
+    expect(received[0]!.body).not.toHaveProperty('content');
+  });
+
+  it('REFUSES when the advisor id resolves to nobody', async () => {
+    // The whole reason this exists. CapitalForge enforces the id since
+    // 2026-09-01; a deployment running on a made-up UUID used to work and now
+    // fails every scan, and because the gate fails closed the symptom is
+    // renders stopping rather than renders going unchecked.
+    process.env.COMPLIANCE_SCAN_ADVISOR_ID = '00000000-0000-4000-8000-000000000000';
+
+    await expect(verifyComplianceIdentity()).rejects.toBeInstanceOf(ComplianceIdentityError);
+  });
+
+  it('distinguishes "we could not ask" from "we were told no"', async () => {
+    // A scanner down at boot may be up in a minute, and the gate refuses per
+    // job while it lasts. Only the second is worth refusing to start over.
+    mode = 'error_500';
+
+    const err = await verifyComplianceIdentity().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ComplianceUnavailableError);
+    expect(err).not.toBeInstanceOf(ComplianceIdentityError);
+  });
+
+  it('does not treat an older scanner as a bad identity', async () => {
+    // A CapitalForge without /preflight tells us nothing about our id, and
+    // refusing to boot against one would make this check cause the outage it
+    // exists to warn about.
+    mode = 'no_preflight';
+
+    const err = await verifyComplianceIdentity().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ComplianceUnavailableError);
+    expect(err).not.toBeInstanceOf(ComplianceIdentityError);
+    expect((err as Error).message).toContain('/preflight');
+  });
+
+  it('refuses a wrong token rather than starting', async () => {
+    process.env.COMPLIANCE_SCAN_TOKEN = 'wrong-token';
+
+    await expect(verifyComplianceIdentity()).rejects.toBeInstanceOf(ComplianceIdentityError);
+  });
+});
+
+describe('Repetition survives the boundary', () => {
+  const THRICE =
+    'We offer guaranteed approval. Guaranteed approval, every time. ' +
+    'Ask about our guaranteed approval programme.';
+
+  it('carries the occurrence count off the wire', async () => {
+    // A script saying it nine times arrived at the gate looking like one hit:
+    // the client's violation interface had no `occurrences`, so the count was
+    // dropped at the boundary rather than in the scan.
+    const scan = await scanScript(THRICE);
+    const hit = scan.violations.find((v) => v.claimId === 'banned-001');
+
+    expect(hit?.occurrences).toBe(3);
+    expect(hit?.positions).toHaveLength(3);
+  });
+
+  it('reports one claim in three mentions, not three claims', async () => {
+    const result = await runMarketingComplianceGate({
+      jobId: 'job-repeat',
+      assetId: 'asset-repeat',
+      prompt: 'n/a',
+      script: THRICE,
+    } as never);
+
+    expect(result.allowed).toBe(false);
+    expect(result.blockedReason).toContain('1 banned claim(s) in 3 mentions');
+    expect(result.blockedReason).toContain('x3');
   });
 });
